@@ -34,9 +34,9 @@
   :where([data-fb-ui]):where(:not([data-fb-ui-page] *)) {
     font-family: var(--font-body);
     font-size: var(--text-body-medium-font-size);
-    font-weight: 450;
+    font-weight: var(--text-body-medium-font-weight);
     line-height: var(--text-body-medium-line-height);
-    letter-spacing: -0.001px;
+    letter-spacing: var(--text-body-medium-letter-spacing);
     tab-size: 4;
     font-feature-settings: normal;
     font-variation-settings: normal;
@@ -82,7 +82,7 @@
   :where(code, kbd, samp, pre):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
       :not([data-fb-ui-page] *)
     ) {
-    font-family: var(--font-family-mono, "Roboto Mono", monospace);
+    font-family: var(--font-mono);
     font-feature-settings: normal;
     font-variation-settings: normal;
     font-size: 1em;
@@ -309,7 +309,7 @@
     ) {
     outline: 1px solid var(--accessibility-focus-color, #0d99ff);
     outline-offset: 1px;
-    border-radius: 0.3125rem;
+    border-radius: var(--radius-medium);
   }
 
   :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(

@@ -1,87 +1,64 @@
 ---
 title: "Theme and white-label the chat UI"
 sidebarTitle: "Theming"
-description: "Set FrogBot UI colors with CSS variables and switch light and dark modes."
+description: "Set FrogBot UI colors, type and radius with CSS variables and switch light and dark modes."
 keywords: ["theme", "white-label", "CSS variables", "ThemeProvider", "cascade layer"]
 ---
 
-FrogBot UI uses the admin panel's color tokens, in the admin and on your own pages. Set them with CSS variables on `:root`. A page-level value reaches every FrogBot component on the page, including menus and dialogs, which render outside your layout.
+FrogBot's theme is a set of CSS variables with [shadcn/ui](https://ui.shadcn.com/docs/theming) names, such as `--primary` and `--muted-foreground`. Set them on `:root` to restyle every FrogBot component, in the admin panel and on your own pages, including menus and dialogs, which render outside your layout.
 
 ```css
 :root {
-  --color-bg-brand: oklch(0.58 0.18 250);
-  --color-bg-brand-hover: oklch(0.5 0.18 250);
+  --primary: oklch(0.58 0.18 250);
+  --primary-hover: oklch(0.64 0.18 250);
+  --primary-foreground: white;
 }
 ```
 
-With Tailwind CSS v4, set the same tokens in `@theme static`:
-
-```css
-@import "tailwindcss";
-
-@theme static {
-  --color-bg-brand: oklch(0.58 0.18 250);
-}
-```
-
-Tailwind drops `@theme` values that no utility uses, so these tokens need `static`.
+With Tailwind CSS v4, set the same variables in `@theme static`. Tailwind drops `@theme` values that no utility uses, so they need `static`.
 
 ## Color tokens
 
-The tokens come in two levels:
+The theme has two levels, like FrogBot's design system:
 
-- **Ramps** are the raw palette, such as `--ramp-grey-100` to `--ramp-grey-900`, `--ramp-blue-500` or `--ramp-green-600`. Override a ramp to retint everything built on it.
-- **Semantic tokens** say what a color is for. Components only read these:
+- **Ramps** are the raw palette: `--neutral-50` to `--neutral-950`, and the same steps of `--green`, `--red`, `--amber`, `--blue` and `--violet`. Override a ramp to retint everything built on it.
+- **Roles** say what a color is for. Each points at a ramp step, with its own value in light and dark mode.
 
-| Token | Used for |
-| --- | --- |
-| `--color-bg` | Page, navigation, chat and dialog backgrounds |
-| `--color-bg-secondary`, `--color-bg-tertiary` | Raised panels, secondary buttons, tracks |
-| `--color-bg-hover`, `--color-bg-pressed`, `--color-bg-transparent-hover` | Hover and pressed states |
-| `--color-bg-elevated` | Menus, dropdowns and popovers |
-| `--color-bg-inverse`, `--color-text-oninverse` | Default buttons and other solid neutral fills, and their text |
-| `--color-bg-brand`, `--color-text-onbrand`, `--color-text-brand` | Brand accents such as primary buttons, checked checkboxes and the chat's send button |
-| `--color-text`, `--color-text-secondary`, `--color-text-tertiary` | Text, from strongest to faintest |
-| `--color-border`, `--color-border-strong` | Borders and dividers |
-| `--field-color-*` | Inputs, textareas and select triggers |
-| `--color-*-danger`, `--color-*-success`, `--color-*-warning` | Status colors |
+| Role | Used for | Light | Dark |
+| --- | --- | --- | --- |
+| `--background`, `--foreground` | Page and its text | white, `neutral-950` | `neutral-950`, `neutral-100` |
+| `--card`, `--popover` (and `-foreground`) | Raised panels, menus and dialogs | white | `neutral-900`, `neutral-700` |
+| `--primary` (`-hover`, `-pressed`) | Primary buttons, checked checkboxes, the chat's send button | `green-400` | `green-400` |
+| `--primary-foreground` | Text and icons on a primary fill | `green-950` | `green-950` |
+| `--brand`, `--brand-subtle`, `--brand-subtle-hover` | Brand text, selected rows and their tint | `green-700`, `green-100` | `green-400`, `green-900` |
+| `--secondary`, `--muted`, `--accent` (and `-foreground`) | Secondary buttons, quiet panels, hover and pressed states | `neutral-50` to `-100` | `neutral-700` to `-800` |
+| `--muted-foreground`, `--disabled-foreground` | Secondary and disabled text | | |
+| `--border`, `--input`, `--ring` | Dividers, field borders, focus rings | | |
+| `--destructive`, `--warning`, `--success`, `--info` | Status colors | | |
+| `--sidebar` (and `-foreground`, `-border`) | The admin's navigation | | |
 
-`@frogbotai/ui/styles.css` defines every token with the admin panel's default values, so pages outside the admin look like the admin. In the admin, the admin's own values apply.
+`@frogbotai/ui/styles.css` defines the ramps and roles, and points each of the admin panel's own tokens (`--color-bg-brand`, `--color-text-secondary` and about 130 more) at one role. Set a role and both FrogBot and the admin follow. Soft tints and hover fills, such as a danger banner, mix from the role, so they follow too.
 
-The brand tokens default to FrogBot green, in the admin and on your own pages:
+The type sizes (`--text-xs` to `--text-5xl`) use Tailwind's names and values, and `--radius` is the base corner radius, as in shadcn/ui. If your app already sets these for Tailwind or shadcn/ui, FrogBot picks up your values.
 
-| Token | Light | Dark |
-| --- | --- | --- |
-| `--color-bg-brand` | `#2f964f` | `#2f964f` |
-| `--color-bg-brand-hover` | `#166d30` | `#166d30` |
-| `--color-bg-brand-pressed`, `--color-bg-brand-secondary` | `#0e5523` | `#0e5523` |
-| `--color-bg-brand-tertiary` | `#d1f0db` | `#083d19` |
-| `--color-bg-brand-tertiary-hover` | `#a0ddb4` | `#0e5523` |
-| `--color-border-brand` | `#a0ddb4` | `#166d30` |
-| `--color-border-brand-strong` | `#166d30` | `#67c285` |
-| `--color-icon-brand`, `--color-text-brand`, `--color-text-brand-secondary` | `#166d30` | `#67c285` |
-
-Text and icons on a brand fill (`--color-text-onbrand`, `--color-icon-onbrand`) stay white. Focus rings and selected rows use the separate `--color-*-selected` tokens, which stay blue.
-
-For example, to give every grey surface a cool blue-black tint, and make brand accents blue:
+For example, to make the theme blue on a cool grey:
 
 ```css
 :root {
-  --ramp-grey-900: #070b16;
-  --ramp-grey-800: #090e1b;
-  --ramp-grey-700: #171d2c;
-  --ramp-grey-600: #232938;
-  --color-bg-brand: #0d99ff;
-  --color-bg-brand-hover: #007be5;
-  --color-bg-brand-pressed: #0768cf;
+  --blue-400: #60a5fa;
+  --primary: var(--blue-400);
+  --primary-foreground: var(--neutral-950);
+  --brand: var(--blue-700);
+}
+
+[data-theme='dark'] {
+  --brand: var(--blue-400);
 }
 ```
 
-Set the other brand tokens too, light on `:root` and dark on `[data-theme='dark']`, or they keep FrogBot's green.
-
 ### Token names your app may already use
 
-The tokens use common names such as `--color-bg`, `--color-text` and `--color-border`. If your app defines a token with the same name for its own use, it restyles FrogBot too. Rename your token or scope it to your own elements. On admin pages, overriding one restyles the admin as well as FrogBot.
+The roles use shadcn/ui's names. If your app defines one of them for another purpose, it restyles FrogBot too. Rename your variable or scope it to your own elements.
 
 ## Fonts
 
@@ -110,7 +87,13 @@ FrogBot sets the regular text size to 14px, in the admin panel (where it raises 
 }
 ```
 
-Code in tool results and code blocks uses Roboto Mono, also from `fonts.css`. On pages outside the admin, set `--font-family-mono` on `:root` to use another code font.
+Code uses JetBrains Mono, in the admin and on your own pages. It comes with `@frogbotai/ui/styles.css` and downloads only on pages that show code. To use another code font, set `--font-mono` on `:root`:
+
+```css
+:root {
+  --font-mono: 'Fira Code', monospace;
+}
+```
 
 ## Glow
 
@@ -132,11 +115,11 @@ Light values are set on `:root` and dark values on `[data-theme='dark']`. A valu
 
 ```css
 :root {
-  --color-bg-brand: oklch(0.58 0.18 250);
+  --brand: oklch(0.45 0.18 250);
 }
 
 [data-theme='dark'] {
-  --color-bg-brand: oklch(0.82 0.12 250);
+  --brand: oklch(0.82 0.12 250);
 }
 ```
 
@@ -183,8 +166,8 @@ Place `ThemeScript` before themed content during server rendering. It reads the 
 A section of a page can use its own mode. Wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow.
 
 - **Set colors page-wide, not on a section.** Colors set on a section, such as `.billing { --color-bg-secondary: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page.
-- **Set semantic tokens per mode.** A section sets its mode's tokens again, so a semantic token that you change on `:root` alone doesn't reach a light section. Set it on `:root, [data-theme='light']`, and set dark values on `[data-theme='dark']`.
-- **Ramps and brand fills reach every section.** This applies to ramps and to the brand fills (`--color-bg-brand`, `-hover`, `-pressed`, `-secondary`) that you set on `:root`.
+- **Set roles per mode.** A section sets its mode's roles again, so a role that you change on `:root` alone doesn't reach a light section. Set it on `:root, [data-theme='light']`, and set dark values on `[data-theme='dark']`.
+- **Ramps reach every section.** A ramp you set on `:root` applies everywhere, because each mode's roles read the same ramps.
 
 ## Override FrogBot styles
 
@@ -247,7 +230,7 @@ To use Tailwind CSS in the admin, import only its theme and utilities, after `@f
 ```css
 /* Page-level, so it reaches menus and dialogs too */
 :root {
-  --color-bg-brand: oklch(0.58 0.18 250);
+  --primary: oklch(0.58 0.18 250);
 }
 ```
 

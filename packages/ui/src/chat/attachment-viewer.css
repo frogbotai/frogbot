@@ -17,7 +17,7 @@
     border-radius: var(--fb-radius-md);
     color: var(--color-text);
     background-color: var(--color-bg-secondary);
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
     white-space: pre-wrap;

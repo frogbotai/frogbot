@@ -161,7 +161,7 @@ export async function renderGallery(
   }: { css: string; js: string; theme: 'light' | 'dark'; admin: boolean; attributes?: string },
 ) {
   const htmlAttributes = admin
-    ? ` data-fb-ui-page="" data-theme="${theme}" style="--font-family-sans: Inter; --font-family-mono: 'Roboto Mono', monospace"`
+    ? ` data-fb-ui-page="" data-theme="${theme}" style="--font-family-sans: Inter"`
     : '';
 
   await page.emulateMedia({ reducedMotion: 'reduce' });

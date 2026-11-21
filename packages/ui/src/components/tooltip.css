@@ -15,7 +15,7 @@
     font-size: var(--text-body-medium-font-size);
     font-weight: var(--text-body-medium-font-weight, 450);
     line-height: var(--text-body-medium-line-height);
-    letter-spacing: var(--text-letter-spacing, -0.001px);
+    letter-spacing: var(--text-letter-spacing, var(--text-body-medium-letter-spacing));
     animation: fb-tooltip-in 150ms ease-out;
   }
 
