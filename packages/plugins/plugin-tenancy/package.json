@@ -1,0 +1,46 @@
+{
+  "name": "@frogbotai/plugin-tenancy",
+  "version": "0.42.0",
+  "description": "Tenants and their members for FrogBot: teams, workspaces or client accounts people are invited to by email, each with a role.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-tenancy"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node ../../../scripts/build-package.mjs",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=24.22.3"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*",
+    "payload": "catalog:"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "payload": "catalog:",
+    "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

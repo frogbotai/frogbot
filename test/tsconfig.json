@@ -55,6 +55,7 @@
     "plugin-notifications",
     "plugin-seo",
     "plugin-ai-usage",
+    "plugin-tenancy",
     "plugins",
     "rich-text",
     "roles",

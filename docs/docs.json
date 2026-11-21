@@ -201,7 +201,7 @@
           {
             "group": "Ecosystem",
             "pages": [
-              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/ai-capture", "plugins/ai-evals", "plugins/ai-policy", "plugins/ai-usage", "plugins/api-keys", "plugins/audit-log", "plugins/comments", "plugins/dojo", "plugins/forms", "plugins/roles", "plugins/mcp", "plugins/import-export", "plugins/nested-docs", "plugins/notifications", "plugins/redirects", "plugins/sentry", "plugins/seo", "plugins/stripe", "plugins/two-factor", "plugins/build-your-own"]},
+              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/ai-capture", "plugins/ai-evals", "plugins/ai-policy", "plugins/ai-usage", "plugins/api-keys", "plugins/audit-log", "plugins/comments", "plugins/dojo", "plugins/forms", "plugins/roles", "plugins/mcp", "plugins/import-export", "plugins/nested-docs", "plugins/notifications", "plugins/redirects", "plugins/sentry", "plugins/seo", "plugins/stripe", "plugins/tenancy", "plugins/two-factor", "plugins/build-your-own"]},
               { "group": "Gateway", "expanded": false, "pages": ["gateway/overview", "gateway/providers", "gateway/configuration", "gateway/embedding", "gateway/hooks", "gateway/observability", "gateway/errors"]},
               { "group": "Agent Skills", "expanded": false, "pages": ["skills/coding-agents"]}
             ]
