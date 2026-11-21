@@ -18,12 +18,14 @@ const firmwareComposerBaseline = {
 it("matches the canonical theme foundation on Payload's color tokens", () => {
   const styles = readFileSync(resolve('packages/ui/src/styles.css'), 'utf8');
   const tokens = readFileSync(resolve('packages/ui/src/payload-tokens.css'), 'utf8');
+  const theme = readFileSync(resolve('packages/ui/src/theme.css'), 'utf8');
 
   expect(styles).toContain('@import "./payload-tokens.css";');
   expect(tokens).toContain('--color-bg: var(--ramp-white-1000)');
   expect(tokens).toContain('--color-bg: var(--ramp-grey-800)');
   expect(tokens).toContain('--color-bg-brand: var(--ramp-blue-500)');
-  expect(styles).toContain('--fb-radius: 0.5rem');
+  expect(theme).toContain('--radius: 0.5rem');
+  expect(theme).toContain('--fb-radius: var(--radius)');
 
   for (const css of [styles, tokens]) {
     expect(css).not.toContain('Satoshi');
