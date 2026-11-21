@@ -29,6 +29,7 @@ export { default as BrandClaudeAiIcon } from './icons/BrandClaudeAiIcon.js';
 export { default as BrandDiscoverIcon } from './icons/BrandDiscoverIcon.js';
 export { default as BrandDropboxIcon } from './icons/BrandDropboxIcon.js';
 export { default as BrandFacebookIcon } from './icons/BrandFacebookIcon.js';
+export { default as BrandFrogBotHeadIcon } from './icons/BrandFrogBotHeadIcon.js';
 export { default as BrandFrogBotIcon } from './icons/BrandFrogBotIcon.js';
 export { default as BrandGitHubIcon } from './icons/BrandGitHubIcon.js';
 export { default as BrandGoogleGeminiIcon } from './icons/BrandGoogleGeminiIcon.js';

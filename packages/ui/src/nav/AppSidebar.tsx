@@ -11,8 +11,8 @@ import {
 } from 'react';
 
 import { Tooltip } from '../components/tooltip.js';
+import BrandFrogBotHeadIcon from '../icons/icons/BrandFrogBotHeadIcon.js';
 import FolderIcon from '../icons/icons/FolderIcon.js';
-import FrogBotFavicon from '../icons/icons/FrogBotFavicon.js';
 import SidebarLeftIcon from '../icons/icons/SidebarLeftIcon.js';
 import { type IconName, iconRegistry, isIconName } from '../icons/registry.js';
 import { isRenderableNode } from '../lib/isRenderableNode.js';
@@ -193,7 +193,7 @@ export function AppSidebar({
               {showToggleIcon ? (
                 <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
               ) : (
-                logo || <FrogBotFavicon size={40} />
+                logo || <BrandFrogBotHeadIcon size={40} />
               )}
             </button>
           </Tooltip>

@@ -1,5 +1,5 @@
-import FrogBotFavicon from '../../icons/icons/FrogBotFavicon.js';
+import BrandFrogBotHeadIcon from '../../icons/icons/BrandFrogBotHeadIcon.js';
 
 export const FrogBotIcon = () => (
-  <FrogBotFavicon className="graphic-icon frogbot-graphic-icon" size={24} />
+  <BrandFrogBotHeadIcon className="graphic-icon frogbot-graphic-icon" size={24} />
 );
