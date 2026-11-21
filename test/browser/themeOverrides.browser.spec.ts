@@ -187,3 +187,83 @@ test('Tailwind pages keep JetBrains Mono as the FrogBot code font', async ({ pag
 
   expect(font).toMatch(/^"JetBrains Mono"/);
 });
+
+test('a dark --primary set on [data-theme=dark] drives hover and pressed in a dark section', async ({
+  page,
+}) => {
+  await openPostCreate(page, 'light');
+  await page.addStyleTag({ content: `[data-theme='dark'] { --primary: rgb(37, 99, 235); }` });
+
+  const section = '<div data-theme="dark" data-leaf></div>';
+  const mixed = (amount: string) =>
+    tokenIn(
+      page,
+      '--mixed',
+      `<div data-theme="dark" data-leaf style="--mixed: color-mix(in srgb, rgb(37, 99, 235), ${amount})"></div>`,
+    );
+
+  expect(await tokenIn(page, '--color-bg-brand', section)).toBe('rgb(37, 99, 235)');
+  expect(await tokenIn(page, '--color-bg-brand-hover', section)).toBe(await mixed('white 16%'));
+  expect(await tokenIn(page, '--color-bg-brand-pressed', section)).toBe(await mixed('black 11%'));
+});
+
+test("the admin's body line height stays a length when Tailwind's theme sets --text-sm--line-height", async ({
+  page,
+}) => {
+  await openPostCreate(page, 'light');
+
+  await page.addStyleTag({
+    content:
+      '@layer theme { :root, :host { --text-sm: 0.875rem; --text-sm--line-height: calc(1.25 / 0.875); } }',
+  });
+
+  const height = await page.evaluate(() => {
+    const probe = document.createElement('div');
+
+    probe.style.height = 'calc(var(--text-body-medium-line-height) + 0px)';
+    document.body.append(probe);
+
+    const value = getComputedStyle(probe).height;
+
+    probe.remove();
+
+    return value;
+  });
+
+  expect(height).toBe('20px');
+});
+
+test("an app's --popup-item-color-hover on the menu still reaches the user menu's brand row", async ({
+  page,
+}) => {
+  await openPostCreate(page, 'light');
+
+  await page.addStyleTag({
+    content:
+      '.app-menu { --popup-item-bg-hover: rgb(37, 99, 235); --popup-item-color-hover: rgb(255, 255, 255); }',
+  });
+
+  const row = await page.evaluate(() => {
+    const host = document.createElement('div');
+
+    host.innerHTML =
+      '<div class="app-menu popup__content"><button class="user-menu__submenu-header-row">Acme</button></div>';
+
+    document.body.append(host);
+
+    const button = host.querySelector('button')!;
+
+    button.style.color = 'var(--popup-item-color-hover, var(--color-text-onselected-strong))';
+    button.style.backgroundColor = 'var(--popup-item-bg-hover, var(--color-bg-transparent-hover))';
+
+    const style = getComputedStyle(button);
+    const result = { text: style.color, background: style.backgroundColor };
+
+    host.remove();
+
+    return result;
+  });
+
+  expect(row.background).toBe('rgb(37, 99, 235)');
+  expect(row.text).toBe('rgb(255, 255, 255)');
+});

@@ -126,6 +126,8 @@ Light values are set on `:root` and dark values on `[data-theme='dark']`. Dark m
 
 A ramp you override on `:root` applies in both modes, because the dark tokens read the same ramps.
 
+The admin's high-contrast setting darkens `--muted-foreground`, `--disabled-foreground`, `--border` and `--input`. A value you set for one of these yourself stays as you set it.
+
 On your own pages, `<html data-theme="dark">` turns on dark mode for the whole page. `ThemeProvider` sets it for you.
 
 ### ThemeProvider
