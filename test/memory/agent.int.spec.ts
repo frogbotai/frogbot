@@ -167,7 +167,7 @@ describe('agent memory', () => {
 
     await vi.waitFor(() =>
       expect(error).toHaveBeenCalledWith(
-        expect.objectContaining({ error: expect.objectContaining({ message: 'vendor down' }) }),
+        expect.objectContaining({ err: expect.objectContaining({ message: 'vendor down' }) }),
         '[frogbot] Memory afterTurn failed.',
       ),
     );
