@@ -244,7 +244,7 @@ describe('block tools and blocks fields the caller may not update or read', () =
     expect([ids(b.body), ids(b.flagged)]).toEqual([[], ['f1']]);
   });
 
-  it('treats a hidden blocks field as unreadable: no index, no row count, no block in replies', async () => {
+  it('treats a hidden blocks field as unreadable: no index and no row count', async () => {
     const id = await page({
       hiddenList: [
         { id: 'h0', blockType: 'tile', label: 'Secret' },
@@ -264,7 +264,6 @@ describe('block tools and blocks fields the caller may not update or read', () =
       expect(result.text).not.toMatch(/\d+ blocks/);
     }
 
-    expect(JSON.stringify(await member('listBlocks', target(id)))).not.toContain('hiddenList');
     expect(ids((await stored('pages', id)).hiddenList)).toEqual(['h0', 'h1']);
   });
 

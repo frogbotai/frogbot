@@ -76,6 +76,10 @@ export async function may(
 ) {
   const { collection, ctx, doc } = loaded;
 
+  if (operation === 'read' && chain.some(({ field }) => 'hidden' in field && field.hidden)) {
+    return false;
+  }
+
   if (ctx.overrideAccess) return true;
 
   for (const { field, siblingData, blockData } of chain) {
