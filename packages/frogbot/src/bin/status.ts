@@ -27,6 +27,7 @@ export function statusRows(registrations: Registration[], now = Date.now()): str
     return [
       registration.dir,
       registration.url,
+      registration.mode ?? 'production',
       alive ? registration.state : stoppedState(registration),
       alive ? uptime(registration.startedAt, now) : '-',
       (registration.lastError ?? '')
@@ -61,5 +62,5 @@ export function status(args: string[] = []): void {
     return;
   }
 
-  console.log(formatTable([['FOLDER', 'URL', 'STATE', 'UPTIME', 'LAST ERROR'], ...rows]));
+  console.log(formatTable([['FOLDER', 'URL', 'MODE', 'STATE', 'UPTIME', 'LAST ERROR'], ...rows]));
 }

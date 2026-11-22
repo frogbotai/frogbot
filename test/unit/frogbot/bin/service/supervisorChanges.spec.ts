@@ -70,7 +70,7 @@ async function superviseWith(dir: string, runtime: Omit<AppRuntime, 'start'>, po
     port: port ?? (await freePort()),
     autostart: false,
     env: { ...process.env, XDG_STATE_HOME: folder('frogbot-supervisor-state-') },
-    runtime: { ...runtime, start },
+    runtimes: { production: { ...runtime, start }, dev: { prepare: runtime.prepare, start } },
   });
 
   stops.push(

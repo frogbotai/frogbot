@@ -32,6 +32,12 @@ export function createBuildQueue(run: (kind: RunKind) => Promise<unknown>) {
 
       current = loop(kind);
     },
+    drop(): void {
+      pending = undefined;
+    },
+    get pending(): RunKind | undefined {
+      return pending;
+    },
     idle(): Promise<void> {
       return current ?? Promise.resolve();
     },

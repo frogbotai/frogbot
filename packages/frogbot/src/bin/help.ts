@@ -2,7 +2,7 @@ import { jobsRunUsage } from './jobsRunOptions.js';
 
 const line = (usage: string, describe: string) => `[frogbot] usage: frogbot ${usage}\n${describe}`;
 
-export const upUsage = '[frogbot] usage: frogbot up [--port <n|auto>] [--autostart]';
+export const upUsage = '[frogbot] usage: frogbot up [--port <n|auto>] [--dev] [--autostart]';
 
 export const downUsage = '[frogbot] usage: frogbot down [folder]';
 
@@ -34,7 +34,7 @@ export const commandHelp = {
     'dev [next dev options]',
     'Generates the admin import map, then starts the Next.js development server. `npx next dev --help` lists its options.',
   ),
-  up: `${upUsage}\nRuns the app in the background, rebuilding and swapping in each edit.\n  --port <n|auto>  the port to serve on, remembered for later runs; auto picks a free one\n  --autostart      macOS only: also start the app at login`,
+  up: `${upUsage}\nRuns the app in the background, rebuilding and swapping in each edit.\n  --port <n|auto>  the port to serve on, remembered for later runs; auto picks a free one\n  --dev            run next dev with hot reload instead of production builds\n  --autostart      macOS only: also start the app at login`,
   down: `${downUsage}\nStops the app that \`up\` started in folder, the current one by default.`,
   status: line('status', 'Lists every app `up` started on this computer.'),
   run: line(

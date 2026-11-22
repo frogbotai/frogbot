@@ -384,18 +384,19 @@ frogbot up
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
 | `--port <n\|auto>` | number or `auto` | the app's last port, else the first free one from `9696` | Serve on this port from now on. See [Port](#port). |
-| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`, and on an app already up without it, it exits `1` and tells you to run `down` first. |
+| `--dev` | flag | off | Run `next dev` with hot reload instead of production builds. See [Dev mode](#dev-mode). Not remembered: a later `frogbot up` without it is production. |
+| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`, and on an app already up without it, it exits `1` and tells you to run `down` first. With `--dev`, it exits `1`: autostart is for hosting. |
 
 The app listens on `127.0.0.1` and `::1`, so `localhost` reaches it whichever address it resolves to. It isn't reachable from other computers. Each app gets its own port, so several apps run side by side:
 
 ```bash
 frogbot status
-# FOLDER          URL                    STATE          UPTIME  LAST ERROR
-# /Users/me/crm   http://127.0.0.1:9696  running        2h 5m
-# /Users/me/hr    http://127.0.0.1:9697  update failed  12m     build failed (exit 1): src/hr.ts(3,7): error TS2322: Type 'number' is not assignable to type 'string'.
+# FOLDER          URL                    MODE        STATE          UPTIME  LAST ERROR
+# /Users/me/crm   http://127.0.0.1:9696  production  running        2h 5m
+# /Users/me/hr    http://127.0.0.1:9697  dev         update failed  12m     importmap failed (exit 1): SyntaxError: Unexpected token
 ```
 
-`frogbot status` works from any folder. The states are `starting`, `running`, `building`, `update failed`, `crashed`, and `stopped`. Three of them say more than their name:
+`frogbot status` works from any folder. `MODE` is `production` or `dev`. The states are `starting`, `running`, `building`, `update failed`, `crashed`, and `stopped`. Three of them say more than their name:
 
 | State | Meaning |
 | --- | --- |
@@ -465,6 +466,26 @@ Apps made with FrogBot 0.39 list both build folders in the `include` of `tsconfi
 #### Crashes
 
 A server that crashes restarts on the same build after 1 second. The wait doubles after each crash, up to 30 seconds. It goes back to 1 second once the server has stayed up for a minute.
+
+### Dev mode
+
+```bash
+frogbot up --dev
+# [frogbot] /Users/me/crm is up at http://127.0.0.1:9696 in dev mode, hot reloading
+```
+
+`frogbot up --dev` runs `next dev` in the background, behind the same port, supervisor and `frogbot down` as production. Edits show in the browser at once:
+
+| Change | What happens |
+| --- | --- |
+| `src/` or `public/` | Next's hot reload applies it. Nothing builds or restarts. |
+| `frogbot.config.*`, `next.config.*`, `tsconfig.json`, `package.json`, the lockfile, or `.env*` | `up` regenerates the import map, which loads `frogbot.config`, then stops the dev server and starts a new one. Next lets only one `next dev` use `.next/dev`, so the app answers `503` with `retry-after` for the few seconds in between. |
+| A `frogbot.config` that doesn't load | The running dev server keeps serving, and `status` shows `update failed`. |
+| A dev server that doesn't start | `status` shows `update failed` and the error. The next change tries again. |
+
+Dev mode builds nothing into `.frogbot/builds`; Next uses its own `.next`. Each restart regenerates the types, and the database schema follows your config as it does under [`frogbot dev`](#dev-and-start), with no separate schema step.
+
+`frogbot up --dev` on an app already up in production switches it to dev without downtime: the dev server starts, traffic moves to it, then production stops. `frogbot up` without `--dev` on an app in dev mode switches it back, with a production build first. Each prints `switching … to <mode> mode`, then waits until the switch lands or fails.
 
 ### Database schema
 

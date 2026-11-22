@@ -476,7 +476,7 @@ await frogbot.create({ collection: 'notes', data: { title: 'saved' }, overrideAc
 
     const listed = await frogbot(tmpdir(), 'status');
 
-    expect(listed.output).toMatch(new RegExp(`${one}\\s+\\S+\\s+stopped\\s`));
+    expect(listed.output).toMatch(new RegExp(`${one}\\s+\\S+\\s+production\\s+stopped\\s`));
 
     const again = await frogbot(one, 'up');
 
@@ -521,5 +521,42 @@ await frogbot.create({ collection: 'notes', data: { title: 'saved' }, overrideAc
       code: 1,
       output: expect.stringContaining('unknown option --bogus; usage: frogbot down [folder]'),
     });
+  });
+
+  it('`up --dev` hot reloads an edit with no build, `up` switches back to production, and `down` stops both', async () => {
+    const started = await frogbot(one, 'up', '--dev');
+
+    expect(started.code, started.output).toBe(0);
+    expect(started.output).toContain('in dev mode, hot reloading');
+
+    const { url } = registrationOf(one)!;
+
+    expect(registrationOf(one)).toMatchObject({ mode: 'dev', state: 'running' });
+    expect((await frogbot(tmpdir(), 'status')).output).toMatch(
+      new RegExp(`${one}\\s+\\S+\\s+dev\\s+running\\s`),
+    );
+
+    const builds = () => serviceLog(one).split('building into').length;
+    const before = builds();
+
+    setText(one, "'hot'");
+    await vi.waitFor(async () => expect((await get(`${url}/text`)).text).toBe('hot'), BUILD);
+
+    expect(builds()).toBe(before);
+    expect(existsSync(join(one, '.frogbot', 'builds'))).toBe(false);
+
+    const switched = await frogbot(one, 'up');
+
+    expect(switched.code, switched.output).toBe(0);
+    expect(switched.output).toContain('in production mode');
+    expect(registrationOf(one)).toMatchObject({ mode: 'production', state: 'running' });
+    expect(await get(`${url}/text`)).toEqual({ status: 200, text: 'hot' });
+    expect(builds()).toBe(before + 1);
+
+    const found = registrationOf(one)!;
+
+    expect((await frogbot(one, 'down')).code).toBe(0);
+    expect(alive(found.pid)).toBe(false);
+    expect(serversIn(one)).toEqual([]);
   });
 });
