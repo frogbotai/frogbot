@@ -31,6 +31,7 @@ export function BoardCard({
       {...draggable.attributes}
       {...draggable.listeners}
       className={`frog-board__card${draggable.isDragging ? ' frog-board__card--dragging' : ''}${className ? ` ${className}` : ''}`}
+      data-record-id={id}
       onAuxClick={onClick ? (event) => event.button === 1 && onClick(event) : undefined}
       onClick={onClick}
       onKeyDown={onClick ? onKeyDown : undefined}

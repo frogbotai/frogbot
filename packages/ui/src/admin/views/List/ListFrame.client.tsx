@@ -23,6 +23,7 @@ import { aiBulkMenuFields } from '../../fields/AI/bulk.js';
 import { AIFieldListMenuItem } from '../../fields/AI/ListMenuItem.client.js';
 import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
 import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
+import { rowRecordId } from '../panel/recordSteps.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { CellEditing } from './cellEdit/CellEditing.client.js';
 import { CellToggleProvider } from './cellEdit/CellToggle.client.js';
@@ -73,10 +74,6 @@ export function ListFrameClient({ listProps, ...frame }: ListFrameClientProps) {
   return <ListFrameInner {...frame} listProps={listProps} />;
 }
 
-function rowId(row: HTMLElement): string | undefined {
-  return row.dataset.id ?? row.querySelector<HTMLElement>('[data-row-id]')?.dataset.rowId;
-}
-
 function useRecordRows(doneIds: string[] | undefined) {
   const ref = useRef<HTMLDivElement>(null);
   const key = doneIds?.join('\n') ?? '';
@@ -91,7 +88,7 @@ function useRecordRows(doneIds: string[] | undefined) {
       container
         .querySelectorAll<HTMLElement>('.table:not(.table--drag-preview) tbody > tr')
         .forEach((row) => {
-          const id = rowId(row);
+          const id = rowRecordId(row);
           row.toggleAttribute('data-done', id !== undefined && done.has(id));
           row.toggleAttribute('data-selected', id !== undefined && id === openId);
         });
