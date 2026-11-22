@@ -197,10 +197,20 @@ export type FormSubmitBody = {
   turnstile?: string;
 };
 
-export type FormFieldError = { field?: string; message: string };
+export type FormFieldError = {
+  field?: string;
+  message: string;
+  /** `invalid_answer` when the answer has the wrong type for its question. */
+  code?: 'invalid_answer';
+};
+
+/** An answer a confirmed submission didn't use. `reason` is for reading and may be reworded. */
+export type FormIgnoredAnswer = { field: string; reason: string };
 
 export type FormSubmitResponse =
-  { confirmation: FormConfirmation } | { errors: FormFieldError[] } | { error: string };
+  | { confirmation: FormConfirmation; ignored?: FormIgnoredAnswer[] }
+  | { errors: FormFieldError[] }
+  | { error: string };
 
 /** `req.context.form` while a submission creates its record. */
 export type FormSubmission = {

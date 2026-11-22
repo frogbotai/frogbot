@@ -41,6 +41,7 @@ export type {
   FormDefinition,
   FormDocument,
   FormFieldError,
+  FormIgnoredAnswer,
   FormLinkContext,
   FormLinkDocument,
   FormLinkDuration,

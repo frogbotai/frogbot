@@ -112,7 +112,7 @@ steps: [
 ]
 ```
 
-The page and the server run the same check, `visibleQuestions` from `@frogbotai/ui/forms/rules`, over the answers in order, so the answer to a hidden question counts as no answer for the rules after it. A step whose questions are all hidden is skipped, and the step count leaves it out. Hidden questions aren't checked on the page, and the server drops their answers and files, even if a client sends them; through an edit link, a hidden question's field keeps its saved value, and the rules read the record's saved answer to any earlier question the edit leaves out. Since a hidden question must never block a response, a `required` field can't have rules, even one with a default: make it optional. If a field becomes `required` after a form gave it rules, the page and the server ignore those rules and always show it.
+The page and the server run the same check, `visibleQuestions` from `@frogbotai/ui/forms/rules`, over the answers in order, so the answer to a hidden question counts as no answer for the rules after it. A step whose questions are all hidden is skipped, and the step count leaves it out. Hidden questions aren't checked on the page, and the server ignores their answers and files, even if a client sends them, and lists the answers in the response's `ignored`; through an edit link, a hidden question's field keeps its saved value, and the rules read the record's saved answer to any earlier question the edit leaves out. Since a hidden question must never block a response, a `required` field can't have rules, even one with a default: make it optional. If a field becomes `required` after a form gave it rules, the page and the server ignore those rules and always show it.
 
 ## Who can open a form
 
@@ -313,9 +313,26 @@ Content-Type: application/json
 { "data": { "email": "ada@example.com", "interest": "sales" }, "params": { "utm_source": "newsletter" }, "turnstile": "<token>" }
 ```
 
-- Keys that aren't questions on the form are dropped, as are undeclared parameters. A declared parameter is cut to 500 characters.
+- Each answer must have its question's type: a boolean for a checkbox, a number or numeric string for a number, an array of strings for a multi-select, and a string for every other question. `null` and `""` count as no answer. A wrong-typed answer to a shown question is refused with `400`, every one at once, alongside any file errors, and nothing is saved:
+
+  ```json
+  { "errors": [{ "field": "age", "message": "age: expected a number or numeric string, got \"forty\".", "code": "invalid_answer" }] }
+  ```
+
 - A form that is closed, past `closesAt` or at `maxResponses` answers `410`.
 - On success the response is `{ "confirmation": { "type": "message", "message": "…" } }` or `{ "confirmation": { "type": "redirect", "url": "/thanks" } }`, never the record.
+- Answers that were sent but not saved are listed in `ignored`: answers to questions a rule hid, even wrong-typed ones, with the rules that hid them, and keys that aren't questions on the form. `field` and the shape are stable; `reason` is for reading and may be reworded. `ignored` is left out when nothing was ignored. Undeclared parameters are dropped, and a declared parameter is cut to 500 characters.
+
+  ```json
+  {
+    "confirmation": { "type": "message", "message": "Thanks!" },
+    "ignored": [
+      { "field": "company", "reason": "hidden: business equals yes" },
+      { "field": "nmae", "reason": "not a question on this form" }
+    ]
+  }
+  ```
+
 - When the collection refuses the record, the response is `400` with `{ "errors": [{ "field": "email", "message": "…" }] }`.
 - With files, send `multipart/form-data` as described in [How files are saved](#how-files-are-saved). Files over the app's upload limits answer `413`.
 - A missing or refused Turnstile token answers `400`, and too many submits from one address answer `429` with a `Retry-After` header. See [Spam protection](#spam-protection).
@@ -415,7 +432,7 @@ A link works for any number of saves until it expires; set `maxSubmissions: 1` f
 ### What a link can do
 
 - It opens one form for one record. `/forms/<slug>?link=<token>` shows the record's current answers to the form's questions and nothing else, read with `overrideAccess: false`.
-- Saving keeps only the form's questions, ignores URL parameters, and updates the record with `overrideAccess: false`. Emptying an answer clears its field. The response is the confirmation or field errors, never the record.
+- Saving keeps only the form's questions, ignores URL parameters, and updates the record with `overrideAccess: false`. Emptying an answer clears its field, and a wrong-typed answer is refused with `400` and spends no use, as on [submit](#endpoints). The response is the confirmation, with any `ignored` answers, or field errors, never the record.
 - While a link is used, each listed collection's `access.read` and `access.update` admit only the link's record. `req.context.formLink` holds `{ id, collection, record }`, so your hooks can tell link saves apart; only the plugin can set it, and a hook that writes another collection or record with the same `req` isn't admitted there.
 - `updatedBy` stays as it was, since nobody is signed in. The link's `submissions` and `lastSubmittedAt` record each save. A save the collection refuses spends no use.
 - An unknown, expired, revoked or used-up link, or another form's, shows one "This link is no longer valid" page, and the endpoints answer `410` with no detail. With `trustProxy`, each such link counts toward the visitor's [rate limit](#spam-protection).
