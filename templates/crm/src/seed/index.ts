@@ -20,8 +20,7 @@ export const SAMPLE_COLLECTIONS = [
 ] as const;
 
 export type SeedArgs = {
-  frogbot: FrogBotInstance;
-  req?: FrogBotRequest;
+  req: FrogBotRequest;
   today: Date;
 };
 
@@ -64,10 +63,10 @@ export async function seed(args: SeedArgs): Promise<SeedResult> {
     return await addSample(args, added);
   } catch (err) {
     for (const { collection, id } of added.reverse()) {
-      await args.frogbot
+      await args.req.frogbot
         .delete({ collection, id, overrideAccess: true, req: args.req })
         .catch((cleanupErr: unknown) =>
-          args.frogbot.logger.error(
+          args.req.frogbot.logger.error(
             { err: cleanupErr, collection, id },
             'Removing a partly added sample record failed',
           ),
@@ -84,11 +83,11 @@ type Added = {
 };
 
 async function addSample(
-  { frogbot, req, today }: SeedArgs,
+  { req, today }: SeedArgs,
   added: Added[],
 ): Promise<SeedResult> {
   const options = { overrideAccess: true, req };
-  const owner = req?.user?.id ?? (await firstUser(frogbot));
+  const owner = req.user?.id ?? (await firstUser(req));
 
   const result: SeedResult = {
     companies: new Map(),
@@ -99,7 +98,7 @@ async function addSample(
   };
 
   for (const { logo, ...company } of COMPANIES) {
-    const media = await frogbot.create({
+    const media = await req.frogbot.create({
       collection: 'media',
       data: { alt: `${company.name} logo` },
       filePath: path.join(LOGOS_DIR, logo),
@@ -109,7 +108,7 @@ async function addSample(
     added.push({ collection: 'media', id: media.id });
     result.logos.set(logo, media.id);
 
-    const created = await frogbot.create({
+    const created = await req.frogbot.create({
       collection: 'companies',
       data: { ...company, logo: media.id, owner },
       ...options,
@@ -120,7 +119,7 @@ async function addSample(
   }
 
   for (const { company, lastContactedDaysAgo, ...contact } of CONTACTS) {
-    const created = await frogbot.create({
+    const created = await req.frogbot.create({
       collection: 'contacts',
       data: {
         ...contact,
@@ -136,7 +135,7 @@ async function addSample(
   }
 
   for (const { company, contact, closeInDays, ...deal } of DEALS) {
-    const created = await frogbot.create({
+    const created = await req.frogbot.create({
       collection: 'deals',
       data: {
         ...deal,
@@ -163,7 +162,7 @@ async function addSample(
   } of ACTIVITIES) {
     const start = at(today, day, hour, minute);
 
-    const created = await frogbot.create({
+    const created = await req.frogbot.create({
       collection: 'activities',
       data: {
         ...activity,
@@ -180,7 +179,7 @@ async function addSample(
   }
 
   for (const { dueInDays, deal, contact, ...task } of TASKS) {
-    const created = await frogbot.create({
+    const created = await req.frogbot.create({
       collection: 'tasks',
       data: {
         ...task,
@@ -199,13 +198,14 @@ async function addSample(
   return result;
 }
 
-async function firstUser(frogbot: FrogBotInstance) {
-  const { docs } = await frogbot.find({
+async function firstUser(req: FrogBotRequest) {
+  const { docs } = await req.frogbot.find({
     collection: 'users',
     depth: 0,
     limit: 1,
     sort: 'createdAt',
     overrideAccess: true,
+    req,
   });
 
   return docs[0]?.id;

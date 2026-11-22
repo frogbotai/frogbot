@@ -31,7 +31,7 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
       try {
         if (await hasRecords(req.frogbot)) return refused();
 
-        await run({ frogbot: req.frogbot, req, today: new Date() });
+        await run({ req, today: new Date() });
       } catch (err) {
         req.frogbot.logger.error({ err }, 'Seeding the database failed');
 
