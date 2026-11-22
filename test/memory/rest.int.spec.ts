@@ -243,4 +243,20 @@ describe('memory REST and SDK', () => {
     expect(missing).toBeInstanceOf(FrogBotSDKError);
     expect(missing.status).toBe(404);
   });
+
+  it('sdk.memory refuses an empty id instead of forgetting or listing the whole scope', async () => {
+    const sdk = sdkAs(ann);
+
+    await sdk.memory.save({ scope: 'me', text: 'Ann keeps this' });
+
+    for (const id of ['', '  ']) {
+      await expect(sdk.memory.forget({ scope: 'me', id })).rejects.toThrow(/id/);
+      await expect(sdk.memory.get({ scope: 'me', id })).rejects.toThrow(/id/);
+      await expect(sdk.memory.update({ scope: 'me', id, pinned: true })).rejects.toThrow(/id/);
+    }
+
+    expect((await sdk.memory.list({ scope: 'me' })).docs.map(({ text }) => text)).toEqual([
+      'Ann keeps this',
+    ]);
+  });
 });

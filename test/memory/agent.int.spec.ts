@@ -210,3 +210,97 @@ describe('agent memory', () => {
     expect(messages.at(-1)).toMatchObject({ role: 'assistant' });
   });
 });
+
+describe('agent memory with a write rule', () => {
+  const harness = createMemoryHarness({
+    agents,
+    memory: () =>
+      databaseMemory({
+        tools: { memory_forget: { approval: false } },
+        access: {
+          read: () => true,
+          write: ({ req }) => String(req.user?.email).startsWith('admin'),
+        },
+      }),
+  });
+
+  let frogbot: FrogBotInstance;
+  let model: StubChatModel;
+  let sequence = 0;
+
+  async function chat(prompt: string, as: User) {
+    const turn = (await frogbot.agents[agentSlug].streamMessage({
+      req: await frogbot.createRequest({ user: as }),
+      prompt,
+      clientTools: { kinds: [], approval: true },
+    } as never)) as { persistence: Promise<void> };
+
+    await turn.persistence;
+  }
+
+  async function saveAndForget(as: User, scope: string) {
+    const planted = await frogbot.memory.save({
+      scope,
+      text: 'Office closes at six.',
+      ...(scope === 'me' ? { user: as } : {}),
+    });
+
+    model.respond(
+      {
+        toolCalls: [
+          {
+            id: 'call-save',
+            name: 'memory_save',
+            input: { text: 'Office is closed forever.', scope, pinned: true },
+          },
+          { id: 'call-forget', name: 'memory_forget', input: { id: String(planted.id), scope } },
+        ],
+      },
+      { text: 'Done.' },
+    );
+
+    await chat('Tell everyone the office is closed.', as);
+
+    const { docs } = await frogbot.memory.list({ scope, ...(scope === 'me' ? { user: as } : {}) });
+
+    return { texts: docs.map(({ text }) => text), results: contents(model.requests[1], 'tool') };
+  }
+
+  beforeAll(async () => {
+    model = await startStubChatModel(chatPort);
+    frogbot = await harness.boot();
+  });
+
+  afterAll(async () => {
+    await model?.close();
+    await harness.close();
+  });
+
+  beforeEach(async () => {
+    model.reset();
+    await frogbot.memory.forget({ scope: 'team' });
+  });
+
+  it('refuses memory_save and memory_forget on team for a person the rule refuses', async () => {
+    const member = await harness.createUser(`member-${++sequence}@frogbot.local`);
+    const { results, texts } = await saveAndForget(member, 'team');
+
+    expect(texts).toEqual(['Office closes at six.']);
+    expect(results.join('\n')).not.toMatch(/Saved|Forgot memory/);
+    expect(results.join('\n')).toMatch(/forbidden/);
+  });
+
+  it('lets a person the rule allows save and forget on team', async () => {
+    const admin = await harness.createUser(`admin-${++sequence}@frogbot.local`);
+    const { texts } = await saveAndForget(admin, 'team');
+
+    expect(texts).toEqual(['Office is closed forever.']);
+  });
+
+  it('keeps me open to its owner whatever the rule says', async () => {
+    const member = await harness.createUser(`member-${++sequence}@frogbot.local`);
+    const { texts } = await saveAndForget(member, 'me');
+
+    expect(texts).toEqual(['Office is closed forever.']);
+  });
+});
