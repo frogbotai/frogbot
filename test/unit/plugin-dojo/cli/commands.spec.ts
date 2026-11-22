@@ -276,6 +276,10 @@ const destructive: { args: string[]; asked: string; replies?: Record<string, unk
   },
   { args: ['env', 'unset', 'deals', 'MODE'], asked: 'Remove MODE from deals?' },
   {
+    args: ['git', 'disconnect', 'deals'],
+    asked: "Disconnect deals's repo? Pushes stop deploying it; deployments already made stay.",
+  },
+  {
     args: ['domains', 'clear', 'deals'],
     asked: 'Remove the custom domain of deals? It stops reaching the app.',
   },

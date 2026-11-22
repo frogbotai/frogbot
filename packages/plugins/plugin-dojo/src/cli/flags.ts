@@ -2,9 +2,37 @@ import { parseArgs } from 'node:util';
 
 import { ShareError } from './error.js';
 
-/** The `dojo` target's own flags, for `frogbot deploy --help`. */
-export const shareUsage =
-  '[--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys] [--wait]';
+/**
+ * The `dojo` target's flags: what `parseArgs` takes and what the usage line shows, from one table so they can't
+ * drift; `parseArgs` ignores `value` and `shown`. `shown` replaces the usage text of a flag that has forms, like
+ * `--data | --no-data`.
+ */
+export const shareOptions = {
+  app: { type: 'string', value: 'slug or id' },
+  data: { type: 'boolean', shown: '--data | --no-data | --replace-data' },
+  'replace-data': { type: 'boolean', default: false, shown: '' },
+  confirm: { type: 'string', value: 'app-slug' },
+  workspace: { type: 'string', value: 'slug' },
+  name: { type: 'string', value: 'name' },
+  keys: { type: 'boolean', default: true, shown: '--no-keys' },
+  'skip-key': { type: 'string', multiple: true, default: [] as string[], value: 'NAME' },
+  yes: { type: 'boolean', default: false },
+  'update-keys': { type: 'boolean', default: false },
+  wait: { type: 'boolean', default: false },
+} as const;
+
+function shownFlag(name: string, option: (typeof shareOptions)[keyof typeof shareOptions]) {
+  const text =
+    'shown' in option ? option.shown : `--${name}${'value' in option ? ` <${option.value}>` : ''}`;
+
+  return text ? `[${text}]${'multiple' in option ? '...' : ''}` : '';
+}
+
+/** The `dojo` target's own flags, for `frogbot deploy --help`: every flag `parseShareArgs` accepts. */
+export const shareUsage = Object.entries(shareOptions)
+  .map(([name, option]) => shownFlag(name, option))
+  .filter(Boolean)
+  .join(' ');
 
 const usage = (program: string) => `Usage: ${program} deploy [dojo] ${shareUsage}`;
 
@@ -13,6 +41,8 @@ export type ShareFlags = {
   app?: string;
   data?: boolean;
   replaceData: boolean;
+  /** `--confirm <app-slug>`: answers `--replace-data`'s typed confirmation, so an agent can replace live data. */
+  confirm?: string;
   workspace?: string;
   name?: string;
   keys: boolean;
@@ -30,18 +60,7 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
   try {
     parsed = parseArgs({
       args: argv,
-      options: {
-        app: { type: 'string' },
-        data: { type: 'boolean' },
-        'replace-data': { type: 'boolean', default: false },
-        workspace: { type: 'string' },
-        name: { type: 'string' },
-        keys: { type: 'boolean', default: true },
-        'skip-key': { type: 'string', multiple: true, default: [] },
-        yes: { type: 'boolean', default: false },
-        'update-keys': { type: 'boolean', default: false },
-        wait: { type: 'boolean', default: false },
-      },
+      options: shareOptions,
       allowNegative: true,
       strict: true,
       tokens: true,
@@ -66,6 +85,13 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
     throw new ShareError(`Use --replace-data or --no-data, not both. ${usage(program)}`, 2);
   }
 
+  if (values.confirm !== undefined && !values['replace-data']) {
+    throw new ShareError(
+      `--confirm answers --replace-data; use them together. ${usage(program)}`,
+      2,
+    );
+  }
+
   if (values.app !== undefined && !values.app.trim()) {
     throw new ShareError(`--app needs an app's slug or id. ${usage(program)}`, 2);
   }
@@ -81,6 +107,7 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
     app: values.app,
     data: values.data,
     replaceData: values['replace-data'],
+    confirm: values.confirm,
     workspace: values.workspace,
     name: values.name,
     keys: values.keys,

@@ -1,5 +1,5 @@
 import type { Noun, RawVerb, Verb } from './command.js';
-import { runVerb, verbHelp, verbUsage } from './command.js';
+import { parseVerbArgs, runVerb, verbHelp, verbUsage } from './command.js';
 import { reportStop } from './error.js';
 import type { DojoIO } from './io.js';
 import { jsonIO, processIO } from './io.js';
@@ -11,6 +11,7 @@ import { billing } from './nouns/billing.js';
 import { deployments } from './nouns/deployments.js';
 import { domains } from './nouns/domains.js';
 import { env } from './nouns/env.js';
+import { git } from './nouns/git.js';
 import { handovers } from './nouns/handovers.js';
 import { members } from './nouns/members.js';
 import { projects } from './nouns/projects.js';
@@ -28,6 +29,7 @@ export const dojoCommands: Record<string, Verb | RawVerb | Noun> = {
   handovers,
   templates,
   deployments,
+  git,
   env,
   domains,
   sharing,
@@ -107,9 +109,15 @@ async function runCommand(
   const out = { ...(json ? jsonIO(io) : io), ...(waits && { waits }) };
 
   try {
-    if ('raw' in verb) return await verb.raw(rest, out);
+    const usage = verbUsage(io.program, name, verb);
 
-    return await runVerb(verb, rest, out, verbUsage(io.program, name, verb));
+    if ('raw' in verb) {
+      parseVerbArgs(verb, rest, usage);
+
+      return await verb.raw(rest, out);
+    }
+
+    return await runVerb(verb, rest, out, usage);
   } catch (error) {
     return reportStop(out, error);
   }

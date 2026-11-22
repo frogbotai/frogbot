@@ -103,7 +103,14 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
   if (started && flags.data && !replacing) say(io, `[frogbot] ${replaceMessages.firstShareOnly}`);
 
   const data = replacing
-    ? await askReplace({ slug: slug ?? String(link?.appId), level, root, config, io })
+    ? await askReplace({
+        slug: slug ?? String(link?.appId),
+        level,
+        root,
+        config,
+        confirm: flags.confirm,
+        io,
+      })
     : started
       ? undefined
       : await askData({ data: flags.replaceData || flags.data, root, config, io });

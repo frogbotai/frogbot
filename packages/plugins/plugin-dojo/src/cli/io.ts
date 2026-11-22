@@ -15,6 +15,8 @@ export type DojoIO = Omit<DeployIO, 'exec' | 'which' | 'loadConfig'> & {
   json?: { write: (text: string) => unknown };
   /** With `--wait`: wait for a sign-in or a payment even without a terminal. */
   waits?: boolean;
+  /** A secret, asked hidden with a terminal or read whole from piped stdin, so it never sits in an argument. */
+  readSecret?: (message: string) => Promise<string>;
 };
 
 /** Whether someone may be waited for: a terminal, or `--wait`. Otherwise a needed sign-in or payment exits. */
@@ -65,6 +67,18 @@ function openBrowser(url: string): void {
   child.unref();
 }
 
+async function readSecret(message: string): Promise<string> {
+  if (process.stdin.isTTY) {
+    return answered<string>(await p.password({ message, output: process.stderr }));
+  }
+
+  let text = '';
+
+  for await (const chunk of process.stdin) text += String(chunk);
+
+  return text;
+}
+
 /** The real terminal and browser. */
 export function processIO(program: string): DojoIO {
   return {
@@ -77,6 +91,7 @@ export function processIO(program: string): DojoIO {
     prompts: clackPrompts,
     openBrowser,
     wait: setTimeout,
+    readSecret,
   };
 }
 
