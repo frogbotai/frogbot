@@ -579,7 +579,13 @@ describe(`form edit links [${adapterLabel}]`, () => {
       });
 
       expect(saved.status).toBe(200);
-      expect(saved.body).toEqual({ confirmation: expect.any(Object) });
+      expect(saved.body).toEqual({
+        confirmation: expect.any(Object),
+        ignored: ['email', 'status', 'owner', 'id'].map((field) => ({
+          field,
+          reason: 'not a question on this form',
+        })),
+      });
 
       expect(await application(mine)).toMatchObject({
         email: 'mine@example.com',
@@ -762,6 +768,37 @@ describe(`form edit links [${adapterLabel}]`, () => {
 
       expect((await save(token, { name: 'Fine' })).status).toBe(200);
       expect((await application(mine)).name).toBe('Fine');
+    });
+
+    it('refuses a wrong-typed answer without spending a use, and clears a null one', async () => {
+      await booted.frogbot.update({
+        collection: applicationsSlug,
+        id: mine,
+        data: { name: 'Ada', phone: '555-0100' },
+        overrideAccess: true,
+      });
+
+      const token = await link({ maxSubmissions: 1 });
+      const refused = await save(token, { name: 'Grace', phone: 5550100 });
+
+      expect(refused.status).toBe(400);
+      expect(refused.body).toEqual({
+        errors: [
+          {
+            field: 'phone',
+            message: 'phone: expected a string, got 5550100.',
+            code: 'invalid_answer',
+          },
+        ],
+      });
+      expect(await uses(token)).toEqual({ submissions: 0, lastSubmittedAt: null });
+      expect(await application(mine)).toMatchObject({ name: 'Ada', phone: '555-0100' });
+
+      const cleared = await save(token, { phone: null });
+
+      expect(cleared.status).toBe(200);
+      expect(cleared.body).toEqual({ confirmation: expect.any(Object) });
+      expect(await application(mine)).toMatchObject({ name: 'Ada', phone: null });
     });
 
     it('is reusable by default until it expires', async () => {
