@@ -140,6 +140,7 @@ export function Form({ definition, submitUrl, onSubmitted, eventUrl, className }
   const [message, setMessage] = useState<string>();
   const [trap, setTrap] = useState('');
   const [restored, setRestored] = useState(!resumes);
+  const [answered, setAnswered] = useState(false);
   const started = useRef(false);
   const viewed = useRef(false);
 
@@ -154,15 +155,20 @@ export function Form({ definition, submitUrl, onSubmitted, eventUrl, className }
     const shownNow = visibleQuestions(steps, { ...defaults, ...saved });
     const kept = Object.entries(saved).filter(([key]) => shownNow.has(key));
 
-    if (kept.some(([, value]) => !isEmpty(value))) started.current = true;
+    if (Object.keys(saved).length) {
+      started.current = true;
+      setAnswered(true);
+    }
 
     setValues((current) => ({ ...current, ...Object.fromEntries(kept) }));
     setRestored(true);
   }, [restored, slug, questions, steps]);
 
   useEffect(() => {
-    if (resumes && restored && message === undefined) saveAnswers(slug, questions, values);
-  }, [resumes, restored, message, slug, questions, values]);
+    if (resumes && restored && answered && message === undefined) {
+      saveAnswers(slug, questions, values);
+    }
+  }, [resumes, restored, answered, message, slug, questions, values]);
 
   useEffect(() => {
     if (!counts || viewed.current || !eventUrl) return;
@@ -211,6 +217,7 @@ export function Form({ definition, submitUrl, onSubmitted, eventUrl, className }
 
   const change = (key: string, value: FormValue) => {
     setValues((current) => ({ ...current, [key]: value }));
+    setAnswered(true);
 
     if (counts && eventUrl && !started.current) {
       started.current = true;

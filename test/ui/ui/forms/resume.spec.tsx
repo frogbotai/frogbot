@@ -130,12 +130,12 @@ describe('Form resume', () => {
 
   it('survives storage that is not JSON', async () => {
     window.localStorage.setItem(STORED, '{not json');
+    const user = userEvent.setup();
 
     render(<Form definition={definition} submitUrl={SUBMIT} />);
+    await user.type(screen.getByLabelText(/Email/), 'ada@example.com');
 
-    await waitFor(() => {
-      expect(stored()).toEqual({ email: '', business: '', company: '', news: false });
-    });
+    expect(stored()).toEqual({ email: 'ada@example.com', business: '', company: '', news: false });
   });
 
   it('keeps nothing for an edit link or a preview', async () => {
@@ -192,6 +192,31 @@ describe('Form counts', () => {
     await user.type(screen.getByLabelText(/Email/), 'x');
 
     expect(pings(fetch)).toEqual(['view']);
+  });
+
+  it('keeps nothing for a visitor who only looked, so they count as a start when they come back and answer', async () => {
+    const fetch = respond({});
+    const user = userEvent.setup();
+    const counted = { ...definition, analytics: true as const };
+    const first = render(<Form definition={counted} eventUrl={EVENTS} submitUrl={SUBMIT} />);
+
+    await waitFor(() => {
+      expect(pings(fetch)).toEqual(['view']);
+    });
+
+    first.unmount();
+
+    expect(stored()).toBeNull();
+
+    render(<Form definition={counted} eventUrl={EVENTS} submitUrl={SUBMIT} />);
+
+    await waitFor(() => {
+      expect(pings(fetch)).toEqual(['view', 'view']);
+    });
+
+    await user.type(screen.getByLabelText(/Email/), 'a');
+
+    expect(pings(fetch)).toEqual(['view', 'view', 'start']);
   });
 
   it('pings nothing when the definition has no analytics, or the form is closed', async () => {
