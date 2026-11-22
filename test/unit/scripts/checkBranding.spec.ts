@@ -96,6 +96,17 @@ describe('checkBranding', () => {
     expect(problems).toEqual([]);
   });
 
+  it('rejects a migration signature with payload that Prettier split over lines', () => {
+    const file = 'examples/demo/src/migrations/1_init.ts';
+    const problems = check({
+      ...allowed,
+      [file]:
+        'export async function down({\n  db,\n  payload,\n  req,\n}: MigrateDownArgs): Promise<void> {}\n',
+    });
+
+    expect(problems).toEqual([{ file, line: 1, text: 'export async function down({' }]);
+  });
+
   it('allows Payload only inside the allowlisted section', () => {
     const problems = check({
       'skills/frogbot/reference/PLUGIN-DEVELOPMENT.md':
