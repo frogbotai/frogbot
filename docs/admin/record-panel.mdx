@@ -154,7 +154,7 @@ Either field also works alone, outside a tabs field. Posting a comment doesn't c
 
 ## Saving
 
-The panel saves the way the edit page does: the **Save** button or Cmd/Ctrl-S, or autosave when the collection has `versions.drafts.autosave`, which hides **Save**. A save updates the record's card, row or event; unsaved values never show on it. Switching records, closing, Esc and clicking outside ask before throwing away unsaved edits.
+The panel saves the way the edit page does: the **Save** button or Cmd/Ctrl-S, or autosave when the collection has `versions.drafts.autosave`, which hides **Save**. A save updates the record's card, row or event; unsaved values never show on it. Switching records, `j` and `k`, closing, Esc and clicking outside ask before throwing away unsaved edits.
 
 Custom views hear about saves and deletes with `useRecordPanelEvents`:
 
@@ -184,6 +184,7 @@ export function TaskStrip({ initial }: { initial: Task[] }) {
 - The open record is `?record=<id>` on every view. Reload, Back and shared links reopen it. Opening or switching a record replaces the history entry, so Back doesn't step through each record.
 - Cmd, Ctrl or Shift-click, or a middle click, opens the record's edit page in a new tab.
 - Esc, the close button, or a click on the view outside a record closes the panel.
+- `j` opens the next record and `k` the previous one, in the order the view shows them: list rows top to bottom, board columns left to right and their cards top to bottom. Like Esc, they do nothing while you type in a field or a menu, picker or dialog is open, and they ask before throwing away unsaved edits. At the first or last record they do nothing. Each step replaces the history entry, like switching.
 - A record that is missing or the user can't read closes the panel with a not-found message.
 - Below 768 px the panel covers the view.
 - With `panel: false`, `?record=<id>` redirects to the record's edit page, so shared links keep working.

@@ -491,7 +491,7 @@ describe('audit log plugin integration', () => {
     expect(remaining.docs.map((doc) => doc.id)).toEqual([recent.id]);
   });
 
-  it('schedules pruning on the default queue alongside a job left on the old queue', async () => {
+  it('schedules pruning on the frogbot queue alongside a job left on the old queue', async () => {
     const post = await booted.frogbot.create({
       collection: 'posts',
       data: { title: 'Kept' },
@@ -521,10 +521,10 @@ describe('audit log plugin integration', () => {
       queue: 'frogbot-prune-audit-logs',
     });
 
-    const defaultQueue = await booted.frogbot.jobs.handleSchedules({ queue: 'default' });
+    const frogbotQueue = await booted.frogbot.jobs.handleSchedules({ queue: 'frogbot' });
 
     expect(oldQueue.queued).toEqual([]);
-    expect(defaultQueue.errored).toEqual([]);
+    expect(frogbotQueue.errored).toEqual([]);
 
     const scheduled = await booted.payload.find({
       collection: 'payload-jobs',
@@ -534,7 +534,7 @@ describe('audit log plugin integration', () => {
     });
 
     expect(scheduled.docs).toEqual([
-      expect.objectContaining({ queue: 'default', meta: { scheduled: true } }),
+      expect.objectContaining({ queue: 'frogbot', meta: { scheduled: true } }),
     ]);
 
     await booted.frogbot.jobs.runByID({ id: leftover.id, overrideAccess: true });

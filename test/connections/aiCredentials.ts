@@ -14,7 +14,7 @@ export const AGENT_MODELS = [MODEL, 'openai/gpt-4.1', 'openai/gpt-4o'] as const;
 export const SETUP_ERROR =
   "OpenAI isn't set up. Add your OpenAI key in Settings → Linked accounts.";
 
-export const RECONNECT_ERROR = 'Reconnect OpenAI in Settings → Linked accounts.';
+export const RECONNECT_ERROR = 'Reconnect it in Settings → Linked accounts.';
 
 export type Upstream = { url: string; authorization: string | null; body: string };
 

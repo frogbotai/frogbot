@@ -16,6 +16,7 @@ export { cascadeDelete } from '../collections/config/cascadeDelete.js';
 export { isInternalCollection } from '../collections/config/internal.js';
 export { attachRegisteredFrogBot } from '../config/attachFrogBot.js';
 export { getPayloadConfig } from '../config/getPayloadConfig.js';
+export { ConfigIssueError } from '../config/issue.js';
 export { loadConfig } from '../config/load.js';
 export { findConfigFile } from '../config/resolveConfigPath.js';
 export type { ComponentPathMap } from '../config/rewriteComponentPaths.js';

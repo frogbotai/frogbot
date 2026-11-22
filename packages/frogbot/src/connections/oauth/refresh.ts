@@ -69,11 +69,11 @@ export async function refreshOAuthConnection({
             if (metadata.expiresAt && Date.parse(metadata.expiresAt) <= Date.now()) {
               throw new OAuthError('refresh');
             }
-          } catch {
+          } catch (cause) {
             const { current, same } = await unchanged();
             if (!same) return current;
             await locked.upsert({ ...row, status: 'error', reconnect: row.id });
-            throw new OAuthError('refresh');
+            throw new OAuthError('refresh', { cause });
           }
 
           const { current, same } = await unchanged();

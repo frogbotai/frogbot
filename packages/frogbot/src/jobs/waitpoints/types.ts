@@ -1,4 +1,6 @@
-import type { RunInlineTaskFunction } from 'payload';
+import type { RunInlineTaskFunction as PayloadRunInlineTaskFunction } from 'payload';
+
+import type { FrogBotRequest } from '../../types/request.js';
 
 export type WaitpointResult<T = unknown> = { expired: false; data: T } | { expired: true };
 
@@ -40,12 +42,30 @@ export type WaitFor = {
   ): Promise<WaitpointResult<T>>;
 };
 
+type PayloadInlineTaskArgs = Parameters<PayloadRunInlineTaskFunction>[1];
+
+export type StepRetries = PayloadInlineTaskArgs['retries'];
+
+/** Payload's `inlineTask`, with `req` typed as `FrogBotRequest` in the step it runs. */
+export type RunInlineTaskFunction = <TTaskInput extends object, TTaskOutput extends object>(
+  taskID: string,
+  taskArgs: {
+    input?: TTaskInput;
+    retries?: StepRetries;
+    task: (
+      args: Omit<Parameters<PayloadInlineTaskArgs['task']>[0], 'inlineTask' | 'input' | 'req'> & {
+        inlineTask: RunInlineTaskFunction;
+        input: TTaskInput;
+        req: FrogBotRequest;
+      },
+    ) => { output: TTaskOutput } | Promise<{ output: TTaskOutput }>;
+  },
+) => Promise<TTaskOutput>;
+
 export type StepTaskArgs = Omit<
   Parameters<Parameters<RunInlineTaskFunction>[1]['task']>[0],
   'input'
 >;
-
-export type StepRetries = Parameters<RunInlineTaskFunction>[1]['retries'];
 
 type StepResult<TOutput extends object> = { output: TOutput } | Promise<{ output: TOutput }>;
 

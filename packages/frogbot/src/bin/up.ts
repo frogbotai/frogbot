@@ -3,6 +3,7 @@ import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:
 
 import nextEnvImport from '@next/env';
 
+import { upUsage } from './help.js';
 import { findNextConfig } from './runNext.js';
 import {
   installLaunchAgent,
@@ -86,9 +87,7 @@ export function parseUpArgs(args: string[]): UpOptions {
     else if (arg === '--port' || arg === '-p') options.port = parsePort(args[++i]);
     else if (arg.startsWith('--port=')) options.port = parsePort(arg.slice('--port='.length));
     else {
-      throw new Error(
-        `[frogbot] usage: frogbot up [--port <n|auto>] [--dev] [--autostart]; "${arg}" isn't one of them`,
-      );
+      throw new Error(`${upUsage}; "${arg}" isn't one of them`);
     }
   }
 
@@ -224,7 +223,7 @@ const defaultSpawn = (dir: string, env: NodeJS.ProcessEnv) =>
   });
 
 /**
- * `frogbot up [--port <n>] [--autostart]`: starts the app's supervisor in the background, waits until
+ * `frogbot up [--port <n>] [--dev] [--autostart]`: starts the app's supervisor in the background, waits until
  * the app answers, and prints its URL and log. A first build or start that fails prints the error's
  * tail and exits 1, leaving nothing behind.
  */

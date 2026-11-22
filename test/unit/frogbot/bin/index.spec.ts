@@ -101,7 +101,7 @@ vi.mock('../../../../packages/frogbot/src/bin/up.js', () => ({ up: mocks.up }));
 vi.mock('../../../../packages/frogbot/src/bin/down.js', () => ({ down: mocks.down }));
 vi.mock('../../../../packages/frogbot/src/bin/status.js', () => ({ status: mocks.status }));
 
-import { bin } from '../../../../packages/frogbot/src/bin/index.js';
+import { bin, commands } from '../../../../packages/frogbot/src/bin/index.js';
 
 describe('frogbot bin', () => {
   const argv = process.argv;
@@ -188,6 +188,55 @@ describe('frogbot bin', () => {
       );
     },
   );
+
+  it.each(Object.keys(commands).flatMap((command) => [`${command} --help`, `${command} -h`]))(
+    'prints the usage for `frogbot %s` on stdout and exits 0 without running it',
+    async (line) => {
+      const [command] = line.split(' ');
+
+      process.argv = ['node', 'frogbot', ...line.split(' ')];
+
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      vi.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`exit:${code}`);
+      });
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(mocks.calls).toEqual(['loadEnv']);
+      expect(log).toHaveBeenCalledOnce();
+      expect(log.mock.calls[0]?.[0]).toMatch(/^\[frogbot\] usage: frogbot /);
+      expect(log.mock.calls[0]?.[0]).toContain(command);
+    },
+  );
+
+  it.each([
+    ['up', ['--port', '4000', '--help'], '--autostart'],
+    ['run', ['--help'], '<file> [args...]'],
+    ['deploy', ['--help'], '--dry-run'],
+    ['deploy', ['fly', '-h'], '--region <region>'],
+  ])('prints `%s` usage for %j', async (command, args, flag) => {
+    process.argv = ['node', 'frogbot', command, ...args];
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(log.mock.calls[0]?.[0]).toContain(flag);
+  });
+
+  it('leaves `--help` after `--` to the command', async () => {
+    process.argv = ['node', 'frogbot', 'jobs:run', '--', '--help'];
+
+    await bin();
+
+    expect(mocks.jobsRun).toHaveBeenLastCalledWith(['--', '--help']);
+  });
 
   it('loads env before rejecting a missing name with the usage line', async () => {
     process.argv = ['node', 'frogbot'];
@@ -384,6 +433,17 @@ describe('frogbot bin', () => {
         expect.objectContaining({ args: ['--port', '4000'], command: 'start' }),
       );
       expect(mocks.calls).toEqual(['loadEnv']);
+    });
+
+    it('passes `--help` to an app command that replaces a built-in', async () => {
+      const start = vi.fn();
+
+      withConfig({ start });
+      process.argv = ['node', 'frogbot', 'start', '--help'];
+
+      await bin();
+
+      expect(start).toHaveBeenCalledWith(expect.objectContaining({ args: ['--help'] }));
     });
 
     it.each([

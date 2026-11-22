@@ -8,7 +8,6 @@ import type { AIConfig, ModelId, SanitizedAIConfig } from '../../../ai/types.js'
 import type { CollectionConfig } from '../../../collections/config/types.js';
 import type { FrogBot } from '../../../frogbot.js';
 import { getFrogBotInstance } from '../../../instanceRegistry.js';
-import { withFrogBotAutoRun } from '../../../jobs/autoRun.js';
 import { flattenTopLevelFields } from '../../../seams/config.js';
 import type { FrogBotRequest } from '../../../types/request.js';
 import type { Field } from '../../config/types.js';
@@ -312,6 +311,5 @@ export function resolveAIFieldTask<T extends JobsConfig>({
   return {
     ...jobs,
     tasks: [...(jobs.tasks ?? []), task],
-    autoRun: withFrogBotAutoRun(jobs.autoRun),
   };
 }

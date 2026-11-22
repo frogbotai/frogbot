@@ -160,12 +160,16 @@ async function requestTokens({
         signal,
       });
 
-      if (!response.ok) throw new OAuthError('tokens');
+      if (!response.ok) {
+        throw new OAuthError('tokens', {
+          message: `The token endpoint answered ${response.status}.`,
+        });
+      }
 
       return parseOAuthTokens(await response.json());
     }, signal);
-  } catch {
-    throw new OAuthError('tokens');
+  } catch (cause) {
+    throw new OAuthError('tokens', { cause });
   }
 }
 
@@ -266,8 +270,11 @@ export async function lookupOAuthAccount({
       signal,
       req.signal,
     );
-  } catch {
-    throw new OAuthError('account');
+  } catch (cause) {
+    throw new OAuthError('account', {
+      cause,
+      message: `Couldn't read the signed-in account from ${definition.label}.`,
+    });
   }
 }
 
@@ -295,7 +302,9 @@ export async function refreshOAuthTokens({
       ),
     );
   } else {
-    if (!tokens.refresh_token) throw new OAuthError('refresh');
+    if (!tokens.refresh_token) {
+      throw new OAuthError('refresh', { message: 'No refresh token is stored.' });
+    }
 
     next = await requestTokens({
       piece,

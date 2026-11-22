@@ -80,6 +80,7 @@ function CalendarDocumentEvent({
   return (
     <div
       className={recordClassName({ done, selected })}
+      data-record-id={String(row.id)}
       onAuxClick={(event) => event.button === 1 && panel.open(row.id, event.nativeEvent)}
       onClick={(event) => panel.open(row.id, event.nativeEvent)}
       role="presentation"
