@@ -77,9 +77,11 @@ export function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): 
   const { guarded, localized } = rowBoundFields(row, block, loaded.config);
   const lost = [
     ...(guarded.length && !loaded.ctx.overrideAccess
-      ? [`fields with their own edit access (${names(guarded)})`]
+      ? [`fields with their own edit access${names(guarded, (list) => ` (${list})`)}`]
       : []),
-    ...(localized.length ? [`the other locales of ${names(localized)}`] : []),
+    ...(localized.length
+      ? [`the other locales of ${names(localized, (list) => list) || 'some fields'}`]
+      : []),
   ];
 
   if (lost.length) {
@@ -89,11 +91,12 @@ export function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): 
   }
 }
 
-function names(fields: BoundField[]): string {
+function names(fields: BoundField[], wrap: (list: string) => string): string {
   const shown = fields.filter(({ readable }) => readable).map(({ path }) => path);
-  const unread = shown.length < fields.length ? ["fields you can't read"] : [];
 
-  return [...shown, ...unread].join(', ');
+  if (!shown.length) return '';
+
+  return wrap([...shown, ...(shown.length < fields.length ? ['others'] : [])].join(', '));
 }
 
 export async function may(
