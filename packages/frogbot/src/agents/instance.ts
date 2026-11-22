@@ -33,6 +33,9 @@ import { validateChatMessages } from '../chat/validateMessages.js';
 import type { FrogBot } from '../frogbot.js';
 import type { MCPConnections } from '../mcp/connections.js';
 import { resolveMCPTools } from '../mcp/tools.js';
+import { startAfterTurn } from '../memory/agent.js';
+import { pinnedMemoryPrompt, recallMemories, withRecalled } from '../memory/prompt.js';
+import { markMemoryAgentRun } from '../memory/run-context.js';
 import { canUseTool, NO_TOOL_ACCESS } from '../tools/access.js';
 import type { ToolApprovalOption } from '../tools/approval.js';
 import { resolveToolApproval, toApprovalStatus } from '../tools/approval.js';
@@ -82,6 +85,7 @@ type AgentRun = {
   autoApprove: boolean;
   denied: ReadonlySet<string>;
   compaction?: CompactionRun;
+  recalled?: Promise<ModelMessage | undefined>;
 };
 
 export function createAgentInstance(
@@ -132,14 +136,11 @@ export function createAgentInstance(
     stopWhen: agentConfig.stopWhen,
     ...(output === undefined ? {} : { output }),
     prepareCall: async ({ options, ...call }) => {
+      const agent = { slug: agentConfig.slug, runId: options.runId!, chatId: options.chatId };
       const ctx: ToolCtx = {
         req: options.req!,
         frogbot,
-        agent: {
-          slug: agentConfig.slug,
-          runId: options.runId!,
-          chatId: options.chatId,
-        },
+        agent: agentConfig.memory ? markMemoryAgentRun(agent) : agent,
         overrideAccess: options.overrideAccess === true,
       };
 
@@ -149,7 +150,9 @@ export function createAgentInstance(
       const run = runs.get(options)!;
 
       const mcpToolNames = Object.keys(run.mcpTools);
-      const instructions = await resolveAgentInstructions(agentConfig, req);
+      const memory = agentConfig.memory ? { req, frogbot, agent: ctx.agent } : undefined;
+      const base = await resolveAgentInstructions(agentConfig, req);
+      const instructions = memory ? `${base}\n\n${await pinnedMemoryPrompt(memory)}` : base;
 
       return {
         ...call,
@@ -237,7 +240,9 @@ export function createAgentInstance(
           const shape = (stepMessages: ModelMessage[]) =>
             toModelInput({ messages: stepMessages, inputs, provider, hashes: run.hashes });
 
-          const stepMessages = run.compaction
+          if (memory && stepNumber === 0) run.recalled = recallMemories(memory, messages);
+
+          const compacted = run.compaction
             ? await compactionStep({
                 run: run.compaction,
                 messages,
@@ -251,6 +256,8 @@ export function createAgentInstance(
             : steeredMessages.length === 0
               ? messages
               : [...messages, ...steeredMessages];
+
+          const stepMessages = withRecalled(compacted, await run.recalled);
 
           const stepModel = run.op.chatModel(model);
 
@@ -451,6 +458,25 @@ export function createAgentInstance(
     }
   };
 
+  const afterTurn = (
+    call: { prompt?: unknown; messages?: unknown; options: AgentCallOptions },
+    response: readonly ModelMessage[],
+  ) => {
+    if (!agentConfig.memory) return;
+
+    const { req, chatId } = call.options;
+    const input: readonly ModelMessage[] =
+      typeof call.prompt === 'string'
+        ? [{ role: 'user', content: call.prompt }]
+        : (((Array.isArray(call.prompt) ? call.prompt : call.messages) as
+            ModelMessage[] | undefined) ?? []);
+
+    startAfterTurn(
+      { req: req!, frogbot, agent: markMemoryAgentRun({ slug: agentConfig.slug, chatId }) },
+      [...input, ...response],
+    );
+  };
+
   const runGenerate = async <O extends AIOutput = never>(
     call: Call,
     output?: O,
@@ -495,6 +521,8 @@ export function createAgentInstance(
         finishReason: result.finishReason,
         usage: toHookUsage(result.usage),
       });
+
+      afterTurn(preparedCall, result.responseMessages);
 
       return result;
     } catch (error) {
@@ -579,6 +607,8 @@ export function createAgentInstance(
             finishReason: event.finishReason,
             usage: toHookUsage(event.usage),
           });
+
+          afterTurn(preparedCall, event.responseMessages);
 
           if (userEnd) {
             await userEnd(event);

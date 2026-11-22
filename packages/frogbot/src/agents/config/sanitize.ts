@@ -3,6 +3,8 @@ import { getConfiguredChatModelIds, getConfiguredModelIds } from '../../ai/model
 import type { ValidationMode } from '../../config/validationContext.js';
 import { sanitizeMCPServers } from '../../mcp/server.js';
 import type { MCPServer } from '../../mcp/types.js';
+import { withMemoryTools } from '../../memory/agent.js';
+import type { MemoryAdapter } from '../../memory/types.js';
 import { isPieceInstance, pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import { pieceCapabilities, type PieceInstance } from '../../pieces/types.js';
 import { sanitizeSkills } from '../../skills/config/sanitize.js';
@@ -16,16 +18,20 @@ import type { AgentConfig, AgentModelId, SanitizedAgentConfig } from '../types.j
 export function sanitizeAgents({
   agents,
   ai,
+  memory,
   mode,
   rootTools,
   rootMCP,
 }: {
-  agents: AgentConfig[];
+  agents?: AgentConfig[];
   ai: SanitizedAIBase | undefined;
+  memory?: MemoryAdapter;
   mode: ValidationMode;
   rootTools: AnyTool[];
   rootMCP: MCPServer[];
 }): SanitizedAgentConfig[] | undefined {
+  if (agents === undefined) return undefined;
+
   if (!Array.isArray(agents)) {
     throw new Error('[frogbot] `agents` must be an array.');
   }
@@ -250,6 +256,13 @@ export function sanitizeAgents({
         agentTools = [...(agentTools ?? []), ...buildSkillTools(agent.skills)];
       }
     }
+
+    agentTools = withMemoryTools({
+      memory: agent.memory,
+      root: memory,
+      slug: agent.slug,
+      tools: agentTools,
+    });
 
     if (agent.triggers !== undefined) {
       if (!Array.isArray(agent.triggers)) {

@@ -273,10 +273,7 @@ export function sanitize(
 
   const rootTools = sanitizeToolList(config.tools ?? [], 'Root');
   const rootMCP = sanitizeMCPServers(config.tools ?? [], 'Root');
-  const agents =
-    config.agents !== undefined
-      ? sanitizeAgents({ agents: config.agents, ai: sanitizedAI, mode, rootTools, rootMCP })
-      : undefined;
+  const agents = sanitizeAgents({ ...config, ai: sanitizedAI, mode, rootTools, rootMCP });
 
   const triggers = buildIngressRegistry({ agents });
   const hasChannelAdapters = Object.values(triggers).some(

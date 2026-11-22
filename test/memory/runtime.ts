@@ -9,7 +9,7 @@ import type { MemoryAdapter } from 'frogbot/memory';
 import { FrogBot, resetFrogBotCache } from 'frogbot/test';
 
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
-import { embedderModel, modelPort, usersSlug } from './shared.js';
+import { chatPort, embedderModel, modelPort, usersSlug } from './shared.js';
 
 export const database = process.env.FROGBOT_DATABASE || 'sqlite';
 
@@ -46,8 +46,14 @@ async function databaseAdapter(name: string, sqlitePath: string): Promise<FrogBo
   throw new Error(`Memory tests do not support ${database}`);
 }
 
-/** Boots one FrogBot with the given memory adapter on the database `FROGBOT_DATABASE` names. */
-export function createMemoryHarness({ memory }: { memory: () => MemoryAdapter }) {
+/** Boots one FrogBot with the given memory adapter, and any agents, on the database `FROGBOT_DATABASE` names. */
+export function createMemoryHarness({
+  agents,
+  memory,
+}: {
+  agents?: FrogBotConfig['agents'];
+  memory: () => MemoryAdapter;
+}) {
   const name = `memory_${randomUUID().replaceAll('-', '')}`;
   const sqlitePath = fileURLToPath(new URL(`./${name}.db`, import.meta.url));
   let frogbot: FrogBotInstance | undefined;
@@ -65,8 +71,15 @@ export function createMemoryHarness({ memory }: { memory: () => MemoryAdapter })
             apiKey: 'test-key',
             models: [{ id: embedderModel, mode: 'embedding' }],
           },
+          'test-chat': {
+            type: 'openai-compatible',
+            baseUrl: `http://127.0.0.1:${chatPort}/v1`,
+            apiKey: 'test-key',
+            models: [{ id: 'chat', mode: 'chat' }],
+          },
         },
       },
+      ...(agents ? { agents } : {}),
       memory: memory(),
     });
 
