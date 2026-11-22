@@ -18,7 +18,7 @@ const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 const mocks = vi.hoisted(() => ({
   adapter: {
     createMigration: vi.fn(async () => {}),
-    migrate: vi.fn(async () => {}),
+    migrate: vi.fn(async (_args?: { forceAcceptWarning?: boolean }) => {}),
     migrateDown: vi.fn(async () => {}),
     migrateFresh: vi.fn(async () => {}),
     migrateRefresh: vi.fn(async () => {}),
