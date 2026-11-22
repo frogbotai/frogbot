@@ -56,7 +56,7 @@ A required user without two-factor sign-in goes to setup at their next sign-in, 
 
 ## Recovery and reset
 
-A recovery code signs in once. After using one, the code page says how many are left and, at 3 or fewer, links to the account page to make new ones; JSON clients get `recoveryCodesLeft`. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**: it removes their secret and codes, ends every session (with `auth.useSessions: false`, issued tokens stay valid until they expire) and clears the lock. `canReset` is asked only for a user the admin can read and update. Nobody can reset their own.
+A recovery code signs in once. After using one, the code page says how many are left and, at 3 or fewer, advises making new ones, with a link to the account page for the admin's user collection only (other auth collections get the advice without a link); JSON clients get `recoveryCodesLeft`. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**: it removes their secret and codes, ends every session (with `auth.useSessions: false`, issued tokens stay valid until they expire) and clears the lock. `canReset` is asked only for a user the admin can read and update. Nobody can reset their own.
 
 ## Sessions and password login
 

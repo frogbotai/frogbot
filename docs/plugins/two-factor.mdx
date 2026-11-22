@@ -45,7 +45,7 @@ Each user turns two-factor sign-in on from the **Two-factor sign-in** section of
 
 The section names only the sign-in methods the collection has: "after your password" when password login is on, "after your sign-in provider" when `auth.signIn` has a method, or both.
 
-Codes follow RFC 6238: SHA-1, 30-second steps, one step of drift either way. A code works once, and so does each recovery code. After a recovery-code sign-in the code page says how many codes are left (for example "9 recovery codes left.") before it continues, and links to the account page to make new ones when 3 or fewer remain. JSON clients get the count as `recoveryCodesLeft` in the login response. Five wrong codes in 10 minutes lock code entry for that user for 10 minutes, however they signed in; a right code clears the count. The code page never says which part was wrong.
+Codes follow RFC 6238: SHA-1, 30-second steps, one step of drift either way. A code works once, and so does each recovery code. After a recovery-code sign-in the code page says how many codes are left (for example "9 recovery codes left.") before it continues. When 3 or fewer remain it advises making new ones, with a link to the account page for the admin's user collection (`admin.user`); other auth collections get the advice without a link. JSON clients get the count as `recoveryCodesLeft` in the login response. Five wrong codes in 10 minutes lock code entry for that user for 10 minutes, however they signed in; a right code clears the count. The code page never says which part was wrong.
 
 ## Require it
 
