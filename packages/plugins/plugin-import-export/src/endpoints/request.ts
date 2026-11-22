@@ -94,12 +94,12 @@ export async function readColumnsRequest(req: PayloadRequest): Promise<ColumnsRe
     );
   }
 
-  const format = body.format ?? 'csv';
+  const format = body.format === undefined ? 'csv' : body.format;
 
   if (!formats.includes(format as ImportFormat)) {
     throw importError(
       'unsupported_format',
-      `Unsupported format ${JSON.stringify(format)}: use "csv" or "json".`,
+      `Unsupported format ${JSON.stringify(format)}. Use "csv" or "json".`,
       400,
       { allowed: formats },
     );

@@ -246,7 +246,7 @@ describe('import columns endpoint', () => {
     ]);
   });
 
-  it.each(['xlsx', 'CSV', 5])(
+  it.each(['xlsx', 'CSV', 5, null])(
     'refuses the format %j instead of reading it as CSV',
     async (format) => {
       const response = await postBody({ fileData: csv([['Name']]).toString('base64'), format });
@@ -254,7 +254,7 @@ describe('import columns endpoint', () => {
       expect(response.status).toBe(400);
       expect(response.body.errors).toMatchObject([
         {
-          message: `Unsupported format ${JSON.stringify(format)}: use "csv" or "json".`,
+          message: `Unsupported format ${JSON.stringify(format)}. Use "csv" or "json".`,
           data: { code: 'unsupported_format', allowed: ['csv', 'json'] },
         },
       ]);

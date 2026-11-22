@@ -164,13 +164,11 @@ Every failure answers `{ "errors": [{ "message": "...", "data": { "code": "..." 
 | Code | Status | Means |
 | --- | --- | --- |
 | `import_not_allowed` | `403` | The user can't create an import. |
-| `collection_not_importable` | `400` | `collectionSlug` isn't a collection this import collection serves. `data.allowed` lists the ones it does. |
+| `collection_not_importable` | `400` | `collectionSlug` isn't a collection this import collection serves. When the plugin's `collections` option limits them, the message and `data.allowed` list the ones it serves. |
 | `file_data_missing` | `400` | `fileData` is missing or empty. |
 | `unsupported_format` | `400` | `format` isn't `"csv"` or `"json"`. The file's content isn't inspected, so an xlsx sent as `"csv"` reads as text. |
 | `file_unreadable` | `400` | The file couldn't be parsed, for example JSON that isn't an array, or `Item 2 is not an object (got number).` |
-| `ai_model_missing` | `404` | No AI model is set. |
 | `ai_suggestion_failed` | `502` | The model call failed. |
-| `unknown_import_collection` | `404` | The route names no import collection. |
 
 ### Link records from code
 
