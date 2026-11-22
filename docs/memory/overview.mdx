@@ -138,7 +138,7 @@ When the adapter has `afterTurn`, FrogBot calls it after each finished turn with
 
 ### Memory over MCP
 
-`memoryTools` from `frogbot/memory` are the same three tools. List them in [`plugin-mcp`](/plugins/mcp)'s `tools` to serve memory to MCP clients. MCP calls have no agent, so the `agent` scope fails there with `invalid`, and `memory_forget` can't ask anyone, so it is refused unless you set its `approval` to `false`.
+`memoryTools` from `frogbot/memory` are the same three tools. List them in [`plugin-mcp`](/plugins/mcp)'s `tools` to serve memory to MCP clients. MCP calls have no agent, so the `agent` scope fails there with `invalid`. They keep the MCP caller's access check, so shared scopes follow [Access](#access) and are refused until you set `access`, and `memory_forget` can't ask anyone, so it is refused unless you set its `approval` to `false`.
 
 ```ts
 import { memoryTools } from 'frogbot/memory'

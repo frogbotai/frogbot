@@ -9,13 +9,15 @@ export type MemoryRunSource = {
   req: FrogBotRequest;
   frogbot: FrogBot;
   agent: { slug: string; chatId?: number | string };
+  /** Whether a caller outside an agent run, such as MCP, skips `memory.access`. Defaults to `true`. */
+  overrideAccess?: boolean;
 };
 
 export type MemoryResolvedScope = { scope: string; scopeId: string };
 
 /** Memory calls for one agent run. Scope words resolve from the host, never from the model. */
 export type MemoryRun = {
-  /** Spread into `frogbot.memory.*`. Agent runs skip `memory.access`, which guards REST and the SDK. */
+  /** Spread into `frogbot.memory.*`. Runs of a `memory: true` agent skip `memory.access`; other callers keep theirs. */
   callArgs: Omit<MemoryCallArgs, 'scope'>;
   /** The scope words this run can use, built-in words first, then custom words in declaration order. */
   available: () => Promise<string[]>;
@@ -57,7 +59,7 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
     );
   }
 
-  const known = frogbot.config.agents?.some(({ slug }) => slug === source.agent.slug);
+  const known = frogbot.config.agents?.find(({ slug }) => slug === source.agent.slug);
   const chat = await loadChat(source);
   const agent = known ? { slug: source.agent.slug } : undefined;
 
@@ -87,7 +89,7 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
       req,
       ...(agent ? { agent: agent.slug } : {}),
       ...(chat ? { chat } : {}),
-      overrideAccess: true,
+      overrideAccess: known?.memory === true || source.overrideAccess !== false,
     },
     resolved: () => (resolved ??= resolveAll()),
     available: async () => (await (resolved ??= resolveAll())).map(({ scope }) => scope),
@@ -104,7 +106,10 @@ export function memoryRun(source: MemoryRunSource): Promise<MemoryRun> {
     runs.set(source.req, byAgent);
   }
 
-  const key = `${source.agent.slug}\u0000${String(source.agent.chatId ?? '')}`;
+  const key = [source.agent.slug, source.agent.chatId ?? '', source.overrideAccess !== false].join(
+    '\u0000',
+  );
+
   let run = byAgent.get(key);
 
   if (!run) {
