@@ -71,6 +71,7 @@ Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, follow
 | Code | Means | Fix |
 | --- | --- | --- |
 | `MISSING_ICON` | A collection that shows in the sidebar has no `admin.icon`, so it shows a folder. Collections with `admin.hidden`, `admin.group: false` or `auth` are skipped. The path names it, for example `collections.invoices`. | Set `admin.icon` to one of the [built-in names](/admin/admin-navigation#collection-icons-and-placement). |
+| `NEXT_ADVISORY` | The installed `next` has npm security advisories. The message gives their count and severity, and the version to install inside `@frogbotai/next`'s range, or says the fix needs a FrogBot release. `check` asks npm for this; offline, it skips it. | Run the command it names. See [Upgrading Next.js](/getting-started/upgrading-next). |
 
 `check` doesn't run TypeScript or look at the database, and it says so when it passes. Run your app's `typecheck` script for type errors, and `frogbot migrate:status` for pending migrations.
 
@@ -372,7 +373,7 @@ frogbot up
 | Situation | What `up` does |
 | --- | --- |
 | The first run | Waits until the app answers, prints its URL and log, and exits `0`. |
-| The first build or start fails | Prints the error, leaves nothing running, and exits `1`. |
+| The first build or start fails | Prints the error and exits `1`. The app stays up in state `build failed`, serving nothing, and builds again on your next change, including `pnpm add`. `frogbot down` stops it. |
 | The app in this folder is already up | Prints the same URL, says it is watching for changes and when the last build landed, and adds the last error when the last update or restart failed. |
 
 ```bash
@@ -394,15 +395,22 @@ frogbot status
 # /Users/me/hr    http://127.0.0.1:9697  update failed  12m     build failed (exit 1): src/hr.ts(3,7): error TS2322: Type 'number' is not assignable to type 'string'.
 ```
 
-`frogbot status` works from any folder. The states are `starting`, `running`, `building`, `update failed`, `crashed`, and `stopped`. Three of them say more than their name:
+`frogbot status` works from any folder. The states are `starting`, `running`, `building`, `build failed`, `update failed`, `crashed`, and `stopped`. Four of them say more than their name:
 
 | State | Meaning |
 | --- | --- |
 | `building` | An update is on its way. The current version still serves. |
+| `build failed` | No build has worked since `up` started, so nothing serves. The next change builds again. |
 | `update failed` | The last edit didn't build or start. The previous version still serves. |
 | `crashed` | The server is restarting. |
 
 `LAST ERROR` is the line of the failed step's output that says why: a TypeScript error, else the thrown error, else its last meaningful line. The log has the full output.
+
+When the app's installed `next` has an npm security advisory, `status` adds a line under the table with the version to install:
+
+```bash
+# [frogbot] /Users/me/crm: next 16.4.2 has 7 security advisories (7 moderate); run `pnpm add next@16.4.6` (no FrogBot release needed)
+```
 
 `frogbot down` stops the app in the current folder, or in the folder you name, and removes its builds. On an app that isn't up, it prints `not running` and exits `0`.
 
@@ -483,10 +491,11 @@ Nothing is written to `payload_migrations`, so you can still adopt [migrations](
 
 ### Log
 
-`.frogbot/service.log` holds timestamped lines from the supervisor, each build, the schema sync, and the server, without colour codes.
+`.frogbot/service.log` holds timestamped lines from the supervisor, each build, the schema sync, and the server, without colour codes. Each line is tagged with its source: `[supervisor]` lines are FrogBot's, and `[build:next]` lines are Next.js's own build output.
 
 - The schema sync logs how many statements it applied. It also logs one line that names the removed fields and collections it keeps hidden, only when that list changes.
 - The supervisor logs `server back up (pid N)` after a crashed server answers again.
+- After a build, the supervisor asks npm about the installed `next`. When it has a security advisory, it logs one line with the command that fixes it, such as ``next 16.4.2 has 7 security advisories (7 moderate); run `pnpm add next@16.4.6` (no FrogBot release needed)``.
 - Once the file reaches 10 MB, it moves to `service.log.1` and a new file starts.
 
 ### Start at login

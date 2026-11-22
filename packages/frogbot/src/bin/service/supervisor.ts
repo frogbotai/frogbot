@@ -3,6 +3,12 @@ import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
+import {
+  type AdvisoryResult,
+  createAdvisor,
+  isSecurityFailure,
+  securityFallback,
+} from './advisory.js';
 import { createBackoff } from './backoff.js';
 import { isEnvOnly, type PublicEnv, publicEnvChanged, readPublicEnv } from './envChanges.js';
 import { checkHealth } from './health.js';
@@ -22,7 +28,7 @@ import { type App, type AppRuntime, nextRuntime, outputTail, StepError } from '.
 import { syncSchema } from './schema.js';
 import { watchApp } from './watch.js';
 
-/** The marker `frogbot up` looks for in a LaunchAgent's log when the first build fails. */
+/** The marker `frogbot up` looks for in the supervisor's stderr or LaunchAgent log when the first build fails. */
 export const BOOT_FAILED = '[frogbot] up failed:';
 
 const DRAIN_MS = 30_000;
@@ -90,14 +96,17 @@ export type SuperviseOptions = {
   autostart: boolean;
   env: NodeJS.ProcessEnv;
   runtime?: AppRuntime;
-  /** Called once the app first answers, or with the error when it never does. */
+  /** Asks npm about the installed `next`; tests pass their own. */
+  advise?: () => Promise<AdvisoryResult | undefined>;
+  /** Called once: when the app first answers, or with the error when the first build or start fails. */
   onBoot?: (error?: Error) => void;
 };
 
 /**
  * The long-lived `frogbot up` process: holds the public port, builds into the idle slot on every
  * change (one build at a time), syncs the schema, starts a server on that build and swaps the proxy to
- * it once it answers. A failed update keeps the old server; a crashed server restarts on its build.
+ * it once it answers. A failed update keeps the old server; a crashed server restarts on its build. A
+ * failed first build leaves it watching, in state `build failed`, until a change builds (571 D3).
  */
 export async function supervise({
   dir,
@@ -105,6 +114,7 @@ export async function supervise({
   autostart,
   env,
   runtime = nextRuntime,
+  advise = createAdvisor({ dir }),
   onBoot,
 }: SuperviseOptions): Promise<void> {
   const paths = appPaths(dir);
@@ -121,6 +131,7 @@ export async function supervise({
   let publicEnv = readPublicEnv(dir, env);
   let building: PublicEnv | undefined;
   let booted = false;
+  let bootReported = false;
   let stopping = false;
 
   const skipped = await proxy.listen(port);
@@ -290,25 +301,46 @@ export async function supervise({
       swap(server, { built: true });
       publicEnv = baked;
       log.write('supervisor', `serving ${paths.distDir(slot)} (pid ${server.child.pid})`);
-
-      if (!booted) {
-        booted = true;
-        onBoot?.();
-      }
+      booted = true;
+      reportBoot();
+      void advise().then(noteAdvisory);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const output = error instanceof StepError ? tail(error.output) : '';
+      const output = error instanceof StepError ? error.output : '';
+      const refused = isSecurityFailure(output);
+      const advisory = refused ? await advise() : undefined;
+      const known = refused ? (advisory?.line ?? securityFallback(advisory?.version)) : undefined;
 
       log.write('supervisor', `update failed: ${summarize(error)}`);
+      if (known) log.write('supervisor', known);
+
+      save({
+        state: current ? 'update failed' : 'build failed',
+        lastError: known ?? summarize(error),
+        ...(advisory && { advisory: advisory.line }),
+      });
 
       if (!booted) {
-        throw Object.assign(new Error(output ? `${message}\n${output}` : message), { boot: true });
-      }
+        const shown = known ?? (output ? `${message}\n${tail(output)}` : message);
 
-      save({ state: current ? 'update failed' : 'crashed', lastError: summarize(error) });
+        log.write('supervisor', 'nothing is serving; the next change rebuilds');
+        reportBoot(new Error(shown));
+      }
     } finally {
       building = undefined;
     }
+  }
+
+  function reportBoot(error?: Error) {
+    if (bootReported) return;
+    bootReported = true;
+    onBoot?.(error);
+  }
+
+  function noteAdvisory(result: AdvisoryResult | undefined) {
+    if (!result || result.line === registration.advisory) return;
+    if (result.line) log.write('supervisor', result.line);
+    save({ advisory: result.line });
   }
 
   async function restartOnEnv(): Promise<void> {
@@ -399,15 +431,6 @@ export async function supervise({
     onLost: () => void shutdown('its registration was removed or taken over'),
   });
 
-  try {
-    await update();
-  } catch (error) {
-    onBoot?.(error as Error);
-    await shutdown('the first build failed', 1);
-
-    return;
-  }
-
   watcher = watchApp({
     dir,
     ignore: () => typesFile,
@@ -436,4 +459,7 @@ export async function supervise({
       queue.trigger('update');
     },
   });
+
+  queue.trigger('update');
+  await queue.idle();
 }

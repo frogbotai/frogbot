@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+
 /** The `next` range `@frogbotai/next` accepts as a peer, so an app can take any version in it without a FrogBot release. */
 export const NEXT_PEER_RANGE = '>=16.4.0 <17.0.0';
 
@@ -277,4 +280,81 @@ export async function checkNextAdvisories({
   }
 
   return undefined;
+}
+
+const SEVERITIES = ['critical', 'high', 'moderate', 'low'];
+
+const LOCKFILES: [file: string, command: string][] = [
+  ['pnpm-lock.yaml', 'pnpm add'],
+  ['package-lock.json', 'npm install'],
+  ['yarn.lock', 'yarn add'],
+  ['bun.lock', 'bun add'],
+  ['bun.lockb', 'bun add'],
+];
+
+/**
+ * The `next` version installed for the app in `dir`: the nearest `node_modules/next` in `dir` or a
+ * folder above it, never one `NODE_PATH` adds. `undefined` when there is none.
+ */
+export function installedNextVersion(dir: string): string | undefined {
+  for (let folder = dir; ; folder = dirname(folder)) {
+    const file = join(folder, 'node_modules', 'next', 'package.json');
+
+    if (existsSync(file)) {
+      try {
+        const { version } = JSON.parse(readFileSync(file, 'utf8')) as { version?: unknown };
+
+        return typeof version === 'string' ? version : undefined;
+      } catch {
+        return undefined;
+      }
+    }
+
+    if (dirname(folder) === folder) return undefined;
+  }
+}
+
+/** The command that installs `next@<version>` with the package manager whose lockfile is in `dir`; pnpm when there is none. */
+export function nextInstallCommand(dir: string, version: string): string {
+  const command = LOCKFILES.find(([file]) => existsSync(join(dir, file)))?.[1] ?? 'pnpm add';
+
+  return `${command} next@${version}`;
+}
+
+function severities(advisories: NextAdvisory[]): string {
+  const counts = new Map<string, number>();
+
+  for (const { severity } of advisories) counts.set(severity, (counts.get(severity) ?? 0) + 1);
+
+  return [...counts]
+    .sort(([a], [b]) => {
+      const rank = (severity: string) =>
+        SEVERITIES.includes(severity) ? SEVERITIES.indexOf(severity) : SEVERITIES.length;
+
+      return rank(a) - rank(b);
+    })
+    .map(([severity, count]) => `${count} ${severity}`)
+    .join(', ');
+}
+
+/**
+ * One line that names a vulnerable `next`, its advisories and the fix, for example
+ * ``next 16.4.2 has 7 security advisories (7 moderate); run `pnpm add next@16.4.6` (no FrogBot release needed)``.
+ * `undefined` when the report has no advisories.
+ */
+export function describeNextAdvisories(
+  report: NextAdvisoryReport,
+  dir: string,
+): string | undefined {
+  const { advisories, fix, peerRange, version } = report;
+
+  if (!advisories.length) return undefined;
+
+  const found = `next ${version} has ${advisories.length} security ${advisories.length === 1 ? 'advisory' : 'advisories'} (${severities(advisories)})`;
+
+  if (!fix) {
+    return `${found} and no fixed version inside @frogbotai/next's range ${peerRange}; it needs a FrogBot release`;
+  }
+
+  return `${found}; run \`${nextInstallCommand(dir, fix)}\` (no FrogBot release needed)`;
 }
