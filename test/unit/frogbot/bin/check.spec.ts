@@ -107,7 +107,13 @@ describe('frogbot check', () => {
     }
 
     const registry = vi.fn<typeof fetch>((input, init) => {
-      if (!String(input).endsWith('/advisories/bulk')) return Promise.resolve(Response.json({}));
+      if (!String(input).endsWith('/advisories/bulk')) {
+        const versions = ['16.4.2', '16.4.3', '16.4.4', '16.4.5', '16.4.6'];
+
+        return Promise.resolve(
+          Response.json({ versions: Object.fromEntries(versions.map((v) => [v, {}])) }),
+        );
+      }
 
       const [version] = (JSON.parse(String(init?.body)) as { next: string[] }).next;
 
