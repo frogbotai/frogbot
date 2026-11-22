@@ -1,6 +1,6 @@
 import type { Payload } from 'payload';
 
-import { pageBulkDelete } from './collections/bulkDelete.js';
+import { pagedDelete } from './collections/bulkDelete.js';
 import type { FrogBot } from './frogbot.js';
 import { toFrogBotLocalAPI } from './seams/request.js';
 import { withFileFromPath } from './uploads/fileFromPath.js';
@@ -35,7 +35,7 @@ export function createFrogBotLocalAPI(payload: Payload): FrogBotLocalAPI {
   const update = (async (args: Parameters<FrogBotLocalAPI['update']>[0]) =>
     local.update(await withFileFromPath(args))) as FrogBotLocalAPI['update'];
 
-  const remove = pageBulkDelete(payload, local.delete.bind(local));
+  const remove = pagedDelete(payload);
 
   return new Proxy(local, {
     get(target, key, receiver) {

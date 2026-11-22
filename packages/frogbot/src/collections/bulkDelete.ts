@@ -1,7 +1,7 @@
 import type { Payload, Where } from 'payload';
 
 import type { FrogBotLocalAPI } from '../localAPI.js';
-import { toPayloadRequest } from '../seams/request.js';
+import { toFrogBotLocalAPI, toPayloadRequest } from '../seams/request.js';
 import type { BulkResult, DeleteManyArgs, DocID } from './config/types.js';
 
 /** The most documents one Payload bulk delete gets, since it puts every id in one `in (…)` list per query. */
@@ -9,8 +9,10 @@ export const BULK_DELETE_PAGE_SIZE = 500;
 
 type Delete = FrogBotLocalAPI['delete'];
 
-/** Splits a where-keyed delete into pages of matched ids, so one call works for any number of matches. */
-export function pageBulkDelete(payload: Payload, remove: Delete): Delete {
+/** Payload's `delete`, with a where-keyed delete split into pages of matched ids so one call works for any number of matches. */
+export function pagedDelete(payload: Payload): Delete {
+  const local = toFrogBotLocalAPI(payload);
+  const remove: Delete = local.delete.bind(local);
   const removePage = remove as (args: DeleteManyArgs<string>) => Promise<BulkResult<unknown>>;
 
   return (async (args: Parameters<Delete>[0]) => {
