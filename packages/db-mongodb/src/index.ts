@@ -20,6 +20,7 @@ export const mongooseAdapter = (
 ): ReturnType<typeof createMongooseAdapter> & {
   aggregate: AggregateAdapter;
   search: SearchAdapter;
+  url?: string;
 } => {
   const { init, ...adapter } = createMongooseAdapter(args);
 
@@ -27,6 +28,7 @@ export const mongooseAdapter = (
     ...adapter,
     aggregate: mongooseAggregateAdapter,
     search: mongooseSearchAdapter,
+    url: args.url || undefined,
     init(initArgs) {
       const database = init(initArgs) as MongooseAdapter &
         Pick<JobLogDatabase, typeof jobLogOperations>;

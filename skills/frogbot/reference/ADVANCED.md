@@ -4,15 +4,12 @@ Docs: https://docs.frogbot.ai/authentication/overview, https://docs.frogbot.ai/c
 
 ## Authentication
 
-Auth-enabled collections expose login and account endpoints. Server-side code can use the Local API:
+Auth-enabled collections expose login and account endpoints. Make the first login with `npx frogbot users create <email>`, which prints a random password once; never write a password into a script or seed. Server-side code can sign in with the Local API:
 
 ```ts
 const result = await frogbot.login({
   collection: 'users',
-  data: {
-    email: 'user@example.com',
-    password: 'password',
-  },
+  data: { email, password },
 });
 ```
 
@@ -22,10 +19,7 @@ The equivalent REST request is:
 const response = await fetch('/api/users/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'password',
-  }),
+  body: JSON.stringify({ email, password }),
 });
 ```
 

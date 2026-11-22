@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot deploy", "frogbot dojo", "plugin-dojo", "pull", "logs", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot users create", "first user", "frogbot deploy", "frogbot dojo", "plugin-dojo", "pull", "logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -26,6 +26,7 @@ pnpm frogbot generate:types
 | `status` | — | Lists every app `up` started on this computer. See [Run in the background](#run-in-the-background). |
 | `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
 | `check` | `--json` | Loads your config as the running app does, with no server or database, and lists every problem it finds. See [Check your config](#check-your-config). |
+| `users create` | `<email>`, `--collection`, `--set <field>=<value>`, `--yes` | Creates the first user of an empty auth collection and prints a random password once. See [Create the first user](#create-the-first-user). |
 | `deploy` | `[target]`, `--dry-run`, `--json`, `--no-interactive`, `--env-file` | Checks the app, then deploys it to Dojo, Docker, Fly.io, Google Cloud, AWS or Azure. See [Deploy](#deploy). |
 | `generate:types` | — | Writes `frogbot-types.ts` from your config. See [Generating types](/typescript/generating-types). |
 | `generate:importmap` | — | Writes the admin import map for the custom components your config references. See [Custom components](/custom-components/overview). |
@@ -107,7 +108,28 @@ When there are warnings, a `warnings` array of `{ code, path, message }` entries
 
 An issue has no `path` when it isn't tied to one place in the config, as with `CONFIG_INVALID`.
 
+## Create the first user
+
+`frogbot users create <email>` makes the first login for a new app from the terminal, with no browser, so a coding agent can sign in to the app it built. It boots your app, creates the user through the Local API, and prints a random password once:
+
+```sh
+$ pnpm frogbot users create me@example.com
+[frogbot] users create: database file:./frogbot.db
+Created me@example.com in users.
+Password: 3q2-7wZq…
+It is shown only this once. Change it on the account page after signing in.
+```
+
+- **Collection.** It writes to `admin.user`'s collection, or the auth collection `--collection <slug>` names It refuses a collection with `auth.disableLocalStrategy`, whose users sign in without a password.
+- **Only the first user.** It refuses, exiting `1`, when the collection has any user, trashed ones included, as the create-first-user page does. It takes the same per-collection lock as sign-in, so two runs, or a run and a sign-in, can't both make the first user. Add more users in the admin.
+- **Password.** Each run makes a new random password (32 random bytes). There is no option or variable to set one, and it is stored only as the collection's usual hash. Change it on the account page.
+- **Required fields.** The collection's hooks, validation and required fields apply. When one has no value, it exits `1` and names the field; pass string fields with `--set <field>=<value>` (repeatable).
+- **Verification.** On a collection with `auth.verify`, the user is created already verified and no verification email is sent.
+- **Database.** It first prints the database it will write to: a SQLite `file:` path, or the host and database name without credentials. An embedded replica (a `file:` URL with a `syncUrl`) prints as `file:./replica.db, a replica of libsql://<host>`, because its writes reach the remote. For anything but a local `file:` SQLite database without a `syncUrl` it exits `1` without writing, unless you pass `--yes`.
+- **Local only.** It runs only in the terminal, against the app's code, database and `FROGBOT_SECRET`. No HTTP endpoint or admin button does the same. A login made this way reaches a deployed app only if you deploy with `--data`, which asks first.
+
 ## Deploy
+
 
 ```bash
 pnpm frogbot deploy docker --dry-run

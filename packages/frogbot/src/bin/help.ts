@@ -45,6 +45,10 @@ export const commandHelp = {
     'check [--json]',
     'Loads your config as the running app does, with no server or database, and lists every problem it finds.\n  --json  one result object on stdout',
   ),
+  users: line(
+    'users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes]',
+    "Creates the first login when the auth collection is empty and prints its random password once.\n  --collection <slug>    the auth collection, when the app has more than one\n  --set <field>=<value>  a value for another required field\n  --yes                  confirm writing to a database that isn't a local SQLite file",
+  ),
   'generate:types': line('generate:types', 'Writes `frogbot-types.ts` from your config.'),
   'generate:piece-types': line(
     'generate:piece-types <module> --export <factory> --output <file> [--check]',
