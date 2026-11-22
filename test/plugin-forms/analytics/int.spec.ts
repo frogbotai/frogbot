@@ -162,4 +162,26 @@ describe(`forms plugin analytics [${adapterLabel}]`, () => {
 
     expect(await stats()).toEqual([]);
   });
+
+  it('still counts a completion, and answers a ping without a 500, while the old stats lock is held', async () => {
+    const key = `plugin-forms:stats:${form.id}:${new Date().toISOString().slice(0, 10)}`;
+
+    const [submitted, pinged] = await booted.frogbot.kv.lock(key, 30_000, async () =>
+      Promise.all([submit('ada@example.com'), ping('view')]),
+    );
+
+    expect(submitted.status).toBe(200);
+    expect(pinged.status).toBe(204);
+    expect(await stats()).toMatchObject([{ views: 1, completions: 1 }]);
+  });
+
+  it('counts every ping and completion exactly under a burst', async () => {
+    const results = await Promise.all([
+      ...Array.from({ length: 30 }, (_, n) => ping(n % 3 === 0 ? 'start' : 'view')),
+      ...Array.from({ length: 4 }, (_, n) => submit(`burst${n}@example.com`)),
+    ]);
+
+    expect(results.filter(({ status }) => status >= 300)).toEqual([]);
+    expect(await stats()).toMatchObject([{ views: 20, starts: 10, completions: 4 }]);
+  });
 });
