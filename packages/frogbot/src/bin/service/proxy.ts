@@ -189,6 +189,9 @@ export function createProxy() {
 
       return previous;
     },
+    release(): void {
+      current = undefined;
+    },
     async close(): Promise<void> {
       await Promise.all(
         servers.map((server) => {

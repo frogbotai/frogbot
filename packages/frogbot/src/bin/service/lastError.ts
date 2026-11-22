@@ -1,3 +1,5 @@
+import { StepError } from './runtime.js';
+
 const ESC = String.fromCharCode(27);
 const BEL = String.fromCharCode(7);
 const ANSI = new RegExp(
@@ -75,4 +77,14 @@ export function pickError(output: string): string | undefined {
   const last = lines.filter((line) => !noise.some((pattern) => pattern.test(line))).at(-1);
 
   return last ? cap(last.trim()) : undefined;
+}
+
+/** An update's error for the registration: its message, the output's key line, at most 200 characters. */
+export function summarize(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const why = error instanceof StepError ? pickError(error.output) : undefined;
+
+  const text = why && !message.includes(why) ? `${message}: ${why}` : message;
+
+  return text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH - 1)}…` : text;
 }

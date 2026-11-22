@@ -4,9 +4,10 @@ import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
 import { createBackoff } from './backoff.js';
+import { type DevRuntime, devRuntime } from './devRuntime.js';
 import { isEnvOnly, type PublicEnv, publicEnvChanged, readPublicEnv } from './envChanges.js';
 import { checkHealth } from './health.js';
-import { pickError } from './lastError.js';
+import { summarize } from './lastError.js';
 import { createLog, type Log } from './log.js';
 import { appPaths, registrationFile, serviceId, type Slot } from './paths.js';
 import { freePort, HOST, readSavedPort, writeSavedPort } from './ports.js';
@@ -15,21 +16,23 @@ import { createBuildQueue, type RunKind } from './queue.js';
 import {
   type Registration,
   removeRegistration,
+  type ServiceMode,
   watchOwnership,
   writeRegistration,
 } from './registration.js';
 import { type App, type AppRuntime, nextRuntime, outputTail, StepError } from './runtime.js';
 import { syncSchema } from './schema.js';
-import { watchApp } from './watch.js';
+import { exited, signalGroup, stopServer } from './stop.js';
+import { isRootFile, watchApp } from './watch.js';
 
 /** The marker `frogbot up` looks for in a LaunchAgent's log when the first build fails. */
 export const BOOT_FAILED = '[frogbot] up failed:';
 
 const DRAIN_MS = 30_000;
 const ERROR_TAIL_LINES = 30;
-const MAX_ERROR = 200;
 
 type Server = {
+  mode: ServiceMode;
   slot: Slot;
   port: number;
   child: ChildProcess;
@@ -37,19 +40,13 @@ type Server = {
   upstream?: Upstream;
 };
 
-/** Sent by `frogbot up --port <n>` after it saves the new port in `.frogbot/port`. */
-export const MOVE_SIGNAL = 'SIGUSR2';
+/**
+ * Sent by `frogbot up` after it saves a new port in `.frogbot/port` or a new mode in
+ * `.frogbot/mode-request`.
+ */
+export const SETTINGS_SIGNAL = 'SIGUSR2';
 
 const tail = (text: string) => text.trimEnd().split('\n').slice(-ERROR_TAIL_LINES).join('\n');
-
-function summarize(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  const why = error instanceof StepError ? pickError(error.output) : undefined;
-
-  const text = why && !message.includes(why) ? `${message}: ${why}` : message;
-
-  return text.length > MAX_ERROR ? `${text.slice(0, MAX_ERROR - 1)}…` : text;
-}
 
 function includesBuilds(dir: string): boolean {
   try {
@@ -59,37 +56,13 @@ function includesBuilds(dir: string): boolean {
   }
 }
 
-function exited(child: ChildProcess): Promise<void> {
-  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
-
-  return new Promise((resolve) => child.once('exit', () => resolve()));
-}
-
-function signalGroup(child: ChildProcess, signal: NodeJS.Signals) {
-  try {
-    process.kill(-child.pid!, signal);
-  } catch {
-    child.kill(signal);
-  }
-}
-
-async function stopServer(child: ChildProcess): Promise<void> {
-  if (child.exitCode !== null || child.signalCode !== null) return;
-
-  signalGroup(child, 'SIGTERM');
-
-  const timer = setTimeout(() => signalGroup(child, 'SIGKILL'), 5000);
-
-  await exited(child);
-  clearTimeout(timer);
-}
-
 export type SuperviseOptions = {
   dir: string;
   port: number;
   autostart: boolean;
   env: NodeJS.ProcessEnv;
-  runtime?: AppRuntime;
+  mode?: ServiceMode;
+  runtimes?: { production: AppRuntime; dev: DevRuntime };
   /** Called once the app first answers, or with the error when it never does. */
   onBoot?: (error?: Error) => void;
 };
@@ -98,13 +71,15 @@ export type SuperviseOptions = {
  * The long-lived `frogbot up` process: holds the public port, builds into the idle slot on every
  * change (one build at a time), syncs the schema, starts a server on that build and swaps the proxy to
  * it once it answers. A failed update keeps the old server; a crashed server restarts on its build.
+ * In dev mode it runs `next dev` instead, restarting it only for root files (`src/` hot reloads).
  */
 export async function supervise({
   dir,
   port,
   autostart,
   env,
-  runtime = nextRuntime,
+  mode: startMode = 'production',
+  runtimes = { production: nextRuntime, dev: devRuntime },
   onBoot,
 }: SuperviseOptions): Promise<void> {
   const paths = appPaths(dir);
@@ -117,6 +92,9 @@ export async function supervise({
   const draining = new Map<Slot, Set<ChildProcess>>();
   const reported: { kept?: string } = {};
   let current: Server | undefined;
+  let mode = startMode;
+  let switchTo: ServiceMode | undefined;
+  let relaunching: Promise<void> = Promise.resolve();
   let typesFile: string | undefined;
   let publicEnv = readPublicEnv(dir, env);
   let building: PublicEnv | undefined;
@@ -138,6 +116,7 @@ export async function supervise({
     frogbot: FROGBOT_VERSION,
     startedAt: new Date().toISOString(),
     state: 'starting',
+    mode,
     log: paths.log,
     autostart,
   };
@@ -148,6 +127,7 @@ export async function supervise({
     writeRegistration(file, registration);
   };
 
+  rmSync(paths.modeRequest, { force: true });
   save({});
 
   log.write(
@@ -164,11 +144,17 @@ export async function supervise({
     );
   }
 
-  async function launch(slot: Slot): Promise<Server> {
+  async function launch(slot: Slot, serverMode: ServiceMode): Promise<Server> {
     const serverPort = await freePort();
-    const child = runtime.start(app, slot, serverPort);
+    const child = runtimes[serverMode].start(app, slot, serverPort);
     const output = outputTail(child);
-    const server: Server = { slot, port: serverPort, child, startedAt: Date.now() };
+    const server: Server = {
+      mode: serverMode,
+      slot,
+      port: serverPort,
+      child,
+      startedAt: Date.now(),
+    };
 
     try {
       await checkHealth(serverPort, child);
@@ -205,7 +191,8 @@ export async function supervise({
 
     save({
       state: 'running',
-      build: server.slot,
+      mode: server.mode,
+      build: server.mode === 'dev' ? undefined : server.slot,
       serverPid: server.child.pid,
       lastError: undefined,
       ...(built && { builtAt: new Date().toISOString() }),
@@ -232,7 +219,7 @@ export async function supervise({
     setTimeout(() => {
       if (stopping || current !== server) return;
 
-      launch(server.slot).then(
+      relaunching = launch(server.slot, server.mode).then(
         (next) => {
           if (stopping || current !== server) {
             void stopServer(next.child);
@@ -255,17 +242,47 @@ export async function supervise({
     }, wait).unref();
   }
 
+  async function stopDevServer(): Promise<boolean> {
+    await relaunching;
+
+    const old = current;
+
+    if (old?.mode !== 'dev') return false;
+
+    current = undefined;
+    proxy.release();
+    save({ serverPid: undefined });
+    log.write('supervisor', `stopping the dev server (pid ${old.child.pid}) to restart it`);
+    await stopServer(old.child);
+
+    return true;
+  }
+
   async function update(): Promise<void> {
-    const slot: Slot = current?.slot === 'a' ? 'b' : 'a';
+    const from = mode;
+    const requested = switchTo;
+
+    switchTo = undefined;
+    if (requested) mode = requested;
+
+    const dev = mode === 'dev';
+    const slot: Slot = !dev && current?.slot === 'a' ? 'b' : 'a';
+    let stopped = false;
 
     save({ state: booted ? 'building' : 'starting' });
-    log.write('supervisor', `building into ${paths.distDir(slot)}`);
+
+    log.write(
+      'supervisor',
+      dev ? 'starting the dev server' : `building into ${paths.distDir(slot)}`,
+    );
 
     try {
-      await Promise.all([...(draining.get(slot) ?? [])].map(exited));
+      if (!dev) {
+        await Promise.all([...(draining.get(slot) ?? [])].map(exited));
+        rmSync(paths.build(slot), { recursive: true, force: true });
+      }
 
-      rmSync(paths.build(slot), { recursive: true, force: true });
-      const prepared = (await runtime.prepare(app)).typesFile;
+      const prepared = (await runtimes[mode].prepare(app)).typesFile;
 
       if (prepared && prepared !== typesFile) {
         typesFile = prepared;
@@ -274,12 +291,15 @@ export async function supervise({
 
       const baked = readPublicEnv(dir, env);
 
-      building = baked;
+      if (!dev) {
+        building = baked;
+        await runtimes.production.build(app, slot);
+        await syncSchema(app, reported);
+      }
 
-      await runtime.build(app, slot);
-      await syncSchema(app, reported);
+      stopped = dev && (await stopDevServer());
 
-      const server = await launch(slot);
+      const server = await launch(slot, mode);
 
       if (stopping) {
         await stopServer(server.child);
@@ -287,9 +307,13 @@ export async function supervise({
         return;
       }
 
-      swap(server, { built: true });
-      publicEnv = baked;
-      log.write('supervisor', `serving ${paths.distDir(slot)} (pid ${server.child.pid})`);
+      swap(server, { built: !dev });
+      if (!dev) publicEnv = baked;
+
+      log.write(
+        'supervisor',
+        `serving ${dev ? 'next dev' : paths.distDir(slot)} (pid ${server.child.pid})`,
+      );
 
       if (!booted) {
         booted = true;
@@ -299,26 +323,33 @@ export async function supervise({
       const message = error instanceof Error ? error.message : String(error);
       const output = error instanceof StepError ? tail(error.output) : '';
 
+      if (current) mode = current.mode;
+      else if (requested) mode = from;
+
       log.write('supervisor', `update failed: ${summarize(error)}`);
 
       if (!booted) {
         throw Object.assign(new Error(output ? `${message}\n${output}` : message), { boot: true });
       }
 
-      save({ state: current ? 'update failed' : 'crashed', lastError: summarize(error) });
+      save({
+        state: current || stopped ? 'update failed' : 'crashed',
+        lastError: summarize(error),
+      });
     } finally {
       building = undefined;
+      if (requested && !switchTo) save({ switching: undefined });
     }
   }
 
   async function restartOnEnv(): Promise<void> {
-    if (!current) return update();
+    if (current?.mode !== 'production') return update();
 
     const { slot } = current;
     const { state, lastError } = registration;
 
     try {
-      const server = await launch(slot);
+      const server = await launch(slot, 'production');
 
       if (stopping) {
         await stopServer(server.child);
@@ -340,7 +371,7 @@ export async function supervise({
   }
 
   const queue = createBuildQueue((kind: RunKind) =>
-    kind === 'restart' ? restartOnEnv() : update(),
+    kind === 'restart' && mode === 'production' && !switchTo ? restartOnEnv() : update(),
   );
 
   let watcher: ReturnType<typeof watchApp> | undefined;
@@ -367,7 +398,34 @@ export async function supervise({
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGHUP', () => void shutdown('SIGHUP'));
-  process.on(MOVE_SIGNAL, () => void move());
+
+  process.on(SETTINGS_SIGNAL, () => {
+    switchMode();
+    void move();
+  });
+
+  function switchMode() {
+    let wanted: string;
+
+    try {
+      wanted = readFileSync(paths.modeRequest, 'utf8').trim();
+    } catch {
+      return;
+    }
+
+    if (
+      !stopping &&
+      (wanted === 'dev' || wanted === 'production') &&
+      (wanted !== mode || switchTo)
+    ) {
+      switchTo = wanted;
+      save({ switching: wanted });
+      log.write('supervisor', `switching to ${wanted} mode`);
+      queue.trigger('update');
+    }
+
+    rmSync(paths.modeRequest, { force: true });
+  }
 
   async function move() {
     const next = readSavedPort(paths.port);
@@ -412,6 +470,17 @@ export async function supervise({
     dir,
     ignore: () => typesFile,
     onChange: (changed) => {
+      if (mode === 'dev' && !switchTo) {
+        const roots = changed.filter(isRootFile);
+
+        if (!roots.length) return;
+
+        log.write('supervisor', `${roots.join(', ')} changed; restarting the dev server`);
+        queue.trigger('update');
+
+        return;
+      }
+
       if (isEnvOnly(changed)) {
         const now = readPublicEnv(dir, env);
         const keys = [

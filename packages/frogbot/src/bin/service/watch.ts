@@ -34,14 +34,17 @@ export function shouldRebuild(path: string): boolean {
   return ROOT_FILES.some((pattern) => pattern.test(first));
 }
 
-/** `tsconfig.json` without the `include` entries Next adds for a build folder, to tell its edit from the user's. */
+/** Whether `path` is a root file (config, env, package), the only changes that restart `next dev`. */
+export const isRootFile = (path: string): boolean => !path.includes('/') && shouldRebuild(path);
+
+/** `tsconfig.json` without the `include` entries Next adds for a build or dev folder, to tell its edit from the user's. */
 export function tsconfigShape(text: string): string {
   try {
     const json = JSON.parse(text) as { include?: unknown };
 
     if (Array.isArray(json.include)) {
       json.include = json.include.filter(
-        (entry) => !(typeof entry === 'string' && entry.startsWith('.frogbot/')),
+        (entry) => !(typeof entry === 'string' && /^\.(frogbot|next)\//.test(entry)),
       );
     }
 
