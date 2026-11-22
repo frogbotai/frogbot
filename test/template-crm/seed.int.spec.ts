@@ -74,7 +74,7 @@ describe('crm template seed', () => {
   it('adds 24 to 40 curated records with a logo for every company, and no QA edge case', async () => {
     const { id } = await signUp();
 
-    await seed({ frogbot: booted.frogbot, today });
+    await seed({ req: await booted.frogbot.createRequest(), today });
 
     const { media, users, ...sample } = await counts();
     const total = Object.values(sample).reduce((sum, count) => sum + count, 0);
@@ -124,7 +124,7 @@ describe('crm template seed', () => {
   });
 
   it('dates every record from today, so two runs a day apart shift by exactly a day', async () => {
-    await seed({ frogbot: booted.frogbot, today });
+    await seed({ req: await booted.frogbot.createRequest(), today });
 
     const first = await booted.frogbot.find({
       collection: 'deals',
@@ -134,7 +134,11 @@ describe('crm template seed', () => {
     });
 
     await clearAndSeed(booted.frogbot, 'empty');
-    await seed({ frogbot: booted.frogbot, today: new Date('2026-06-16T12:00:00Z') });
+
+    await seed({
+      req: await booted.frogbot.createRequest(),
+      today: new Date('2026-06-16T12:00:00Z'),
+    });
 
     const second = await booted.frogbot.find({
       collection: 'deals',
