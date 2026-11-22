@@ -462,6 +462,23 @@ describe('OAuth linking endpoints', () => {
     },
   );
 
+  it('logs why the token exchange failed, without the response body', async () => {
+    const f = fixture();
+    const flow = await f.start();
+
+    f.fetch.mockResolvedValue(
+      Response.json({ error_description: 'private-description' }, { status: 401 }),
+    );
+
+    const response = await f.endpoints[1].handler(f.request(flow));
+
+    expect(response.status).toBe(400);
+    expect(f.warn.mock.calls[0][0].err).toMatchObject({
+      code: 'tokens',
+      cause: { message: 'The token endpoint answered 401.' },
+    });
+  });
+
   it.each([
     ['auth', failed("Couldn't finish signing in to Example. Try again.", 'tokens')],
     ['account', failed("Couldn't read the signed-in account from Example.", 'account')],

@@ -392,6 +392,23 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       expiresAt: '2000-01-01T00:00:00Z',
     });
 
+    const warn = vi.spyOn(payload.logger, 'warn');
+    const error = await frogbot.connections
+      .resolve({ piece, req: request() })
+      .catch((error: unknown) => error);
+
+    expect(error).toMatchObject({
+      message:
+        "Connection for 'example' could not be refreshed. Reconnect it in Settings → Linked accounts.",
+      cause: { code: 'refresh', cause: { message: 'No refresh token is stored.' } },
+    });
+    expect(warn).toHaveBeenCalledWith(
+      { err: (error as Error).cause, piece: 'example' },
+      "[frogbot] Connection for 'example' could not be refreshed",
+    );
+
+    warn.mockRestore();
+
     await expect(frogbot.connections.resolve({ piece, req: request() })).rejects.toMatchObject({
       name: 'ConnectionError',
       code: 'error',

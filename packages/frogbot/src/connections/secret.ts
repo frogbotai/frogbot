@@ -98,7 +98,7 @@ export function buildSecretEndpoints({
 
       if (!parsed?.success) {
         const { message, fields } = parsed
-          ? describeCredentialIssues({ issues: parsed.error.issues, input })
+          ? describeCredentialIssues({ issues: parsed.error.issues, input, schema })
           : { message: 'Invalid credentials: the key failed validation.', fields: [] };
 
         return errorResponse({

@@ -112,13 +112,38 @@ describe('static connection endpoints', () => {
 
     expect(JSON.parse(text)).toEqual(
       failed(
-        'Invalid credentials: key has the wrong format (expected starts_with); region must be one of us, eu; nested.id is required (expected number); extra is not a known field.',
+        "Invalid credentials: key has the wrong format (expected starts_with); region must be one of us, eu; nested.id is required (expected number); the body has fields the key doesn't take.",
         'invalid_credentials',
-        { fields: ['key', 'region', 'nested.id', 'extra'] },
+        { fields: ['key', 'region', 'nested.id'] },
       ),
     );
     expect(text).not.toContain('secret-value');
     expect(text).not.toContain('mars');
+    expect(text).not.toContain('extra');
+  });
+
+  it('never names a key that came from the body', async () => {
+    const { endpoints, request } = setup(
+      z.object({ token: z.string(), headers: z.record(z.string(), z.string()) }).strict(),
+    );
+
+    const body = {
+      token: 'ok',
+      headers: { 'Bearer SECRET456': 42 },
+      'sk-live-SECRET123': true,
+    };
+
+    const response = await endpoints[0].handler(request({ body }));
+    const text = await response.text();
+
+    expect(JSON.parse(text)).toEqual(
+      failed(
+        "Invalid credentials: headers has an invalid entry; the body has fields the key doesn't take.",
+        'invalid_credentials',
+        { fields: ['headers'] },
+      ),
+    );
+    expect(text).not.toContain('SECRET');
   });
 
   it('says the piece takes no key when its entry has no auth schema', async () => {
