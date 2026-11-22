@@ -13,7 +13,8 @@ import { compareAndSet } from '../database/compareAndSet.js';
 import { toPayloadRequest } from '../seams/request.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
 import { type JobLogDatabase, jobLogOperations } from './log.js';
-import { getJobRunContext, targetJob, withJobRun } from './run.js';
+import { getJobRunContext, isJobClaim, targetJob, withJobRun } from './run.js';
+import { holdLease, isStopping, trackJobs } from './stop.js';
 import type { Jobs, JobsRuntime } from './types.js';
 import { resumeWaitpoint } from './waitpoints/operations.js';
 import type { WaitpointReplay } from './waitpoints/types.js';
@@ -54,8 +55,37 @@ export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
   const nativeUpdateJobs = payload.db.updateJobs.bind(payload.db);
   const nativeDeleteMany = payload.db.deleteMany.bind(payload.db);
 
+  const release = (tokens: string[]) =>
+    nativeUpdateJobs({
+      data: { processingToken: null, processingUntil: null },
+      returning: false,
+      where: { processingToken: { in: tokens } },
+    });
+
+  trackJobs({ payload, release });
+
   payload.db.updateJobs = async (args) => {
     const context = getJobRunContext();
+
+    if (isJobClaim(args.data)) {
+      const token = args.data.processingToken;
+      const unclaimed = args.returning === false ? null : [];
+
+      if (isStopping(payload)) return unclaimed;
+
+      if (context?.payload === payload) context.tokens.add(token);
+
+      holdLease({ payload, token });
+
+      const claimed = await nativeUpdateJobs(args);
+
+      if (!isStopping(payload)) return claimed;
+
+      await release([token]);
+
+      return unclaimed;
+    }
+
     const target = targetJob(args);
     const rearm =
       context?.payload === payload && target.id !== undefined

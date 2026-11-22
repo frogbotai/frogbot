@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { FindArgs, Job, Payload, Where } from 'payload';
 
+import { dropLeases } from './stop.js';
 import type { WaitpointReplay } from './waitpoints/types.js';
 
 /** A `waitUntil` that runs the job now: Payload runs only jobs whose `waitUntil` is strictly before its clock. */
@@ -18,6 +19,7 @@ export type ReArm = {
 export type JobRunContext = {
   payload: Payload;
   rearm: Map<number | string, ReArm>;
+  tokens: Set<string>;
 };
 
 const runContext = new AsyncLocalStorage<JobRunContext>();
@@ -26,8 +28,17 @@ export function getJobRunContext(): JobRunContext | undefined {
   return runContext.getStore();
 }
 
+/** Runs `run` as one job run; the leases it claims are forgotten when it ends. */
 export function withJobRun<T>({ payload, run }: { payload: Payload; run: () => Promise<T> }) {
-  return runContext.run({ payload, rearm: new Map() }, run);
+  const tokens = new Set<string>();
+
+  return runContext.run({ payload, rearm: new Map(), tokens }, async () => {
+    try {
+      return await run();
+    } finally {
+      dropLeases({ payload, tokens });
+    }
+  });
 }
 
 /** Payload's first claim of a run: a fresh `processingToken` and lease, nothing else. */
