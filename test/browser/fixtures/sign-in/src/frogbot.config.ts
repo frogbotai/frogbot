@@ -58,7 +58,13 @@ export default buildConfig({
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
   admin: { avatar: 'default', importMap: { autoGenerate: false } },
-  plugins: [twoFactor({ issuer: 'Sign-in Lab', canReset: ({ req }) => Boolean(req.user) })],
+  plugins: [
+    twoFactor({
+      issuer: 'Sign-in Lab',
+      canReset: ({ req }) => Boolean(req.user),
+      require: ({ user }) => Boolean(user.email?.startsWith('required-')),
+    }),
+  ],
   connections: [{ piece: linked, oauth: true }],
   collections: [
     {
