@@ -7,6 +7,11 @@ import { loadConfig, resolveConfigDir } from '../config/load.js';
 import { writeGeneratedTypes } from '../typegen/index.js';
 import { formatCliError } from './formatCliError.js';
 import { generateImportMap } from './generateImportMap/index.js';
+import {
+  checkNextAdvisories,
+  describeNextAdvisories,
+  installedNextVersion,
+} from './nextAdvisories.js';
 
 type CheckIssue = { code: string; path?: string; message: string };
 
@@ -89,6 +94,24 @@ async function findIssues(cwd: string): Promise<CheckResult> {
   return { issues, warnings };
 }
 
+async function nextAdvisoryWarnings(
+  cwd: string,
+  fetch: typeof globalThis.fetch | undefined,
+): Promise<CheckIssue[]> {
+  const version = installedNextVersion(cwd);
+
+  if (!version) return [];
+
+  try {
+    const report = await checkNextAdvisories({ fetch, version });
+    const message = report && describeNextAdvisories(report, cwd);
+
+    return message ? [{ code: 'NEXT_ADVISORY', path: 'package.json', message }] : [];
+  } catch {
+    return [];
+  }
+}
+
 function logToStderr(): () => void {
   const { debug, info, log } = console;
 
@@ -97,19 +120,28 @@ function logToStderr(): () => void {
   return () => Object.assign(console, { debug, info, log });
 }
 
-/** Loads the config as the running app does, with no server or database, and reports what's wrong. */
-export async function check(args: string[] = []): Promise<void> {
+/** Options for {@link check}; tests pass their own `fetch` for npm. */
+export type CheckDeps = { fetch?: typeof globalThis.fetch };
+
+/**
+ * Loads the config as the running app does, with no server or database, and reports what's wrong.
+ * It also asks npm about the installed `next` and warns when it has a security advisory.
+ */
+export async function check(args: string[] = [], { fetch }: CheckDeps = {}): Promise<void> {
   const { values } = parseArgs({ args, options: { json: { type: 'boolean' } } });
   const restore = values.json ? logToStderr() : () => undefined;
+  const cwd = process.cwd();
+  const advisories = nextAdvisoryWarnings(cwd, fetch);
   let result: CheckResult;
 
   try {
-    result = await collectIssues(process.cwd());
+    result = await collectIssues(cwd);
   } finally {
     restore();
   }
 
-  const { issues, warnings } = result;
+  const { issues } = result;
+  const warnings = [...result.warnings, ...(await advisories)];
   const withWarnings = warnings.length ? { warnings } : {};
 
   if (issues.length) process.exitCode = 1;

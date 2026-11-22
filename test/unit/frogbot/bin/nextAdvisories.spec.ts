@@ -1,12 +1,16 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import {
   checkNextAdvisories,
+  describeNextAdvisories,
   findNextFix,
+  installedNextVersion,
   NEXT_PEER_RANGE,
+  nextInstallCommand,
 } from '../../../../packages/frogbot/src/bin/nextAdvisories.js';
 
 const repoRoot = join(import.meta.dirname, '..', '..', '..', '..');
@@ -350,5 +354,75 @@ describe('checkNextAdvisories', () => {
 
     expect(await checkNextAdvisories({ fetch: down, version: '16.4.2' })).toBeUndefined();
     expect(await checkNextAdvisories({ fetch: offline, version: '16.4.2' })).toBeUndefined();
+  });
+});
+
+describe('describing a report', () => {
+  const app = () => {
+    const dir = mkdtempSync(join(tmpdir(), 'frogbot-next-app-'));
+
+    onTestFinished(() => rmSync(dir, { recursive: true, force: true }));
+
+    return dir;
+  };
+
+  const report = (fix: string | undefined, severities: string[]) => ({
+    advisories: severities.map((severity, i) => ({
+      id: i,
+      severity,
+      title: 't',
+      url: 'u',
+      vulnerableVersions: '<=16.4.4',
+    })),
+    fix,
+    peerRange: NEXT_PEER_RANGE,
+    version: '16.4.2',
+  });
+
+  it('names the count, the severities worst first and the install command', () => {
+    expect(describeNextAdvisories(report('16.4.6', ['low', 'critical', 'low']), app())).toBe(
+      'next 16.4.2 has 3 security advisories (1 critical, 2 low); run `pnpm add next@16.4.6` (no FrogBot release needed)',
+    );
+  });
+
+  it('says a FrogBot release is needed when no fix is inside the peer range', () => {
+    expect(describeNextAdvisories(report(undefined, ['high']), app())).toBe(
+      "next 16.4.2 has 1 security advisory (1 high) and no fixed version inside @frogbotai/next's range >=16.4.0 <17.0.0; it needs a FrogBot release",
+    );
+  });
+
+  it('is nothing for a clean version', () => {
+    expect(describeNextAdvisories(report('16.4.2', []), app())).toBeUndefined();
+  });
+
+  it("uses the app's package manager", () => {
+    const dir = app();
+
+    expect(nextInstallCommand(dir, '16.4.6')).toBe('pnpm add next@16.4.6');
+
+    writeFileSync(join(dir, 'package-lock.json'), '{}');
+
+    expect(nextInstallCommand(dir, '16.4.6')).toBe('npm install next@16.4.6');
+  });
+
+  it('finds the lockfile at the workspace root for an app in a subfolder', () => {
+    const root = app();
+    const dir = join(root, 'apps', 'crm');
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(root, 'package-lock.json'), '{}');
+
+    expect(nextInstallCommand(dir, '16.4.6')).toBe('npm install next@16.4.6');
+  });
+
+  it('reads the installed next from the app folder', () => {
+    const dir = app();
+
+    expect(installedNextVersion(dir)).toBeUndefined();
+
+    mkdirSync(join(dir, 'node_modules', 'next'), { recursive: true });
+    writeFileSync(join(dir, 'node_modules', 'next', 'package.json'), '{"version":"16.4.2"}');
+
+    expect(installedNextVersion(dir)).toBe('16.4.2');
   });
 });

@@ -3,6 +3,13 @@ import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
+import { installedNextVersion } from '../nextAdvisories.js';
+import {
+  type AdvisoryResult,
+  createAdvisor,
+  isSecurityFailure,
+  securityFallback,
+} from './advisory.js';
 import { createBackoff } from './backoff.js';
 import { type DevRuntime, devRuntime } from './devRuntime.js';
 import { isEnvOnly, type PublicEnv, publicEnvChanged, readPublicEnv } from './envChanges.js';
@@ -25,7 +32,7 @@ import { syncSchema } from './schema.js';
 import { exited, signalGroup, stopServer } from './stop.js';
 import { isRootFile, watchApp } from './watch.js';
 
-/** The marker `frogbot up` looks for in a LaunchAgent's log when the first build fails. */
+/** The marker `frogbot up` looks for in the supervisor's stderr or LaunchAgent log when the first build fails. */
 export const BOOT_FAILED = '[frogbot] up failed:';
 
 const DRAIN_MS = 30_000;
@@ -63,14 +70,17 @@ export type SuperviseOptions = {
   env: NodeJS.ProcessEnv;
   mode?: ServiceMode;
   runtimes?: { production: AppRuntime; dev: DevRuntime };
-  /** Called once the app first answers, or with the error when it never does. */
+  /** Asks npm about the installed `next`; tests pass their own. */
+  advise?: () => Promise<AdvisoryResult | undefined>;
+  /** Called once: when the app first answers, or with the error when the first build or start fails. */
   onBoot?: (error?: Error) => void;
 };
 
 /**
  * The long-lived `frogbot up` process: holds the public port, builds into the idle slot on every
  * change (one build at a time), syncs the schema, starts a server on that build and swaps the proxy to
- * it once it answers. A failed update keeps the old server; a crashed server restarts on its build.
+ * it once it answers. A failed update keeps the old server; a crashed server restarts on its build. A
+ * failed first build leaves it watching, in state `build failed`, until a change builds (571 D3).
  * In dev mode it runs `next dev` instead, restarting it only for root files (`src/` hot reloads).
  */
 export async function supervise({
@@ -80,6 +90,7 @@ export async function supervise({
   env,
   mode: startMode = 'production',
   runtimes = { production: nextRuntime, dev: devRuntime },
+  advise = createAdvisor({ dir }),
   onBoot,
 }: SuperviseOptions): Promise<void> {
   const paths = appPaths(dir);
@@ -100,6 +111,8 @@ export async function supervise({
   let publicEnv = readPublicEnv(dir, env);
   let building: PublicEnv | undefined;
   let booted = false;
+  let bootReported = false;
+  let advisedVersion: string | undefined;
   let stopping = false;
 
   const skipped = await proxy.listen(port);
@@ -314,31 +327,61 @@ export async function supervise({
         `serving ${dev ? 'next dev' : paths.distDir(slot)} (pid ${server.child.pid})`,
       );
 
-      if (!booted) {
-        booted = true;
-        onBoot?.();
-      }
+      booted = true;
+      reportBoot();
+      void advise().then(noteAdvisory);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const output = error instanceof StepError ? tail(error.output) : '';
+      const output = error instanceof StepError ? error.output : '';
+      const refused = isSecurityFailure(output);
+      const advisory = refused ? await advise() : undefined;
+      const known = refused ? (advisory?.line ?? securityFallback(advisory?.version)) : undefined;
+
+      const advised = registration.advisory;
 
       if (current) mode = current.mode;
       else if (requested) mode = from;
 
       log.write('supervisor', `update failed: ${summarize(error)}`);
-
-      if (!booted) {
-        throw Object.assign(new Error(output ? `${message}\n${output}` : message), { boot: true });
+      if (refused) noteAdvisory(advisory);
+      else void advise().then(noteAdvisory);
+      if (known && (known !== registration.advisory || known === advised)) {
+        log.write('supervisor', known);
       }
 
       save({
-        state: current || dev ? 'update failed' : 'crashed',
-        lastError: summarize(error),
+        state: current || dev ? 'update failed' : 'build failed',
+        lastError: known ?? summarize(error),
       });
+
+      if (!booted) {
+        const shown = known ?? (output ? `${message}\n${tail(output)}` : message);
+
+        log.write('supervisor', 'nothing is serving; the next change rebuilds');
+        reportBoot(new Error(shown));
+      }
     } finally {
       building = undefined;
       if (requested && !switchTo) save({ switching: undefined });
     }
+  }
+
+  function reportBoot(error?: Error) {
+    if (bootReported) return;
+    bootReported = true;
+    onBoot?.(error);
+  }
+
+  function noteAdvisory(result: AdvisoryResult | undefined) {
+    if (result?.version !== installedNextVersion(dir)) return;
+    if (result?.offline && result.version === advisedVersion) return;
+
+    const line = result?.offline ? undefined : result?.line;
+
+    advisedVersion = result?.version;
+    if (line === registration.advisory) return;
+    if (line) log.write('supervisor', line);
+    save({ advisory: line });
   }
 
   async function restartOnEnv(): Promise<void> {
@@ -425,10 +468,8 @@ export async function supervise({
       switchTo = wanted;
       save({ switching: wanted });
       log.write('supervisor', `switching to ${wanted} mode`);
-      if (booted) {
-        queuedBySwitch = queue.busy && !queue.pending;
-        queue.trigger('update');
-      }
+      queuedBySwitch = queue.busy && !queue.pending;
+      queue.trigger('update');
     } else if (wanted && !stopping && switchTo) {
       switchTo = undefined;
       save({ switching: undefined });
@@ -468,22 +509,11 @@ export async function supervise({
     onLost: () => void shutdown('its registration was removed or taken over'),
   });
 
-  try {
-    await update();
-  } catch (error) {
-    onBoot?.(error as Error);
-    await shutdown('the first build failed', 1);
-
-    return;
-  }
-
-  if (switchTo) trigger('update');
-
   watcher = watchApp({
     dir,
     ignore: () => typesFile,
     onChange: (changed) => {
-      if (mode === 'dev' && !switchTo) {
+      if (mode === 'dev' && !switchTo && current) {
         const roots = changed.filter(isRootFile);
 
         if (!roots.length) return;
@@ -518,4 +548,7 @@ export async function supervise({
       trigger('update');
     },
   });
+
+  queue.trigger('update');
+  await queue.idle();
 }

@@ -75,6 +75,29 @@ describe('frogbot status', () => {
     );
   });
 
+  it('shows a failed first build and, under the table, the Next advisory with its fix', () => {
+    const advisory =
+      'next 16.4.2 has 7 security advisories (7 moderate); run `pnpm add next@16.4.6` (no FrogBot release needed)';
+
+    writeRegistration(
+      registrationFile('one'),
+      registration({
+        state: 'build failed',
+        lastError: 'build failed (exit 1): Type error: x',
+        advisory,
+      }),
+    );
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    status();
+
+    expect(String(log.mock.calls[0][0]).split('\n')[1]).toMatch(
+      /^\/apps\/one {2}http:\/\/127\.0\.0\.1:3000 {2}production {2}build failed {2}.+? {2}build failed \(exit 1\): Type error: x$/,
+    );
+    expect(log.mock.calls[1]).toEqual([`[frogbot] /apps/one: ${advisory}`]);
+  });
+
   it('shows uptime in seconds, minutes, hours and days', () => {
     const now = Date.parse('2026-11-01T12:00:00.000Z');
     const at = (seconds: number) =>

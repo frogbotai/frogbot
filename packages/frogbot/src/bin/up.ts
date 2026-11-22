@@ -67,9 +67,13 @@ export function alreadyUp(found: Registration, now = Date.now()): string[] {
     Number.isNaN(built) || found.mode === 'dev' ? '' : ` (last build ${age(built, now)} ago)`;
 
   const watching = found.mode === 'dev' ? 'in dev mode, hot reloading' : 'watching for changes';
+  const serving =
+    found.state === 'build failed'
+      ? `${found.dir} is already up at ${found.url}, but its build failed; it rebuilds on your next change`
+      : `${found.dir} is already up at ${found.url}, ${watching}${last}`;
 
   return [
-    `[frogbot] ${found.dir} is already up at ${found.url}, ${watching}${last}`,
+    `[frogbot] ${serving}`,
     ...(found.lastError ? [`[frogbot] last error: ${found.lastError}`] : []),
   ];
 }
@@ -225,7 +229,7 @@ const defaultSpawn = (dir: string, env: NodeJS.ProcessEnv) =>
 /**
  * `frogbot up [--port <n>] [--dev] [--autostart]`: starts the app's supervisor in the background, waits until
  * the app answers, and prints its URL and log. A first build or start that fails prints the error's
- * tail and exits 1, leaving nothing behind.
+ * tail and exits 1; the supervisor keeps watching and rebuilds on the next change (571 D3).
  */
 export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
   if (process.env.FROGBOT_SERVICE === 'schema') return schemaStep();
@@ -343,8 +347,11 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
       exit = error.message;
     });
 
-    failed = () =>
-      exit === undefined ? undefined : stderr.trim() || `the supervisor stopped (${exit})`;
+    failed = () => {
+      if (stderr.includes(BOOT_FAILED)) return stderr.trim();
+
+      return exit === undefined ? undefined : stderr.trim() || `the supervisor stopped (${exit})`;
+    };
 
     release = () => {
       child.stderr?.destroy();
@@ -357,6 +364,17 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
   try {
     await waitUntilUp(file, failed);
   } catch (error) {
+    const left = readRegistration(file);
+
+    if (left && isAlive(left.pid)) {
+      release();
+      throw withLogTail(
+        error,
+        paths.log,
+        `[frogbot] still watching ${dir} at ${left.url}; it rebuilds on your next change (\`frogbot down\` to stop)`,
+      );
+    }
+
     await cleanup();
     throw withLogTail(error, paths.log);
   }
@@ -474,7 +492,7 @@ async function waitUntilUp(file: string, failed: () => string | undefined): Prom
   }
 }
 
-function withLogTail(error: unknown, logFile: string): Error {
+function withLogTail(error: unknown, logFile: string, after?: string): Error {
   const message = (error instanceof Error ? error.message : String(error))
     .replaceAll(BOOT_FAILED, '')
     .trim();
@@ -482,6 +500,6 @@ function withLogTail(error: unknown, logFile: string): Error {
   const tail = readTail(logFile).split('\n').slice(-20).join('\n');
 
   return new Error(
-    `[frogbot] up failed:\n${message}${tail && !message.includes(tail) ? `\n\nLast lines of ${logFile}:\n${tail}` : ''}`,
+    `[frogbot] up failed:\n${message}${tail && !message.includes(tail) ? `\n\nLast lines of ${logFile}:\n${tail}` : ''}${after ? `\n\n${after}` : ''}`,
   );
 }

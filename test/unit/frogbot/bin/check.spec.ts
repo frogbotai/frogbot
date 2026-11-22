@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -40,13 +40,13 @@ async function writeTypes({ dir }: Fixture): Promise<void> {
 
 const USERS = "  collections: [{ slug: 'users', auth: true, fields: [] }],";
 
-async function runCheck(args: string[] = []) {
+async function runCheck(args: string[] = [], deps: Parameters<typeof check>[1] = {}) {
   const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
   const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
   const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   const writeFileSpy = vi.spyOn(fs, 'writeFile');
 
-  await check(args);
+  await check(args, deps);
 
   expect(console.log).toBe(log);
 
@@ -92,6 +92,94 @@ describe('frogbot check', () => {
 
     expect(result).toEqual({ exitCode: 0, stderr: [], stdout: [PASSED], writes: 0 });
     expect(init).not.toHaveBeenCalled();
+  });
+
+  describe('the installed next', () => {
+    async function withNext(fixture: Fixture, version: string) {
+      await mkdir(join(fixture.dir, 'node_modules', 'next'), { recursive: true });
+
+      await writeFile(
+        join(fixture.dir, 'node_modules', 'next', 'package.json'),
+        JSON.stringify({ name: 'next', version }),
+      );
+
+      await writeFile(join(fixture.dir, 'pnpm-lock.yaml'), "lockfileVersion: '9.0'\n");
+    }
+
+    const registry = vi.fn<typeof fetch>((input, init) => {
+      if (!String(input).endsWith('/advisories/bulk')) {
+        const versions = ['16.4.2', '16.4.3', '16.4.4', '16.4.5', '16.4.6'];
+
+        return Promise.resolve(
+          Response.json({ versions: Object.fromEntries(versions.map((v) => [v, {}])) }),
+        );
+      }
+
+      const [version] = (JSON.parse(String(init?.body)) as { next: string[] }).next;
+
+      return Promise.resolve(
+        Response.json({
+          next:
+            version === '16.4.2'
+              ? [
+                  {
+                    id: 1,
+                    severity: 'moderate',
+                    title: 'a',
+                    url: 'https://github.com/advisories/1',
+                    vulnerable_versions: '>=16.0.0 <=16.4.4',
+                  },
+                  {
+                    id: 2,
+                    severity: 'high',
+                    title: 'b',
+                    url: 'https://github.com/advisories/2',
+                    vulnerable_versions: '>=16.0.0 <16.4.6',
+                  },
+                ]
+              : [],
+        }),
+      );
+    });
+
+    it('warns when it has an advisory, naming the version to install, and still passes', async () => {
+      const fixture = await makeFixture(USERS);
+      await writeTypes(fixture);
+      await withNext(fixture, '16.4.2');
+
+      const result = await runCheck([], { fetch: registry });
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toEqual([
+        '[frogbot] warning NEXT_ADVISORY package.json: next 16.4.2 has 2 security advisories (1 high, 1 moderate); run `pnpm add next@16.4.6` (no FrogBot release needed)',
+      ]);
+      expect(result.stdout).toEqual([
+        PASSED.replace('check passed.', 'check passed with 1 warning.'),
+      ]);
+    });
+
+    it('says nothing about advisories when npm cannot be reached', async () => {
+      const fixture = await makeFixture(USERS);
+      await writeTypes(fixture);
+      await withNext(fixture, '16.4.2');
+
+      const offline = vi.fn<typeof fetch>(() => Promise.reject(new TypeError('fetch failed')));
+      const result = await runCheck([], { fetch: offline });
+
+      expect(offline).toHaveBeenCalled();
+      expect(result).toEqual({ exitCode: 0, stderr: [], stdout: [PASSED], writes: 0 });
+    });
+
+    it('says nothing for a next with no advisories', async () => {
+      const fixture = await makeFixture(USERS);
+      await writeTypes(fixture);
+      await withNext(fixture, '16.4.6');
+
+      expect(await runCheck(['--json'], { fetch: registry })).toMatchObject({
+        exitCode: 0,
+        stdout: ['{"command":"check","success":true}'],
+      });
+    });
   });
 
   it('reports an unconfigured model ID as CONFIG_INVALID', async () => {

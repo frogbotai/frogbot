@@ -33,4 +33,8 @@ Install the patched version inside the supported range:
 pnpm add next@16.4.6
 ```
 
+`frogbot check` names this command too, and so do `frogbot status` and `.frogbot/service.log` for an app under `frogbot up`.
+
+`frogbot up` builds as a background service, so Next.js doesn't stop its builds over an advisory, even when a coding agent started it. The app stays up on the vulnerable version until you install the fix, which rebuilds it.
+
 Each advisory names its first patched version. If the only fix is a newer minor or major, it needs a FrogBot release first. FrogBot checks its own Next.js version against npm every day and bumps it when an advisory lands.

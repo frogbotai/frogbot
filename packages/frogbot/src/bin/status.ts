@@ -38,6 +38,13 @@ export function statusRows(registrations: Registration[], now = Date.now()): str
   });
 }
 
+/** One line per app that is up on a `next` with npm security advisories, naming the fix. */
+export function advisoryLines(registrations: Registration[]): string[] {
+  return registrations
+    .filter((registration) => registration.advisory && isAlive(registration.pid))
+    .map((registration) => `[frogbot] ${registration.dir}: ${registration.advisory}`);
+}
+
 export function formatTable(rows: string[][]): string {
   const widths = rows[0].map((_, column) => Math.max(...rows.map((row) => row[column].length)));
 
@@ -54,7 +61,8 @@ export function formatTable(rows: string[][]): string {
 export function status(args: string[] = []): void {
   if (args.length) throw new Error('[frogbot] usage: frogbot status');
 
-  const rows = statusRows(listRegistrations());
+  const registrations = listRegistrations();
+  const rows = statusRows(registrations);
 
   if (!rows.length) {
     console.log('[frogbot] no apps are up; start one with `frogbot up` in its folder');
@@ -63,4 +71,6 @@ export function status(args: string[] = []): void {
   }
 
   console.log(formatTable([['FOLDER', 'URL', 'MODE', 'STATE', 'UPTIME', 'LAST ERROR'], ...rows]));
+
+  for (const line of advisoryLines(registrations)) console.log(line);
 }

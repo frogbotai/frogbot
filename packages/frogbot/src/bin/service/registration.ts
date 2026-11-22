@@ -7,7 +7,7 @@ import { servicesDir } from './paths.js';
 export type ServiceMode = 'dev' | 'production';
 
 export type ServiceState =
-  'starting' | 'running' | 'building' | 'update failed' | 'crashed' | 'stopped';
+  'starting' | 'running' | 'building' | 'build failed' | 'update failed' | 'crashed' | 'stopped';
 
 /** One running app, at `<state>/frogbot/services/<id>.json`. No secrets. */
 export type Registration = {
@@ -30,6 +30,8 @@ export type Registration = {
   /** The build folder being served. */
   build?: string;
   lastError?: string;
+  /** The installed `next`'s npm security advisories and the command that fixes them, when it has any. */
+  advisory?: string;
   /** When the last build landed; a restart on the same build keeps it. */
   builtAt?: string;
   log: string;

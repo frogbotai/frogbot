@@ -78,21 +78,22 @@ export function outputTail(child: ChildProcess): () => string {
 }
 
 /**
- * Runs a child to its end, its output in the log unless `quiet`; a failure carries the output's tail.
+ * Runs a child to its end, its output in the log under `tag` unless `quiet`; a failure carries the
+ * output's tail.
  */
 export function runStep(
   app: App,
   name: string,
   args: string[],
   env: NodeJS.ProcessEnv,
-  { quiet = false } = {},
+  { quiet = false, tag = name } = {},
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, args, { cwd: app.dir, ...withLifeline(env) });
     const tail = outputTail(child);
 
     if (!quiet) {
-      const toLog = app.log.stream(name);
+      const toLog = app.log.stream(tag);
 
       child.stdout?.on('data', toLog);
       child.stderr?.on('data', toLog);
@@ -118,6 +119,42 @@ export function parseTypesFile(output: string): string | undefined {
     .map((line) => TYPES_LINE.exec(line.trimEnd())?.[1])
     .filter((file) => file !== undefined)
     .at(-1);
+}
+
+/**
+ * The env keys Next's bundled `@vercel/detect-agent` reads to tell a coding agent's command, and
+ * the policy an agent's `next upgrade` sets. A build under `up` is the service's, not the agent's
+ * that started it, so Next's advisory check warns instead of refusing to build (571 D2).
+ */
+export const AGENT_ENV_KEYS = [
+  'AI_AGENT',
+  'ANTIGRAVITY_AGENT',
+  'AUGMENT_AGENT',
+  'CLAUDECODE',
+  'CLAUDE_CODE',
+  'CLAUDE_CODE_IS_COWORK',
+  'CODEX_CI',
+  'CODEX_SANDBOX',
+  'CODEX_THREAD_ID',
+  'COPILOT_ALLOW_ALL',
+  'COPILOT_GITHUB_TOKEN',
+  'COPILOT_MODEL',
+  'CURSOR_AGENT',
+  'CURSOR_EXTENSION_HOST_ROLE',
+  'CURSOR_TRACE_ID',
+  'GEMINI_CLI',
+  'OPENCODE_CLIENT',
+  'REPL_ID',
+  '__NEXT_AGENT_UPGRADE',
+];
+
+/** `env` without the coding-agent markers in {@link AGENT_ENV_KEYS}. */
+export function serviceBuildEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const kept = { ...env };
+
+  for (const key of AGENT_ENV_KEYS) delete kept[key];
+
+  return kept;
 }
 
 const productionEnv = (app: App, slot: Slot): NodeJS.ProcessEnv => ({
@@ -146,10 +183,16 @@ export const nextRuntime: AppRuntime = {
   },
 
   async build(app, slot) {
-    await runStep(app, 'build', [resolveNextBin(app.dir), 'build'], {
-      ...productionEnv(app, slot),
-      NODE_OPTIONS: app.env.NODE_OPTIONS ?? '--no-deprecation --max-old-space-size=8000',
-    });
+    await runStep(
+      app,
+      'build',
+      [resolveNextBin(app.dir), 'build'],
+      serviceBuildEnv({
+        ...productionEnv(app, slot),
+        NODE_OPTIONS: app.env.NODE_OPTIONS ?? '--no-deprecation --max-old-space-size=8000',
+      }),
+      { tag: 'build:next' },
+    );
   },
 
   start(app, slot, port) {
