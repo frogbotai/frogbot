@@ -69,8 +69,6 @@ describe('memory REST and SDK', () => {
 
   beforeAll(async () => {
     frogbot = await harness.boot();
-    await send('GET', '?scope=team');
-
     ann = await signIn('ann@example.com');
     ben = await signIn('ben@example.com');
     staff = await signIn('staff@example.com');
@@ -159,8 +157,6 @@ describe('memory REST and SDK', () => {
       'Office closes at six',
     ]);
     expect((await send('GET', '?scope=team', { headers: ann })).status).toBe(403);
-
-    await send('GET', '?scope=team');
 
     expect(
       (await send('POST', '', { headers: staff, body: { scope: 'team', text: 'No write' } }))
