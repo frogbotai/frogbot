@@ -9,6 +9,7 @@ export type {
   FormConfirmation,
   FormDefinition,
   FormFieldError,
+  FormIgnoredAnswer,
   FormOption,
   FormQuestion,
   FormQuestionType,

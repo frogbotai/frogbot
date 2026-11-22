@@ -2,7 +2,7 @@ import { jobsRunUsage } from './jobsRunOptions.js';
 
 const line = (usage: string, describe: string) => `[frogbot] usage: frogbot ${usage}\n${describe}`;
 
-export const upUsage = '[frogbot] usage: frogbot up [--port <n|auto>] [--autostart]';
+export const upUsage = '[frogbot] usage: frogbot up [--port <n|auto>] [--dev] [--autostart]';
 
 export const downUsage = '[frogbot] usage: frogbot down [folder]';
 
@@ -20,7 +20,7 @@ commands:
 options:
   --name <name>            name for the generated migration (migrate:create)
   --file <path>            use a pre-defined migration file (migrate:create)
-  --force-accept-warning   skip interactive confirmation prompts (CI)
+  --force-accept-warning   skip confirmation prompts and apply over dev-mode changes (migrate, migrate:create, migrate:fresh)
   --skip-empty             skip empty migrations (migrate:create)
   --help, -h               show this help`;
 
@@ -34,7 +34,7 @@ export const commandHelp = {
     'dev [next dev options]',
     'Generates the admin import map, then starts the Next.js development server. `npx next dev --help` lists its options.',
   ),
-  up: `${upUsage}\nRuns the app in the background, rebuilding and swapping in each edit.\n  --port <n|auto>  the port to serve on, remembered for later runs; auto picks a free one\n  --autostart      macOS only: also start the app at login`,
+  up: `${upUsage}\nRuns the app in the background, rebuilding and swapping in each edit.\n  --port <n|auto>  the port to serve on, remembered for later runs; auto picks a free one\n  --dev            run next dev with hot reload instead of production builds\n  --autostart      macOS only: also start the app at login`,
   down: `${downUsage}\nStops the app that \`up\` started in folder, the current one by default.`,
   status: line('status', 'Lists every app `up` started on this computer.'),
   run: line(
@@ -44,6 +44,10 @@ export const commandHelp = {
   check: line(
     'check [--json]',
     'Loads your config as the running app does, with no server or database, and lists every problem it finds.\n  --json  one result object on stdout',
+  ),
+  users: line(
+    'users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes]',
+    "Creates the first login when the auth collection is empty and prints its random password once.\n  --collection <slug>    the auth collection, when the app has more than one\n  --set <field>=<value>  a value for another required field\n  --yes                  confirm writing to a database that isn't a local SQLite file",
   ),
   'generate:types': line('generate:types', 'Writes `frogbot-types.ts` from your config.'),
   'generate:piece-types': line(

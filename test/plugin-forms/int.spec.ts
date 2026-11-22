@@ -242,7 +242,13 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     });
 
     expect(status).toBe(200);
-    expect(body).toEqual({ confirmation: { type: 'message', message: 'Thanks!' } });
+    expect(body).toEqual({
+      confirmation: { type: 'message', message: 'Thanks!' },
+      ignored: ['priority', 'internalNote', 'meta', 'id'].map((field) => ({
+        field,
+        reason: 'not a question on this form',
+      })),
+    });
 
     const [lead] = await leads();
 
@@ -260,7 +266,7 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     expect(await booted.frogbot.kv.get(`${hookMarkerPrefix}${lead.id}`)).toBe('contact');
   });
 
-  it('drops the answer to a hidden question, whatever the client sends', async () => {
+  it('drops the answer to a hidden question, whatever the client sends, and lists it', async () => {
     await createForm({
       steps: [
         {
@@ -285,11 +291,73 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     });
 
     expect([hidden.status, shown.status]).toEqual([200, 200]);
+    expect(hidden.body.ignored).toEqual([
+      { field: 'lastName', reason: 'hidden: interest equals sales' },
+    ]);
+    expect(shown.body).not.toHaveProperty('ignored');
 
     const byEmail = Object.fromEntries((await leads()).map((lead) => [lead.email, lead]));
 
     expect(byEmail['ada@example.com']?.lastName ?? null).toBeNull();
     expect(byEmail['grace@example.com']?.lastName).toBe('Hopper');
+  });
+
+  it('refuses every wrong-typed answer in one 400 and saves nothing', async () => {
+    await createForm();
+
+    const { status, body } = await submit('contact', {
+      data: { email: 'ada@example.com', firstName: 5, interest: ['sales'] },
+    });
+
+    expect(status).toBe(400);
+    expect(body).toEqual({
+      errors: [
+        {
+          field: 'firstName',
+          message: 'firstName: expected a string, got 5.',
+          code: 'invalid_answer',
+        },
+        {
+          field: 'interest',
+          message: 'interest: expected a string, got ["sales"].',
+          code: 'invalid_answer',
+        },
+      ],
+    });
+    expect(await leads()).toEqual([]);
+  });
+
+  it("refuses a wrong-typed answer to a rule's source question by its own name", async () => {
+    await createForm({
+      steps: [
+        {
+          questions: [
+            { field: 'email' },
+            { field: 'interest' },
+            {
+              field: 'lastName',
+              rules: [{ question: 'interest', operator: 'equals', value: 'sales' }],
+            },
+          ],
+        },
+      ],
+    });
+
+    const { status, body } = await submit('contact', {
+      data: { email: 'ada@example.com', interest: 7, lastName: 'Lovelace' },
+    });
+
+    expect(status).toBe(400);
+    expect(body).toEqual({
+      errors: [
+        {
+          field: 'interest',
+          message: 'interest: expected a string, got 7.',
+          code: 'invalid_answer',
+        },
+      ],
+    });
+    expect(await leads()).toEqual([]);
   });
 
   it('refuses rules on a required field and on a later question', async () => {

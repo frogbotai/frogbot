@@ -21,6 +21,7 @@ import type { CollectionAdminConfig } from '../collections/config/types.js';
 import type { Endpoint, Handler } from '../endpoints/types.js';
 import type { FrogBot } from '../frogbot.js';
 import { seedFrogBotCache } from '../getFrogBot.js';
+import { assertNotStopping, isStopping } from '../jobs/stop.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { UploadHandler } from '../uploads/types.js';
 import { attachFrogBotInstance, attachRegisteredFrogBot } from './attachFrogBot.js';
@@ -221,7 +222,11 @@ export function wrapJobs(jobs: PayloadJobsConfig, attachFrogBot: AttachFrogBot):
   };
 
   const wrapCallback = (callback: PayloadTaskCallback): PayloadTaskCallback => {
-    return async (args) => callback({ ...args, req: await withFrogBot(args.req) });
+    return async (args) => {
+      if (isStopping(args.req.payload)) return;
+
+      return callback({ ...args, req: await withFrogBot(args.req) });
+    };
   };
 
   return {
@@ -233,8 +238,11 @@ export function wrapJobs(jobs: PayloadJobsConfig, attachFrogBot: AttachFrogBot):
         ...task,
         ...(typeof handler === 'function'
           ? {
-              handler: async (args: Parameters<typeof handler>[0]) =>
-                handler({ ...args, req: await withFrogBot(args.req) }),
+              handler: async (args: Parameters<typeof handler>[0]) => {
+                assertNotStopping({ payload: args.req.payload, job: args.job });
+
+                return handler({ ...args, req: await withFrogBot(args.req) });
+              },
             }
           : {}),
         ...(onFail ? { onFail: wrapCallback(onFail) } : {}),
@@ -247,8 +255,11 @@ export function wrapJobs(jobs: PayloadJobsConfig, attachFrogBot: AttachFrogBot):
       return typeof handler === 'function'
         ? {
             ...workflow,
-            handler: async (args: Parameters<typeof handler>[0]) =>
-              handler({ ...args, req: await withFrogBot(args.req) }),
+            handler: async (args: Parameters<typeof handler>[0]) => {
+              assertNotStopping({ payload: args.req.payload, job: args.job });
+
+              return handler({ ...args, req: await withFrogBot(args.req) });
+            },
           }
         : workflow;
     }),

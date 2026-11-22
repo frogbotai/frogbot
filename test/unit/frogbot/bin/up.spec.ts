@@ -224,11 +224,30 @@ describe('frogbot up', () => {
     expect(exit).toHaveBeenCalledWith(0);
   });
 
-  it('reads --port and --autostart', () => {
-    expect(parseUpArgs(['--port', '3100', '--autostart'])).toEqual({ port: 3100, autostart: true });
-    expect(parseUpArgs(['--port=3101'])).toEqual({ port: 3101, autostart: false });
-    expect(parseUpArgs(['--port', 'auto'])).toEqual({ port: 'auto', autostart: false });
-    expect(() => parseUpArgs(['--watch'])).toThrow(/usage: frogbot up/);
+  it('reads --port, --dev and --autostart', () => {
+    expect(parseUpArgs(['--port', '3100', '--autostart'])).toEqual({
+      port: 3100,
+      autostart: true,
+      dev: false,
+    });
+    expect(parseUpArgs(['--port=3101', '--dev'])).toEqual({
+      port: 3101,
+      autostart: false,
+      dev: true,
+    });
+    expect(parseUpArgs(['--port', 'auto'])).toEqual({ port: 'auto', autostart: false, dev: false });
+    expect(() => parseUpArgs(['--watch'])).toThrow(
+      /usage: frogbot up \[--port <n\|auto>\] \[--dev\]/,
+    );
+  });
+
+  it('refuses --dev with --autostart, before anything starts', async () => {
+    const spawnSupervisor = vi.fn();
+
+    await expect(up(['--dev', '--autostart'], { spawnSupervisor })).rejects.toThrow(
+      "[frogbot] --dev can't start at login; --autostart is for hosting. Run `frogbot up --dev` after each login",
+    );
+    expect(spawnSupervisor).not.toHaveBeenCalled();
   });
 });
 
@@ -277,6 +296,12 @@ describe('the already-up line', () => {
     ).toEqual([
       '[frogbot] /apps/crm is already up at http://127.0.0.1:9696, but its build failed; it rebuilds on your next change',
       '[frogbot] last error: build failed (exit 1)',
+    ]);
+  });
+
+  it('says an app in dev mode is hot reloading, with no build time', () => {
+    expect(alreadyUp({ ...found, mode: 'dev', builtAt: '2026-11-12T11:57:30.000Z' }, now)).toEqual([
+      '[frogbot] /apps/crm is already up at http://127.0.0.1:9696, in dev mode, hot reloading',
     ]);
   });
 

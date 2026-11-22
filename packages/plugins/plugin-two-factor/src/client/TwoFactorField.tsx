@@ -21,7 +21,19 @@ export type TwoFactorFieldProps = {
   canEnable: boolean;
   /** True when the signed-in user may reset this other user's two-factor sign-in. */
   canReset: boolean;
+  /** The collection's sign-in methods the code step follows. */
+  signIn: { password: boolean; provider: boolean };
+  /** Where the user manages their API keys. */
+  keysURL?: string;
 };
+
+/** When the code step comes, in terms of the sign-in methods the collection has. */
+export function afterSignIn({ password, provider }: TwoFactorFieldProps['signIn']): string {
+  if (password && provider) return ' after your password or sign-in provider';
+  if (password) return ' after your password';
+
+  return provider ? ' after your sign-in provider' : '';
+}
 
 /** The account section for two-factor sign-in on a user's document. */
 export function TwoFactorField(props: TwoFactorFieldProps) {
@@ -52,9 +64,9 @@ export function TwoFactorField(props: TwoFactorFieldProps) {
         <>
           <p className="two-factor__hint">
             {enabled
-              ? 'Signing in asks for a code from your authenticator app after your password or sign-in provider.'
+              ? `Signing in asks for a code from your authenticator app${afterSignIn(props.signIn)}.`
               : props.canEnable
-                ? 'Ask for a code from an authenticator app after your password or sign-in provider.'
+                ? `Ask for a code from an authenticator app${afterSignIn(props.signIn)}.`
                 : "Two-factor sign-in isn't available for your account."}
           </p>
           {enabled && props.required ? (
@@ -97,7 +109,8 @@ export function TwoFactorField(props: TwoFactorFieldProps) {
             ) : null}
           </div>
           <p className="two-factor__note">
-            API keys aren&apos;t affected: they keep working without a code.
+            {props.keysURL ? <a href={props.keysURL}>API keys</a> : 'API keys'} aren&apos;t
+            affected: they keep working without a code.
           </p>
         </>
       ) : (

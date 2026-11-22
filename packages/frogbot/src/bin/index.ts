@@ -20,6 +20,7 @@ import { runScript } from './run.js';
 import { start } from './start.js';
 import { status } from './status.js';
 import { up } from './up.js';
+import { users } from './usersCreate.js';
 
 type LoadedConfig = { config?: FrogBotSanitizedConfig; loadError?: unknown };
 
@@ -42,6 +43,12 @@ export const commands: Record<string, Command> = {
   status: { run: (args) => status(args), help: commandHelp.status },
   run: { run: (args) => runScript(args), help: commandHelp.run },
   check: { run: (args) => check(args), help: commandHelp.check },
+  users: {
+    run: async (args, _command, loaded) => {
+      process.exitCode = await users(args, loaded);
+    },
+    help: commandHelp.users,
+  },
   deploy: {
     run: async (args, _command, loaded) => {
       const { deploy } = await import('./deploy/command.js');

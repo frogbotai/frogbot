@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { type ChildProcess, execFileSync } from 'node:child_process';
 
 import { isAlive } from './registration.js';
 
@@ -66,4 +66,32 @@ export async function stopLeftServer(pid: number | undefined, dir: string): Prom
   await stopProcess(left, { group: true });
 
   return true;
+}
+
+/** Resolves once `child` has exited. */
+export function exited(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
+
+  return new Promise((resolve) => child.once('exit', () => resolve()));
+}
+
+/** Signals `child`'s process group, or `child` alone when it leads none. */
+export function signalGroup(child: ChildProcess, signal: NodeJS.Signals) {
+  try {
+    process.kill(-child.pid!, signal);
+  } catch {
+    child.kill(signal);
+  }
+}
+
+/** `SIGTERM` to a server's group, `SIGKILL` after 5 s, resolving once it has exited. */
+export async function stopServer(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+
+  signalGroup(child, 'SIGTERM');
+
+  const timer = setTimeout(() => signalGroup(child, 'SIGKILL'), 5000);
+
+  await exited(child);
+  clearTimeout(timer);
 }

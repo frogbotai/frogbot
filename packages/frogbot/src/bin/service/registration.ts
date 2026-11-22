@@ -3,6 +3,9 @@ import { dirname, join } from 'node:path';
 
 import { servicesDir } from './paths.js';
 
+/** `dev` runs `next dev` with hot reload; `production` builds and swaps. */
+export type ServiceMode = 'dev' | 'production';
+
 export type ServiceState =
   'starting' | 'running' | 'building' | 'build failed' | 'update failed' | 'crashed' | 'stopped';
 
@@ -20,6 +23,10 @@ export type Registration = {
   frogbot: string;
   startedAt: string;
   state: ServiceState;
+  /** Missing in a registration from before dev mode, which was `production`. */
+  mode?: ServiceMode;
+  /** The mode `frogbot up` asked to switch to, until that switch lands or fails. */
+  switching?: ServiceMode;
   /** The build folder being served. */
   build?: string;
   lastError?: string;

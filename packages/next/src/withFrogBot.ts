@@ -181,6 +181,7 @@ export function withFrogBot(
     : undefined;
 
   const distDir = process.env.FROGBOT_DIST_DIR;
+  const supervised = process.env.FROGBOT_SUPERVISED === '1';
   const tsconfigPath = distDir
     ? writeSlotTsconfig(distDir, nextConfig.typescript?.tsconfigPath)
     : undefined;
@@ -201,6 +202,7 @@ export function withFrogBot(
       ],
     }),
     agentRules: nextConfig.agentRules ?? false,
+    ...(supervised && { experimental: { ...nextConfig.experimental, agentUpgrade: false } }),
     ...(distDir && { distDir }),
     ...(tsconfigPath && { typescript: { ...nextConfig.typescript, tsconfigPath } }),
     serverExternalPackages: [

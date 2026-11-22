@@ -40,10 +40,10 @@ describe('frogbot status', () => {
     rmSync(state, { recursive: true, force: true });
   });
 
-  it('lists every registered app from any folder, a dead supervisor as stopped', () => {
+  it('lists every registered app from any folder with its mode, a dead supervisor as stopped', () => {
     writeRegistration(
       registrationFile('one'),
-      registration({ startedAt: new Date().toISOString() }),
+      registration({ startedAt: new Date().toISOString(), mode: 'dev' }),
     );
 
     writeRegistration(
@@ -64,9 +64,15 @@ describe('frogbot status', () => {
 
     const lines = String(log.mock.calls[0][0]).split('\n');
 
-    expect(lines[0]).toBe('FOLDER     URL                    STATE    UPTIME  LAST ERROR');
-    expect(lines[1]).toMatch(/^\/apps\/one {2}http:\/\/127\.0\.0\.1:3000 {2}running {2}\d+s$/);
-    expect(lines[2]).toBe('/apps/two  http://127.0.0.1:3001  stopped  -       Type error: x');
+    expect(lines[0]).toBe(
+      'FOLDER     URL                    MODE        STATE    UPTIME  LAST ERROR',
+    );
+    expect(lines[1]).toMatch(
+      /^\/apps\/one {2}http:\/\/127\.0\.0\.1:3000 {2}dev {9}running {2}\d+s$/,
+    );
+    expect(lines[2]).toBe(
+      '/apps/two  http://127.0.0.1:3001  production  stopped  -       Type error: x',
+    );
   });
 
   it('shows a failed first build and, under the table, the Next advisory with its fix', () => {
@@ -87,7 +93,7 @@ describe('frogbot status', () => {
     status();
 
     expect(String(log.mock.calls[0][0]).split('\n')[1]).toMatch(
-      /^\/apps\/one {2}http:\/\/127\.0\.0\.1:3000 {2}build failed {2}.+? {2}build failed \(exit 1\): Type error: x$/,
+      /^\/apps\/one {2}http:\/\/127\.0\.0\.1:3000 {2}production {2}build failed {2}.+? {2}build failed \(exit 1\): Type error: x$/,
     );
     expect(log.mock.calls[1]).toEqual([`[frogbot] /apps/one: ${advisory}`]);
   });
@@ -98,7 +104,7 @@ describe('frogbot status', () => {
       statusRows(
         [registration({ startedAt: new Date(now - seconds * 1000).toISOString() })],
         now,
-      )[0][3];
+      )[0][4];
 
     expect([at(5), at(125), at(3 * 3600 + 120), at(2 * 86_400 + 3600)]).toEqual([
       '5s',
@@ -129,7 +135,7 @@ describe('frogbot status', () => {
       registration({ pid: 2 ** 22 + 12_345, serverPid: left.pid }),
     ]);
 
-    expect(rows.map((row) => row[2])).toEqual([
+    expect(rows.map((row) => row[3])).toEqual([
       `stopped (server left running, pid ${process.pid})`,
       'stopped',
     ]);

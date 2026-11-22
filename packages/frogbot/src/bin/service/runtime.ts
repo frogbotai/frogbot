@@ -162,6 +162,7 @@ const productionEnv = (app: App, slot: Slot): NodeJS.ProcessEnv => ({
   NODE_ENV: 'production',
   FROGBOT_DIST_DIR: appPaths(app.dir).distDir(slot),
   FROGBOT_SERVICE: undefined,
+  FROGBOT_SUPERVISED: '1',
 });
 
 export const nextRuntime: AppRuntime = {

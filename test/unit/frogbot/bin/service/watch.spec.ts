@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createBuildQueue } from '../../../../../packages/frogbot/src/bin/service/queue.js';
 import {
+  isRootFile,
   shouldRebuild,
   tsconfigShape,
   watchApp,
@@ -64,6 +65,21 @@ describe('what the service watches', () => {
     expect(shouldRebuild(path)).toBe(false);
   });
 
+  it('restarts `next dev` only for root files, leaving src/ and public/ to hot reload', () => {
+    expect(
+      [
+        'frogbot.config.ts',
+        'next.config.mjs',
+        'package.json',
+        'pnpm-lock.yaml',
+        '.env.local',
+      ].every(isRootFile),
+    ).toBe(true);
+    expect(
+      ['src/app/page.tsx', 'public/logo.svg', 'frogbot.db', 'README.md'].some(isRootFile),
+    ).toBe(false);
+  });
+
   it("tells Next's build-folder include entries from a real tsconfig change", () => {
     const base = JSON.stringify({ compilerOptions: { strict: true }, include: ['**/*.ts'] });
     const withSlot = JSON.stringify(
@@ -75,7 +91,13 @@ describe('what the service watches', () => {
       2,
     );
 
+    const withDev = JSON.stringify({
+      compilerOptions: { strict: true },
+      include: ['**/*.ts', '.next/dev/types/**/*.ts'],
+    });
+
     expect(tsconfigShape(withSlot)).toBe(tsconfigShape(base));
+    expect(tsconfigShape(withDev)).toBe(tsconfigShape(base));
     expect(tsconfigShape(base.replace('true', 'false'))).not.toBe(tsconfigShape(base));
   });
 });

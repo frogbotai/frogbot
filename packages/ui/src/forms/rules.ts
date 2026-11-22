@@ -49,6 +49,15 @@ function equals(answer: unknown, value: string, type: string | undefined): boole
   return same(answer, value, type);
 }
 
+/** Whether one rule passes for the answer to its source question, read as a question of `type`. */
+export function rulePasses(rule: FormRule, answer: unknown, type: string | undefined): boolean {
+  if (rule.operator === 'hasValue') return present(answer);
+
+  const matched = equals(answer, rule.value ?? '', type);
+
+  return rule.operator === 'equals' ? matched : !matched;
+}
+
 /**
  * The keys of the questions shown for `answers`. Questions are read in order, and the answer to a
  * hidden, later or unknown question counts as unanswered, so chained rules resolve the same way in
@@ -62,15 +71,13 @@ export function visibleQuestions(
   const types = new Map<string, string | undefined>();
 
   for (const question of steps.flatMap((step) => step.questions)) {
-    const checks = (question.rules ?? []).map(({ question: source, operator, value = '' }) => {
-      const answer = shown.has(source) ? answers[source] : undefined;
-
-      if (operator === 'hasValue') return present(answer);
-
-      const matched = equals(answer, value, types.get(source));
-
-      return operator === 'equals' ? matched : !matched;
-    });
+    const checks = (question.rules ?? []).map((rule) =>
+      rulePasses(
+        rule,
+        shown.has(rule.question) ? answers[rule.question] : undefined,
+        types.get(rule.question),
+      ),
+    );
 
     const visible =
       checks.length === 0 ||

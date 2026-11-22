@@ -1,6 +1,5 @@
-import { randomBytes } from 'node:crypto';
-
 import type { CollectionConfig, FrogBotConfig, OnInit } from 'frogbot';
+import { firstUser } from 'frogbot';
 
 type ValidationErrors = { data?: { errors?: { path?: string; message?: string }[] } };
 
@@ -25,8 +24,6 @@ export function withDojoFirstUser(
   collection: CollectionConfig,
   email: string,
 ): FrogBotConfig {
-  const verify = typeof collection.auth === 'object' && Boolean(collection.auth.verify);
-
   const seed: OnInit = async (frogbot) => {
     try {
       const { docs } = await frogbot.db.find({
@@ -37,17 +34,7 @@ export function withDojoFirstUser(
 
       if (docs.length > 0) return;
 
-      await frogbot.create({
-        collection: collection.slug,
-        data: {
-          email,
-          password: randomBytes(32).toString('base64url'),
-          ...(verify ? { _verified: true } : {}),
-        },
-        disableVerificationEmail: true,
-        overrideAccess: true,
-        depth: 0,
-      });
+      await frogbot.create(firstUser({ collection, email }).create);
 
       frogbot.logger.info(`[plugin-dojo] Added ${email} as the first user.`);
     } catch (error) {

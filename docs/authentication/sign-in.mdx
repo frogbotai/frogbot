@@ -137,6 +137,8 @@ The rule also governs `POST /api/users`, so an open rule lets anyone create an a
 
 The first user is the exception, as with the create-first-user screen: while the collection has no users at all, counting trashed ones, the first person to sign in gets an account whatever `access.create` says. Sign-ins to a collection run one at a time, so two people signing in at once can't both become the first user.
 
+From a terminal, [`frogbot users create <email>`](/getting-started/cli#create-the-first-user) makes that first user with a random password, under the same rule: it refuses once the collection has any user.
+
 On Dojo, the [Dojo plugin](/plugins/dojo#sign-in-with-dojo) adds "Continue with Dojo" to the user collection, and it follows these same rules.
 
 ## Two-factor sign-in

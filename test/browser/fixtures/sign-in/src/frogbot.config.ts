@@ -64,7 +64,8 @@ export default buildConfig({
     twoFactor({
       issuer: 'Sign-in Lab',
       canReset: ({ req }) => Boolean(req.user),
-      ...(withFields ? { require: ({ user }) => user.role === 'owner' } : {}),
+      require: ({ user }) =>
+        withFields ? user.role === 'owner' : Boolean(user.email?.startsWith('required-')),
     }),
   ],
   connections: [{ piece: linked, oauth: true }],

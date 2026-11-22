@@ -12,6 +12,7 @@ import {
   type AdvisoryResult,
   createAdvisor,
 } from '../../../../../packages/frogbot/src/bin/service/advisory.js';
+import { devRuntime } from '../../../../../packages/frogbot/src/bin/service/devRuntime.js';
 import { createLog } from '../../../../../packages/frogbot/src/bin/service/log.js';
 import {
   type AppRuntime,
@@ -177,7 +178,14 @@ async function up(
   const env = { ...process.env, XDG_STATE_HOME: folder('frogbot-supervisor-state-') };
   const before = new Set(process.listeners('SIGTERM'));
 
-  await supervise({ dir, port: await freePort(), autostart: false, env, runtime, advise });
+  await supervise({
+    dir,
+    port: await freePort(),
+    autostart: false,
+    env,
+    runtimes: { production: runtime, dev: devRuntime },
+    advise,
+  });
 
   stops.push(
     ...(process.listeners('SIGTERM').filter((listener) => !before.has(listener)) as (() => void)[]),
@@ -255,7 +263,7 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
       port: await freePort(),
       autostart: false,
       env,
-      runtime,
+      runtimes: { production: runtime, dev: devRuntime },
       advise,
       onBoot: (error) => boots.push(error),
     });
@@ -277,7 +285,7 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
       advisory: ADVISORY,
       pid: process.pid,
     });
-    expect(statusRows([readRegistration(file)!])[0][2]).toBe('build failed');
+    expect(statusRows([readRegistration(file)!])[0][3]).toBe('build failed');
 
     writeFileSync(join(dir, 'src', 'fixed.ts'), 'export {};\n');
 
@@ -285,7 +293,7 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
 
     expect(builds).toBe(2);
     expect(boots).toHaveLength(1);
-    expect(statusRows([readRegistration(file)!])[0][2]).toBe('running');
+    expect(statusRows([readRegistration(file)!])[0][3]).toBe('running');
     expect(readRegistration(file)?.lastError).toBeUndefined();
     expect(readRegistration(file)?.advisory).toBe(ADVISORY);
   });
@@ -328,7 +336,10 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
       port: await freePort(),
       autostart: false,
       env,
-      runtime: { prepare: () => Promise.resolve({}), build: () => Promise.resolve(), start },
+      runtimes: {
+        production: { prepare: () => Promise.resolve({}), build: () => Promise.resolve(), start },
+        dev: devRuntime,
+      },
       advise: createAdvisor({ dir, check }),
     });
 
@@ -367,10 +378,13 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
       port: await freePort(),
       autostart: false,
       env,
-      runtime: {
-        prepare: () => Promise.resolve({}),
-        build: () => Promise.reject(new StepError('build failed (exit 1)', REFUSAL)),
-        start,
+      runtimes: {
+        production: {
+          prepare: () => Promise.resolve({}),
+          build: () => Promise.reject(new StepError('build failed (exit 1)', REFUSAL)),
+          start,
+        },
+        dev: devRuntime,
       },
       advise: () => Promise.resolve(undefined),
       onBoot: (error) => boots.push(error),

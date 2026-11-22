@@ -166,6 +166,35 @@ describe('signing in', () => {
 });
 
 const member = { id: 3, email: 'ada@example.com', role: 'member' };
+const projectReplies = {
+  'GET /api/projects': { docs: [{ id: 'p1', name: 'Deals', workspace: 1 }] },
+};
+
+const twoWorkspaces = {
+  'GET /api/workspaces': {
+    docs: [
+      { id: 1, name: 'Trend Capital', slug: 'trend-capital' },
+      { id: 2, name: 'Acme', slug: 'acme' },
+    ],
+  },
+};
+
+const handover = {
+  id: 'h1',
+  kind: 'app',
+  name: 'Deals',
+  sender: 'Ada',
+  fromWorkspace: 'Trend Capital',
+  email: 'bo@example.com',
+  expiresAt: '2026-11-29T00:00:00Z',
+  status: 'pending',
+  recipient: true,
+  workspaces: [{ id: 2, name: 'Acme' }],
+  toWorkspace: null,
+  people: [{ email: 'ada@example.com', level: 'owner' }],
+  canRemove: false,
+};
+
 const liveDomain = { domain: 'crm.acme.com', record: null, status: 'live' };
 
 const destructive: { args: string[]; asked: string; replies?: Record<string, unknown> }[] = [
@@ -194,6 +223,52 @@ const destructive: { args: string[]; asked: string; replies?: Record<string, unk
     asked:
       'Make ada@example.com the Owner of trend-capital? You become an Admin, and only they can pay for, change the plan of or delete it.',
     replies: { 'GET /api/members': { docs: [member] } },
+  },
+  {
+    args: ['projects', 'move', 'Deals', '--workspace', 'acme'],
+    asked:
+      'Move the project Deals and its apps to Acme (acme) now? They keep running at the same addresses; Acme pays for them from then on.',
+    replies: { ...projectReplies, ...twoWorkspaces },
+  },
+  {
+    args: ['projects', 'handover', 'Deals', '--to', 'bo@example.com'],
+    asked:
+      'Hand the project Deals and its apps to bo@example.com? Once they accept, their workspace pays for them.',
+    replies: projectReplies,
+  },
+  {
+    args: ['apps', 'move', 'deals', '--workspace', 'acme'],
+    asked:
+      'Move deals to Acme (acme) now? It keeps running at its address; Acme pays for it from then on.',
+    replies: twoWorkspaces,
+  },
+  {
+    args: ['apps', 'move', 'deals', '--project', 'Deals'],
+    asked: "Move deals into the project Deals? The project's people get access to it.",
+    replies: projectReplies,
+  },
+  {
+    args: ['apps', 'handover', 'deals', '--to', 'bo@example.com'],
+    asked:
+      'Hand deals to bo@example.com? Once they accept, their workspace pays for it; everyone keeps access, Admins from outside it as Editors.',
+  },
+  {
+    args: ['handovers', 'accept', 'h1', '--workspace', 'acme'],
+    asked:
+      'Accept Deals from Ada into Acme (acme)? You become its Admin, and Acme pays for it from then on.',
+    replies: { ...twoWorkspaces, 'GET /api/handovers/h1/details': handover },
+  },
+  {
+    args: ['handovers', 'remove-access', 'h1'],
+    asked: 'Remove 1 person outside Acme from Deals? ada@example.com',
+    replies: {
+      'GET /api/handovers/h1/details': {
+        ...handover,
+        status: 'accepted',
+        toWorkspace: 'Acme',
+        canRemove: true,
+      },
+    },
   },
   {
     args: ['sharing', 'leave', 'deals'],

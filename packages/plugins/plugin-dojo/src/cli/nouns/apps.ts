@@ -6,7 +6,9 @@ import { dojoProgram, done } from '../io.js';
 import { whenPaid } from '../payment.js';
 import { findWorkspace } from '../workspaces.js';
 import { appActions } from './appActions.js';
-import { appAddress, findApp, relationId, whereEquals } from './resolve.js';
+import { intoFlag, recipient, sendHandover, toFlag, withPayLink } from './handovers.js';
+import { resolveProject } from './projects.js';
+import { appAddress, count, findApp, relationId, whereEquals } from './resolve.js';
 import { findTemplate } from './templates.js';
 
 type App = {
@@ -19,6 +21,7 @@ type App = {
 };
 
 const ownerNeeded = 'owner access to the app';
+const adminNeeded = 'Admin access to the app';
 
 const shown = ({ id, name, slug, workspace, domain, startedAt }: App) => ({
   id,
@@ -30,7 +33,10 @@ const shown = ({ id, name, slug, workspace, domain, startedAt }: App) => ({
   started: Boolean(startedAt),
 });
 
-/** `apps`: pull and logs, list, get, create, rename and delete, then run, keep, Trash and data. `frogbot deploy` ships an app. */
+/**
+ * `apps`: pull and logs, list, get, create, rename, delete, move and handover, then run, keep, Trash and data.
+ * `frogbot deploy` ships an app.
+ */
 export const apps: Noun = {
   summary: 'Pull, read logs of, run and manage your apps.',
   verbs: {
@@ -194,6 +200,103 @@ export const apps: Noun = {
         done(io, { deleted: { id: app.id, slug: app.slug }, purgeAt }, [
           `[frogbot] Moved ${app.slug} to Trash. It's deleted for good ${purgeAt}; ${dojoProgram(io.program)} apps restore ${app.slug} brings it back.`,
         ]);
+      },
+    },
+    move: {
+      summary:
+        'Move an app to another workspace you admin, at once, or into another project of its workspace.',
+      args: '<app>',
+      flags: {
+        workspace: {
+          ...intoFlag,
+          help: `${intoFlag.help} That workspace pays for it from then on.`,
+        },
+        project: {
+          type: 'string',
+          value: 'project',
+          help: "The project it moves into, by id or name, in the app's workspace.",
+        },
+      },
+      confirm: true,
+      run: async ({ io, dojo, confirm, values, positionals: [ref = ''] }) => {
+        const slug = typeof values.workspace === 'string' ? values.workspace.trim() : '';
+        const named = typeof values.project === 'string' ? values.project.trim() : '';
+
+        if (Boolean(slug) === Boolean(named)) {
+          throw new ShareError('Pass --workspace <slug> or --project <project>, one of them.', 2);
+        }
+
+        const app = await findApp(dojo(), ref);
+
+        if (named) {
+          const project = await resolveProject({
+            dojo: dojo(),
+            ref: named,
+            ...(app.workspace !== undefined && {
+              workspace: { id: app.workspace, label: `${app.slug}'s workspace` },
+            }),
+          });
+
+          await confirm(
+            `Move ${app.slug} into the project ${project.name}? The project's people get access to it.`,
+          );
+
+          await dojoJSON<{ doc: App }>(dojo(), `/api/apps/${segment(app.id)}?depth=0`, {
+            method: 'PATCH',
+            body: { project: project.id },
+            what: `Dojo couldn't move ${app.slug} into ${project.name}`,
+            needs: adminNeeded,
+          });
+
+          done(io, { app: app.slug, project: { id: project.id, name: project.name } }, [
+            `[frogbot] Moved ${app.slug} into the project ${project.name}.`,
+          ]);
+
+          return;
+        }
+
+        const workspace = await findWorkspace({ dojo: dojo(), io, slug });
+
+        await confirm(
+          `Move ${app.slug} to ${workspace.name} (${workspace.slug}) now? It keeps running at its address; ${workspace.name} pays for it from then on.`,
+        );
+
+        const { moved } = await withPayLink(() =>
+          dojoJSON<{ moved: (string | number)[] }>(dojo(), `/api/apps/${segment(app.id)}/move`, {
+            method: 'POST',
+            body: { workspace: workspace.id },
+            what: `Dojo couldn't move ${app.slug}`,
+            needs: `${adminNeeded}, and Admin access to ${workspace.slug}`,
+          }),
+        );
+
+        done(io, { app: app.slug, workspace: workspace.slug, moved }, [
+          `[frogbot] Moved ${app.slug} to ${workspace.slug}${moved.length > 1 ? ` with ${count(moved.length - 1, 'other app')}` : ''}.`,
+        ]);
+      },
+    },
+    handover: {
+      summary:
+        'Hand an app to someone. Dojo emails them a link to accept it into a workspace they admin; it waits 7 days.',
+      args: '<app>',
+      flags: { to: toFlag },
+      confirm: true,
+      run: async ({ io, dojo, confirm, values, positionals: [ref = ''] }) => {
+        const email = recipient(values.to);
+        const app = await findApp(dojo(), ref);
+
+        await confirm(
+          `Hand ${app.slug} to ${email}? Once they accept, their workspace pays for it; everyone keeps access, Admins from outside it as Editors.`,
+        );
+
+        await sendHandover({
+          io,
+          dojo: dojo(),
+          path: `/api/apps/${segment(app.id)}/handover`,
+          name: app.slug,
+          email,
+          needs: adminNeeded,
+        });
       },
     },
     ...appActions,

@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot deploy", "frogbot dojo", "plugin-dojo", "pull", "logs", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot users create", "first user", "frogbot deploy", "frogbot dojo", "plugin-dojo", "pull", "logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -26,6 +26,7 @@ pnpm frogbot generate:types
 | `status` | — | Lists every app `up` started on this computer. See [Run in the background](#run-in-the-background). |
 | `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
 | `check` | `--json` | Loads your config as the running app does, with no server or database, and lists every problem it finds. See [Check your config](#check-your-config). |
+| `users create` | `<email>`, `--collection`, `--set <field>=<value>`, `--yes` | Creates the first user of an empty auth collection and prints a random password once. See [Create the first user](#create-the-first-user). |
 | `deploy` | `[target]`, `--dry-run`, `--json`, `--no-interactive`, `--env-file` | Checks the app, then deploys it to Dojo, Docker, Fly.io, Google Cloud, AWS or Azure. See [Deploy](#deploy). |
 | `generate:types` | — | Writes `frogbot-types.ts` from your config. See [Generating types](/typescript/generating-types). |
 | `generate:importmap` | — | Writes the admin import map for the custom components your config references. See [Custom components](/custom-components/overview). |
@@ -33,7 +34,7 @@ pnpm frogbot generate:types
 | `pieces:port` | `<slug>` | Prepares a piece package in the FrogBot repository for porting. See [Port a piece](#port-a-piece). |
 | `jobs:run` | `--cron`, `--limit`, `--queue`, `--all-queues`, `--handle-schedules` | Runs a long-lived jobs worker without Next.js. See [Workers](/jobs-queue/workers). |
 | `channels:run` | — | Holds chat-channel gateway connections, such as Discord's, in their own process. See [Discord](/pieces/discord). |
-| `migrate` | — | Applies pending database migrations. See [Migrations](/database/migrations). |
+| `migrate` | `--force-accept-warning` | Applies pending database migrations. See [Migrations](/database/migrations). |
 | `migrate:create` | `[name]`, `--name`, `--file`, `--skip-empty`, `--force-accept-warning` | Creates a migration from the current schema. See [Migrations](/database/migrations). |
 | `migrate:status` | — | Lists applied and pending migrations. See [Migrations](/database/migrations). |
 | `migrate:down` | — | Rolls back the last batch of migrations. See [Migrations](/database/migrations). |
@@ -108,7 +109,28 @@ When there are warnings, a `warnings` array of `{ code, path, message }` entries
 
 An issue has no `path` when it isn't tied to one place in the config, as with `CONFIG_INVALID`.
 
+## Create the first user
+
+`frogbot users create <email>` makes the first login for a new app from the terminal, with no browser, so a coding agent can sign in to the app it built. It boots your app, creates the user through the Local API, and prints a random password once:
+
+```sh
+$ pnpm frogbot users create me@example.com
+[frogbot] users create: database file:./frogbot.db
+Created me@example.com in users.
+Password: 3q2-7wZq…
+It is shown only this once. Change it on the account page after signing in.
+```
+
+- **Collection.** It writes to `admin.user`'s collection, or the auth collection `--collection <slug>` names It refuses a collection with `auth.disableLocalStrategy`, whose users sign in without a password.
+- **Only the first user.** It refuses, exiting `1`, when the collection has any user, trashed ones included, as the create-first-user page does. It takes the same per-collection lock as sign-in, so two runs, or a run and a sign-in, can't both make the first user. Add more users in the admin.
+- **Password.** Each run makes a new random password (32 random bytes). There is no option or variable to set one, and it is stored only as the collection's usual hash. Change it on the account page.
+- **Required fields.** The collection's hooks, validation and required fields apply. When one has no value, it exits `1` and names the field; pass string fields with `--set <field>=<value>` (repeatable).
+- **Verification.** On a collection with `auth.verify`, the user is created already verified and no verification email is sent.
+- **Database.** It first prints the database it will write to: a SQLite `file:` path, or the host and database name without credentials. An embedded replica (a `file:` URL with a `syncUrl`) prints as `file:./replica.db, a replica of libsql://<host>`, because its writes reach the remote. For anything but a local `file:` SQLite database without a `syncUrl` it exits `1` without writing, unless you pass `--yes`.
+- **Local only.** It runs only in the terminal, against the app's code, database and `FROGBOT_SECRET`. No HTTP endpoint or admin button does the same. A login made this way reaches a deployed app only if you deploy with `--data`, which asks first.
+
 ## Deploy
+
 
 ```bash
 pnpm frogbot deploy docker --dry-run
@@ -282,6 +304,7 @@ Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which add
 | `workspaces`, `members`, `projects` | Lists, creates, renames, deletes and hands over workspaces, manages their members, and manages their projects. |
 | `apps pull`, `apps logs` | Downloads an app, or prints its logs. To ship an app, run [`frogbot deploy`](#deploy-to-dojo). |
 | `apps list`, `get`, `create`, `rename`, `delete`, `trash`, `restore` | Manages your apps, from a template too, and Trash. |
+| `apps move`, `apps handover`, `projects move`, `projects handover`, `handovers` | Moves an app or project to another workspace or project, or hands it to someone, who accepts it with `handovers accept`. |
 | `apps restart`, `stop`, `start`, `keep`, `usage`, `export-data` | Runs and stops an app, keeps a free preview, shows its AI spend, and downloads its data. |
 | `deployments`, `env`, `domains`, `sharing` | An app's deployments, build logs, rollbacks and cancels, environment keys, custom domain, and who it's shared with. |
 | `templates`, `activity` | The templates a new app can start from, and a workspace's activity log. |
@@ -385,18 +408,19 @@ frogbot up
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
 | `--port <n\|auto>` | number or `auto` | the app's last port, else the first free one from `9696` | Serve on this port from now on. See [Port](#port). |
-| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`, and on an app already up without it, it exits `1` and tells you to run `down` first. |
+| `--dev` | flag | off | Run `next dev` with hot reload instead of production builds. See [Dev mode](#dev-mode). Not remembered: a later `frogbot up` without it is production. |
+| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`, and on an app already up without it, it exits `1` and tells you to run `down` first. With `--dev`, it exits `1`: autostart is for hosting. |
 
 The app listens on `127.0.0.1` and `::1`, so `localhost` reaches it whichever address it resolves to. It isn't reachable from other computers. Each app gets its own port, so several apps run side by side:
 
 ```bash
 frogbot status
-# FOLDER          URL                    STATE          UPTIME  LAST ERROR
-# /Users/me/crm   http://127.0.0.1:9696  running        2h 5m
-# /Users/me/hr    http://127.0.0.1:9697  update failed  12m     build failed (exit 1): src/hr.ts(3,7): error TS2322: Type 'number' is not assignable to type 'string'.
+# FOLDER          URL                    MODE        STATE          UPTIME  LAST ERROR
+# /Users/me/crm   http://127.0.0.1:9696  production  running        2h 5m
+# /Users/me/hr    http://127.0.0.1:9697  dev         update failed  12m     importmap failed (exit 1): SyntaxError: Unexpected token
 ```
 
-`frogbot status` works from any folder. The states are `starting`, `running`, `building`, `build failed`, `update failed`, `crashed`, and `stopped`. Four of them say more than their name:
+`frogbot status` works from any folder. `MODE` is `production` or `dev`. The states are `starting`, `running`, `building`, `build failed`, `update failed`, `crashed`, and `stopped`. Four of them say more than their name:
 
 | State | Meaning |
 | --- | --- |
@@ -473,6 +497,26 @@ Apps made with FrogBot 0.39 list both build folders in the `include` of `tsconfi
 #### Crashes
 
 A server that crashes restarts on the same build after 1 second. The wait doubles after each crash, up to 30 seconds. It goes back to 1 second once the server has stayed up for a minute.
+
+### Dev mode
+
+```bash
+frogbot up --dev
+# [frogbot] /Users/me/crm is up at http://127.0.0.1:9696 in dev mode, hot reloading
+```
+
+`frogbot up --dev` runs `next dev` in the background, behind the same port, supervisor and `frogbot down` as production. Edits show in the browser at once:
+
+| Change | What happens |
+| --- | --- |
+| `src/` or `public/` | Next's hot reload applies it. Nothing builds or restarts. |
+| `frogbot.config.*`, `next.config.*`, `tsconfig.json`, `package.json`, the lockfile, or `.env*` | `up` regenerates the import map, which loads `frogbot.config`, then stops the dev server and starts a new one. Next lets only one `next dev` use `.next/dev`, so the app answers `503` with `retry-after` for the few seconds in between. |
+| A `frogbot.config` that doesn't load | The running dev server keeps serving, and `status` shows `update failed`. |
+| A dev server that doesn't start | `status` shows `update failed` and the error. The next change tries again. |
+
+Dev mode builds nothing into `.frogbot/builds`; Next uses its own `.next`. Each restart regenerates the types, and the database schema follows your config as it does under [`frogbot dev`](#dev-and-start), with no separate schema step.
+
+`frogbot up --dev` on an app already up in production switches it to dev without downtime: the dev server starts, traffic moves to it, then production stops. `frogbot up` without `--dev` on an app in dev mode switches it back, with a production build first. Each prints `switching … to <mode> mode`, then waits until the switch lands or fails.
 
 ### Database schema
 
