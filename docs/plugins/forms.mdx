@@ -387,8 +387,8 @@ export const sendEditLink: Tool<typeof sendEditLinkInput, { url: string; expires
   description: 'Make a link that lets an applicant update their application.',
   inputSchema: sendEditLinkInput,
   approval: 'ask',
-  execute: async ({ application }, { frogbot, req }) => {
-    const { url, expiresAt } = await createFormLink(frogbot, {
+  execute: async ({ application }, { req }) => {
+    const { url, expiresAt } = await createFormLink(req.frogbot, {
       form: 'update-application',
       record: application,
       req,

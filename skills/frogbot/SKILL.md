@@ -94,6 +94,8 @@ Run `frogbot generate:types` after schema changes. Import application document t
 
 ## Essential Patterns
 
+A callback that receives a `req` (hooks, access, endpoints, jobs, tool `execute`, skill content, schedule handlers) reaches the app through `req.frogbot`; none gets a separate `frogbot`. Only `onInit(frogbot)` and auth strategies, which have no request, get `frogbot` directly.
+
 ### Collection
 
 ```ts

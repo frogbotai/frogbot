@@ -39,8 +39,7 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
 
 | Property         | Value                                                                         |
 | ---------------- | ----------------------------------------------------------------------------- |
-| `frogbot`        | The initialized FrogBot instance                                              |
-| `req`            | The current `FrogBotRequest`                                                  |
+| `req`            | The current `FrogBotRequest`; reach the app through `req.frogbot`             |
 | `agent`          | The current agent `slug`, `runId`, and optional `chatId`                      |
 | `overrideAccess` | Whether the run is trusted: `false` in chat and over MCP, `true` on schedules |
 

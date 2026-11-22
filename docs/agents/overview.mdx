@@ -215,7 +215,7 @@ export const lookupTicket: Tool<
   description: 'Look up the current status of a support ticket',
   inputSchema: lookupInput,
   execute: async ({ ticket }, ctx) => {
-    ctx.frogbot.logger.info({ ticket }, 'Looking up ticket')
+    ctx.req.frogbot.logger.info({ ticket }, 'Looking up ticket')
 
     return {
       ticket,
@@ -247,8 +247,7 @@ Client tools replace `execute` with `outputSchema` and `client`; see [Build a cl
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `req` | `FrogBotRequest` | The request for the run. |
-| `frogbot` | `FrogBot` | The FrogBot instance. |
+| `req` | `FrogBotRequest` | The request for the run. Reach the app through `req.frogbot`. |
 | `agent` | `{ slug: string; runId: string; chatId?: number \| string }` | The running agent, the run ID shared with [hooks](#follow-hooks), and the chat ID when the run belongs to a persisted chat. Direct `generateText` and `streamText` calls use the slug `'direct'`, and [MCP](/plugins/mcp#tools) calls `'mcp'`, with no `chatId`. |
 | `overrideAccess` | `boolean` | Whether the run is trusted. `false` when a person chats, over MCP, and on local calls by default; `true` on [prompt schedules](#schedule-runs) and local calls that pass it. |
 
@@ -256,7 +255,7 @@ Forward `ctx.overrideAccess` to Local API calls, so one tool acts as the user in
 
 ```ts
 execute: async ({ ticket }, ctx) =>
-  ctx.frogbot.find({
+  ctx.req.frogbot.find({
     collection: 'tickets',
     where: { number: { equals: ticket } },
     req: ctx.req,
@@ -428,7 +427,7 @@ export const supportAgent: AgentConfig = {
 }
 ```
 
-`instructions` and resource `content` accept a string or a function receiving `{ req, frogbot }`. Function content is evaluated only when the agent loads it. Unknown skill and resource names return the available names so the agent can correct its next call.
+`instructions` and resource `content` accept a string or a function receiving `{ req }`. Function content is evaluated only when the agent loads it. Unknown skill and resource names return the available names so the agent can correct its next call.
 
 `resources` can also be a function receiving `{ req }`, called each time `list_skills` or `load_skill_resource` runs. Use it when the list itself changes while the app runs, such as a folder of documents:
 
@@ -455,7 +454,7 @@ A function's entries are checked when it is called: a missing or duplicate path,
 | `license` | `string` | — | Must be non-empty when set. Maps to `license`. |
 | `compatibility` | `string` | — | Must be non-empty when set. Maps to `compatibility`. |
 | `metadata` | `Record<string, string>` | — | Flat string map. Maps to `metadata`. |
-| `instructions` | `string \| ({ req, frogbot }) => string \| Promise<string>` | Required | Returned by `load_skill`. A string must be non-empty. Maps to the `SKILL.md` body. |
+| `instructions` | `string \| ({ req }) => string \| Promise<string>` | Required | Returned by `load_skill`. A string must be non-empty. Maps to the `SKILL.md` body. |
 | `resources` | `SkillResource[] \| ({ req }) => SkillResource[] \| Promise<SkillResource[]>` | — | Reference files returned by `load_skill_resource`. A function is called on every `list_skills` and `load_skill_resource`. Maps to `references/` files. |
 
 Each resource takes these options:
@@ -464,7 +463,7 @@ Each resource takes these options:
 | --- | --- | --- | --- |
 | `path` | `string` | Required | Name the agent passes to `load_skill_resource`. Unique within the skill. |
 | `description` | `string` | — | Listed with the resource in `list_skills`. Must be non-empty when set. |
-| `content` | `string \| ({ req, frogbot }) => string \| Promise<string>` | Required | Resource content. A string must be non-empty. |
+| `content` | `string \| ({ req }) => string \| Promise<string>` | Required | Resource content. A string must be non-empty. |
 
 `license` and `compatibility` are top-level fields. `metadata` is a flat string map. The three generated tool slugs are reserved when an agent has skills. `inheritTools: false` disables root tool inheritance but does not disable that agent's skill tools.
 
@@ -740,9 +739,8 @@ A handler receives:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `frogbot` | `FrogBot` | The FrogBot instance. |
 | `agent` | `AgentInstance` | The owning agent, with `generate` and `stream`. |
-| `req` | `FrogBotRequest` | A request without a user. `req.context` holds `source`, `agentSlug`, `triggerSlug`, and `jobId`. |
+| `req` | `FrogBotRequest` | A request without a user; the app is `req.frogbot`. `req.context` holds `source`, `agentSlug`, `triggerSlug`, and `jobId`. |
 | `job` | `{ id: DocID; scheduledFor: Date }` | The job record ID and the time the occurrence was scheduled for. |
 
 A schedule trigger runs the agent on a clock. A [polling piece trigger](/pieces/triggers#polling) takes the same `schedule` shape, but there it sets how often FrogBot checks the provider for new items; its handler runs only when there are some.
@@ -751,7 +749,7 @@ FrogBot runs schedules and skips an occurrence while the same trigger already ha
 
 - Each prompt trigger creates a fresh chat with `user: null` and persists its user and assistant messages.
 - A handler may invoke the owning agent, another agent, or no agent.
-- Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`.
+- Every handler receives `{ agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`.
 - Removing an agent or trigger makes already-queued work for it complete without running.
 
 ---
