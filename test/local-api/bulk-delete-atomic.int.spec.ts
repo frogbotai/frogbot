@@ -173,6 +173,23 @@ describe(`bulk delete is one transaction [${process.env.FROGBOT_DATABASE || 'sql
     expect(await count('rows', { batch: { equals: 'commit' } })).toBe(0);
   }, 120_000);
 
+  it('disableTransaction: true opens no transaction, like Payload', async () => {
+    await seed('no-tx', 400);
+    failOn.index = 399;
+
+    await expect(
+      frogbot.delete({
+        collection: 'rows',
+        where: { batch: { equals: 'no-tx' } },
+        depth: 0,
+        overrideAccess: true,
+        disableTransaction: true,
+      }),
+    ).rejects.toThrow('audit sink rejected the delete');
+
+    expect(await count('rows', { batch: { equals: 'no-tx' } })).toBe(0);
+  }, 120_000);
+
   it('a beforeOperation hook that rewrites the where is honoured at 500 or fewer matches', async () => {
     await insert(
       'aliased',
