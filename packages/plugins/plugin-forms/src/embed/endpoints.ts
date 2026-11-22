@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-import type { Endpoint } from 'frogbot';
+import type { Endpoint, FrogBotRequest } from 'frogbot';
 
 import { definitionFor, findForm, type FormsRuntime } from '../lookup.js';
 import type { EmbedData } from './messages.js';
@@ -17,24 +17,34 @@ type Assets = { files: Record<AssetName, Buffer>; version: string };
 
 let loaded: Promise<Assets | undefined> | undefined;
 
-const loadAssets = () =>
-  (loaded ??= Promise.all(
-    (Object.keys(ASSETS) as AssetName[]).map(async (name) => {
-      const file = await readFile(new URL(`./assets/${name}`, import.meta.url));
+const readAssets = async (): Promise<Assets> => {
+  const entries = await Promise.all(
+    (Object.keys(ASSETS) as AssetName[]).map(
+      async (name) => [name, await readFile(new URL(`./assets/${name}`, import.meta.url))] as const,
+    ),
+  );
 
-      return [name, file] as const;
-    }),
-  ).then(
-    (entries) => {
-      const files = Object.fromEntries(entries) as Record<AssetName, Buffer>;
-      const hash = createHash('sha256');
+  const hash = createHash('sha256');
 
-      for (const [, file] of entries) hash.update(file);
+  for (const [, file] of entries) hash.update(file);
 
-      return { files, version: hash.digest('hex').slice(0, 16) };
-    },
-    () => undefined,
-  ));
+  return {
+    files: Object.fromEntries(entries) as Record<AssetName, Buffer>,
+    version: hash.digest('hex').slice(0, 16),
+  };
+};
+
+const loadAssets = (req: FrogBotRequest) =>
+  (loaded ??= readAssets().catch((error: unknown) => {
+    loaded = undefined;
+
+    req.frogbot.logger.error(
+      { err: error },
+      '[plugin-forms] Could not read the embed assets; run the plugin build',
+    );
+
+    return undefined;
+  }));
 
 const LOADER = `(() => {
   const script = document.currentScript;
@@ -68,6 +78,8 @@ const LOADER = `(() => {
 })();
 `;
 
+const HOSTNAME = /^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)*$|^\[[0-9a-f:.]+\]$/;
+
 const escapeHTML = (value: string) =>
   value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 
@@ -79,7 +91,12 @@ export function resolveFrameAncestors(origins: string[] = []): string {
   for (const origin of origins) {
     const url = URL.canParse(origin) ? new URL(origin) : undefined;
 
-    if (!url || !['https:', 'http:'].includes(url.protocol) || url.origin !== origin) {
+    if (
+      !url ||
+      !['https:', 'http:'].includes(url.protocol) ||
+      url.origin !== origin ||
+      !HOSTNAME.test(url.hostname)
+    ) {
       throw new Error(
         `[plugin-forms] frameAncestors takes origins like 'https://www.example.com', not '${origin}'.`,
       );
@@ -130,7 +147,7 @@ export function createEmbedEndpoints({
       path: '/:slug/embed',
       handler: async (req) => {
         const found = await findForm(req, runtime, req.routeParams?.slug);
-        const assets = await loadAssets();
+        const assets = await loadAssets(req);
 
         if (!found || found.form.mode === 'update' || !assets) return notFound();
 
@@ -178,7 +195,7 @@ export function createEmbedEndpoints({
       method: 'get',
       path: `/embed/${name}`,
       handler: async (req) => {
-        const assets = await loadAssets();
+        const assets = await loadAssets(req);
 
         if (!assets) return new Response('Not found', { status: 404 });
 

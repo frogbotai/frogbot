@@ -31,7 +31,7 @@ function pageEndpoint(frameAncestors: string) {
 
 const missingFormRequest = {
   routeParams: { slug: 'missing' },
-  frogbot: { find: () => Promise.resolve({ docs: [] }) },
+  frogbot: { find: () => Promise.resolve({ docs: [] }), logger: { error: () => undefined } },
 } as unknown as FrogBotRequest;
 
 describe('forms embed frame-ancestors', () => {
