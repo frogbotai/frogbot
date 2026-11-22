@@ -90,6 +90,13 @@ const Pages: CollectionConfig = {
       blocks: ['tile'],
       access: { update: ({ siblingData }) => siblingData?.flag === true },
     },
+    { name: 'ownerKey', type: 'text', access: { read: isAdmin } },
+    {
+      name: 'keyed',
+      type: 'blocks',
+      blocks: ['tile'],
+      access: { read: ({ siblingData }) => siblingData?.ownerKey === 'k' },
+    },
   ],
 };
 

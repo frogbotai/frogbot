@@ -332,4 +332,18 @@ describe('block tools and blocks fields the caller may not update or read', () =
     expect(inserted).toMatchObject({ isError: true });
     expect(inserted.text).toContain("'secret.list' is not a blocks field");
   });
+
+  it('the read tools show a blocks field whose read access looks at a field the caller cannot read', async () => {
+    const id = await page({
+      ownerKey: 'k',
+      keyed: [{ id: 'k1', blockType: 'tile', label: 'Key' }],
+    });
+
+    const listed = await member('listBlocks', target(id));
+    const got = await member('getBlock', { ...target(id), blockId: 'k1' });
+
+    expect(JSON.stringify(listed.data)).toContain('"path":"keyed"');
+    expect(got).toMatchObject({ isError: false, data: { path: 'keyed', index: 0 } });
+    expect(JSON.stringify(listed.data)).not.toContain('ownerKey');
+  });
 });
