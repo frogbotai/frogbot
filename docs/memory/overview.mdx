@@ -204,7 +204,7 @@ A memory adapter is an object with six methods. FrogBot resolves the scope and c
 | `update` | `(args: MemoryUpdateArgs) => Promise<Memory>` | — | Changes one memory, or throws `not-found`. |
 | `forget` | `(args: MemoryForgetArgs) => Promise<{ deleted: number }>` | — | Removes one memory by `id`, or the whole scope without one. |
 | `init` | `(args: { frogbot }) => void \| Promise<void>` | — | Runs once at startup, to open clients. |
-| `afterTurn` | `(args: MemoryAfterTurnArgs) => void \| Promise<void>` | — | Runs after a finished agent turn, to learn from it, once agent memory ships; nothing calls it yet. The reply never waits for it, and a throw is logged. |
+| `afterTurn` | `(args: MemoryAfterTurnArgs) => void \| Promise<void>` | — | Runs after a finished turn of an agent with `memory: true`, to learn from it. The reply never waits for it, and a throw is logged. |
 | `sync` | `MemorySync` | — | A `push(changes)` and `pull(cursor)` pair FrogBot keeps on `frogbot.memory.sync`, with no behavior of its own. |
 | `collection` | `(args: { db }) => CollectionConfig` | — | A collection the adapter stores memories in, added to the app's database. |
 | `namespace` | `string` | `''` | Accept it in your factory options, so apps can set it. |
