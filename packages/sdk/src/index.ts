@@ -35,6 +35,7 @@ import {
   type UpdateManyOptions,
   type UpdateOptions,
 } from './collections/update.js';
+import { memoryClient } from './memory.js';
 import {
   search,
   searchMany,
@@ -91,6 +92,15 @@ export type {
   UpdateManyOptions,
   UpdateOptions,
 } from './collections/update.js';
+export type {
+  FrogBotSDKMemory,
+  MemoryForgetOptions,
+  MemoryListOptions,
+  MemorySaveOptions,
+  MemoryScopeOptions,
+  MemorySearchOptions,
+  MemoryUpdateOptions,
+} from './memory.js';
 export type {
   SearchHit,
   SearchManyCollection,
@@ -237,6 +247,9 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
       return response.blob();
     },
   };
+
+  /** Memories over REST, run as the signed-in person. */
+  readonly memory = memoryClient((args) => this.#send(args));
 
   constructor({ baseURL, fetch: customFetch, headers }: FrogBotSDKConfig) {
     this.baseURL = baseURL.replace(/\/$/, '');

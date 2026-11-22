@@ -1,0 +1,95 @@
+@layer frogbot {
+  .frogbot-memory {
+    color: var(--color-text);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .frogbot-memory__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .frogbot-memory__row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg-tertiary);
+  }
+
+  .frogbot-memory__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .frogbot-memory__body p {
+    margin: 0;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+
+  .frogbot-memory__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .frogbot-memory__muted {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+
+  .frogbot-memory__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    padding: 48px 16px;
+    border: 1px dashed var(--special-border-translucent-strong);
+    border-radius: 12px;
+    text-align: center;
+    color: var(--color-text-secondary);
+  }
+
+  .frogbot-memory__empty p {
+    margin: 0;
+  }
+
+  .frogbot-memory__error {
+    color: var(--color-text-danger);
+  }
+
+  .frogbot-memory__more {
+    align-self: center;
+  }
+
+  .frogbot-memory__spinner {
+    animation: frogbot-memory-spin 1s linear infinite;
+  }
+
+  @keyframes frogbot-memory-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frogbot-memory__spinner {
+      animation: none;
+    }
+  }
+}

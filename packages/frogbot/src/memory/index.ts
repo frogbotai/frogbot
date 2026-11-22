@@ -5,6 +5,7 @@ import {
   optionalKey,
   optionalPinned,
   requireID,
+  requireMemoryText,
   requireText,
   resolveMemoryTarget,
 } from './run.js';
@@ -22,7 +23,7 @@ export function createMemory(frogbot: FrogBot): FrogBotMemory {
     },
     async save({ key, pinned, text, ...args }) {
       const input = {
-        text: requireText(text, 'text'),
+        text: requireMemoryText(text),
         key: optionalKey(key),
         pinned: optionalPinned(pinned),
       };
@@ -66,7 +67,7 @@ export function createMemory(frogbot: FrogBot): FrogBotMemory {
     async update({ id, key, pinned, text, ...args }) {
       const input = {
         id: requireID(id),
-        ...(text !== undefined ? { text: requireText(text, 'text') } : {}),
+        ...(text !== undefined ? { text: requireMemoryText(text) } : {}),
         ...(key !== undefined ? { key: key === null ? null : optionalKey(key) } : {}),
         ...(pinned !== undefined ? { pinned: optionalPinned(pinned) } : {}),
       };

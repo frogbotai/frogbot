@@ -28,6 +28,8 @@ export type MemoryRun = {
   resolved: () => Promise<MemoryResolvedScope[]>;
   /** `me` for a signed-in person, otherwise `agent`. */
   defaultScope: () => string;
+  /** In a `memory: true` agent's run, whether `memory.access.write` lets the chat's person change a shared scope. Always `true` elsewhere. */
+  mayWrite: (scope: string) => Promise<boolean>;
 };
 
 const runs = new WeakMap<FrogBotRequest, Map<string, Promise<MemoryRun>>>();
@@ -113,6 +115,13 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
     resolved: () => (resolved ??= resolveAll()),
     available: async () => (await (resolved ??= resolveAll())).map(({ scope }) => scope),
     defaultScope: () => (req.user ? 'me' : 'agent'),
+    mayWrite: async (scope) => {
+      if (!own || scope === 'me' || !memory.access?.write) return true;
+
+      const scopeId = await resolveMemoryScope({ options: memory, scope, req, agent, chat });
+
+      return (await memory.access.write({ req, scope, scopeId })) === true;
+    },
   };
 }
 
