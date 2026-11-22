@@ -309,6 +309,7 @@ describe('typecheck areas', () => {
       'ai',
       'auth',
       'search',
+      'database',
       'duplicate',
     ]);
     expect(frogbotAreas.find(({ area }) => area === 'jobs')?.dir).toBe('test/types/jobs');
