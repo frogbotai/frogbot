@@ -300,11 +300,24 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
   it('does not replace a row with malformed credentials or leak validation input', async () => {
     await link({ token: 'valid-secret' });
 
-    for (const body of [{ token: 42 }, { credential: { token: 'private' } }, {}]) {
+    for (const [body, issue] of [
+      [{ token: 42 }, 'token has the wrong type (expected string)'],
+      [{ credential: { token: 'private' } }, 'token is required (expected string)'],
+      [{}, 'token is required (expected string)'],
+    ] as const) {
       const response = await link(body);
+      const text = await response.text();
 
       expect(response.status).toBe(400);
-      expect(await response.json()).toEqual({ error: 'Invalid credentials' });
+      expect(JSON.parse(text)).toEqual({
+        errors: [
+          {
+            message: `Invalid credentials: ${issue}.`,
+            data: { code: 'invalid_credentials', fields: ['token'] },
+          },
+        ],
+      });
+      expect(text).not.toContain('private');
     }
 
     expect(await piece.read({ input: {}, req: request() })).toBe('valid-secret');

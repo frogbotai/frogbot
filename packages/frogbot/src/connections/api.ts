@@ -48,8 +48,9 @@ export class ConnectionError extends Error {
       'missing' | 'revoked' | 'expired' | 'error' | 'scopes' | 'ambiguous' | 'forbidden',
     public readonly missingScopes?: string[],
     public readonly piece?: string,
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
     this.name = 'ConnectionError';
   }
 }
@@ -157,9 +158,25 @@ export class Connections {
     }
 
     let id: string | undefined;
-    const fail = (code: ConnectionError['code'], message: string): never => {
+    const reconnect = 'Reconnect it in Settings → Linked accounts.';
+    const fail = (
+      code: ConnectionError['code'],
+      message: string,
+      { next, cause }: { next?: string; cause?: unknown } = {},
+    ): never => {
       if (id) credentialKeys.delete(id);
-      throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
+      const text = `Connection for '${slug}' ${message}`;
+      if (cause !== undefined) {
+        frogbot.logger.warn({ err: cause, piece: slug }, `[frogbot] ${text}`);
+      }
+
+      throw new ConnectionError(
+        `${text}.${next ? ` ${next}` : ''}`,
+        code,
+        undefined,
+        slug,
+        cause === undefined ? undefined : { cause },
+      );
     };
 
     const configured = connectionEntry(config, { app: as, piece: slug });
@@ -172,7 +189,12 @@ export class Connections {
     if (!entry && connection === undefined) {
       if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
 
-      return fail('missing', 'is not linked');
+      throw new ConnectionError(
+        `No \`connections\` entry declares '${slug}': add it to the root \`connections\` config (\`secret: true\` or \`oauth\`).`,
+        'missing',
+        undefined,
+        slug,
+      );
     }
 
     const notLinked = `${as === undefined ? 'is not linked' : `app '${as}' is not linked`}. Link it in Settings → Linked accounts`;
@@ -208,7 +230,10 @@ export class Connections {
     } catch (error) {
       if (error instanceof ConnectionError) throw error;
 
-      return fail('error', 'could not be read');
+      return fail('error', 'could not be read', {
+        cause: error,
+        next: 'Check the server log; if the credential key changed, reconnect it in Settings → Linked accounts.',
+      });
     }
 
     if (!row || !entry) return fail('missing', notLinked);
@@ -228,19 +253,19 @@ export class Connections {
           id: row.id,
           req,
         });
-      } catch {
-        return fail('error', 'could not be refreshed');
+      } catch (error) {
+        return fail('error', 'could not be refreshed', { cause: error, next: reconnect });
       }
 
       if (!row) return fail('missing', notLinked);
     }
 
-    if (row.status === 'revoked') return fail('revoked', 'is revoked');
-    if (row.status !== 'active') return fail('error', 'is in an error state');
+    if (row.status === 'revoked') return fail('revoked', 'is revoked', { next: reconnect });
+    if (row.status !== 'active') return fail('error', 'is in an error state', { next: reconnect });
     if (row.expiresAt) {
       const expiresAt = Date.parse(row.expiresAt);
       if (!Number.isFinite(expiresAt)) return fail('error', 'has an invalid expiry');
-      if (expiresAt <= Date.now()) return fail('expired', 'is expired');
+      if (expiresAt <= Date.now()) return fail('expired', 'is expired', { next: reconnect });
     }
 
     if ((row.method !== 'secret' && row.method !== 'oauth') || !entry[row.method]) {
@@ -269,7 +294,7 @@ export class Connections {
           ? oauthAuth({ piece, tokens: parseOAuthTokens(row.credential) })
           : runtime.definition.auth.parse(row.credential);
     } catch {
-      return fail('error', 'has invalid credentials');
+      return fail('error', 'has invalid credentials', { next: reconnect });
     }
 
     const fingerprint = createHmac('sha256', identitySecret)

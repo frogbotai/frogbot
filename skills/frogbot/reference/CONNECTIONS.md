@@ -42,6 +42,8 @@ Calling a piece action with `req` resolves that owner's active credential. Crede
 
 The configured API route and connections collection slug replace the defaults. OAuth authorization requires a user from the configured admin user collection. State is single-use, route-bound, browser-bound, and expires after ten minutes. PKCE is used when the piece recipe enables it.
 
+Failures answer `{"errors":[{"message":"...","data":{"code":"..."}}]}`. A secret body that fails the piece's schema returns `400` with code `invalid_credentials` and `data.fields` listing the failing paths; the message names each path and expected type, never a value. OAuth failures return the `OAuthError` code (`state`, `tokens`, `account`, `configuration`), with the provider's RFC 6749 `error` as `data.provider` when present, and log the cause on the server.
+
 ## Sign-in is separate
 
 Interactive OAuth login belongs in an auth collection's `auth.signIn` array, not in `connections`.

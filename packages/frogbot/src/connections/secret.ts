@@ -4,6 +4,7 @@ import { KVLockContentionError } from '../kv/errors.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import type { PieceJSON } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { describeCredentialIssues, errorResponse } from './errors.js';
 import { connectionEntry } from './store.js';
 import type { SanitizedConnectionsConfig } from './types.js';
 
@@ -16,22 +17,39 @@ export function buildSecretEndpoints({
 }): Endpoint[] {
   if (!connections.enabled) return [];
   const access = (req: FrogBotRequest) => {
-    if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+    if (!req.user) {
+      return errorResponse({
+        status: 401,
+        message: 'Authentication required',
+        code: 'unauthorized',
+      });
+    }
+
     if (req.user.collection !== userSlug) {
-      return Response.json({ error: 'Access denied' }, { status: 403 });
+      return errorResponse({ status: 403, message: 'Access denied', code: 'forbidden' });
     }
   };
 
-  const failure = (error: unknown) =>
-    Response.json(
-      {
-        error:
-          error instanceof KVLockContentionError
-            ? 'Connection is busy'
-            : 'Connection operation failed',
-      },
-      { status: error instanceof KVLockContentionError ? 409 : 500 },
-    );
+  const notFound = () =>
+    errorResponse({ status: 404, message: 'Connection not found', code: 'not_found' });
+
+  const failure = (req: FrogBotRequest, error: unknown, piece?: string) => {
+    if (error instanceof KVLockContentionError) {
+      return errorResponse({
+        status: 409,
+        message: 'Connection is busy. Try again.',
+        code: 'busy',
+      });
+    }
+
+    req.frogbot.logger.warn({ err: error, piece }, '[frogbot] Connection operation failed');
+
+    return errorResponse({
+      status: 500,
+      message: "Couldn't save the connection. Check the server log.",
+      code: 'internal',
+    });
+  };
 
   const param = (req: FrogBotRequest, name: string) => {
     const value = req.routeParams?.[name];
@@ -49,21 +67,50 @@ export function buildSecretEndpoints({
       const entry =
         (slot && !app) || !slug ? undefined : connectionEntry(connections, { app, piece: slug });
 
-      if (!entry?.secret) {
-        return Response.json({ error: 'Connection not found' }, { status: 404 });
-      }
+      if (!entry?.secret) return notFound();
 
       const { auth: schema, label, provider } = pieceInstanceDefinition(entry.piece);
-      let credential: PieceJSON;
-      let auth: unknown;
+      let input: unknown;
       try {
-        const input: unknown = await req.json!();
-        if (!schema) throw new Error();
-        auth = schema.parse(input);
-        credential = input as PieceJSON;
+        input = await req.json!();
       } catch {
-        return Response.json({ error: 'Invalid credentials' }, { status: 400 });
+        return errorResponse({
+          status: 400,
+          message: "The body isn't valid JSON.",
+          code: 'invalid_json',
+        });
       }
+
+      if (!schema) {
+        return errorResponse({
+          status: 400,
+          message: `${label} takes no key.`,
+          code: 'no_credentials',
+        });
+      }
+
+      let parsed;
+      try {
+        parsed = schema.safeParse(input);
+      } catch {
+        parsed = undefined;
+      }
+
+      if (!parsed?.success) {
+        const { message, fields } = parsed
+          ? describeCredentialIssues({ issues: parsed.error.issues, input })
+          : { message: 'Invalid credentials: the key failed validation.', fields: [] };
+
+        return errorResponse({
+          status: 400,
+          message,
+          code: 'invalid_credentials',
+          data: { fields },
+        });
+      }
+
+      const auth: unknown = parsed.data;
+      const credential = input as PieceJSON;
 
       let models: string[] | undefined;
       try {
@@ -72,11 +119,16 @@ export function buildSecretEndpoints({
         const status = (error as { status?: unknown } | undefined)?.status;
 
         return status === 401 || status === 403
-          ? Response.json({ error: `${label} didn't accept this key.` }, { status: 422 })
-          : Response.json(
-              { error: `Couldn't reach ${label} to check this key. Try again.` },
-              { status: 502 },
-            );
+          ? errorResponse({
+              status: 422,
+              message: `${label} didn't accept this key.`,
+              code: 'rejected',
+            })
+          : errorResponse({
+              status: 502,
+              message: `Couldn't reach ${label} to check this key. Try again.`,
+              code: 'unreachable',
+            });
       }
 
       try {
@@ -95,7 +147,7 @@ export function buildSecretEndpoints({
 
         return Response.json(metadata);
       } catch (error) {
-        return failure(error);
+        return failure(req, error, entry.piece.piece);
       }
     };
 
@@ -109,17 +161,17 @@ export function buildSecretEndpoints({
         if (denied) return denied;
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return Response.json({ error: 'Connection not found' }, { status: 404 });
+          return notFound();
         }
 
         try {
           if (!(await req.frogbot.connections.delete({ req, id }))) {
-            return Response.json({ error: 'Connection not found' }, { status: 404 });
+            return notFound();
           }
 
           return new Response(null, { status: 204 });
         } catch (error) {
-          return failure(error);
+          return failure(req, error);
         }
       },
     },
@@ -135,12 +187,12 @@ export function buildSecretEndpoints({
 
         try {
           if (!app || !piece || !(await req.frogbot.connections.deleteSlot({ req, app, piece }))) {
-            return Response.json({ error: 'Connection not found' }, { status: 404 });
+            return notFound();
           }
 
           return new Response(null, { status: 204 });
         } catch (error) {
-          return failure(error);
+          return failure(req, error);
         }
       },
     },
@@ -157,11 +209,9 @@ export function buildSecretEndpoints({
               ? await req.frogbot.connections.setDefault({ req, id })
               : undefined;
 
-          return row
-            ? Response.json(row)
-            : Response.json({ error: 'Connection not found' }, { status: 404 });
+          return row ? Response.json(row) : notFound();
         } catch (error) {
-          return failure(error);
+          return failure(req, error);
         }
       },
     },

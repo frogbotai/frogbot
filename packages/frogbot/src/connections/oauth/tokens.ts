@@ -266,8 +266,11 @@ export async function lookupOAuthAccount({
       signal,
       req.signal,
     );
-  } catch {
-    throw new OAuthError('account');
+  } catch (cause) {
+    throw new OAuthError('account', {
+      cause,
+      message: `Couldn't read the signed-in account from ${definition.label}.`,
+    });
   }
 }
 
