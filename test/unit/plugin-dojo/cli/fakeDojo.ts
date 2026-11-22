@@ -58,7 +58,7 @@ export type FakeDojo = {
   /** Tokens Dojo accepts, by API key id. */
   tokens: Map<string, number>;
   workspaces: FakeWorkspace[];
-  /** Dojo's apps, served at `/api/apps`. The fake has no projects: `/api/projects` answers 404. */
+  /** Dojo's apps, served at `/api/apps`. `/api/projects` answers 404 unless `replies` names the route. */
   apps: { id: number; name: string; slug: string; workspace: number }[];
   /** Polls answered `authorization_pending` before the sign-in is approved. */
   pendingPolls: number;
@@ -311,13 +311,13 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
     if (!signedIn) return payloadError(res, 401, 'You are not allowed to perform this action.');
 
-    if (url.pathname === '/api/projects' || url.pathname.startsWith('/api/projects/')) {
-      return payloadError(res, 404, 'Not Found');
-    }
-
     const reply = dojo.replies.get(route);
 
     if (reply) return json(res, reply.status ?? 200, reply.body);
+
+    if (url.pathname === '/api/projects' || url.pathname.startsWith('/api/projects/')) {
+      return payloadError(res, 404, 'Not Found');
+    }
 
     if (route === 'GET /api/workspaces') {
       return json(res, 200, { docs: dojo.workspaces, totalDocs: dojo.workspaces.length });
