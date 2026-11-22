@@ -151,9 +151,12 @@ export function createEmbedEndpoints({
 
         if (!found || found.form.mode === 'update' || !assets) return notFound();
 
+        const definition = await definitionFor(req, runtime, found);
+        const formURL = `${base}/${encodeURIComponent(found.form.slug)}`;
         const data: EmbedData = {
-          definition: await definitionFor(req, runtime, found),
-          submitUrl: `${base}/${encodeURIComponent(found.form.slug)}/submit`,
+          definition,
+          submitUrl: `${formURL}/submit`,
+          ...(definition.analytics ? { eventUrl: `${formURL}/events` } : {}),
         };
 
         const json = JSON.stringify(data).replace(/</g, '\\u003c');

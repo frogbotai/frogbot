@@ -268,6 +268,26 @@ Every form has a public page at `/forms/<slug>` under the admin route, `/forms/c
 
 The page reads the form's hidden parameters from its own URL, so `/forms/contact?utm_source=newsletter` saves `newsletter` to the field `utm_source` maps to. A required question must be answered before **Next** moves on, and errors from the collection's validation are shown on their questions.
 
+### Coming back to a half-filled form
+
+The page keeps a visitor's answers in their browser's `localStorage`, under `frogbot-form:<slug>`, as they type. When they reload or come back on the same device, the answers return; an answer to a question that its rules now hide is dropped. A successful submit clears them. Files are never kept, nothing is sent to the server, and an edit link or a preview keeps nothing. Storage that is blocked or full, as in some private windows, only turns this off.
+
+Anyone using the same browser profile can see kept answers until the form is sent, as with any form a browser autofills.
+
+## Counting views, starts and completions
+
+```ts
+formsPlugin({ collections: ['leads'], analytics: true })
+```
+
+With `analytics` on, the **Form stats** collection (`form-stats`) holds one row per form per UTC day with three counts:
+
+- **Completions**: each new response, counted on the server. Exact. Edit-link saves and honeypot catches aren't counted.
+- **Views**: the page pings once when it loads an open form.
+- **Starts**: the page pings once on the visitor's first answer, and not again for a visitor who comes back to kept answers.
+
+Views and starts come from visitors' browsers, which anyone can send or block, so the admin labels them estimates. Starts over views, and completions over starts, show where people drop off. Signed-in users can read and delete rows; nobody can edit them. Deleting a form deletes its rows. With `analytics` off, there is no collection and the events endpoint answers `404`.
+
 ## Embedding a form on another site
 
 Put a form on any site, a WordPress page, a Webflow site or plain HTML, with one script tag where the form should appear:
@@ -293,6 +313,7 @@ With the list empty, the default, no site can frame a form: the embed page is se
 - After a submit, the iframe fires a `frogbot:form-submitted` event that bubbles from it, with the confirmation as `event.detail.confirmation`. A redirect confirmation then sends the whole page to its URL; call `event.preventDefault()` to handle it yourself.
 - The script has to run as a classic script, so `async` and `defer` work and `type="module"` doesn't.
 - A select question's list opens inside the iframe, so near the form's bottom it opens upward.
+- With [`analytics`](#counting-views-starts-and-completions) on, an embedded form counts views and starts like the form page.
 
 To size or listen to the iframe yourself, frame `/api/forms/<slug>/embed` directly. It posts `{ type: 'frogbot:form:height', height }` whenever its height changes and `{ type: 'frogbot:form:submitted', confirmation }` after a submit, to its parent window; the `EmbedMessage` type describes both. Check that `event.origin` is your app's before using them. Framed this way, a redirect confirmation is never followed for you: send the visitor to `confirmation.url` from your listener.
 
@@ -308,6 +329,8 @@ export function ContactForm({ definition }: { definition: FormDefinition }) {
 }
 ```
 
+With a `submitUrl` and no edit link, the component keeps unfinished answers in the browser, as [the form page](#coming-back-to-a-half-filled-form) does.
+
 Load `@frogbotai/ui/styles.css` once for its styles. They sit in the `frogbot` cascade layer, so your own CSS overrides them without extra specificity. The form's root is `.fb-form`.
 
 | Option | Type | Default | Description |
@@ -315,11 +338,12 @@ Load `@frogbotai/ui/styles.css` once for its styles. They sit in the `frogbot` c
 | `definition` | `FormDefinition` | Required | The form's render definition, from `GET /api/forms/<slug>/definition`. |
 | `submitUrl` | `string` | None | Where answers are posted. For an edit link, add `?link=<token>`. Without it nothing is sent: the last step checks the answers and shows the confirmation, as a preview does. |
 | `onSubmitted` | `(confirmation: FormConfirmation) => void` | None | Called with the confirmation after a successful submit. When set, a redirect confirmation is left to you. |
+| `eventUrl` | `string` | None | Where view and start counts are posted, such as `/api/forms/<slug>/events`, when the definition has `analytics`. Without it nothing is counted. |
 | `className` | `string` | None | Added to the form's root element. |
 
 ## Endpoints
 
-Both endpoints are public and check the form's `read` access as the visitor. The embed has its own [page and script](#embedding-a-form-on-another-site).
+The endpoints are public and check the form's `read` access as the visitor. The embed has its own [page and script](#embedding-a-form-on-another-site).
 
 ```http
 GET /api/forms/contact/definition
@@ -331,6 +355,7 @@ Returns what a page needs to show the form:
 - The hidden parameter names and the confirmation.
 - Whether the form is `closed`.
 - The `honeypot` input's name and, with Turnstile on, `turnstile.siteKey`.
+- `analytics: true` when the app [counts views and starts](#counting-views-starts-and-completions).
 
 It never returns the collection's other fields.
 
@@ -349,6 +374,15 @@ Content-Type: application/json
 - A missing or refused Turnstile token answers `400`, and too many submits from one address answer `429` with a `Retry-After` header. See [Spam protection](#spam-protection).
 
 Both take `?link=<token>` for an [edit link](#edit-links): the definition then carries the record's answers as `values`, and the submit updates that record. An `update` form answers `404` without a link.
+
+```http
+POST /api/forms/contact/events
+Content-Type: application/json
+
+{ "type": "view" }
+```
+
+With `analytics` on, adds one to today's views (`"view"`) or starts (`"start"`) and answers `204`; a closed form counts nothing. Any other `type` answers `400`. With `analytics` off, or for a form the visitor can't read, it answers `404`.
 
 With `maxResponses` set, responses are counted under a per-form lock in the app's KV store, so two visitors submitting at once never pass the limit. Without it, the count is kept but not locked.
 
@@ -505,5 +539,6 @@ A hook on the collection that emails the person who submitted, such as a "we got
 | `turnstile` | `{ siteKey: string; secretKey: string }` | None | Cloudflare Turnstile keys. When set, every submit needs a token Cloudflare accepts. |
 | `rateLimit` | `{ max?: number; window?: number }` | `{ max: 10, window: 600 }` | Submits allowed from one visitor address per window, in seconds, across forms. Counted only with `trustProxy`. |
 | `trustProxy` | `boolean` | `false` | Read the visitor's address from the `x-forwarded-for` (last entry) or `x-real-ip` header your proxy sets. Off, submits aren't rate-limited and boot warns. |
+| `analytics` | `boolean` | `false` | Count views, starts and completions per form per day in the `form-stats` collection. See [Counting views, starts and completions](#counting-views-starts-and-completions). |
 | `links` | `{ defaultExpiry?; maxExpiry?; access? }` | `{ defaultExpiry: '7d', maxExpiry: '30d' }` | Edit links: how long they last, as seconds or a length like `'7d'`, and access for the `form-links` collection, merged over the default (people who can update a record manage its links). |
 | `frameAncestors` | `string[]` | `[]` | Origins allowed to [embed forms](#embedding-a-form-on-another-site), like `'https://www.example.com'`. Empty, no site can frame them. |

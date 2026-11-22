@@ -10,7 +10,7 @@ import type { QuestionOptions } from './__helpers/questionTest';
 import { signedOut as signedOutState, type SignInOptions } from './__helpers/signIn';
 import { stopServersOnSignal } from './__helpers/stopServersOnSignal';
 import { dojoBuildEnv, dojoEnv } from './fixtures/dojo/shared';
-import { signInOnly } from './fixtures/sign-in/shared';
+import { firstUserFields, signInOnly } from './fixtures/sign-in/shared';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
@@ -221,6 +221,12 @@ const servers: Record<string, Server> = {
     port: testPort(3141),
     database: 'frogbot.sign-in-only.db',
     env: { SIGN_IN_SETUP: signInOnly },
+  },
+  'first-user-fields': {
+    fixture: 'sign-in',
+    port: testPort(3148),
+    database: 'frogbot.first-user-fields.db',
+    env: { SIGN_IN_SETUP: firstUserFields },
   },
   'sign-in-two-factor': {
     fixture: 'sign-in',
@@ -471,6 +477,7 @@ const testProjects = [
     { name: 'first-user-blank', grep: /@blank/ },
     { name: 'sign-in-passwords', grep: /@passwords/ },
     { name: 'sign-in-only', grep: /@sign-in-only/ },
+    { name: 'first-user-fields', grep: /@fields/ },
   ].map((options) =>
     project({ ...options, testMatch: 'firstUser.browser.spec.ts', signedOut: true }),
   ),

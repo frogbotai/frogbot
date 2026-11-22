@@ -33,6 +33,10 @@ export default buildConfig({
     },
   ],
   plugins: [
-    formsPlugin({ collections: [leadsSlug, applicationsSlug], frameAncestors: [embedHost] }),
+    formsPlugin({
+      collections: [leadsSlug, applicationsSlug],
+      analytics: true,
+      frameAncestors: [embedHost],
+    }),
   ],
 });

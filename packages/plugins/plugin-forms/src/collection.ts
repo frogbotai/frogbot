@@ -7,6 +7,7 @@ import { createDefinitionEndpoint, createSubmitEndpoint } from './endpoints.js';
 import { FORM_LINKS_SLUG } from './links/access.js';
 import type { FormsRuntime } from './lookup.js';
 import { checkForm } from './questions.js';
+import { createEventsEndpoint, FORM_STATS_SLUG } from './stats.js';
 import type { FormDocument } from './types.js';
 
 export const FORMS_SLUG = 'forms';
@@ -51,7 +52,12 @@ export function createFormsCollection({
       delete: signedIn,
       ...access,
     },
-    endpoints: [createDefinitionEndpoint(runtime), createSubmitEndpoint(runtime), ...embed],
+    endpoints: [
+      createDefinitionEndpoint(runtime),
+      createSubmitEndpoint(runtime),
+      ...(runtime.analytics ? [createEventsEndpoint(runtime)] : []),
+      ...embed,
+    ],
     hooks: {
       beforeValidate: [
         async ({ data, originalDoc, req }) => {
@@ -71,6 +77,15 @@ export function createFormsCollection({
             overrideAccess: true,
             req,
           });
+
+          if (runtime.analytics) {
+            await req.frogbot.delete({
+              collection: FORM_STATS_SLUG,
+              where: { form: { equals: id } },
+              overrideAccess: true,
+              req,
+            });
+          }
         },
       ],
       afterDelete: [

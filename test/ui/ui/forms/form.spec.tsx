@@ -73,6 +73,7 @@ async function fillFirstStep(user: ReturnType<typeof userEvent.setup>) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  window.localStorage.clear();
   window.history.replaceState(null, '', '/');
 });
 

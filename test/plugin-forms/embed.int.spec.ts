@@ -9,6 +9,8 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { leadsSlug } from './shared.js';
 
+type EmbedData = { definition: FormDefinition; submitUrl: string; eventUrl?: string };
+
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const adapterLabel = process.env.FROGBOT_DATABASE || 'sqlite';
 
@@ -20,12 +22,12 @@ const form: Omit<FormDocument, 'id'> = {
   confirmation: { type: 'message', message: 'Thanks!' },
 };
 
-function embedData(html: string): { definition: FormDefinition; submitUrl: string } {
+function embedData(html: string): EmbedData {
   const json = /<script type="application\/json" id="fb-form-data">(.*?)<\/script>/s.exec(html);
 
   if (!json) throw new Error('No embed data in the page');
 
-  return JSON.parse(json[1]) as { definition: FormDefinition; submitUrl: string };
+  return JSON.parse(json[1]) as EmbedData;
 }
 
 describe(`forms embed [${adapterLabel}]`, () => {
@@ -70,6 +72,7 @@ describe(`forms embed [${adapterLabel}]`, () => {
     const data = embedData(html);
 
     expect(data.submitUrl).toBe('/api/forms/contact/submit');
+    expect(data.eventUrl).toBeUndefined();
     expect(data.definition).toMatchObject({ slug: 'contact', title: form.title, closed: false });
   });
 

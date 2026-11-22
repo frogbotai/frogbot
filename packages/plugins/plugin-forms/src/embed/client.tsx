@@ -15,6 +15,7 @@ if (root && data) {
     <Form
       definition={data.definition}
       submitUrl={data.submitUrl}
+      eventUrl={data.eventUrl}
       onSubmitted={(confirmation) => post({ type: 'frogbot:form:submitted', confirmation })}
     />,
   );
