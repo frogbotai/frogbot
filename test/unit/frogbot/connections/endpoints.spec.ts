@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildConnectionOAuthEndpoints } from '../../../../packages/frogbot/src/connections/endpoints.js';
+import { OAuthError } from '../../../../packages/frogbot/src/connections/oauth/error.js';
 import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { OAuthTokens, PieceOAuthSave } from '../../../../packages/frogbot/src/pieces/types.js';
@@ -9,9 +10,14 @@ import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/requ
 import { continuedTo } from '../../../__helpers/shared/continuedTo.js';
 import { definition, setup } from './oauth/fixtures.js';
 
+const failed = (message: string, code: string, data: Record<string, unknown> = {}) => ({
+  errors: [{ message, data: { code, ...data } }],
+});
+
 function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
   const base = setup(pieceDefinition);
   const upsert = vi.fn().mockResolvedValue({ id: 'connection' });
+  const warn = vi.fn();
   const findByID = vi.fn().mockResolvedValue({ id: 'owner' });
   const config = {
     serverURL: 'https://app.test',
@@ -44,6 +50,7 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
       t: (key: string) => key,
       frogbot: {
         kv: base.kv,
+        logger: { warn },
         config: { _internal: { payloadConfig: Promise.resolve(config) } },
         connections: { store: Promise.resolve({ upsert }) },
         findByID,
@@ -70,7 +77,7 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
 
   vi.stubGlobal('fetch', fetch);
 
-  return { ...base, upsert, findByID, config, connections, endpoints, request, start, fetch };
+  return { ...base, upsert, warn, findByID, config, connections, endpoints, request, start, fetch };
 }
 
 type Fixture = ReturnType<typeof fixture>;
@@ -225,13 +232,20 @@ describe('OAuth linking endpoints', () => {
     'https://user:private@app.test',
     'javascript:alert(1)',
     'https://app.test/?secret=value',
-  ])('fails closed on unsafe serverURL %s', async (serverURL) => {
+    'not a url',
+  ])('names a setup error and logs it for unsafe serverURL %s', async (serverURL) => {
     const f = fixture();
     f.config.serverURL = serverURL;
     const response = await f.endpoints[0].handler(f.request());
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: 'Connection operation failed' });
+    expect(await response.json()).toEqual(
+      failed("This connection's OAuth setup is incomplete. Check the server log.", 'configuration'),
+    );
+    expect(f.warn).toHaveBeenCalledWith(
+      { err: expect.any(OAuthError), piece: 'example' },
+      '[frogbot] Connection OAuth failed',
+    );
     expect(f.values.size).toBe(0);
   });
 
@@ -338,56 +352,107 @@ describe('OAuth linking endpoints', () => {
     },
   );
 
-  it.each<{ kind: string; status: number; upserts: number; fail: (f: Fixture, url: URL) => void }>([
+  const exchangeFailed = "Couldn't finish signing in to Example. Try again.";
+
+  it.each<{
+    kind: string;
+    status: number;
+    upserts: number;
+    body: ReturnType<typeof failed>;
+    fail: (f: Fixture, url: URL) => void;
+  }>([
     {
       kind: 'denied',
       status: 400,
       upserts: 0,
+      body: failed('The sign-in was cancelled or denied at Example.', 'tokens', {
+        provider: 'access_denied',
+      }),
+      fail: (_f, url) => {
+        url.searchParams.set('error', 'access_denied');
+        url.searchParams.set('error_description', 'private-description');
+      },
+    },
+    {
+      kind: 'provider error outside RFC 6749 syntax',
+      status: 400,
+      upserts: 0,
+      body: failed(exchangeFailed, 'tokens'),
       fail: (_f, url) => url.searchParams.set('error', 'private-provider-error'),
+    },
+    {
+      kind: 'other provider error',
+      status: 400,
+      upserts: 0,
+      body: failed(exchangeFailed, 'tokens', { provider: 'server_error' }),
+      fail: (_f, url) => url.searchParams.set('error', 'server_error'),
     },
     {
       kind: 'missing-code',
       status: 400,
       upserts: 0,
+      body: failed(exchangeFailed, 'tokens'),
       fail: (_f, url) => url.searchParams.delete('code'),
     },
     {
       kind: 'duplicate-code',
       status: 400,
       upserts: 0,
+      body: failed(exchangeFailed, 'tokens'),
       fail: (_f, url) => url.searchParams.append('code', 'private-code-2'),
     },
     {
       kind: 'deleted-owner',
       status: 400,
       upserts: 0,
+      body: failed('This sign-in expired or was already used. Start again.', 'state'),
       fail: (f) => f.findByID.mockResolvedValue(null),
     },
     {
       kind: 'provider',
       status: 400,
       upserts: 0,
+      body: failed(exchangeFailed, 'tokens'),
       fail: (f) => f.fetch.mockRejectedValue(new Error('private-client-secret')),
+    },
+    {
+      kind: 'wrong account',
+      status: 400,
+      upserts: 1,
+      body: failed("Sign in with the same account you're renewing.", 'account'),
+      fail: (f) =>
+        f.upsert.mockRejectedValue(
+          new OAuthError('account', { message: "Sign in with the same account you're renewing." }),
+        ),
     },
     {
       kind: 'storage',
       status: 500,
       upserts: 1,
+      body: failed("Couldn't link the account. Check the server log.", 'internal'),
       fail: (f) => f.upsert.mockRejectedValue(new Error('private-refresh-token')),
     },
   ])(
     'consumes and clears cookies on a valid failed callback: $kind',
-    async ({ status, upserts, fail }) => {
+    async ({ status, upserts, body, fail }) => {
       const f = fixture();
       const flow = await f.start();
       const url = new URL(flow.url);
       fail(f, url);
       const response = await f.endpoints[1].handler(f.request({ ...flow, url: url.href }));
+      const text = await response.text();
 
       expect(response.status).toBe(status);
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(response.headers.get('cache-control')).toBe('no-store');
-      expect(await response.json()).toEqual({ error: 'Connection operation failed' });
+      expect(JSON.parse(text)).toEqual(body);
+      expect(text).not.toMatch(/private-|fresh-token/);
+      expect(f.warn).toHaveBeenCalledOnce();
+      expect(f.warn.mock.calls[0][0]).toMatchObject({ piece: 'example' });
+      expect(f.warn.mock.calls[0][1]).toBe('[frogbot] Connection OAuth failed');
+      expect(JSON.stringify(f.warn.mock.calls)).not.toMatch(
+        /private-code|private-description|fresh-token/,
+      );
       expect(f.upsert).toHaveBeenCalledTimes(upserts);
 
       const calls = f.fetch.mock.calls.length;
@@ -397,7 +462,10 @@ describe('OAuth linking endpoints', () => {
     },
   );
 
-  it.each(['auth', 'account'])('validates fresh-token %s before persistence', async (kind) => {
+  it.each([
+    ['auth', failed("Couldn't finish signing in to Example. Try again.", 'tokens')],
+    ['account', failed("Couldn't read the signed-in account from Example.", 'account')],
+  ])('validates fresh-token %s before persistence', async (kind, body) => {
     const f = fixture({
       ...definition,
       oauth: {
@@ -414,7 +482,7 @@ describe('OAuth linking endpoints', () => {
     expect(response.status).toBe(400);
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(f.upsert).not.toHaveBeenCalled();
-    expect(await response.json()).toEqual({ error: 'Connection operation failed' });
+    expect(await response.json()).toEqual(body);
   });
 });
 
@@ -442,6 +510,7 @@ describe('piece-run sign-in endpoints', () => {
     const upsert = vi.fn().mockResolvedValue({ id: 'connection' });
     const findByID = vi.fn().mockResolvedValue({ id: 'owner' });
     const fetch = vi.fn();
+    const warn = vi.fn();
     const config = {
       serverURL: 'https://configured.test',
       routes: { api: '/api', admin: '/admin' },
@@ -465,14 +534,33 @@ describe('piece-run sign-in endpoints', () => {
         routeParams: { piece: 'example' },
         headers: new Headers(),
         frogbot: {
+          logger: { warn },
           config: { _internal: { payloadConfig: Promise.resolve(config) } },
           connections: { store: Promise.resolve({ upsert }) },
           findByID,
         },
       }) as unknown as FrogBotRequest;
 
-    return { authorize, upsert, findByID, fetch, endpoints, request };
+    return { authorize, upsert, findByID, fetch, warn, endpoints, request };
   }
+
+  it('names a throwing recipe authorize() as a setup error and logs the cause', async () => {
+    const f = signInFixture();
+    const cause = new Error('client id missing');
+    f.authorize.mockRejectedValue(cause);
+    const response = await f.endpoints[0].handler(
+      f.request('http://localhost:3000/api/connections/example/authorize'),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual(
+      failed("This connection's OAuth setup is incomplete. Check the server log.", 'configuration'),
+    );
+    expect(f.warn).toHaveBeenCalledWith(
+      { err: expect.objectContaining({ code: 'configuration', cause }), piece: 'example' },
+      '[frogbot] Connection OAuth failed',
+    );
+  });
 
   it('calls authorize with an absolute returnTo at the request origin and redirects', async () => {
     const f = signInFixture();

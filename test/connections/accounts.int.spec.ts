@@ -297,6 +297,11 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     const wrong = await link('b', { reconnect: first.id });
 
     expect(wrong.status).toBe(400);
+    expect(await wrong.json()).toEqual({
+      errors: [
+        { message: "Sign in with the same account you're renewing.", data: { code: 'account' } },
+      ],
+    });
     expect(await rows()).toEqual(before);
 
     expect((await link('a', { reconnect: first.id })).status).toBe(200);

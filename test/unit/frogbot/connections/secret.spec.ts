@@ -7,11 +7,15 @@ import { buildSecretEndpoints } from '../../../../packages/frogbot/src/connectio
 import { KVLockContentionError } from '../../../../packages/frogbot/src/kv/errors.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
-function setup(auth = z.object({ token: z.string().min(1) })) {
+const failed = (message: string, code: string, data: Record<string, unknown> = {}) => ({
+  errors: [{ message, data: { code, ...data } }],
+});
+
+function setup(auth: z.ZodType | null = z.object({ token: z.string().min(1) })) {
   const piece = definePiece({
     slug: 'example',
     label: 'Example',
-    auth,
+    ...(auth ? { auth } : {}),
     client: () => ({}),
     actions: [],
   })({ slug: 'alias' });
@@ -21,6 +25,7 @@ function setup(auth = z.object({ token: z.string().min(1) })) {
     .mockResolvedValue({ id: 'row', piece: 'example', method: 'secret', status: 'active' });
 
   const remove = vi.fn().mockResolvedValue(true);
+  const warn = vi.fn();
   const connections = {
     enabled: true,
     slug: 'connections',
@@ -39,10 +44,13 @@ function setup(auth = z.object({ token: z.string().min(1) })) {
       user,
       routeParams,
       json: () => Promise.resolve(body),
-      frogbot: { connections: { store: Promise.resolve({ upsert }), delete: remove } },
+      frogbot: {
+        logger: { warn },
+        connections: { store: Promise.resolve({ upsert }), delete: remove },
+      },
     }) as never;
 
-  return { upsert, remove, request, endpoints, connections };
+  return { upsert, remove, warn, request, endpoints, connections };
 }
 
 describe('static connection endpoints', () => {
@@ -65,17 +73,62 @@ describe('static connection endpoints', () => {
     });
   });
 
-  it.each([{}, { credential: { token: 'secret-value' } }, { token: 42 }, null, []])(
-    'rejects malformed raw input %j',
-    async (body) => {
-      const { endpoints, request, upsert } = setup();
-      const response = await endpoints[0].handler(request({ body }));
+  it.each<[unknown, string, string[]]>([
+    [{}, 'token is required (expected string)', ['token']],
+    [{ apiKey: 'secret-value' }, 'token is required (expected string)', ['token']],
+    [{ credential: { token: 'secret-value' } }, 'token is required (expected string)', ['token']],
+    [{ token: 42 }, 'token has the wrong type (expected string)', ['token']],
+    [{ token: '' }, 'token is too short (minimum 1)', ['token']],
+    [null, 'the body must be an object', []],
+    [[], 'the body must be an object', []],
+  ])('names the failing field for raw input %j, never its value', async (body, issue, fields) => {
+    const { endpoints, request, upsert } = setup();
+    const response = await endpoints[0].handler(request({ body }));
+    const text = await response.text();
 
-      expect(response.status).toBe(400);
-      expect(await response.json()).toEqual({ error: 'Invalid credentials' });
-      expect(upsert).not.toHaveBeenCalled();
-    },
-  );
+    expect(response.status).toBe(400);
+    expect(JSON.parse(text)).toEqual(
+      failed(`Invalid credentials: ${issue}.`, 'invalid_credentials', { fields }),
+    );
+    expect(text).not.toContain('secret-value');
+    expect(text).not.toContain('42');
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it('lists every failing field with its expected shape', async () => {
+    const { endpoints, request } = setup(
+      z
+        .object({
+          key: z.string().startsWith('sk-'),
+          region: z.enum(['us', 'eu']),
+          nested: z.object({ id: z.number() }),
+        })
+        .strict(),
+    );
+
+    const body = { key: 'secret-value', region: 'mars', nested: {}, extra: 'secret-value' };
+    const response = await endpoints[0].handler(request({ body }));
+    const text = await response.text();
+
+    expect(JSON.parse(text)).toEqual(
+      failed(
+        'Invalid credentials: key has the wrong format (expected starts_with); region must be one of us, eu; nested.id is required (expected number); extra is not a known field.',
+        'invalid_credentials',
+        { fields: ['key', 'region', 'nested.id', 'extra'] },
+      ),
+    );
+    expect(text).not.toContain('secret-value');
+    expect(text).not.toContain('mars');
+  });
+
+  it('says the piece takes no key when its entry has no auth schema', async () => {
+    const { endpoints, request, upsert } = setup(null);
+    const response = await endpoints[0].handler(request());
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual(failed('Example takes no key.', 'no_credentials'));
+    expect(upsert).not.toHaveBeenCalled();
+  });
 
   it('redacts thrown schema errors', async () => {
     const { endpoints, request } = setup(
@@ -87,9 +140,15 @@ describe('static connection endpoints', () => {
     );
 
     const response = await endpoints[0].handler(request());
+    const text = await response.text();
 
     expect(response.status).toBe(400);
-    expect(await response.text()).not.toContain('secret-value');
+    expect(JSON.parse(text)).toEqual(
+      failed('Invalid credentials: the key failed validation.', 'invalid_credentials', {
+        fields: [],
+      }),
+    );
+    expect(text).not.toContain('secret-value');
   });
 
   it('rejects malformed JSON', async () => {
@@ -99,7 +158,10 @@ describe('static connection endpoints', () => {
       json: () => Promise.reject(new Error('secret-value')),
     };
 
-    expect((await endpoints[0].handler(req as never)).status).toBe(400);
+    const response = await endpoints[0].handler(req as never);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual(failed("The body isn't valid JSON.", 'invalid_json'));
   });
 
   it.each([null, { id: 'owner', collection: 'customers' }])(
@@ -121,7 +183,10 @@ describe('static connection endpoints', () => {
     async (piece) => {
       const { endpoints, request, upsert } = setup();
 
-      expect((await endpoints[0].handler(request({ routeParams: { piece } }))).status).toBe(404);
+      const response = await endpoints[0].handler(request({ routeParams: { piece } }));
+
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual(failed('Connection not found', 'not_found'));
       expect(upsert).not.toHaveBeenCalled();
     },
   );
@@ -148,13 +213,20 @@ describe('static connection endpoints', () => {
     expect((await endpoints[1].handler(req)).status).toBe(404);
   });
 
-  it('redacts persistence errors', async () => {
-    const { endpoints, request, upsert } = setup();
-    upsert.mockRejectedValue(new Error('secret-value'));
+  it('redacts persistence errors and logs the cause', async () => {
+    const { endpoints, request, upsert, warn } = setup();
+    const cause = new Error('store down');
+    upsert.mockRejectedValue(cause);
     const response = await endpoints[0].handler(request());
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: 'Connection operation failed' });
+    expect(await response.json()).toEqual(
+      failed("Couldn't save the connection. Check the server log.", 'internal'),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      { err: cause, piece: 'example' },
+      '[frogbot] Connection operation failed',
+    );
   });
 
   it('reports lock contention without leaking the lock key', async () => {
@@ -163,7 +235,7 @@ describe('static connection endpoints', () => {
     const response = await endpoints[0].handler(request());
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'Connection is busy' });
+    expect(await response.json()).toEqual(failed('Connection is busy. Try again.', 'busy'));
   });
 });
 
@@ -242,7 +314,7 @@ describe('static connection endpoint: provider key check', () => {
       const response = await link.handler(req as never);
 
       expect(response.status).toBe(422);
-      expect(await response.json()).toEqual({ error: "OpenAI didn't accept this key." });
+      expect(await response.json()).toEqual(failed("OpenAI didn't accept this key.", 'rejected'));
       expect(upsert).not.toHaveBeenCalled();
     },
   );
@@ -255,9 +327,9 @@ describe('static connection endpoint: provider key check', () => {
     const response = await link.handler(req as never);
 
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({
-      error: "Couldn't reach OpenAI to check this key. Try again.",
-    });
+    expect(await response.json()).toEqual(
+      failed("Couldn't reach OpenAI to check this key. Try again.", 'unreachable'),
+    );
     expect(upsert).not.toHaveBeenCalled();
   });
 });
