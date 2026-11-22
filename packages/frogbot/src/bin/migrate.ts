@@ -60,7 +60,7 @@ commands:
 options:
   --name <name>            name for the generated migration (migrate:create)
   --file <path>            use a pre-defined migration file (migrate:create)
-  --force-accept-warning   skip interactive confirmation prompts (CI)
+  --force-accept-warning   skip confirmation prompts and apply over dev-mode changes (migrate, migrate:create, migrate:fresh)
   --skip-empty             skip empty migrations (migrate:create)
   --help                   show this help`;
 
@@ -108,6 +108,11 @@ export async function migrate(args: string[]): Promise<void> {
   try {
     switch (command) {
       case 'migrate':
+        if (flags.forceAcceptWarning) {
+          await adapter.migrate({ forceAcceptWarning: true });
+          break;
+        }
+
         if (!process.stdin.isTTY) {
           const hasDevModeMigrations = await payload
             .find({
@@ -121,7 +126,8 @@ export async function migrate(args: string[]): Promise<void> {
 
           if (hasDevModeMigrations) {
             throw new Error(
-              'dev-mode schema changes detected; run `frogbot migrate` interactively to confirm migration',
+              'payload_migrations has a dev-mode row (batch -1): this database was changed by schema push in dev mode.\n' +
+                'Run `frogbot migrate --force-accept-warning` to apply migrations anyway, or delete that row if the database already matches your migrations.',
             );
           }
         }
