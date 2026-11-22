@@ -68,7 +68,9 @@ function openBrowser(url: string): void {
 }
 
 async function readSecret(message: string): Promise<string> {
-  if (process.stdin.isTTY) return answered<string>(await p.password({ message }));
+  if (process.stdin.isTTY) {
+    return answered<string>(await p.password({ message, output: process.stderr }));
+  }
 
   let text = '';
 

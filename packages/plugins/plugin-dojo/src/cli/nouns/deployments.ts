@@ -100,11 +100,17 @@ export const deployments: Noun = {
       summary: "Show one deployment's status. Exits 1 when its build failed or it didn't start.",
       args: '<id>',
       run: async ({ io, dojo, positionals: [id = ''] }) => {
-        const deployment = await dojoJSON<Deployment & { app?: unknown }>(
-          dojo(),
-          `/api/deployments/${segment(id)}?depth=0`,
-          { what: `Couldn't read deployment ${id}`, needs: editorNeeded },
-        );
+        const reply = await dojoJSON<
+          Omit<Deployment, 'id' | 'status'> &
+            Partial<Pick<Deployment, 'id' | 'status'>> & { app?: unknown }
+        >(dojo(), `/api/deployments/${segment(id)}?depth=0`, {
+          what: `Couldn't read deployment ${id}`,
+          needs: editorNeeded,
+        });
+
+        if (reply.id === undefined || !reply.status) throw new ShareError(`No deployment ${id}.`);
+
+        const deployment = { ...reply, id: reply.id, status: reply.status };
 
         const shown = {
           id: deployment.id,
