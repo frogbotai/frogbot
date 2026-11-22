@@ -78,8 +78,18 @@ export default buildConfig({
           : {}),
       },
       fields: [
+        {
+          type: 'row',
+          admin: { condition: () => false },
+          fields: [{ name: 'nickname', type: 'text' }],
+        },
+        {
+          type: 'row',
+          fields: [
+            { name: 'role', type: 'select', required: withFields, options: ['owner', 'member'] },
+          ],
+        },
         { name: 'bio', type: 'textarea' },
-        { name: 'role', type: 'select', required: withFields, options: ['owner', 'member'] },
       ],
     },
   ],

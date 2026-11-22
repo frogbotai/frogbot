@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import type { ClientField } from 'payload';
+import { getFieldPaths } from 'payload/shared';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -16,6 +17,9 @@ const ui = vi.hoisted(() => ({
   formProps: undefined as undefined | Record<string, unknown>,
   setUser: vi.fn(),
   push: vi.fn(),
+  dispatchFields: vi.fn(),
+  setIsValid: vi.fn(),
+  setSubmitted: vi.fn(),
 }));
 
 vi.mock('@payloadcms/ui/utilities/buildFormState', () => ({
@@ -51,15 +55,22 @@ vi.mock('@payloadcms/ui', () => ({
   FormSubmit: ({ children }: { children: ReactNode }) => <button type="submit">{children}</button>,
   OperationProvider: ({ children }: { children: ReactNode }) => children,
   PasswordField: () => <input name="password" />,
-  RenderFields: ({ fields }: { fields: { name?: string }[] }) => {
+  RenderFields: ({ fields }: { fields: { name?: string; admin?: { disabled?: boolean } }[] }) => {
     ui.rendered = fields;
 
-    return fields.map((field) => <input key={field.name} name={field.name} />);
+    return fields.map((field) =>
+      field.admin?.disabled ? null : <input key={field.name} name={field.name} />,
+    );
   },
   useAuth: () => ({ setUser: ui.setUser, user: null }),
   useConfig: () => ({
     config: { admin: { routes: { login: '/login' } }, routes: { admin: '/admin', api: '/api' } },
     getEntityConfig: () => ({ fields: ui.fields }),
+  }),
+  useForm: () => ({
+    dispatchFields: ui.dispatchFields,
+    setIsValid: ui.setIsValid,
+    setSubmitted: ui.setSubmitted,
   }),
   useRouter: () => ({ push: ui.push }),
   useRouteTransition: () => ({ startRouteTransition: (callback: () => void) => callback() }),
@@ -69,8 +80,53 @@ vi.mock('@payloadcms/ui', () => ({
 const text = (name: string, required = false) =>
   ({ name, type: 'text', ...(required ? { required } : {}) }) as ClientField;
 
+const hidden = <T extends object>(field: T) =>
+  ({ ...field, admin: { disabled: true } }) as unknown as ClientField;
+
+const containerPaths = (
+  fields: ClientField[],
+  parentPath = '',
+  parentSchemaPath = 'users',
+  parentIndexPath = '',
+): Record<string, string> =>
+  Object.assign(
+    {},
+    ...fields.map((field, index) => {
+      const { indexPath, path, schemaPath } = getFieldPaths({
+        field,
+        index,
+        parentIndexPath,
+        parentPath,
+        parentSchemaPath,
+      });
+
+      const own = 'label' in field && !('name' in field) ? { [String(field.label)]: path } : {};
+
+      if (field.type === 'tabs') {
+        return Object.assign(
+          own,
+          ...field.tabs.map((tab, tabIndex) => {
+            const paths = getFieldPaths({
+              field: tab,
+              index: tabIndex,
+              parentIndexPath: indexPath,
+              parentPath: path,
+              parentSchemaPath: schemaPath,
+            });
+
+            return containerPaths(tab.fields, paths.path, paths.schemaPath, paths.indexPath);
+          }),
+        );
+      }
+
+      return field.type === 'row' || field.type === 'collapsible' || field.type === 'group'
+        ? { ...own, ...containerPaths(field.fields, path, schemaPath, indexPath) }
+        : own;
+    }),
+  );
+
 describe('requiredFields', () => {
-  it('keeps required fields, drops optional ones and the ones the form draws', () => {
+  it('keeps required fields, and hides optional ones and the ones the form draws', () => {
     const role = { name: 'role', type: 'select', required: true, options: [] } as ClientField;
 
     expect(
@@ -78,13 +134,20 @@ describe('requiredFields', () => {
         [text('email', true), text('username', true), text('bio'), role],
         ['email', 'username'],
       ),
-    ).toEqual([role]);
+    ).toEqual([
+      hidden(text('email', true)),
+      hidden(text('username', true)),
+      hidden(text('bio')),
+      role,
+    ]);
     expect(requiredFields([text('email', true), text('username', true)], ['email'])).toEqual([
+      hidden(text('email', true)),
       text('username', true),
     ]);
+    expect(requiredFields([text('email', true), text('bio')], ['email'])).toEqual([]);
   });
 
-  it('keeps a container only with its required children', () => {
+  it('keeps a container only with its required children, each field in its place', () => {
     const fields = [
       { type: 'row', fields: [text('first', true), text('nickname')] },
       { type: 'collapsible', label: 'Extra', fields: [text('website')] },
@@ -100,10 +163,86 @@ describe('requiredFields', () => {
     ] as ClientField[];
 
     expect(requiredFields(fields)).toEqual([
-      { type: 'row', fields: [text('first', true)] },
-      { name: 'address', type: 'group', fields: [text('city', true)] },
-      { type: 'tabs', tabs: [{ label: 'Profile', fields: [text('title', true)] }] },
+      { type: 'row', fields: [text('first', true), hidden(text('nickname'))] },
+      hidden(fields[1]),
+      { name: 'address', type: 'group', fields: [text('city', true), hidden(text('line2'))] },
+      {
+        type: 'tabs',
+        tabs: [{ label: 'Profile', fields: [text('title', true), hidden(text('motto'))] }],
+      },
+      hidden(fields[4]),
     ]);
+  });
+
+  it('keeps an optional tab before a kept one, empty, and drops the ones after', () => {
+    const tabs = {
+      type: 'tabs',
+      tabs: [
+        { label: 'Social', fields: [text('twitter')] },
+        { label: 'Profile', fields: [text('title', true)] },
+        { label: 'Extra', fields: [text('motto')] },
+      ],
+    } as ClientField;
+
+    expect(requiredFields([tabs])).toEqual([
+      {
+        type: 'tabs',
+        tabs: [
+          { label: 'Social', fields: [] },
+          { label: 'Profile', fields: [text('title', true)] },
+        ],
+      },
+    ]);
+  });
+
+  it('draws each kept unnamed container at the path the server built its form state for', () => {
+    const fields = [
+      { type: 'row', label: 'Extras', admin: { condition: () => false }, fields: [text('nick')] },
+      { type: 'row', label: 'Role row', fields: [text('role', true)] },
+      text('bio'),
+      {
+        name: 'profile',
+        type: 'group',
+        fields: [
+          { type: 'collapsible', label: 'Optional block', fields: [text('motto')] },
+          {
+            type: 'row',
+            label: 'Outer row',
+            fields: [
+              { type: 'collapsible', label: 'Optional inner', fields: [text('website')] },
+              { type: 'collapsible', label: 'Needed inner', fields: [text('title', true)] },
+            ],
+          },
+        ],
+      },
+      {
+        type: 'tabs',
+        label: 'Tabs',
+        tabs: [
+          { label: 'Optional tab', fields: [text('twitter')] },
+          {
+            label: 'Needed tab',
+            fields: [{ type: 'row', label: 'Tab row', fields: [text('plan', true)] }],
+          },
+        ],
+      },
+    ] as unknown as ClientField[];
+
+    const before = containerPaths(fields);
+    const after = containerPaths(requiredFields(fields));
+
+    for (const label of ['Role row', 'Outer row', 'Needed inner', 'Tabs', 'Tab row']) {
+      expect([label, after[label]]).toEqual([label, before[label]]);
+    }
+  });
+
+  it('drops a container whose only required child is hidden or disabled', () => {
+    const fields = [
+      { type: 'collapsible', label: 'Internal', fields: [hidden(text('tenant', true))] },
+      { type: 'row', fields: [{ ...text('secret', true), hidden: true }] },
+    ] as unknown as ClientField[];
+
+    expect(requiredFields(fields)).toEqual([]);
   });
 
   it('keeps a required field named email when it is nested', () => {
@@ -143,8 +282,10 @@ const props = {
 describe('create-first-user view', () => {
   beforeEach(() => {
     ui.fields = [];
-    ui.setUser.mockReset();
-    ui.push.mockReset();
+
+    for (const mock of [ui.setUser, ui.push, ui.dispatchFields, ui.setIsValid, ui.setSubmitted]) {
+      mock.mockReset();
+    }
   });
 
   it('renders the heading, the form, then the divider and sign-in buttons', async () => {
@@ -241,8 +382,12 @@ describe('create-first-user view', () => {
     expect(ui.push).not.toHaveBeenCalled();
   });
 
-  it('shows the server error and its field messages, and stays on the form', async () => {
+  it('puts a server field error on its field, toasts the rest, and stays on the form', async () => {
     const errorToast = vi.fn();
+    const fieldError = {
+      path: 'email',
+      message: 'A user with the given email is already registered.',
+    };
 
     renderClient();
 
@@ -250,19 +395,47 @@ describe('create-first-user view', () => {
       400,
       {
         errors: [
-          {
-            message: 'The following field is invalid: role',
-            data: { errors: [{ path: 'role', message: 'This field is required.' }] },
-          },
+          { message: 'The following field is invalid: email', data: { errors: [fieldError] } },
         ],
       },
       errorToast,
     );
 
-    expect(errorToast).toHaveBeenCalledWith(
-      'The following field is invalid: role This field is required.',
-    );
+    expect(ui.dispatchFields).toHaveBeenCalledWith({
+      type: 'ADD_SERVER_ERRORS',
+      errors: [fieldError],
+    });
+    expect(ui.setIsValid).toHaveBeenCalledWith(false);
+    expect(ui.setSubmitted).toHaveBeenCalledWith(true);
+    expect(errorToast).toHaveBeenCalledWith('The following field is invalid: email');
     expect(ui.setUser).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'authentication:createUser' })).toBeTruthy();
+  });
+
+  it('never shows a blank error toast', async () => {
+    const errorToast = vi.fn();
+
+    renderClient();
+    await respond(400, { errors: [{}, { message: ' ' }] }, errorToast);
+
+    expect(errorToast).toHaveBeenCalledWith('error:unknown');
+    expect(ui.dispatchFields).not.toHaveBeenCalled();
+  });
+
+  it('shows the status text for an error that is not JSON', async () => {
+    const errorToast = vi.fn();
+
+    renderClient();
+
+    await act(() =>
+      ui.handleResponse!(
+        new Response('<html>boom</html>', { status: 500, statusText: 'Internal Server Error' }),
+        vi.fn(),
+        errorToast,
+      ),
+    );
+
+    expect(errorToast).toHaveBeenCalledWith('Internal Server Error');
     expect(screen.getByRole('button', { name: 'authentication:createUser' })).toBeTruthy();
   });
 });
