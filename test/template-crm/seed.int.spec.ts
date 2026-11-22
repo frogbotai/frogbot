@@ -134,6 +134,7 @@ describe('crm template seed', () => {
     });
 
     await clearAndSeed(booted.frogbot, 'empty');
+
     await seed({
       req: await booted.frogbot.createRequest(),
       today: new Date('2026-06-16T12:00:00Z'),
