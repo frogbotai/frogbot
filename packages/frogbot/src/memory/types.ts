@@ -3,6 +3,7 @@ import type { ModelMessage } from 'ai';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { FrogBot } from '../frogbot.js';
+import type { ToolApprovalOption } from '../tools/approval.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 /** A saved memory. `scope` is the scope word it was saved under. */
@@ -50,6 +51,10 @@ export type MemoryOptions = {
   /** Custom scope words, or a replacement for `team`. */
   scopes?: Record<string, MemoryScope>;
   access?: MemoryAccess;
+  /** Changes whether a memory tool asks first, for every agent. Defaults: `memory_forget` asks, the others run. */
+  tools?: Partial<
+    Record<'memory_forget' | 'memory_save' | 'memory_search', { approval?: ToolApprovalOption }>
+  >;
 };
 
 /** The resolved scope core hands every adapter method. */

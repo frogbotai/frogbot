@@ -1,0 +1,117 @@
+import type { FrogBot } from '../frogbot.js';
+import type { FrogBotRequest } from '../types/request.js';
+import { isMemoryAdapterError } from './errors.js';
+import { memoryScopeWords, resolveMemoryScope } from './scopes.js';
+import type { MemoryCallArgs } from './types.js';
+
+/** What a memory call from an agent run needs: who runs it, the agent and the chat. */
+export type MemoryRunSource = {
+  req: FrogBotRequest;
+  frogbot: FrogBot;
+  agent: { slug: string; chatId?: number | string };
+};
+
+export type MemoryResolvedScope = { scope: string; scopeId: string };
+
+/** Memory calls for one agent run. Scope words resolve from the host, never from the model. */
+export type MemoryRun = {
+  /** Spread into `frogbot.memory.*`. Agent runs skip `memory.access`, which guards REST and the SDK. */
+  callArgs: Omit<MemoryCallArgs, 'scope'>;
+  /** The scope words this run can use, built-in words first, then custom words in declaration order. */
+  available: () => Promise<string[]>;
+  /** Each available word with its scope ID, in the same order. */
+  resolved: () => Promise<MemoryResolvedScope[]>;
+  /** `me` for a signed-in person, otherwise `agent`. */
+  defaultScope: () => string;
+};
+
+const runs = new WeakMap<FrogBotRequest, Map<string, Promise<MemoryRun>>>();
+
+async function loadChat({
+  agent,
+  frogbot,
+  req,
+}: MemoryRunSource): Promise<Record<string, unknown> | undefined> {
+  const chat = frogbot.config.chat;
+
+  if (agent.chatId === undefined || !chat.enabled || !frogbot.config.memory?.scopes) {
+    return undefined;
+  }
+
+  return frogbot.findByID({
+    collection: chat.chatsSlug,
+    id: agent.chatId,
+    depth: 0,
+    req,
+    overrideAccess: true,
+  });
+}
+
+async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
+  const { frogbot, req } = source;
+  const memory = frogbot.config.memory;
+
+  if (!memory) {
+    throw new Error(
+      '[frogbot] Memory is not configured. Set `memory: databaseMemory()` in your FrogBot config.',
+    );
+  }
+
+  const known = frogbot.config.agents?.some(({ slug }) => slug === source.agent.slug);
+  const chat = await loadChat(source);
+  const agent = known ? { slug: source.agent.slug } : undefined;
+
+  let resolved: Promise<MemoryResolvedScope[]> | undefined;
+
+  const resolveAll = async (): Promise<MemoryResolvedScope[]> => {
+    const results = await Promise.all(
+      memoryScopeWords(memory).map(async (scope) => {
+        try {
+          return {
+            scope,
+            scopeId: await resolveMemoryScope({ options: memory, scope, req, agent, chat }),
+          };
+        } catch (error) {
+          if (isMemoryAdapterError(error)) return undefined;
+
+          throw error;
+        }
+      }),
+    );
+
+    return results.filter((entry) => entry !== undefined);
+  };
+
+  return {
+    callArgs: {
+      req,
+      ...(agent ? { agent: agent.slug } : {}),
+      ...(chat ? { chat } : {}),
+      overrideAccess: true,
+    },
+    resolved: () => (resolved ??= resolveAll()),
+    available: async () => (await (resolved ??= resolveAll())).map(({ scope }) => scope),
+    defaultScope: () => (req.user ? 'me' : 'agent'),
+  };
+}
+
+/** The memory context of one run, built once per request and agent. */
+export function memoryRun(source: MemoryRunSource): Promise<MemoryRun> {
+  let byAgent = runs.get(source.req);
+
+  if (!byAgent) {
+    byAgent = new Map();
+    runs.set(source.req, byAgent);
+  }
+
+  const key = `${source.agent.slug}\u0000${String(source.agent.chatId ?? '')}`;
+  let run = byAgent.get(key);
+
+  if (!run) {
+    run = createRun(source);
+    byAgent.set(key, run);
+    run.catch(() => byAgent.delete(key));
+  }
+
+  return run;
+}

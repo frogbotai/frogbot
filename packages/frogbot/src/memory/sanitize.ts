@@ -1,5 +1,7 @@
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
+import { assertToolApproval } from '../tools/approval.js';
+import { MEMORY_TOOL_SLUGS } from './tools.js';
 import type { MemoryAdapter } from './types.js';
 
 const METHODS = ['save', 'search', 'list', 'get', 'update', 'forget'] as const;
@@ -36,6 +38,26 @@ function checkScopes(scopes: unknown): void {
   }
 }
 
+function checkTools(tools: unknown): void {
+  if (tools === undefined) return;
+
+  if (typeof tools !== 'object' || tools === null || Array.isArray(tools)) {
+    fail('`tools` must be an object keyed by memory tool slug');
+  }
+
+  for (const [slug, options] of Object.entries(tools)) {
+    if (!(MEMORY_TOOL_SLUGS as readonly string[]).includes(slug)) {
+      fail(`\`tools\` has unknown tool '${slug}'. Use ${MEMORY_TOOL_SLUGS.join(', ')}`);
+    }
+
+    if (typeof options !== 'object' || options === null) {
+      fail(`\`tools.${slug}\` must be an object`);
+    }
+
+    assertToolApproval((options as { approval?: unknown }).approval, `memory tool '${slug}'`);
+  }
+}
+
 function checkAdapter(memory: MemoryAdapter): void {
   if (typeof memory !== 'object' || memory === null) {
     fail('must be a memory adapter, such as `databaseMemory()`');
@@ -56,6 +78,7 @@ function checkAdapter(memory: MemoryAdapter): void {
   }
 
   checkScopes(memory.scopes);
+  checkTools(memory.tools);
 
   for (const kind of ['read', 'write'] as const) {
     if (memory.access?.[kind] !== undefined && !isFunction(memory.access[kind])) {
