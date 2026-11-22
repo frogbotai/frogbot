@@ -167,6 +167,59 @@ describe('localized values inside reordered rows', () => {
     expect(pick(version.sections?.[0]?.content, 'text')).toEqual(['n2 Abajo', 'n1 Arriba']);
   });
 
+  it('keeps the other locale on a row with no text in the saved locale that moves past the old length', async () => {
+    const doc = (await booted.frogbot.create({
+      collection: draftySlug,
+      locale: 'en',
+      data: { layout: [{ id: 'm1', blockType: 'intl', size: 's' }], _status: 'published' },
+    })) as Doc;
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id: doc.id,
+      locale: 'es',
+      data: { layout: [block('m1', 'Hola', 's')], _status: 'published' },
+    });
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id: doc.id,
+      locale: 'en',
+      data: { layout: [block('m3', 'New', 'm'), { id: 'm1', blockType: 'intl', size: 's' }] },
+    });
+
+    const es = await read(draftySlug, doc.id, 'es');
+
+    expect(es.layout?.map((row) => `${row.id} ${String(row.text ?? null)}`)).toEqual([
+      'm3 null',
+      'm1 Hola',
+    ]);
+  });
+
+  it('repairs a publish of a draft reorder that sends only the status', async () => {
+    const id = await create(draftySlug);
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id,
+      locale: 'en',
+      draft: true,
+      data: reordered,
+    });
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id,
+      locale: 'en',
+      data: { _status: 'published' },
+    });
+
+    expect(pick((await read(draftySlug, id, 'es')).layout, 'text')).toEqual([
+      'm2 Adios',
+      'm1 Hola',
+    ]);
+  });
+
   it('keeps an unpublished locale draft out of the main row', async () => {
     const doc = (await booted.frogbot.create({
       collection: draftySlug,

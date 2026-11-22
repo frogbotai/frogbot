@@ -102,6 +102,17 @@ describe('repairLocalizedRows', () => {
     });
   });
 
+  it('restores a localized field Payload dropped from a row entirely', () => {
+    const before = { layout: [{ id: 'm1', blockType: 'intl', size: 'm1', text: { es: 'Hola' } }] };
+    const after = {
+      layout: [row('m3', 'New'), { id: 'm1', blockType: 'intl', size: 'm1' }],
+    };
+
+    expect(repair(before, after)).toEqual({
+      layout: [row('m3', 'New'), { id: 'm1', blockType: 'intl', size: 'm1', text: { es: 'Hola' } }],
+    });
+  });
+
   it('returns null when every row already has its own values', () => {
     const before = { layout: [row('m1', 'Hello', 'Hola')] };
 
