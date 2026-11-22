@@ -27,11 +27,11 @@ describe('memory tools outside an agent run', () => {
       overrideAccess,
     };
 
-    const tool = memoryTools.find((entry) => entry.slug === slug);
+    const execute = memoryTools.find((entry) => entry.slug === slug)?.execute;
 
-    if (!tool || !('execute' in tool)) throw new Error(`No tool ${slug}`);
+    if (!execute) throw new Error(`No tool ${slug}`);
 
-    return tool.execute(input, ctx);
+    return execute(input, ctx);
   }
 
   it('follows memory.access on shared scopes when the caller checks access, as MCP does', async () => {
