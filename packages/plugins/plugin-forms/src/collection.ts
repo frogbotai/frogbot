@@ -52,7 +52,7 @@ export function createFormsCollection({
     endpoints: [
       createDefinitionEndpoint(runtime),
       createSubmitEndpoint(runtime),
-      createEventsEndpoint(runtime),
+      ...(runtime.analytics ? [createEventsEndpoint(runtime)] : []),
     ],
     hooks: {
       beforeValidate: [

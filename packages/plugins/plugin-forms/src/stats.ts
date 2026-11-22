@@ -65,14 +65,12 @@ function isPing(value: unknown): value is 'start' | 'view' {
   return value === 'view' || value === 'start';
 }
 
-/** `POST /api/forms/:slug/events` with `{ type: 'view' | 'start' }`. Answers 204, or 404 with analytics off. */
+/** `POST /api/forms/:slug/events` with `{ type: 'view' | 'start' }`. Added only with `analytics`. */
 export function createEventsEndpoint(runtime: FormsRuntime): Endpoint {
   return {
     method: 'post',
     path: '/:slug/events',
     handler: async (req) => {
-      if (!runtime.analytics) return Response.json({ error: 'Not found' }, { status: 404 });
-
       const body = (await req.json?.().catch(() => null)) as { type?: unknown } | null;
       const type = body?.type;
 
