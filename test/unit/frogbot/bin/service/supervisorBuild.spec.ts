@@ -141,10 +141,10 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
         CLAUDECODE: '1',
         CURSOR_TRACE_ID: 'x',
         __NEXT_AGENT_UPGRADE: 'security',
+        NODE_ENV: 'production',
         PATH: '/bin',
-        HOME: '/home/me',
       }),
-    ).toEqual({ PATH: '/bin', HOME: '/home/me' });
+    ).toEqual({ NODE_ENV: 'production', PATH: '/bin' });
   });
 
   it('run next build without the agent markers, its output tagged [build:next]', async () => {

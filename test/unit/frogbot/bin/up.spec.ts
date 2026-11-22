@@ -176,7 +176,7 @@ describe('frogbot up', () => {
         autostart: true,
       });
 
-      return Promise.resolve();
+      return Promise.resolve('');
     });
 
     await expect(

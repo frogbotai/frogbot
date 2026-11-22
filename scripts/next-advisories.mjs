@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { checkNextAdvisories } from '../packages/frogbot/src/bin/nextAdvisories.ts';
 import { catalogVersion } from './lib/workspace.mjs';
 
+/** @param {{ fetch?: typeof globalThis.fetch, version?: string }} [options] */
 export async function nextAdvisories({ fetch, version = catalogVersion('next') } = {}) {
   const report = await checkNextAdvisories({ fetch, version }).catch((error) => error);
 
