@@ -47,7 +47,7 @@ The seed is plain code in your app, in three files you can change or delete:
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | `src/seed/index.ts`            | `seed({ req })` adds the sample records through `req.frogbot`, the [Local API](/local-api/overview); `hasSampleData({ req })` says whether they exist. |
 | `src/seed/endpoint.ts`         | `seedEndpoint()`, the `POST /api/seed` [root endpoint](/rest-api/overview#custom-endpoints).                  |
-| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`. A server component: it renders `SeedButton` only while `hasSampleData()` is false. |
+| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`. A server component: it renders `SeedButton` only while `hasSampleData({ req })` is false. |
 
 The seed passes `overrideAccess: true` and the request to each call, so it can write fields people can't, such as [autonumber](/fields/autonumber#seeds-and-migrations) numbers. It doesn't import anything from `src/agents`, so it keeps working when the app has no AI.
 
