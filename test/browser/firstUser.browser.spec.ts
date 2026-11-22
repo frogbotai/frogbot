@@ -186,6 +186,7 @@ test('@fields the form asks only for required fields, and two-factor sends the o
   const me = await page.evaluate(async () => (await fetch('/api/users/me')).json());
 
   expect(me.user).toBeNull();
+  await expect(page.locator('[data-sonner-toast]')).toHaveCount(0);
 
   await page.goto('/create-first-user');
   await page.waitForURL((url) => url.pathname === '/login');

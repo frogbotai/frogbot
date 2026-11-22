@@ -33,9 +33,20 @@ export type CreateFirstUserClientProps = {
   userSlug: string;
 };
 
+type FirstRegisterResponse = UserWithToken & {
+  message?: string;
+  errors?: { message?: string; data?: { errors?: { path?: string; message?: string }[] } }[];
+};
+
+const errorText = ({ message, data }: NonNullable<FirstRegisterResponse['errors']>[number]) =>
+  [message, ...(data?.errors ?? []).map((error) => error.message ?? error.path)]
+    .filter(Boolean)
+    .join(' ');
+
 /**
  * Payload's first-user form, asking only for email, password and the fields the collection
- * marks required. A `202` from two-factor's `require` shows a sign-in link instead of signing in.
+ * marks required. It handles the response itself: a `202` from two-factor's `require` shows a
+ * sign-in link, and no after-save form refresh runs, since that needs the session a `202` withholds.
  */
 export function CreateFirstUserClient({
   docPermissions,
@@ -87,15 +98,27 @@ export function CreateFirstUserClient({
     );
   }
 
-  const handleFirstRegister = (json: unknown) => {
-    if ((json as { twoFactor?: unknown }).twoFactor) {
+  const handleFirstRegister = async (
+    res: Response,
+    _successToast: (message: string) => void,
+    errorToast: (message: string) => void,
+  ) => {
+    const json = (await res.json().catch(() => ({}))) as FirstRegisterResponse;
+
+    if (res.status === 202) {
       setNeedsTwoFactor(true);
 
       return;
     }
 
-    setUser(json as UserWithToken);
-    void startRouteTransition(() => router.push(admin));
+    if (res.ok) {
+      setUser(json);
+      void startRouteTransition(() => router.push(admin));
+
+      return;
+    }
+
+    errorToast(json.errors?.map(errorText).join(' ') || json.message || t('error:unknown'));
   };
 
   return (
@@ -117,9 +140,9 @@ export function CreateFirstUserClient({
           action={formatAdminURL({ apiRoute, path: `/${userSlug}/first-register` })}
           className={baseClass}
           disableSuccessStatus
+          handleResponse={handleFirstRegister}
           initialState={formInitialState}
           method="POST"
-          onSuccess={handleFirstRegister}
           schemaPath={userSlug}
           validationOperation="create"
         >

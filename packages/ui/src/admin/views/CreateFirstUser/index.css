@@ -67,7 +67,8 @@
     width: 100%;
   }
 
-  .create-first-user__form__actions .form-submit .btn {
+  .create-first-user__form__actions .form-submit .btn,
+  .create-first-user__form__two-factor .btn {
     justify-content: center;
     width: 100%;
     height: var(--spacer-4);

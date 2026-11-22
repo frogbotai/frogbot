@@ -10,7 +10,9 @@ import { requiredFields } from '../../../../../packages/ui/src/admin/views/Creat
 const ui = vi.hoisted(() => ({
   fields: [] as unknown[],
   rendered: undefined as unknown,
-  onSuccess: undefined as undefined | ((json: unknown) => Promise<void> | void),
+  handleResponse: undefined as
+    | undefined
+    | ((res: Response, success: (m: string) => void, error: (m: string) => void) => Promise<void>),
   formProps: undefined as undefined | Record<string, unknown>,
   setUser: vi.fn(),
   push: vi.fn(),
@@ -30,13 +32,13 @@ vi.mock('@payloadcms/ui', () => ({
   EmailAndUsernameFields: () => <input name="email" />,
   Form: ({
     children,
-    onSuccess,
+    handleResponse,
     ...props
   }: {
     children: ReactNode;
-    onSuccess: (json: unknown) => void;
+    handleResponse: typeof ui.handleResponse;
   }) => {
-    ui.onSuccess = onSuccess;
+    ui.handleResponse = handleResponse;
     ui.formProps = props;
 
     return <form>{children}</form>;
@@ -151,7 +153,11 @@ describe('create-first-user view', () => {
     }
 
     expect(button.getAttribute('href')).toBe('/api/users/sign-in/google?returnTo=%2Fadmin');
-    expect(ui.formProps).toMatchObject({ action: '/api/users/first-register', method: 'POST' });
+    expect(ui.formProps).toMatchObject({
+      action: '/api/users/first-register',
+      disableSuccessStatus: true,
+      method: 'POST',
+    });
   });
 
   const renderClient = () =>
@@ -175,12 +181,15 @@ describe('create-first-user view', () => {
     expect(names).toEqual(['email', 'password', 'confirm-password', 'role']);
   });
 
+  const respond = (status: number, body: unknown, errorToast = vi.fn()) =>
+    act(() => ui.handleResponse!(Response.json(body, { status }), vi.fn(), errorToast));
+
   it('signs the new user in and goes to the admin', async () => {
     renderClient();
 
     const json = { user: { id: 1 }, token: 't', exp: 1 };
 
-    await act(() => ui.onSuccess!(json));
+    await respond(200, json);
 
     expect(ui.setUser).toHaveBeenCalledWith(json);
     expect(ui.push).toHaveBeenCalledWith('/admin');
@@ -189,7 +198,7 @@ describe('create-first-user view', () => {
   it("shows a sign-in link when two-factor's require answers 202", async () => {
     renderClient();
 
-    await act(() => ui.onSuccess!({ twoFactor: 'setup', url: '/api/users/two-factor' }));
+    await respond(202, { twoFactor: 'setup', url: '/api/users/two-factor' });
 
     expect(screen.getByText('Account created. Sign in to set up two-factor.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'authentication:login' }).getAttribute('href')).toBe(
@@ -198,5 +207,30 @@ describe('create-first-user view', () => {
     expect(screen.queryByRole('button', { name: 'authentication:createUser' })).toBeNull();
     expect(ui.setUser).not.toHaveBeenCalled();
     expect(ui.push).not.toHaveBeenCalled();
+  });
+
+  it('shows the server error and its field messages, and stays on the form', async () => {
+    const errorToast = vi.fn();
+
+    renderClient();
+
+    await respond(
+      400,
+      {
+        errors: [
+          {
+            message: 'The following field is invalid: role',
+            data: { errors: [{ path: 'role', message: 'This field is required.' }] },
+          },
+        ],
+      },
+      errorToast,
+    );
+
+    expect(errorToast).toHaveBeenCalledWith(
+      'The following field is invalid: role This field is required.',
+    );
+    expect(ui.setUser).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'authentication:createUser' })).toBeTruthy();
   });
 });
