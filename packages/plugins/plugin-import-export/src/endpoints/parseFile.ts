@@ -44,13 +44,23 @@ function readJSON(data: Buffer): ImportFileColumns {
 
   if (!Array.isArray(parsed)) throw new Error('A JSON import must be an array of objects.');
 
-  const rows = parsed
-    .slice(0, sampleRows)
-    .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null);
+  const rows = parsed.slice(0, sampleRows).map((row: unknown, index) => {
+    if (typeof row === 'object' && row !== null && !Array.isArray(row)) {
+      return row as Record<string, unknown>;
+    }
+
+    throw new Error(`Item ${index + 1} is not an object (got ${typeName(row)}).`);
+  });
 
   const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
 
   return { headers, samples: collectSamples(headers, rows) };
+}
+
+function typeName(value: unknown): string {
+  if (value === null) return 'null';
+
+  return Array.isArray(value) ? 'array' : typeof value;
 }
 
 function collectSamples(headers: string[], rows: Record<string, unknown>[]) {

@@ -51,7 +51,7 @@ async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
       const message = err instanceof Error ? err.message : String(err);
       const name = plugin.slug ? `"${plugin.slug}"` : `at index ${index}`;
 
-      throw new Error(`[frogbot] plugin ${name} failed: ${message}`);
+      throw new Error(`[frogbot] plugin ${name} failed: ${message}`, { cause: err });
     }
   }
 
@@ -66,7 +66,9 @@ async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const name = process.env.FROGBOT_PLATFORM_PLUGIN;
-      throw new Error(`[frogbot] platform plugin ${name ? `${name} ` : ''}failed: ${message}`);
+      throw new Error(`[frogbot] platform plugin ${name ? `${name} ` : ''}failed: ${message}`, {
+        cause: err,
+      });
     }
   }
 

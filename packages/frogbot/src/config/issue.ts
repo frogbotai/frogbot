@@ -1,4 +1,5 @@
-export type ConfigIssueCode = 'INVALID_CRON' | 'UNKNOWN_TASK';
+/** Core's config issue codes; a plugin passes its own, prefixed with its name. */
+export type ConfigIssueCode = 'INVALID_CRON' | 'UNKNOWN_TASK' | (string & {});
 
 /** A config error with a stable `code` and the config `path` it points at, for `frogbot check`. */
 export class ConfigIssueError extends Error {
