@@ -70,6 +70,18 @@ describe('handoverId', () => {
   ])('reads %j as %j', (ref, id) => {
     expect(handoverId(ref)).toBe(id);
   });
+
+  it.each([['https://dojo.frogbot.ai/'], ['https://dojo.frogbot.ai'], ['  ']])(
+    'refuses %j with exit 2 and no request',
+    async (link) => {
+      const { dojo, run } = await setup();
+
+      const result = await run(['handovers', 'details', link]);
+
+      expect(result.code).toBe(2);
+      expect(dojo.paths()).toEqual([]);
+    },
+  );
 });
 
 describe('handovers accept', () => {
@@ -185,7 +197,13 @@ describe('handovers accept', () => {
 });
 
 describe('handovers remove-access', () => {
-  const accepted = { ...pending, status: 'accepted', recipient: false, toWorkspace: 'Acme' };
+  const accepted = {
+    ...pending,
+    status: 'accepted',
+    recipient: false,
+    toWorkspace: 'Acme',
+    canRemove: true,
+  };
 
   it('names who loses access when it asks', async () => {
     const { run } = await setup({ 'GET /api/handovers/h1/details': { body: accepted } });
@@ -209,6 +227,20 @@ describe('handovers remove-access', () => {
 
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout().join('\n'))).toEqual({ id: 'h1', removed: 0 });
+    expect(changes(dojo)).toEqual([]);
+  });
+
+  it('refuses with what it needs, and sends nothing, when Dojo says you may not remove access', async () => {
+    const { dojo, run } = await setup({
+      'GET /api/handovers/h1/details': { body: { ...accepted, canRemove: false } },
+    });
+
+    const result = await run(['handovers', 'remove-access', 'h1', '--yes']);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr()).toEqual([
+      '[frogbot] Removing access to the project Ops needs Admin access to Acme, the workspace it moved into.',
+    ]);
     expect(changes(dojo)).toEqual([]);
   });
 
@@ -264,6 +296,31 @@ describe('apps move --project', () => {
     const listed = dojo.requests.find(({ path }) => path === '/api/projects');
 
     expect(decodeURIComponent(listed?.search ?? '')).toContain('where[workspace][equals]=1');
+    expect(changes(dojo)).toEqual([]);
+  });
+});
+
+describe('the default project', () => {
+  const ops = { id: 'p1', name: 'Ops', workspace: 1, isDefault: true };
+
+  it.each([
+    [['projects', 'move', 'Ops', '--workspace', 'acme', '--yes'], 'POST /api/projects/p1/move'],
+    [
+      ['projects', 'handover', 'Ops', '--to', 'bo@example.com', '--yes'],
+      'POST /api/projects/p1/handover',
+    ],
+  ])('%j stops before asking or sending', async (args, route) => {
+    const { dojo, run } = await setup({
+      'GET /api/projects': { body: { docs: [ops] } },
+      [route]: { status: 404, body: { errors: [{ message: 'Project not found.' }] } },
+    });
+
+    const result = await run(args);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr()).toEqual([
+      "[frogbot] The workspace's default project can't move. Move its apps one by one.",
+    ]);
     expect(changes(dojo)).toEqual([]);
   });
 });
