@@ -9,6 +9,7 @@ import {
   resolvePropertyPaths,
   resolveTitlePath,
 } from '../../../../../packages/ui/src/admin/views/panel/config.js';
+import { adjacentRecord } from '../../../../../packages/ui/src/admin/views/panel/recordSteps.js';
 import { redirectRecordParam } from '../../../../../packages/ui/src/admin/views/panel/redirectRecord.js';
 import { recordPanelStatus } from '../../../../../packages/ui/src/admin/views/panel/status.js';
 
@@ -160,5 +161,24 @@ describe('recordPanelStatus', () => {
 
   it('never offers Save without save access', () => {
     expect(recordPanelStatus({ ...base, canSave: false, modified: true })).toBeUndefined();
+  });
+});
+
+describe('adjacentRecord', () => {
+  const ids = ['a', 'b', 'c'];
+
+  it('steps to the next and the previous record in view order', () => {
+    expect(adjacentRecord(ids, 'b', 1)).toBe('c');
+    expect(adjacentRecord(ids, 'b', -1)).toBe('a');
+  });
+
+  it('stops at either end', () => {
+    expect(adjacentRecord(ids, 'c', 1)).toBeUndefined();
+    expect(adjacentRecord(ids, 'a', -1)).toBeUndefined();
+  });
+
+  it('does nothing when the open record is not in the view', () => {
+    expect(adjacentRecord(ids, 'z', 1)).toBeUndefined();
+    expect(adjacentRecord([], 'a', -1)).toBeUndefined();
   });
 });

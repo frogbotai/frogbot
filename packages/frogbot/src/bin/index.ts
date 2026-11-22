@@ -11,6 +11,7 @@ import { formatCliError } from './formatCliError.js';
 import { generateImportMap } from './generateImportMap.js';
 import { generatePieceTypesCommand } from './generatePieceTypes.js';
 import { generateTypes } from './generateTypes.js';
+import { asksForHelp, commandHelp } from './help.js';
 import { jobsRun } from './jobsRun.js';
 import { loadEnv } from './loadEnv.js';
 import { migrate } from './migrate.js';
@@ -23,36 +24,51 @@ import { users } from './usersCreate.js';
 
 type LoadedConfig = { config?: FrogBotSanitizedConfig; loadError?: unknown };
 
-type Command = (
-  args: string[],
-  command: string,
-  loaded: LoadedConfig,
-) => Promise<unknown> | unknown;
+type Command = {
+  run: (args: string[], command: string, loaded: LoadedConfig) => Promise<unknown> | unknown;
+  help: string | ((args: string[], loaded: LoadedConfig) => Promise<string>);
+};
 
-const runMigrate: Command = (args, command) => migrate([command, ...args]);
+const runMigrate: Command = {
+  run: (args, command) => migrate([command, ...args]),
+  help: commandHelp.migrate,
+};
 
-const commands: Record<string, Command> = {
-  start: (args) => start(args),
-  dev: (args) => dev(args),
-  up: (args) => up(args),
-  down: (args) => down(args),
-  status: (args) => status(args),
-  run: (args) => runScript(args),
-  check: (args) => check(args),
-  users: async (args, _command, loaded) => {
-    process.exitCode = await users(args, loaded);
+/** The built-in commands, keyed by name. */
+export const commands: Record<string, Command> = {
+  start: { run: (args) => start(args), help: commandHelp.start },
+  dev: { run: (args) => dev(args), help: commandHelp.dev },
+  up: { run: (args) => up(args), help: commandHelp.up },
+  down: { run: (args) => down(args), help: commandHelp.down },
+  status: { run: (args) => status(args), help: commandHelp.status },
+  run: { run: (args) => runScript(args), help: commandHelp.run },
+  check: { run: (args) => check(args), help: commandHelp.check },
+  users: {
+    run: async (args, _command, loaded) => {
+      process.exitCode = await users(args, loaded);
+    },
+    help: commandHelp.users,
   },
-  deploy: async (args, _command, loaded) => {
-    const { deploy } = await import('./deploy/command.js');
+  deploy: {
+    run: async (args, _command, loaded) => {
+      const { deploy } = await import('./deploy/command.js');
 
-    process.exitCode = await deploy(args, loaded);
+      process.exitCode = await deploy(args, loaded);
+    },
+    help: async (args, loaded) => (await import('./deploy/command.js')).deployHelp(args, loaded),
   },
-  'generate:types': () => generateTypes(),
-  'generate:piece-types': (args) => generatePieceTypesCommand(args),
-  'pieces:port': (args) => piecesPort(args),
-  'generate:importmap': () => generateImportMap(),
-  'jobs:run': (args) => jobsRun(args),
-  'channels:run': () => channelsRun(),
+  'generate:types': { run: () => generateTypes(), help: commandHelp['generate:types'] },
+  'generate:piece-types': {
+    run: (args) => generatePieceTypesCommand(args),
+    help: commandHelp['generate:piece-types'],
+  },
+  'pieces:port': { run: (args) => piecesPort(args), help: commandHelp['pieces:port'] },
+  'generate:importmap': {
+    run: () => generateImportMap(),
+    help: commandHelp['generate:importmap'],
+  },
+  'jobs:run': { run: (args) => jobsRun(args), help: commandHelp['jobs:run'] },
+  'channels:run': { run: () => channelsRun(), help: commandHelp['channels:run'] },
   migrate: runMigrate,
   'migrate:create': runMigrate,
   'migrate:down': runMigrate,
@@ -134,6 +150,14 @@ export async function bin() {
     process.exit(0);
   }
 
+  if (handler && !appCommand && asksForHelp(command, args)) {
+    const { help } = handler;
+
+    console.log(typeof help === 'string' ? help : await help(args, { config, loadError }));
+
+    process.exit(0);
+  }
+
   if (!command) {
     console.error(usage(appCommands));
     if (loadError) console.error(formatCliError(loadError));
@@ -159,7 +183,7 @@ export async function bin() {
 
   try {
     if (appCommand && config) await runAppCommand(appCommand, { args, command, config });
-    else await handler?.(args, command, { config, loadError });
+    else await handler?.run(args, command, { config, loadError });
   } catch (error) {
     console.error(formatCliError(error));
 

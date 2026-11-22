@@ -1,7 +1,6 @@
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { getFrogBotInstance } from '../instanceRegistry.js';
-import { withFrogBotAutoRun } from '../jobs/autoRun.js';
 
 export const AGENT_TRIGGER_TASK_SLUG = 'frogbot-run-agent-trigger';
 
@@ -53,6 +52,5 @@ export function resolveTriggerTasks(jobs?: JobsConfig): JobsConfig {
   return {
     ...jobs,
     tasks: [...(jobs?.tasks ?? []), task],
-    autoRun: withFrogBotAutoRun(jobs?.autoRun),
   };
 }

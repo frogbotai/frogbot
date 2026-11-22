@@ -4494,7 +4494,14 @@ describe('frogbot sanitize', () => {
           tasks: expect.arrayContaining([
             expect.objectContaining({ slug: 'frogbot-run-agent-trigger' }),
           ]),
-          autoRun: expect.arrayContaining([expect.objectContaining({ allQueues: true })]),
+          autoRun: [
+            { cron: '* * * * *', queue: 'frogbot', silent: { info: true } },
+            {
+              cron: '* * * * *',
+              queue: `frogbot-trigger:${agent.slug}:created`,
+              silent: { info: true },
+            },
+          ],
         },
         endpoints: expect.arrayContaining([
           expect.objectContaining({ path: '/webhooks/:instance' }),
@@ -4507,7 +4514,7 @@ describe('frogbot sanitize', () => {
       expect(removed.pieces.instances).toContain(example);
     });
 
-    it('adds one silent runner when schedules, triggers and AI fields all need it', async () => {
+    it('adds one silent runner per FrogBot queue when schedules, triggers and AI fields need it', async () => {
       const createExample = definePiece({
         slug: 'runner-example',
         label: 'Runner example',
@@ -4565,9 +4572,13 @@ describe('frogbot sanitize', () => {
           'frogbot-run-ai-field',
         ]),
       );
-      expect(payloadConfig.jobs.autoRun).toEqual([
-        { allQueues: true, cron: '* * * * *', silent: { info: true } },
-      ]);
+      expect(payloadConfig.jobs.autoRun).toEqual(
+        [
+          'frogbot',
+          `frogbot-trigger:${agent.slug}:created`,
+          `frogbot-schedule:${agent.slug}:run`,
+        ].map((queue) => ({ cron: '* * * * *', queue, silent: { info: true } })),
+      );
     });
 
     it('adds the subscription ledger for an agent trigger', async () => {
@@ -4653,6 +4664,51 @@ describe('frogbot sanitize', () => {
       expect(
         payloadConfig.collections?.find(({ slug }) => slug === 'frogbot-trigger-subscriptions'),
       ).toMatchObject({ admin: { hidden: true } });
+    });
+
+    it("runs an agent's channel queue on FrogBot's runner", async () => {
+      const channel = createChannel({ auth: { token: 'secret' } });
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] }));
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(payloadConfig.jobs.autoRun).toEqual(
+        ['frogbot', `frogbot-channel:${agent.slug}:${channel.slug}`].map((queue) => ({
+          cron: '* * * * *',
+          queue,
+          silent: { info: true },
+        })),
+      );
+    });
+
+    it("runs a plugin's scheduled task on the frogbot queue, and nothing for the app's own", async () => {
+      const handler = () => ({ output: {} });
+      const plugin = (config: FrogBotConfig): FrogBotConfig => ({
+        ...config,
+        jobs: {
+          ...config.jobs,
+          tasks: [
+            ...(config.jobs?.tasks ?? []),
+            {
+              slug: 'plugin-retention',
+              handler,
+              schedule: [{ cron: '0 0 * * *', queue: 'frogbot' }],
+            },
+          ],
+        },
+      });
+
+      const appOnly = makeConfig({
+        jobs: {
+          tasks: [{ slug: 'digest', handler, schedule: [{ cron: '0 0 * * *', queue: 'default' }] }],
+        },
+      });
+
+      const withPlugin = await buildConfig({ ...appOnly, plugins: [plugin] });
+
+      expect((await withPlugin._internal.payloadConfig).jobs.autoRun).toEqual([
+        { cron: '* * * * *', queue: 'frogbot', silent: { info: true } },
+      ]);
+      expect((await sanitize(appOnly)._internal.payloadConfig).jobs.autoRun).toBeUndefined();
     });
 
     it('lets agent tools override root tools', () => {
@@ -5295,9 +5351,17 @@ describe('frogbot sanitize', () => {
         'frogbot-run-agent-schedule',
         'frogbot-cleanup-kv',
       ]);
+      expect(
+        payloadConfig.jobs.tasks
+          ?.filter(
+            ({ slug }) => slug === 'frogbot-sweep-waitpoints' || slug === 'frogbot-cleanup-kv',
+          )
+          .flatMap(({ schedule }) => schedule?.map(({ queue }) => queue)),
+      ).toEqual(['frogbot', 'frogbot']);
       expect(payloadConfig.jobs.autoRun).toEqual([
         { queue: 'user' },
-        { allQueues: true, cron: '* * * * *', silent: { info: true } },
+        { cron: '* * * * *', queue: 'frogbot', silent: { info: true } },
+        { cron: '* * * * *', queue: `frogbot-schedule:${agent.slug}:run`, silent: { info: true } },
       ]);
       expect(() =>
         sanitize(

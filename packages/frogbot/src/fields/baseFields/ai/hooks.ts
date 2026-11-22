@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 
+import { FROGBOT_QUEUE } from '../../../jobs/autoRun.js';
 import type { Field, FieldHook } from '../../config/types.js';
 import { aiFieldPaths, type AIFieldStatus, type AIKind, isAIFieldInputSet } from './state.js';
 
@@ -240,7 +241,13 @@ export function aiFieldQueueHook({ kind, name }: AIFieldHookSpec): FieldHook {
       ...(user ? { user: { collection: user.collection, id: user.id } } : {}),
     };
 
-    await req.frogbot.jobs.queue({ task: AI_FIELD_TASK_SLUG, input, overrideAccess: true, req });
+    await req.frogbot.jobs.queue({
+      task: AI_FIELD_TASK_SLUG,
+      queue: FROGBOT_QUEUE,
+      input,
+      overrideAccess: true,
+      req,
+    });
 
     return value;
   };

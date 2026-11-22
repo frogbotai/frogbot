@@ -45,7 +45,6 @@ function makeCtx({ overrideAccess = false } = {}) {
 
   const ctx = {
     req: { frogbot },
-    frogbot,
     agent: { slug: 'support', runId: 'run-1' },
     overrideAccess,
   } as unknown as ToolCtx;
@@ -268,7 +267,6 @@ describe('searchTool sources', () => {
     const frogbot = { collections: { posts: { slug: 'posts', auth: false, useAsTitle } }, find };
     const ctx = {
       req: { frogbot },
-      frogbot,
       agent: { slug: 'support', runId: 'run-1' },
       overrideAccess: false,
     } as unknown as ToolCtx;

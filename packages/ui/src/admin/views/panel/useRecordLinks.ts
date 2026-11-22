@@ -4,13 +4,10 @@ import { useConfig } from '@payloadcms/ui';
 import { type RefObject, useEffect, useRef } from 'react';
 
 import { useRecordPanel } from './RecordPanelProvider.client.js';
+import { rowRecordId } from './recordSteps.js';
 
 const INTERACTIVE =
   'a, button, input, select, textarea, label, [role="button"], [role="checkbox"], [contenteditable="true"], .popup, [data-cell-edit]';
-
-function rowRecordId(row: HTMLElement): string | undefined {
-  return row.dataset.id ?? row.querySelector<HTMLElement>('[data-row-id]')?.dataset.rowId;
-}
 
 /**
  * Opens records in the panel from the view's own markup: a plain click on a link to a record's

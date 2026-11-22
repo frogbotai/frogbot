@@ -31,7 +31,6 @@ describe('memory tools outside an agent run', () => {
     const user = await harness.createUser(`mcp-${++sequence}@frogbot.local`);
     const ctx = {
       req: await frogbot.createRequest({ user }),
-      frogbot,
       agent: { slug: 'mcp', runId: 'run-1' },
       overrideAccess,
     };
@@ -73,7 +72,6 @@ describe('memory tools outside an agent run', () => {
       { query: 'oolong' },
       {
         req: await frogbot.createRequest({ user }),
-        frogbot,
         agent: { slug: 'mcp', runId: 'run-1' },
         overrideAccess: false,
       },
@@ -109,7 +107,6 @@ describe('memory tools outside an agent run, with an app agent slugged like the 
     const user = await harness.createUser('mcp-slug@frogbot.local');
     const ctx = {
       req: await frogbot.createRequest({ user }),
-      frogbot,
       agent: { slug: 'mcp', runId: 'run-1' },
       overrideAccess: false,
     };

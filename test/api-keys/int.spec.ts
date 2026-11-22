@@ -310,14 +310,15 @@ describe('API keys plugin integration', () => {
     );
 
     expect(rotatedSibling.status, JSON.stringify(rotatedSibling.body)).toBe(404);
-    expect(
-      await booted.frogbot.findByID({
-        collection: 'credentials',
-        id: sibling.body.id,
-        depth: 0,
-        overrideAccess: true,
-      }),
-    ).toMatchObject({ revokedAt: null });
+
+    const storedSibling = await booted.frogbot.findByID({
+      collection: 'credentials',
+      id: sibling.body.id,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(storedSibling.revokedAt ?? null).toBeNull();
 
     const rotatedChild = await booted.restClient.post<{ mintedBy: number | string }>(
       `/api/credentials/${child.body.id}/rotate`,
@@ -1160,10 +1161,11 @@ describe('API keys plugin integration', () => {
       expect(rotated.status, JSON.stringify(rotated.body)).toBe(201);
       expect(rotated.body.mintedBy).toBe(parent.body.id);
       expect(await stored(rotated.body.id)).toMatchObject({ mintedBy: parent.body.id });
-      expect(await stored(grandchild.body.id)).toMatchObject({
-        mintedBy: rotated.body.id,
-        revokedAt: null,
-      });
+
+      const storedGrandchild = await stored(grandchild.body.id);
+
+      expect(storedGrandchild).toMatchObject({ mintedBy: rotated.body.id });
+      expect(storedGrandchild.revokedAt ?? null).toBeNull();
       expect(await active()).not.toContain(child.body.id);
     });
 

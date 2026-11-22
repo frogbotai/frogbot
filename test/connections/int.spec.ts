@@ -638,7 +638,13 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       expect(response.status).toBe(400);
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(response.headers.get('cache-control')).toBe('no-store');
-      expect(await response.json()).toEqual({ error: 'Connection operation failed' });
+
+      const text = await response.text();
+
+      expect(JSON.parse(text)).toMatchObject({
+        errors: [{ data: { code: code === 'bad-account' ? 'account' : 'tokens' } }],
+      });
+      expect(text).not.toContain('private');
       expect(await store.get({ owner, piece })).toMatchObject({
         id: saved.id,
         method: 'secret',

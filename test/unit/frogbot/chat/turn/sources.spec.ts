@@ -17,7 +17,6 @@ function makeCtx() {
   return {
     ctx: {
       req: { frogbot },
-      frogbot,
       agent: { slug: 'support', runId: 'run-1' },
       overrideAccess: false,
     } as unknown as ToolCtx,

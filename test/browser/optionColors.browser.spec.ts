@@ -6,7 +6,7 @@ import {
   readAdminColor,
   setAdminTheme,
 } from './__helpers/adminTheme';
-import { colorDifference, contrast } from './__helpers/color';
+import { colorDifference, contrast, shownBackground } from './__helpers/color';
 import { labelOptions, tasksSlug } from './fixtures/question/shared';
 
 const labels = labelOptions.map(({ value }) => value);
@@ -152,7 +152,12 @@ for (const theme of ['light', 'dark'] satisfies AdminTheme[]) {
     for (const [index, pill] of pills.entries()) {
       const tokens = optionPillTokens[labels[index]];
 
-      expect(contrast(pill), `${labels[index]} contrast in ${theme}`).toBeGreaterThanOrEqual(4.5);
+      const shown = await shownBackground(labelsCell.locator('.fb-option-pill').nth(index));
+
+      expect(
+        contrast({ text: pill.text, background: shown }),
+        `${labels[index]} contrast in ${theme}`,
+      ).toBeGreaterThanOrEqual(4.5);
       expect(pill.background, `${labels[index]} background in ${theme}`).toBe(
         await readAdminColor(page, tokens.background),
       );

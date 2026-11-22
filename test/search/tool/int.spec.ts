@@ -62,7 +62,6 @@ describe('searchTool', () => {
 
     return {
       req,
-      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-1' },
       overrideAccess,
     };

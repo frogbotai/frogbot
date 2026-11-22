@@ -40,7 +40,7 @@ export function withMemoryTools({
 
 /** Starts the adapter's `afterTurn` without waiting for it. A throw is logged, never surfaced. */
 export function startAfterTurn(source: MemoryRunSource, messages: readonly ModelMessage[]): void {
-  const adapter = source.frogbot.config.memory;
+  const adapter = source.req.frogbot.config.memory;
   const afterTurn = adapter?.afterTurn;
 
   if (!adapter || !afterTurn) return;
@@ -55,6 +55,6 @@ export function startAfterTurn(source: MemoryRunSource, messages: readonly Model
       messages,
     });
   })().catch((error: unknown) => {
-    source.frogbot.logger.error({ err: error }, '[frogbot] Memory afterTurn failed.');
+    source.req.frogbot.logger.error({ err: error }, '[frogbot] Memory afterTurn failed.');
   });
 }

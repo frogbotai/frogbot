@@ -42,6 +42,8 @@ pnpm frogbot generate:types
 | `migrate:reset` | — | Rolls back every migration. See [Migrations](/database/migrations). |
 | `migrate:fresh` | `--force-accept-warning` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
 
+`frogbot help`, `frogbot --help` and `frogbot -h` print the list of commands. `frogbot <command> --help`, or `-h`, prints a built-in command's usage and flags and exits `0`. In `frogbot run <file>`, flags after the file go to the file.
+
 ## Check your config
 
 `frogbot check` loads your config in runtime mode, the way `start` and the running app do, and waits for it to finish sanitizing.
@@ -62,10 +64,11 @@ Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, follow
 | `CONFIG_INVALID` | The config failed to load or sanitize, for example an agent model no provider serves or a duplicate collection slug. The message is the error the running app would throw. The checks below need a loaded config, so they're skipped. | Fix the error, then run `check` again. Config errors show one at a time. |
 | `INVALID_CRON` | A task or workflow `schedule[].cron` isn't a valid cron expression. The path names it, for example `jobs.tasks.sendDigest.schedule.0.cron`. | Fix the expression. |
 | `UNKNOWN_TASK` | A workflow whose `handler` is an array of steps has a step whose `task` isn't in `jobs.tasks`. | Add the task, or fix the slug. |
+| `IMPORT_EXPORT_HOOKS` | `@frogbotai/plugin-import-export` found a different number of `afterChange` hooks on the import or export collection than it supports, so the import-export package it builds on isn't the version it was built for. The path names the override option, for example `plugins.importExport.overrideImportCollection`. | Install the version the message names. Your override isn't the cause: it runs after the check. |
 | `TYPES_STALE` | `frogbot-types.ts` is missing or doesn't match your config. | Run `frogbot generate:types`. |
 | `IMPORT_MAP_STALE` | The admin import map doesn't match the components your config references. Skipped when `admin.importMap.autoGenerate` is `false` or the app has no admin folder. | Run `frogbot generate:importmap`. |
 
-`INVALID_CRON` and `UNKNOWN_TASK` are config errors, so `dev` and `start` fail on them too.
+`INVALID_CRON`, `UNKNOWN_TASK` and `IMPORT_EXPORT_HOOKS` are config errors, so `dev` and `start` fail on them too.
 
 `check` also warns about things that don't stop your app. A warning is one line on stderr, `[frogbot] warning <code> <path>: <message>`. A warning doesn't change the exit code, and a passing run says `check passed with N warnings`:
 
@@ -142,7 +145,7 @@ pnpm frogbot deploy docker --dry-run
 | `docker`, `fly`, `gcp`, `aws`, `azure` | Core. |
 | `dojo` | [`dojo()`](/plugins/dojo). This target runs when you name no target. |
 
-See [Deployment](/deployment/overview) for each target's flags, checks, what it creates, and how to remove it.
+`frogbot deploy --help` lists every target with its flags, including targets plugins add, and `frogbot deploy <target> --help` prints one. See [Deployment](/deployment/overview) for each target's flags, checks, what it creates, and how to remove it.
 
 ### Deploy to Dojo
 
@@ -297,7 +300,7 @@ Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which add
 | Command | Description |
 | --- | --- |
 | `login`, `logout`, `whoami` | Signs in with a browser code (the first sign-in makes the account), signs out, or shows who is signed in. |
-| `workspaces`, `members` | Lists, creates and renames workspaces, and manages their members. |
+| `workspaces`, `members`, `projects` | Lists, creates, renames, deletes and hands over workspaces, manages their members, and manages their projects. |
 | `apps pull`, `apps logs` | Downloads an app, or prints its logs. To ship an app, run [`frogbot deploy`](#deploy-to-dojo). |
 | `apps list`, `get`, `create`, `rename`, `delete`, `trash`, `restore` | Manages your apps, from a template too, and Trash. |
 | `apps restart`, `stop`, `start`, `keep`, `usage`, `export-data` | Runs and stops an app, keeps a free preview, shows its AI spend, and downloads its data. |
@@ -378,8 +381,6 @@ With SQLite, `frogbot dev` and `frogbot run` keep the database's schema in step 
 See [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode).
 
 `withFrogBot` also turns off the rules Next.js writes into `AGENTS.md` during `next dev`, unless you set `agentRules` in `next.config`.
-
-`frogbot help`, `frogbot --help` and `frogbot -h` print the list of commands.
 
 ## Run in the background
 

@@ -40,7 +40,7 @@ const jobs = {
 };
 ```
 
-`shouldAutoRun` prevents web autorun from executing jobs, but scheduling happens before that check: an existing autorun entry can handle schedules once before stopping. `autoRun: []` removes user-defined entries; scheduled agent triggers, piece triggers and AI fields append one shared entry during configuration (it logs job errors only), so the empty array alone does not guarantee that web replicas never schedule jobs. Keep the execution guard even with an empty array. The worker CLI disables built-in autorun before initialization and uses its own tick loop.
+`shouldAutoRun` prevents web autorun from executing jobs, but scheduling happens before that check: an existing autorun entry can handle schedules once before stopping. `autoRun: []` removes user-defined entries; [FrogBot's runner](/jobs-queue/schedules#frogbots-runner) still appends its entries for the `frogbot` and `frogbot-*` queues during configuration (they log job errors only), so the empty array alone does not guarantee that web replicas never schedule jobs. Keep the execution guard even with an empty array. The worker CLI disables built-in autorun before initialization and uses its own tick loop.
 
 ## Separate workers and scheduler
 
@@ -74,13 +74,13 @@ services:
     command: [pnpm, exec, frogbot, 'jobs:run', --handle-schedules, --limit, '0', --all-queues]
 ```
 
-Workers execute batches; the scheduler only enqueues scheduled jobs. Both use `--all-queues` so the minute recovery sweep in `default` is scheduled **and** executed, alongside custom and agent queues. Recovery requires both to remain running: lease expiry alone does not release a job. If you restrict application workers to named queues, retain a scheduler and worker that cover `default`.
+Workers execute batches; the scheduler only enqueues scheduled jobs. Both use `--all-queues` so `default`, your own queues, and FrogBot's `frogbot` and `frogbot-*` queues are all scheduled **and** executed. FrogBot's tasks and plugins' scheduled tasks, such as retention and the minute recovery sweep, run on `frogbot` whenever [FrogBot's runner](/jobs-queue/schedules#frogbots-runner) is on, and on `default` otherwise. Recovery requires both to remain running: lease expiry alone does not release a job. `--queue` selects one queue, so if you restrict workers to named queues, run a scheduler and worker for `default`, `frogbot`, and each `frogbot-*` queue your app uses.
 
 The worker CLI's `--limit 0` never runs jobs. Without `--handle-schedules`, it performs no scheduling either. This differs from local API `run({ limit: 0 })`, which is unlimited.
 
 ## Workers for durable waits
 
-[Workflow waits](/jobs-queue/waits) persist in the shared database and release the current worker. Resume wakes the same paused job in its original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `default`: the minute `frogbot-sweep-waitpoints` task proactively expires waits and recovers accepted responses whose jobs still need waking. The all-queue container setup above covers both.
+[Workflow waits](/jobs-queue/waits) persist in the shared database and release the current worker. Resume wakes the same paused job in its original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `frogbot` and `default`: the minute `frogbot-sweep-waitpoints` task, on `frogbot` when FrogBot's runner is on and on `default` otherwise, proactively expires waits and recovers accepted responses whose jobs still need waking. The all-queue container setup above covers both.
 
 Failed wakes remain retryable by the scheduled sweep. Cancelled, superseded, or deleted paused jobs are not recreated, and their resume links return `409`. See [Dispatch and recovery limits](/jobs-queue/waits#dispatch-and-recovery-limits).
 
@@ -99,7 +99,7 @@ Check these in order:
 | Check | Fix |
 | --- | --- |
 | Is a runner running at all? | Start a worker, add `autoRun`, or call the run URL from a cron. Queuing never runs a job by itself. |
-| Does a runner cover the job's queue? | A runner claims only `default` unless given `--queue` or `--all-queues`. Match the queue name exactly, or use `--all-queues`. |
+| Does a runner cover the job's queue? | A runner claims only `default` unless given `--queue` or `--all-queues`. Match the queue name exactly, or use `--all-queues`. FrogBot's and plugins' jobs run on `frogbot` and `frogbot-*`, which a `default`-only worker misses. |
 | Is `waitUntil` in the future? | The job waits for a delay, a retry backoff, or its schedule time. `runByID` runs it early. |
 | Is another job holding its `concurrency` key? | It runs after that job completes, fails, or pauses. |
 | Does `shouldAutoRun` return `false`? | Web autorun skips every tick while it does. |

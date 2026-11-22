@@ -1,5 +1,5 @@
 import { buildArgs, sourceTag, splitVariables } from '../app.js';
-import { cloudIssues, readCloudFlags, stringFlag } from '../cloud.js';
+import { cloudIssues, cloudUsage, readCloudFlags, stringFlag } from '../cloud.js';
 import { DeployError } from '../error.js';
 import { checkLogin, findTool } from '../preflight.js';
 import type { DeployContext, DeployTarget, PreflightIssue } from '../types.js';
@@ -99,6 +99,7 @@ async function storeSecrets(
 /** `frogbot deploy aws`: built locally, pushed to ECR, keys in Secrets Manager, one ECS Express Mode task. */
 export const awsTarget: DeployTarget = {
   describe: 'Deploy to your AWS (ECS Express Mode on Fargate) with your aws login',
+  usage: cloudUsage(usage),
   preflight: async (context) => {
     const { executionRole, infrastructureRole } = flagsOf(context);
     const issues: PreflightIssue[] = cloudIssues(context, '@frogbotai/storage-s3');

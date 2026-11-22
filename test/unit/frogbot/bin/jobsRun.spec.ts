@@ -492,6 +492,6 @@ describe('jobs:run lifecycle', () => {
       "\n  Caused by: TypeError: CronPattern: invalid configuration format ('bogus')",
     );
     expect(message).not.toContain('croner.js');
-    expect(usage).toContain('FrogBot usage: frogbot jobs:run');
+    expect(usage).toContain('[frogbot] usage: frogbot jobs:run');
   });
 });

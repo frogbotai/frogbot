@@ -9,6 +9,7 @@ import {
 } from '@playwright/test';
 
 import { encryptedOfficeFile, reportDocx, reportText, xlsxFile } from '../__helpers/shared/office';
+import { contrast, shownBackground } from './__helpers/color';
 import { composerInput, expectComposerText, fillComposer } from './__helpers/composer';
 import { signedOut } from './__helpers/signIn';
 import {
@@ -214,32 +215,6 @@ function readCardColors(card: Locator) {
       ],
     };
   });
-}
-
-function srgbChannels(color: string) {
-  const srgb = color.match(/^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)/);
-
-  if (srgb) return srgb.slice(1, 4).map(Number);
-
-  const rgb = color.match(/^rgba?\((\d+), (\d+), (\d+)/);
-
-  expect(rgb, `an rgb() or color(srgb) value, got ${color}`).not.toBeNull();
-
-  return rgb!.slice(1, 4).map((value) => Number(value) / 255);
-}
-
-function luminance(color: string) {
-  const [red, green, blue] = srgbChannels(color).map((channel) =>
-    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-  );
-
-  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-}
-
-function contrast({ text, background }: { text: string; background: string }) {
-  const [light, dark] = [luminance(text), luminance(background)].sort((a, b) => b - a);
-
-  return (light + 0.05) / (dark + 0.05);
 }
 
 test('composer uploads a private chat asset, sends its bytes, and restores the attachment after reload', async ({
@@ -935,8 +910,8 @@ for (const theme of ['light', 'dark'] as const) {
 
     expect(red).toBeGreaterThan(Math.max(green, blue));
     expect(colors.text).toEqual([colors.base, colors.base, colors.base]);
-    expect(contrast({ text: colors.base, background: colors.background })).toBeGreaterThanOrEqual(
-      4.5,
-    );
+    expect(
+      contrast({ text: colors.base, background: await shownBackground(card) }),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 }
