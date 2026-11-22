@@ -275,7 +275,6 @@ describe('definePiece', () => {
     const { req } = request();
     const ctx = (overrideAccess: boolean) => ({
       req,
-      frogbot: {} as never,
       agent: { slug: 'a', runId: 'r' },
       overrideAccess,
     });
