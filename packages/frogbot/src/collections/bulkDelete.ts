@@ -18,7 +18,8 @@ type PageArgs = DeleteManyArgs<string> & { req: FrogBotRequest };
  * Payload's `delete`, with a where-keyed delete split into pages of matched ids so one call works for any number of matches.
  *
  * Above {@link BULK_DELETE_PAGE_SIZE} matches, the count, the id lookup and every page share one transaction: the caller's
- * when `req` carries one, otherwise one this call begins, commits at the end, and rolls back if anything throws.
+ * when `req` carries one, otherwise one this call begins, commits at the end, and rolls back if anything throws. With
+ * `disableTransaction`, it opens none, as Payload does.
  *
  * Limits above {@link BULK_DELETE_PAGE_SIZE} matches:
  * - Each page is its own Payload delete, so `beforeOperation` and `afterOperation` run once per page, each with that page's docs.
@@ -37,7 +38,9 @@ export function pagedDelete(payload: Payload): Delete {
     const req = args.req ?? attachRegisteredFrogBot(await createPayloadRequest({ payload }));
     const transactionReq = toPayloadRequest(req);
     const ownsTransaction =
-      !payload.db.bulkOperationsSingleTransaction && (await initTransaction(transactionReq));
+      !args.disableTransaction &&
+      !payload.db.bulkOperationsSingleTransaction &&
+      (await initTransaction(transactionReq));
 
     try {
       const result = await deleteInPages({ ...args, req });
