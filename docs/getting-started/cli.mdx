@@ -41,6 +41,8 @@ pnpm frogbot generate:types
 | `migrate:reset` | — | Rolls back every migration. See [Migrations](/database/migrations). |
 | `migrate:fresh` | `--force-accept-warning` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
 
+`frogbot help`, `frogbot --help` and `frogbot -h` print the list of commands. `frogbot <command> --help`, or `-h`, prints a built-in command's usage and flags and exits `0`. In `frogbot run <file>`, flags after the file go to the file.
+
 ## Check your config
 
 `frogbot check` loads your config in runtime mode, the way `start` and the running app do, and waits for it to finish sanitizing.
@@ -120,7 +122,7 @@ pnpm frogbot deploy docker --dry-run
 | `docker`, `fly`, `gcp`, `aws`, `azure` | Core. |
 | `dojo` | [`dojo()`](/plugins/dojo). This target runs when you name no target. |
 
-See [Deployment](/deployment/overview) for each target's flags, checks, what it creates, and how to remove it.
+`frogbot deploy --help` lists every target with its flags, including targets plugins add, and `frogbot deploy <target> --help` prints one. See [Deployment](/deployment/overview) for each target's flags, checks, what it creates, and how to remove it.
 
 ### Deploy to Dojo
 
@@ -356,8 +358,6 @@ With SQLite, `frogbot dev` and `frogbot run` keep the database's schema in step 
 See [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode).
 
 `withFrogBot` also turns off the rules Next.js writes into `AGENTS.md` during `next dev`, unless you set `agentRules` in `next.config`.
-
-`frogbot help`, `frogbot --help` and `frogbot -h` print the list of commands.
 
 ## Run in the background
 
