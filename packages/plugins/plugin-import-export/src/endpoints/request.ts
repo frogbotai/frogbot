@@ -45,12 +45,21 @@ export function importError(
   return new APIError(message, status, { code, ...extra }, true);
 }
 
+/** How a column endpoint reads its requests. */
+export type ColumnsEndpointProps = {
+  /** List the served collections in a `collection_not_importable` error: only when the plugin's `collections` option limits them. */
+  listCollections: boolean;
+};
+
 /**
  * Reads a column endpoint's request. The user must be allowed to create an import, the target
  * collection must be one this import collection serves, and `format` must be `csv` (the default)
  * or `json`. Throws an `importError` on any failure.
  */
-export async function readColumnsRequest(req: PayloadRequest): Promise<ColumnsRequest> {
+export async function readColumnsRequest(
+  req: PayloadRequest,
+  { listCollections }: ColumnsEndpointProps,
+): Promise<ColumnsRequest> {
   await addDataAndFileToRequest(req);
 
   const importsSlug = String(req.routeParams?.collection ?? '');
@@ -76,7 +85,7 @@ export async function readColumnsRequest(req: PayloadRequest): Promise<ColumnsRe
   if (!collection || (served && !served.includes(collectionSlug))) {
     const message = `Collection "${collectionSlug}" can't be imported here.`;
 
-    throw served
+    throw listCollections && served
       ? importError(
           'collection_not_importable',
           `${message} Importable: ${served.join(', ')}.`,

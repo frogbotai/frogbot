@@ -55,7 +55,7 @@ const queueHooks: Record<QueueHookKind, { count: number; index: number }> = {
 export const importExportPlugin = definePlugin<ImportExportPluginOptions>({
   slug: 'plugin-import-export',
   plugin: ({ config, options }) => {
-    const imports = importExtras(config);
+    const imports = importExtras(config, (options.collections?.length ?? 0) > 0);
 
     const pluginOptions: ImportExportPluginConfig = {
       ...options,
@@ -224,12 +224,13 @@ function withCollectionQueues(
 
 type ImportExtras = { ai: boolean; endpoints: Endpoint[] };
 
-function importExtras(config: FrogBotConfig): ImportExtras {
+function importExtras(config: FrogBotConfig, listCollections: boolean): ImportExtras {
   const ai = Boolean(config.ai?.smallModel ?? config.ai?.defaultModel);
+  const columns = importColumnsEndpoint({ listCollections });
 
   return {
     ai,
-    endpoints: ai ? [importColumnsEndpoint, suggestColumnsEndpoint] : [importColumnsEndpoint],
+    endpoints: ai ? [columns, suggestColumnsEndpoint({ listCollections })] : [columns],
   };
 }
 

@@ -6,6 +6,7 @@ import type { ImportColumn } from '../columns/columnMap.js';
 import { readColumnMap } from '../columns/columnMap.js';
 import type { ImportTarget } from '../columns/suggest.js';
 import { sanitizeColumns, suggestColumns, toColumn } from '../columns/suggest.js';
+import type { ColumnsEndpointProps } from './request.js';
 import { importError, readColumnsRequest } from './request.js';
 
 /** What `suggest-columns` returns: the mapping with AI picks in its "Skip" columns. */
@@ -31,11 +32,11 @@ const instructions = [
  * are kept; a model error fails with `ai_suggestion_failed`. Registered only when
  * `ai.smallModel` or `ai.defaultModel` is set.
  */
-export const suggestColumnsEndpoint: Endpoint = {
+export const suggestColumnsEndpoint = (props: ColumnsEndpointProps): Endpoint => ({
   method: 'post',
   path: suggestColumnsPath,
   handler: async (req) => {
-    const request = await readColumnsRequest(req);
+    const request = await readColumnsRequest(req, props);
 
     const { headers, samples, targets, fields, body } = request;
 
@@ -106,7 +107,7 @@ export const suggestColumnsEndpoint: Endpoint = {
 
     return Response.json({ columns: filled, suggested } satisfies SuggestColumnsResponse);
   },
-};
+});
 
 function describeTarget({ field, label, type, hasMany, relationship }: ImportTarget) {
   return {

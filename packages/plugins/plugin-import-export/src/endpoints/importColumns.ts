@@ -9,7 +9,7 @@ import {
 } from '../columns/columnMap.js';
 import type { ImportTarget } from '../columns/suggest.js';
 import { sanitizeColumns, suggestColumns } from '../columns/suggest.js';
-import type { ColumnsRequest } from './request.js';
+import type { ColumnsEndpointProps, ColumnsRequest } from './request.js';
 import { readColumnsRequest } from './request.js';
 
 /** What `import-columns` returns for a chosen file. */
@@ -33,11 +33,11 @@ export const importColumnsPath = '/import-columns';
  * import of the same collection with the same headers, in any order, that the user can read is
  * reused; otherwise headers are matched to fields by name.
  */
-export const importColumnsEndpoint: Endpoint = {
+export const importColumnsEndpoint = (props: ColumnsEndpointProps): Endpoint => ({
   method: 'post',
   path: importColumnsPath,
   handler: async (req) => {
-    const request = await readColumnsRequest(req);
+    const request = await readColumnsRequest(req, props);
 
     const { headers, samples, targets, fields } = request;
 
@@ -61,7 +61,7 @@ export const importColumnsEndpoint: Endpoint = {
 
     return Response.json(response);
   },
-};
+});
 
 async function findPreviousColumns(
   req: PayloadRequest,
