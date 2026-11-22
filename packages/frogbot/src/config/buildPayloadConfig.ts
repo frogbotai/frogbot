@@ -147,6 +147,7 @@ export function buildPayloadConfig({
     cli: _cli,
     connections: _connections,
     email: _email,
+    memory: _memory,
     onInit: _onInit,
     plugins: _plugins,
     settings: _settings,

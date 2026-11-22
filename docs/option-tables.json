@@ -410,6 +410,21 @@
     "type": "import('@frogbotai/kv-redis').RedisKVAdapterOptions"
   },
   {
+    "page": "memory/overview",
+    "heading": "Use memories from server code",
+    "type": "import('frogbot/memory').MemoryCallArgs"
+  },
+  {
+    "page": "memory/overview",
+    "heading": "The database adapter",
+    "type": "import('frogbot/memory').DatabaseMemoryOptions"
+  },
+  {
+    "page": "memory/overview",
+    "heading": "Write an adapter",
+    "type": "import('frogbot/memory').MemoryAdapter"
+  },
+  {
     "page": "connections/overview",
     "heading": "Configure linking",
     "type": "import('frogbot').ConnectionsConfig"

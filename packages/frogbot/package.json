@@ -59,6 +59,16 @@
       "import": "./dist/exports/kv.js",
       "default": "./dist/exports/kv.js"
     },
+    "./memory": {
+      "types": "./dist/exports/memory.d.ts",
+      "import": "./dist/exports/memory.js",
+      "default": "./dist/exports/memory.js"
+    },
+    "./memory/testing": {
+      "types": "./dist/exports/memory-testing.d.ts",
+      "import": "./dist/exports/memory-testing.js",
+      "default": "./dist/exports/memory-testing.js"
+    },
     "./test": {
       "types": "./dist/exports/test.d.ts",
       "import": "./dist/exports/test.js",
@@ -207,6 +217,16 @@
         "types": "./dist/exports/kv.d.ts",
         "import": "./dist/exports/kv.js",
         "default": "./dist/exports/kv.js"
+      },
+      "./memory": {
+        "types": "./dist/exports/memory.d.ts",
+        "import": "./dist/exports/memory.js",
+        "default": "./dist/exports/memory.js"
+      },
+      "./memory/testing": {
+        "types": "./dist/exports/memory-testing.d.ts",
+        "import": "./dist/exports/memory-testing.js",
+        "default": "./dist/exports/memory-testing.js"
       },
       "./test": {
         "types": "./dist/exports/test.d.ts",

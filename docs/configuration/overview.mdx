@@ -72,6 +72,7 @@ export default buildConfig({
 | `logger` | `'sync' \| { options: LoggerOptions; destination?: DestinationStream } \| Logger` | Pretty-printed pino logger | Logger behind `frogbot.logger`. Pass [pino options](https://getpino.io/#/docs/api?id=options), options with a destination stream, or a pino logger instance. `'sync'` writes logs synchronously. |
 | `loggingLevels` | `Partial<Record<ErrorName, Level \| false>>` | See description | Log level for each error class, or `false` to not log it. Defaults: `info` for `Forbidden`, `Locked`, `MissingFile`, `NotFound`, and `ValidationError`; `error` for the rest. |
 | `maxDepth` | `number` | `10` | Highest `depth` any request can use. Larger values are lowered to this limit. |
+| `memory` | `MemoryAdapter` | — | Memories behind `frogbot.memory`, such as `databaseMemory()` from `frogbot/memory`. Unset adds no collection. See [Memory](/memory/overview). |
 | `onInit` | `OnInit \| OnInit[]` | — | Runs after initialization with the `FrogBot` instance. See [Run initialization steps](#run-initialization-steps). |
 | `plugins` | `Plugin[]` | — | Functions that transform the config, in order, before sanitization. See [Run plugins](#run-plugins). |
 | `queryPresets` | `QueryPresetsConfig` | — | Access rules for saved list filters, columns, and sorts on collections with `enableQueryPresets`. See [Query presets](#query-presets). |

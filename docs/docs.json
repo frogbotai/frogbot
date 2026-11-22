@@ -70,6 +70,11 @@
                 "pages": ["search/overview"]
               },
               {
+                "group": "Memory",
+                "expanded": false,
+                "pages": ["memory/overview"]
+              },
+              {
                 "group": "Access Control",
                 "expanded": false,
                 "pages": [
