@@ -105,8 +105,14 @@ export async function findMemory(
   return docs[0];
 }
 
+const MAX_SERIAL_ID = 2_147_483_647;
+
 function isValidID(payload: Payload, id: string): boolean {
-  if (payload.db.defaultIDType === 'number') return /^\d+$/.test(id);
+  if (payload.db.defaultIDType === 'number') {
+    const max = payload.db.name === 'postgres' ? MAX_SERIAL_ID : Number.MAX_SAFE_INTEGER;
+
+    return /^\d+$/.test(id) && Number(id) <= max;
+  }
 
   if (payload.db.name === 'mongoose') return /^[a-f\d]{24}$/i.test(id);
 
