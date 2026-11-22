@@ -98,6 +98,8 @@ export type DeployContext = {
 export type DeployTarget = {
   /** One line for the target list. */
   describe: string;
+  /** The target's own flags, for `frogbot deploy --help`, such as `[--tag <tag>]`. */
+  usage?: string;
   /** Returns every reason the deploy can't start; must not change anything. */
   preflight: (context: DeployContext) => PreflightIssue[] | Promise<PreflightIssue[]>;
   /** Deploys. Its result goes in `--json` output's `result`. */

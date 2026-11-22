@@ -3,6 +3,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 
 import nextEnvImport from '@next/env';
 
+import { upUsage } from './help.js';
 import { findNextConfig } from './runNext.js';
 import {
   installLaunchAgent,
@@ -80,9 +81,7 @@ export function parseUpArgs(args: string[]): UpOptions {
     else if (arg === '--port' || arg === '-p') options.port = parsePort(args[++i]);
     else if (arg.startsWith('--port=')) options.port = parsePort(arg.slice('--port='.length));
     else {
-      throw new Error(
-        `[frogbot] usage: frogbot up [--port <n|auto>] [--autostart]; "${arg}" isn't one of them`,
-      );
+      throw new Error(`${upUsage}; "${arg}" isn't one of them`);
     }
   }
 

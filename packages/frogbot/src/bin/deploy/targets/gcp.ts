@@ -3,14 +3,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { buildArgs, sourceTag, splitVariables } from '../app.js';
-import { cloudIssues, readCloudFlags, stringFlag, warnIdleJobs } from '../cloud.js';
+import { cloudIssues, cloudUsage, readCloudFlags, stringFlag, warnIdleJobs } from '../cloud.js';
 import { checkLogin, findTool } from '../preflight.js';
 import type { DeployContext, DeployTarget, PreflightIssue } from '../types.js';
 
 const options = { project: { type: 'string' } } as const;
 
+const usage = '[--project <id>]';
+
 const flagsOf = (context: DeployContext) =>
-  readCloudFlags(context, { target: 'gcp', usage: '[--project <id>]', options });
+  readCloudFlags(context, { target: 'gcp', usage, options });
 
 const repository = 'frogbot';
 
@@ -144,6 +146,7 @@ async function storeSecrets(
 /** `frogbot deploy gcp`: Cloud Build into Artifact Registry, keys in Secret Manager, one Cloud Run instance. */
 export const gcpTarget: DeployTarget = {
   describe: 'Deploy to your Google Cloud Run with your gcloud login (built by Cloud Build)',
+  usage: cloudUsage(usage),
   preflight: async (context) => {
     flagsOf(context);
 
