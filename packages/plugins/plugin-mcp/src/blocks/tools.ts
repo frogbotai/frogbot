@@ -344,14 +344,19 @@ async function load({
     : checked;
 
   const all = collectBlockLists(doc, collection.flattenedFields, config);
-  const lists = writes
-    ? readable(all, collectBlockLists(checked, collection.flattenedFields, config))
+  const loaded: Loaded = { collection, config, ctx, doc, lists: [], all, input };
+  const seen = writes
+    ? sameRows(all, collectBlockLists(checked, collection.flattenedFields, config))
     : all;
 
-  return { collection, config, ctx, doc, lists, all, input };
+  const shown = await Promise.all(seen.map((list) => may(loaded, list.chain, 'read')));
+
+  loaded.lists = seen.filter((_, index) => shown[index]);
+
+  return loaded;
 }
 
-function readable(all: BlockList[], seen: BlockList[]): BlockList[] {
+function sameRows(all: BlockList[], seen: BlockList[]): BlockList[] {
   const rowsAt = new Map(seen.map((list) => [list.path, rowKey(list)]));
 
   return all.filter((list) => rowsAt.get(list.path) === rowKey(list));
