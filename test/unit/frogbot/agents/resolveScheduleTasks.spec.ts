@@ -185,12 +185,12 @@ describe('agent schedule tasks', () => {
 
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
-        frogbot,
         agent,
         req: expect.objectContaining({ user: null }),
         job: { id: 42, scheduledFor: new Date(waitUntil) },
       }),
     );
+    expect(handler.mock.calls[0]?.[0]).not.toHaveProperty('frogbot');
   });
 
   it('no-ops when an agent or trigger was removed', async () => {

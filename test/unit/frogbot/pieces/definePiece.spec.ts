@@ -254,7 +254,7 @@ describe('definePiece', () => {
     await expect(
       tool.execute(
         { value: 'hi' },
-        { req, frogbot: {} as never, agent: { slug: 'a', runId: 'r' }, overrideAccess: false },
+        { req, agent: { slug: 'a', runId: 'r' }, overrideAccess: false },
       ),
     ).resolves.toEqual({ input: { value: 'hi' }, client: { auth: { token: 'resolved' } } });
     expect(resolvePieceCredential).toHaveBeenCalledWith({ piece, req });

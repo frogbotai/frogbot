@@ -141,7 +141,7 @@ export async function persist(loaded: Loaded, lists: BlockList[]) {
     }
   }
 
-  const saved = (await ctx.frogbot.update({
+  const saved = (await ctx.req.frogbot.update({
     collection: collection.slug,
     id: doc.id as number | string,
     data,

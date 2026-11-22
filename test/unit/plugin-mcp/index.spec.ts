@@ -130,14 +130,14 @@ describe('MCP plugin tools', () => {
     });
   });
 
-  it('runs execute with the request, its FrogBot and an mcp agent', async () => {
+  it('runs execute with the request and an mcp agent', async () => {
     const { echo: tool } = toPayloadTools([echo]);
-    const { frogbot, req, result } = call(tool, { text: 'hi' });
+    const { req, result } = call(tool, { text: 'hi' });
 
     await expect(result).resolves.toEqual({ content: [{ type: 'text', text: 'hi' }] });
     expect(echo.execute).toHaveBeenCalledWith(
       { text: 'hi' },
-      { req, frogbot, agent: { slug: 'mcp', runId: expect.any(String) }, overrideAccess: false },
+      { req, agent: { slug: 'mcp', runId: expect.any(String) }, overrideAccess: false },
     );
     expect(vi.mocked(echo.execute).mock.calls[0]?.[1].agent).not.toHaveProperty('chatId');
   });
