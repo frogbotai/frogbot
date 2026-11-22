@@ -610,6 +610,38 @@ describe('frogbot dojo <noun> <verb>', () => {
   });
 
   it.each([
+    [['workspaces', 'delete', '', '--yes'], "<slug> can't be blank."],
+    [['workspaces', 'owner', ' ', 'ada@example.com', '--yes'], "<slug> can't be blank."],
+    [['workspaces', 'owner', 'trend-capital', '', '--yes'], "<email> can't be blank."],
+    [['projects', 'delete', '', '--yes'], "<project> can't be blank."],
+  ])('refuses a blank argument in %j, as an unset shell variable gives', async (args, message) => {
+    const { dojo, env, cwd } = await setup({ 'GET /api/members': { body: { docs: [member] } } });
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(args, result.io)).toBe(2);
+    expect(result.stderr()[0]).toContain(message);
+    expect(dojo.requests).toEqual([]);
+  });
+
+  it("prints Dojo's Business-features refusal without blaming access", async () => {
+    const { env, cwd } = await setup({
+      'POST /api/projects': {
+        status: 403,
+        body: {
+          errors: [{ message: 'Adding projects needs Business features on the workspace.' }],
+        },
+      },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'create', 'Deals'], result.io)).toBe(1);
+    expect(result.stderr()).toEqual([
+      "[frogbot] Dojo couldn't create the project in trend-capital: Adding projects needs Business features on the workspace.",
+    ]);
+  });
+
+  it.each([
     ['apps', '/api/apps'],
     ['keys', '/api/api-keys'],
     ['members', '/api/members'],

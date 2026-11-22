@@ -124,7 +124,6 @@ export const projects: Noun = {
           method: 'POST',
           body: { workspace: workspace.id, name },
           what: `Dojo couldn't create the project in ${workspace.slug}`,
-          needs: 'Admin access to the workspace',
         });
 
         done(io, shown(doc), [`[frogbot] Created ${doc.name} (${doc.id}) in ${workspace.slug}.`]);
