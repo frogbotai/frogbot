@@ -77,6 +77,12 @@ const Pages: CollectionConfig = {
     { name: 'frozen', type: 'blocks', blocks: ['tile'], access: { update: isAdmin } },
     { name: 'vault', type: 'blocks', blocks: ['tile'], access: { read: isAdmin } },
     { name: 'hiddenList', type: 'blocks', blocks: ['tile'], hidden: true },
+    {
+      name: 'secret',
+      type: 'group',
+      hidden: true,
+      fields: [{ name: 'list', type: 'blocks', blocks: ['tile'] }],
+    },
     { name: 'flag', type: 'checkbox' },
     {
       name: 'flagged',
