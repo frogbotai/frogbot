@@ -34,7 +34,7 @@ describe('memory custom scopes', () => {
     ).rejects.toMatchObject({ code: 'invalid' });
   });
 
-  it('keeps string and number scope values apart', async () => {
+  it('keeps one scope per value, number or string', async () => {
     await frogbot.memory.save({ scope: 'client', chat: { client: 7 }, text: 'Seven pays late' });
 
     await frogbot.memory.save({
