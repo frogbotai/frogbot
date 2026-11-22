@@ -25,9 +25,11 @@ Here are some common examples of how you can use the Local API:
 
 You can gain access to the currently running `frogbot` object via two ways:
 
-#### Accessing from args or `req`
+#### Accessing from `req`
 
-In most places within FrogBot itself, you can access `frogbot` directly from the arguments of [Hooks](/hooks/overview), [Access Control](/access-control/overview), [validation functions](/fields/overview#validation), and similar. This is the simplest way to access FrogBot in most cases. Most config functions take the `req` (Request) object, which has FrogBot bound to it (`req.frogbot`).
+Every callback that receives a `req` reaches FrogBot through `req.frogbot`: [Hooks](/hooks/overview), [Access Control](/access-control/overview), [validation functions](/fields/overview#validation), endpoints, job handlers, and agent tools, skill content and schedule handlers. None of them gets a separate `frogbot` argument.
+
+A separate `frogbot` exists only where there may be no request: the config's [`onInit(frogbot)`](/configuration/overview#run-initialization-steps), a [memory adapter's](/memory/overview) `init({ frogbot })`, and [auth strategies](/authentication/custom-strategies), whose `req` is optional.
 
 Example:
 

@@ -1,8 +1,8 @@
 import { assert, describe, expect, it, vi } from 'vitest';
 
-const req = { id: 'request' };
 const frogbot = { id: 'frogbot' };
-const ctx = { req, frogbot, agent: { slug: 'agent', runId: 'run' } };
+const req = { id: 'request', frogbot };
+const ctx = { req, agent: { slug: 'agent', runId: 'run' } };
 const skills = [
   {
     slug: 'docs',
@@ -14,7 +14,7 @@ const skills = [
     slug: 'dynamic',
     instructions: vi.fn(({ req: value }) => `Dynamic ${value.id}`),
     resources: [
-      { path: 'runtime.md', content: vi.fn(({ frogbot: value }) => `Runtime ${value.id}`) },
+      { path: 'runtime.md', content: vi.fn(({ req: value }) => `Runtime ${value.frogbot.id}`) },
     ],
   },
 ];
@@ -58,7 +58,7 @@ describe('skill tools', () => {
     expect(await registry.load_skill.execute({ skill: 'dynamic' }, ctx as never)).toBe(
       'Dynamic request',
     );
-    expect(skills[1].instructions).toHaveBeenCalledWith({ req, frogbot });
+    expect(skills[1].instructions).toHaveBeenCalledWith({ req });
   });
 
   it('loads string and function skill resources', async () => {
@@ -73,7 +73,7 @@ describe('skill tools', () => {
         ctx as never,
       ),
     ).toBe('Runtime frogbot');
-    expect(skills[1].resources[0].content).toHaveBeenCalledWith({ req, frogbot });
+    expect(skills[1].resources[0].content).toHaveBeenCalledWith({ req });
   });
 
   it('returns valid names for unknown skills and paths', async () => {

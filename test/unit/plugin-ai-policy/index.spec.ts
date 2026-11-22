@@ -353,9 +353,7 @@ describe('aiPolicyPlugin', () => {
       'other',
       'plugin-ai-policy-reset-spend',
     ]);
-    expect(task?.schedule).toEqual([
-      { cron: '0 * 1,2,28-31 * *', queue: 'plugin-ai-policy-reset-spend' },
-    ]);
+    expect(task?.schedule).toEqual([{ cron: '0 * 1,2,28-31 * *', queue: 'frogbot' }]);
 
     await (task!.handler as (args: unknown) => Promise<unknown>)({ req });
 

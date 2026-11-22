@@ -50,7 +50,7 @@ export function toolSources<TOOLS extends ToolSet>({
 
       return Array.isArray(listed) ? listed.filter(isToolSource) : [];
     } catch (error) {
-      ctx.frogbot.logger.error(
+      ctx.req.frogbot.logger.error(
         { error, tool: toolName },
         `[frogbot] Tool \`${toolName}\` failed to list its sources.`,
       );

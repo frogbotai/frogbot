@@ -92,8 +92,8 @@ export const searchProjects: Tool<typeof searchInput> = {
   description: 'Search projects by title.',
   inputSchema: searchInput,
   access: ({ req }) => Boolean(req.user),
-  async execute({ query }, { frogbot, req, overrideAccess }) {
-    const projects = await frogbot.find({
+  async execute({ query }, { req, overrideAccess }) {
+    const projects = await req.frogbot.find({
       collection: 'projects',
       where: { title: { contains: query } },
       req,
@@ -124,7 +124,7 @@ See the [Tools skill reference](https://raw.githubusercontent.com/frogbotai/frog
 
 ## Runtime skills
 
-`AgentConfig.skills` contains runtime `SkillConfig` values. FrogBot exposes them to that running agent through `list_skills`, `load_skill`, and `load_skill_resource`; instruction and resource content may be strings or functions receiving `{ req, frogbot }`. `resources` itself may be a function receiving `{ req }`, called on every `list_skills` and `load_skill_resource`, for a list that changes while the app runs (a folder of files); its entries are checked when it runs.
+`AgentConfig.skills` contains runtime `SkillConfig` values. FrogBot exposes them to that running agent through `list_skills`, `load_skill`, and `load_skill_resource`; instruction and resource content may be strings or functions receiving `{ req }`; reach the app through `req.frogbot`. `resources` itself may be a function receiving `{ req }`, called on every `list_skills` and `load_skill_resource`, for a list that changes while the app runs (a folder of files); its entries are checked when it runs.
 
 ```ts
 import type { AgentConfig, SkillConfig } from 'frogbot';

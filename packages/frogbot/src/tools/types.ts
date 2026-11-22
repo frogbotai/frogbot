@@ -2,14 +2,12 @@ import type { z } from 'zod';
 
 import type { FrogBotComponent } from '../admin/types.js';
 import type { PendingCall } from '../chat/turn/types.js';
-import type { FrogBot } from '../frogbot.js';
 import type { CollectionSlug } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ToolApprovalOption } from './approval.js';
 
 export type ToolCtx = {
   req: FrogBotRequest;
-  frogbot: FrogBot;
   agent: { slug: string; runId: string; chatId?: number | string };
   /**
    * Whether the run is trusted: `true` on code-started runs such as schedules, `false` when a

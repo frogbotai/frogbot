@@ -55,7 +55,7 @@ Codes follow RFC 6238: SHA-1, 30-second steps, one step of drift either way. A c
 - A required user can't turn it off. The account section hides **Turn off**, and the API refuses with `403`.
 - When `require` stops returning true for a user, they can turn it off with a code. This happens, for example, when an admin turns a workspace's requirement off and `require` reads that setting.
 
-When `require` covers the first user, `POST /api/<collection>/first-register` creates the account and answers the same `202` as password login instead of signing them in. The admin's create-first-user form doesn't follow that answer, so after registering there, sign in with the new password to reach setup.
+When `require` covers the first user, `POST /api/<collection>/first-register` creates the account and answers the same `202` as password login instead of signing them in. The admin's create-first-user form then says the account was created and links to the login page, where signing in with the new password leads to setup.
 
 ## Sign-in flow
 

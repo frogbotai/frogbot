@@ -25,11 +25,44 @@ const dojoPackage = '@frogbotai/plugin-dojo';
 
 const sharedUsage = '[--dry-run] [--json] [--no-interactive] [--env-file <path>]';
 
-function targetList(targets: Record<string, DeployTarget>): string {
+function targetList(targets: Record<string, DeployTarget>, { flags = false } = {}): string {
   const width = Math.max(...Object.keys(targets).map((name) => name.length));
 
   return Object.entries(targets)
-    .map(([name, target]) => `  ${name.padEnd(width)}  ${target.describe}`)
+    .flatMap(([name, target]) => [
+      `  ${name.padEnd(width)}  ${target.describe}`,
+      ...(flags && target.usage ? [`${' '.repeat(width + 4)}${target.usage}`] : []),
+    ])
+    .join('\n');
+}
+
+type LoadedConfig = { config?: FrogBotSanitizedConfig; loadError?: unknown };
+
+const allTargets = (config?: FrogBotSanitizedConfig): Record<string, DeployTarget> => ({
+  ...config?.cli.deployTargets,
+  ...coreDeployTargets,
+});
+
+/** What `frogbot deploy --help` prints: every target with its own flags, or, after a target's name, that target's. */
+export function deployHelp(args: string[], { config, loadError }: LoadedConfig = {}): string {
+  const targets = allTargets(config);
+  const named = args[0]?.startsWith('-') ? undefined : args[0]?.toLowerCase();
+  const target = named && Object.hasOwn(targets, named) ? targets[named] : undefined;
+
+  if (named && target) {
+    return `[frogbot] usage: frogbot deploy ${named} ${sharedUsage}${target.usage ? ` ${target.usage}` : ''}\n${target.describe}`;
+  }
+
+  return [
+    `[frogbot] usage: frogbot deploy [target] ${sharedUsage} [target flags]`,
+    Object.hasOwn(targets, 'dojo') ? 'With no target, deploys to dojo.' : undefined,
+    loadError
+      ? 'Targets that plugins add, such as dojo, load only with a working config.'
+      : undefined,
+    'Targets:',
+    targetList(targets, { flags: true }),
+  ]
+    .filter(Boolean)
     .join('\n');
 }
 
@@ -42,8 +75,7 @@ export async function deploy(
     io,
   }: { config?: FrogBotSanitizedConfig; loadError?: unknown; io?: DeployIO } = {},
 ): Promise<number> {
-  const plugins = config?.cli.deployTargets ?? {};
-  const targets: Record<string, DeployTarget> = { ...plugins, ...coreDeployTargets };
+  const targets = allTargets(config);
   const [first, ...rest] = args;
   const named = first && !first.startsWith('-') ? first.toLowerCase() : undefined;
   const name = named ?? (Object.hasOwn(targets, 'dojo') ? 'dojo' : undefined);

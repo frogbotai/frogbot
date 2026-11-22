@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 
 function srgbChannels(color: string) {
   const srgb = color.match(/^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)/);
@@ -26,6 +26,21 @@ export function flatten(color: string, backdrop: string) {
   const bottom = srgbChannels(backdrop);
 
   return `color(srgb ${top.map((channel, index) => channel * opacity + bottom[index] * (1 - opacity)).join(' ')})`;
+}
+
+/** The opaque color an element's background shows on screen, painted over every ancestor's. */
+export async function shownBackground(locator: Locator) {
+  const layers = await locator.evaluate((element) => {
+    const colors: string[] = [];
+
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      colors.push(getComputedStyle(node).backgroundColor);
+    }
+
+    return colors;
+  });
+
+  return layers.reduceRight((backdrop, color) => flatten(color, backdrop), 'rgb(255, 255, 255)');
 }
 
 function linearChannels(color: string) {

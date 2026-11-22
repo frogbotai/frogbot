@@ -31,7 +31,7 @@ In development, the dashboard shows a **Load sample data** panel. Its button cal
 - It creates no login and deletes nothing.
 - With `NODE_ENV=production`, as under `npm run start` and the Dockerfile, the panel renders nothing and the endpoint answers `404`.
 
-Its `seed({ frogbot, req, today })` takes the date the sample is arranged around, so a test can pass a fixed date and get the same records every run.
+Its `seed({ req, today })` takes the date the sample is arranged around, so a test can pass a fixed date and get the same records every run. Code with no request, such as a test, makes one with `frogbot.createRequest()`.
 
 ### projects
 
@@ -45,9 +45,9 @@ The seed is plain code in your app, in three files you can change or delete:
 
 | File                           | Does                                                                                                         |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `src/seed/index.ts`            | `seed({ frogbot, req })` adds the sample records through the [Local API](/local-api/overview); `hasSampleData()` says whether they exist. |
+| `src/seed/index.ts`            | `seed({ req })` adds the sample records through `req.frogbot`, the [Local API](/local-api/overview); `hasSampleData({ req })` says whether they exist. |
 | `src/seed/endpoint.ts`         | `seedEndpoint()`, the `POST /api/seed` [root endpoint](/rest-api/overview#custom-endpoints).                  |
-| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`. A server component: it renders `SeedButton` only while `hasSampleData()` is false. |
+| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`. A server component: it renders `SeedButton` only while `hasSampleData({ req })` is false. |
 
 The seed passes `overrideAccess: true` and the request to each call, so it can write fields people can't, such as [autonumber](/fields/autonumber#seeds-and-migrations) numbers. It doesn't import anything from `src/agents`, so it keeps working when the app has no AI.
 
@@ -68,14 +68,14 @@ export function seedEndpoint(): Endpoint {
       }
 
       try {
-        if (await hasSampleData({ frogbot: req.frogbot, req })) {
+        if (await hasSampleData({ req })) {
           return Response.json(
             { error: 'This app already has projects, so the sample data was not added.' },
             { status: 409 },
           )
         }
 
-        await seed({ frogbot: req.frogbot, req })
+        await seed({ req })
       } catch (err) {
         req.frogbot.logger.error({ err }, 'Seeding the database failed')
 

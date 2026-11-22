@@ -34,7 +34,8 @@
               "getting-started/installation",
               "getting-started/templates",
               "getting-started/concepts",
-              "getting-started/cli"
+              "getting-started/cli",
+              "getting-started/upgrading-next"
             ]
           },
           {

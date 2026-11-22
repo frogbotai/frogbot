@@ -129,3 +129,21 @@ describe('deploy dojo', () => {
     expect(io.asked).toEqual([]);
   });
 });
+
+describe('dojoTarget.usage', () => {
+  it.each([
+    '--app',
+    '--data',
+    '--no-data',
+    '--replace-data',
+    '--workspace',
+    '--name',
+    '--no-keys',
+    '--skip-key',
+    '--yes',
+    '--update-keys',
+    '--wait',
+  ])('lists %s for frogbot deploy --help', (flag) => {
+    expect(dojoTarget.usage).toContain(flag);
+  });
+});

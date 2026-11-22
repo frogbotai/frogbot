@@ -7,6 +7,7 @@ const usage = '[--tag <tag>]';
 /** `frogbot deploy docker`: builds the app's image locally and prints how to run it. Never pushes. */
 export const dockerTarget: DeployTarget = {
   describe: 'Build a Docker image of the app on this computer (no push)',
+  usage,
   preflight: async (context) => {
     parseTargetArgs(context, { target: 'docker', usage, options: { tag: { type: 'string' } } });
 

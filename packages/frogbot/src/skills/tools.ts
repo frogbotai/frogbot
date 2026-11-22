@@ -6,7 +6,7 @@ import type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './types
 
 function resolveContent(content: SkillContent, ctx: ToolCtx) {
   if (typeof content === 'string') return content;
-  const skillCtx: SkillCtx = { req: ctx.req, frogbot: ctx.frogbot };
+  const skillCtx: SkillCtx = { req: ctx.req };
 
   return content(skillCtx);
 }
