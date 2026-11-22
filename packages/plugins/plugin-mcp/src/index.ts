@@ -2,8 +2,10 @@ import { isApiKeyStrategy } from '@frogbotai/plugin-api-keys';
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp';
 import { mcpPlugin as payloadMcpPlugin } from '@payloadcms/plugin-mcp';
 import { definePlugin, type Plugin } from 'frogbot';
+import type { Config as PayloadConfig } from 'payload';
 
 import { authorizeMcp } from './access.js';
+import { bindBlockTools } from './blocks/tools.js';
 import type { AUTH_TOOLS, COLLECTION_TOOLS, McpTool } from './tools.js';
 import { toPayloadTools } from './tools.js';
 
@@ -36,6 +38,8 @@ export type McpPluginOptions = Pick<
   /** FrogBot tools, piece actions and piece instances to serve, each named by its slug. */
   tools?: readonly McpTool[];
 };
+
+const PAYLOAD_MCP_ORDER = 10;
 
 declare module 'frogbot' {
   interface RegisteredPlugins {
@@ -79,6 +83,17 @@ export function mcpPlugin(options: McpPluginOptions = {}): Plugin {
         ...config,
         _payloadPlugins: [
           ...(config._payloadPlugins ?? []),
+          Object.assign(
+            (payloadConfig: PayloadConfig) => {
+              Object.assign(
+                payloadTools,
+                toPayloadTools(bindBlockTools(tools, payloadConfig.collections ?? [])),
+              );
+
+              return payloadConfig;
+            },
+            { order: PAYLOAD_MCP_ORDER },
+          ),
           payloadMcpPlugin({
             ...rest,
             tools: payloadTools,
