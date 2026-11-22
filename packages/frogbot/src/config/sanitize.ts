@@ -45,6 +45,7 @@ import { defaultWaitpointsCollection, WAITPOINTS_SLUG } from '../jobs/waitpoints
 import { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
 import { resolveKVCleanupTask } from '../kv/resolveCleanupTask.js';
 import { sanitizeMCPServers } from '../mcp/server.js';
+import { buildMemoryEndpoints } from '../memory/endpoints.js';
 import { sanitizeMemory } from '../memory/sanitize.js';
 import { collectPieceInstances } from '../pieces/config/sanitize.js';
 import { fromPayloadJobs } from '../seams/config.js';
@@ -367,7 +368,7 @@ export function sanitize(
   }
 
   const memoryCollection = config.memory
-    ? sanitizeMemory({ collections: config.collections, db: config.db, memory: config.memory })
+    ? sanitizeMemory({ ...config, memory: config.memory, settings })
     : undefined;
 
   const chatResult = resolveChatCollections({ ...config, agents });
@@ -490,6 +491,7 @@ export function sanitize(
       ...(Object.keys(triggers).length ? buildTriggerEndpoints() : []),
       ...(hasChannelAdapters ? buildChannelGatewayEndpoints() : []),
       ...(searchCollections.length ? [buildSearchManyEndpoint()] : []),
+      ...(config.memory ? buildMemoryEndpoints() : []),
     ],
     attachFrogBot,
     resolveFrogBot,

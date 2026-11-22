@@ -56,6 +56,40 @@ describe('databaseMemory cleanup', () => {
     expect(await count()).toBe(1);
   });
 
+  it('never merges a keyless save into a keyed memory', async () => {
+    const keyed = await frogbot.memory.save({
+      scope: 'team',
+      key: 'contact',
+      text: 'The client prefers email',
+    });
+
+    const exact = await frogbot.memory.save({ scope: 'team', text: 'The client prefers email' });
+
+    const near = await frogbot.memory.save({
+      scope: 'team',
+      text: 'The client prefers email!',
+    });
+
+    expect(exact.id).not.toBe(keyed.id);
+    expect(near.id).toBe(exact.id);
+    expect(await frogbot.memory.get({ scope: 'team', id: keyed.id })).toMatchObject({
+      key: 'contact',
+      text: 'The client prefers email',
+    });
+    expect(await count()).toBe(2);
+  });
+
+  it('rejects text over 4,000 characters', async () => {
+    await expect(
+      frogbot.memory.save({ scope: 'team', text: 'a'.repeat(4_001) }),
+    ).rejects.toMatchObject({ code: 'invalid', message: expect.stringContaining('4000') });
+    await expect(
+      frogbot.memory.save({ scope: 'team', text: 'a'.repeat(4_000) }),
+    ).resolves.toMatchObject({
+      text: 'a'.repeat(4_000),
+    });
+  });
+
   it('keeps memories that only share some words', async () => {
     await frogbot.memory.save({ scope: 'team', text: 'The client prefers email' });
     await frogbot.memory.save({ scope: 'team', text: 'The client prefers mornings' });
@@ -64,7 +98,8 @@ describe('databaseMemory cleanup', () => {
   });
 
   it('rejects pinned memories over the 2,000-token budget', async () => {
-    await frogbot.memory.save({ scope: 'team', text: 'a'.repeat(6_000), pinned: true });
+    await frogbot.memory.save({ scope: 'team', text: 'a'.repeat(4_000), pinned: true });
+    await frogbot.memory.save({ scope: 'team', text: 'c'.repeat(2_000), pinned: true });
 
     await expect(
       frogbot.memory.save({ scope: 'team', text: 'b'.repeat(2_004), pinned: true }),
