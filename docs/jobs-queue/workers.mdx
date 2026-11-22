@@ -80,7 +80,7 @@ The worker CLI's `--limit 0` never runs jobs. Without `--handle-schedules`, it p
 
 ## Workers for durable waits
 
-[Workflow waits](/jobs-queue/waits) persist in the shared database and release the current worker. Resume wakes the same paused job in its original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `frogbot`: the minute `frogbot-sweep-waitpoints` task proactively expires waits and recovers accepted responses whose jobs still need waking. The all-queue container setup above covers both.
+[Workflow waits](/jobs-queue/waits) persist in the shared database and release the current worker. Resume wakes the same paused job in its original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `default`: the minute `frogbot-sweep-waitpoints` task proactively expires waits and recovers accepted responses whose jobs still need waking. The all-queue container setup above covers both.
 
 Failed wakes remain retryable by the scheduled sweep. Cancelled, superseded, or deleted paused jobs are not recreated, and their resume links return `409`. See [Dispatch and recovery limits](/jobs-queue/waits#dispatch-and-recovery-limits).
 

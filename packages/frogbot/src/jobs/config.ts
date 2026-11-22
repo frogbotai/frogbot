@@ -5,7 +5,6 @@ import {
   toPayloadJobs,
   toPayloadJobsCollection,
 } from '../seams/config.js';
-import { FROGBOT_QUEUE } from './autoRun.js';
 import { deleteOrphanJobs } from './orphans.js';
 import { withJobRun } from './run.js';
 import type { JobsConfig } from './types.js';
@@ -91,7 +90,7 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
       {
         slug: WAITPOINT_SWEEP_TASK_SLUG,
         interfaceName: 'TaskFrogBotSweepWaitpoints',
-        schedule: [{ cron: '* * * * *', queue: FROGBOT_QUEUE }],
+        schedule: [{ cron: '* * * * *', queue: 'default' }],
         handler: async ({ req }) => {
           await deleteOrphanJobs({ req });
           await sweepWaitpoints({ req });

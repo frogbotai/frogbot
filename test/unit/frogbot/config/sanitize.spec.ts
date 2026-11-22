@@ -5351,6 +5351,13 @@ describe('frogbot sanitize', () => {
         'frogbot-run-agent-schedule',
         'frogbot-cleanup-kv',
       ]);
+      expect(
+        payloadConfig.jobs.tasks
+          ?.filter(
+            ({ slug }) => slug === 'frogbot-sweep-waitpoints' || slug === 'frogbot-cleanup-kv',
+          )
+          .flatMap(({ schedule }) => schedule?.map(({ queue }) => queue)),
+      ).toEqual(['frogbot', 'frogbot']);
       expect(payloadConfig.jobs.autoRun).toEqual([
         { queue: 'user' },
         { cron: '* * * * *', queue: 'frogbot', silent: { info: true } },

@@ -224,6 +224,10 @@ In addition to the setup covered above, here are other best practices to follow:
 
 For a better user experience, provide a way to disable the plugin without uninstalling it.
 
+### Schedule tasks on the frogbot queue
+
+A task your plugin schedules runs with no setup in the app when its `schedule` uses `queue: FROGBOT_QUEUE` (imported from `frogbot`): FrogBot's runner covers that queue. A schedule on `default` or another queue runs only if the app runs a worker or `jobs.autoRun` for it. See [FrogBot's runner](/jobs-queue/schedules#frogbots-runner).
+
 ### Include tests in your GitHub CI workflow
 
 If you've configured tests for your package, integrate them into your workflow to run the tests each time you commit to the plugin repository. Learn more about [how to configure tests into your GitHub CI workflow.](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs)

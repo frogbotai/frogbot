@@ -503,7 +503,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
   });
 
   it('queues the waitpoint sweep through native scheduling and runs its persisted job', async () => {
-    const result = await fixture.frogbot.jobs.handleSchedules({ queue: 'frogbot' });
+    const result = await fixture.frogbot.jobs.handleSchedules({ queue: 'default' });
     const scheduled = await fixture.payload.find({
       collection: 'payload-jobs',
       where: { taskSlug: { equals: 'frogbot-sweep-waitpoints' } },
@@ -514,7 +514,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     expect(result.errored).toEqual([]);
     expect(scheduled.docs).toHaveLength(1);
     expect(scheduled.docs[0]).toMatchObject({
-      queue: 'frogbot',
+      queue: 'default',
       meta: { scheduled: true },
       waitUntil: expect.any(String),
     });
@@ -523,7 +523,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     vi.setSystemTime(new Date(timestamp(scheduled.docs[0].waitUntil) + 1));
 
     await fixture.frogbot.jobs.run({
-      queue: 'frogbot',
+      queue: 'default',
       where: { taskSlug: { equals: 'frogbot-sweep-waitpoints' } },
       overrideAccess: true,
     });

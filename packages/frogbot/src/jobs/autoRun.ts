@@ -37,8 +37,8 @@ export function withFrogBotAutoRun(
 /**
  * Adds FrogBot's runner when FrogBot or a plugin has work on a FrogBot queue: `queues` FrogBot
  * queues jobs on at runtime, or a task or workflow scheduled on one. The runner covers those
- * queues and `frogbot`, never the app's own queues. Tasks in `housekeeping` run when the runner
- * does but don't turn it on.
+ * queues and `frogbot`, never the app's own queues. Tasks in `housekeeping` don't turn it on; they
+ * stay on the app's queues without it and move to `frogbot` with it.
  */
 export function resolveFrogBotAutoRun<T extends JobsConfig>({
   housekeeping,
@@ -58,6 +58,11 @@ export function resolveFrogBotAutoRun<T extends JobsConfig>({
 
   return {
     ...jobs,
+    tasks: jobs.tasks?.map((task) =>
+      housekeeping.includes(task.slug) && task.schedule
+        ? { ...task, schedule: task.schedule.map((entry) => ({ ...entry, queue: FROGBOT_QUEUE })) }
+        : task,
+    ),
     autoRun: withFrogBotAutoRun(jobs.autoRun, [
       ...new Set([FROGBOT_QUEUE, ...queues, ...scheduled]),
     ]),

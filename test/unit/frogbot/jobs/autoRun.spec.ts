@@ -73,6 +73,15 @@ describe('resolveFrogBotAutoRun', () => {
     expect(resolve({ tasks: [scheduled('digest', 'default')] })).not.toHaveProperty('autoRun');
   });
 
+  it('moves housekeeping to the frogbot queue only when the runner turns on', () => {
+    const sweep = scheduled('frogbot-sweep-waitpoints', 'default');
+
+    expect(resolve({ tasks: [sweep] }).tasks).toEqual([sweep]);
+    expect(resolve({ tasks: [sweep] }, [FROGBOT_QUEUE]).tasks?.[0]?.schedule).toEqual([
+      { cron: '0 0 * * *', queue: FROGBOT_QUEUE },
+    ]);
+  });
+
   it('runs the frogbot queue for a task scheduled on it', () => {
     expect(resolve({ tasks: [scheduled('plugin-retention', FROGBOT_QUEUE)] }).autoRun).toEqual([
       frogbotAutoRun(FROGBOT_QUEUE),
