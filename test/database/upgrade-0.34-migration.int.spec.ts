@@ -15,6 +15,7 @@ import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import type { Payload } from 'payload';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { rewriteMigrationFile } from '../../packages/frogbot/src/bin/migrationFile.js';
 import { closePostgresPool, createPostgresDatabase } from '../__helpers/shared/db/postgres.js';
 
 const adapterName = process.env.FROGBOT_DATABASE ?? 'sqlite';
@@ -33,6 +34,7 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
     let directory: string;
     let frogbot: FrogBot;
     let payload: Payload;
+    let initial: string;
     let db: SQLiteAdapter | PostgresAdapter;
     let cleanupDatabase: (() => Promise<void>) | undefined;
     let userID: number;
@@ -94,7 +96,14 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       payload = getFrogBotPayload(frogbot);
       db = payload.db as unknown as typeof db;
 
-      await db.createMigration({ forceAcceptWarning: true, migrationName: 'initial', payload });
+      const created = await db.createMigration({
+        forceAcceptWarning: true,
+        migrationName: 'initial',
+        payload,
+      });
+
+      await rewriteMigrationFile(created!.path!);
+      initial = await readFile(created!.path!, 'utf8');
 
       const snapshotFile = (await readdir(migrationDir)).find((file) => file.endsWith('.json'))!;
       const snapshotPath = join(migrationDir, snapshotFile);
@@ -167,6 +176,12 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       await rm(migrationDir, { recursive: true, force: true });
     });
 
+    it('migrate:create writes `{ db, req }` from the FrogBot adapter, and it runs', () => {
+      expect(initial).toMatch(/export async function up\(\{ db, req \}: MigrateUpArgs\)/);
+      expect(initial).toMatch(/export async function down\(\{ db, req \}: MigrateDownArgs\)/);
+      expect(initial).toMatch(/from '@frogbotai\/db-(sqlite|postgres)'/);
+    });
+
     it('lists the 3.x author column and keeps it in the snapshot', async () => {
       const filePath = join(migrationDir, '20260101_000000_upgrade');
       const template = await dynamic({ filePath, migrationName: 'upgrade', payload } as never);
@@ -183,6 +198,7 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
 
       expect(posts.columns.created_by_id).toBeDefined();
       expect(template.upSQL).toContain('await authorshipMigration(');
+      expect(template.upSQL).not.toMatch(/\bpayload\b/);
     });
 
     it('writes the schema change without asking about renames', async () => {
@@ -227,8 +243,8 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
         { table: 'posts', column: 'created_by_id', relationTo: 'users', to: 'createdBy' },
       ];
 
-      await authorshipMigration({ db: db.drizzle, payload, columns });
-      await authorshipMigration({ db: db.drizzle, payload, columns });
+      await authorshipMigration({ db: db.drizzle, req: await frogbot.createRequest(), columns });
+      await authorshipMigration({ db: db.drizzle, req: await frogbot.createRequest(), columns });
 
       const migrated = await payload.findByID({
         collection: 'posts',
@@ -290,7 +306,10 @@ describe.skipIf(adapterName !== 'mongodb')('Upgrade migration: mongodb', () => {
       { $set: { lastModifiedBy: user.id }, $unset: { createdBy: '', updatedBy: '' } },
     );
 
-    await authorshipMigration({ payload, keys: { lastModifiedBy: 'updatedBy' } });
+    await authorshipMigration({
+      req: await frogbot.createRequest(),
+      keys: { lastModifiedBy: 'updatedBy' },
+    });
 
     const migrated = await models.posts.collection.findOne({ title: post.title });
 

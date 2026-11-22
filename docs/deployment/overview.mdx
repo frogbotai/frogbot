@@ -257,7 +257,7 @@ sqliteAdapter({
 
 Commit the generated files. They are applied automatically on boot (before the server starts serving), so a fresh database gets its schema on first deploy. When you add or change collections, run `pnpm migrate:create <name>` again and commit the new files.
 
-Generated migrations import from the underlying database adapter package, which the template includes as a direct dependency — do not remove it.
+Generated migrations import their types and `sql` from your database adapter, such as `@frogbotai/db-sqlite`, and take `{ db, req }`. See [Migration file contents](/database/migrations#migration-file-contents).
 
 ## Troubleshooting
 

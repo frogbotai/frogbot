@@ -555,7 +555,7 @@ export type {
   TypeWithID,
   UntypedFrogBotTypes,
 } from './types/generated.js';
-export type { FrogBotRequest } from './types/request.js';
+export type { FrogBotRequest, MigrationArgs, MigrationRequest } from './types/request.js';
 export type {
   StorageAdapter,
   StorageAdapterCollections,

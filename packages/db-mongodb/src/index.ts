@@ -1,5 +1,11 @@
-import type { Args, MongooseAdapter } from '@payloadcms/db-mongodb';
+import type {
+  Args,
+  MigrateDownArgs as PayloadMigrateDownArgs,
+  MigrateUpArgs as PayloadMigrateUpArgs,
+  MongooseAdapter,
+} from '@payloadcms/db-mongodb';
 import { mongooseAdapter as createMongooseAdapter } from '@payloadcms/db-mongodb';
+import type { MigrationArgs } from 'frogbot';
 import type { AggregateAdapter } from 'frogbot/aggregate';
 import type { JobLogDatabase } from 'frogbot/jobs';
 import { jobLogOperations } from 'frogbot/jobs';
@@ -12,8 +18,14 @@ import { pruneJobLogs } from './jobLogs.js';
 import { mongooseSearchAdapter } from './search/index.js';
 import { createUpdateJobs } from './updateJobs.js';
 
-export type { Args, MigrateDownArgs, MigrateUpArgs, MongooseAdapter } from '@payloadcms/db-mongodb';
+export type { Args, MongooseAdapter } from '@payloadcms/db-mongodb';
 export { compatibilityOptions } from '@payloadcms/db-mongodb';
+
+/** What a migration's `up` gets: `session`, the migration's transaction when the database runs them, and `req`. */
+export type MigrateUpArgs = MigrationArgs<PayloadMigrateUpArgs>;
+
+/** What a migration's `down` gets: `session`, the migration's transaction when the database runs them, and `req`. */
+export type MigrateDownArgs = MigrationArgs<PayloadMigrateDownArgs>;
 
 export const mongooseAdapter = (
   args: Args,

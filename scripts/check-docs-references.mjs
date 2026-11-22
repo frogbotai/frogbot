@@ -6,9 +6,7 @@ import ts from 'typescript';
 
 import { publishablePackages, readJSON, ROOT } from './lib/workspace.mjs';
 
-export const ALLOWLIST = [
-  { name: '@frogbotai/your-db-adapter', reason: 'placeholder in migrations.mdx' },
-];
+export const ALLOWLIST = [];
 
 const IMPORT_LANGUAGES = new Set(['ts', 'tsx', 'typescript', 'js', 'jsx', 'mjs']);
 const SHELL_LANGUAGES = new Set(['bash', 'sh', 'shell', 'zsh', 'console']);

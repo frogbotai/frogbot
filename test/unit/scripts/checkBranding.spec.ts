@@ -66,6 +66,14 @@ describe('checkBranding', () => {
     ['packages/plugins/plugin-x/README.md', 'Delegates to Payload.'],
     ['templates/blank/src/frogbot.config.ts', 'type PayloadRequest = unknown'],
     ['examples/demo/README.md', 'See PayloadCMS.'],
+    [
+      'examples/demo/src/migrations/1_init.ts',
+      'export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {',
+    ],
+    [
+      'docs/database/migrations.mdx',
+      'export async function down({ payload, req }: MigrateDownArgs) {',
+    ],
   ])('rejects %s: %s', (file, line) => {
     const problems = check({ ...allowed, [file]: `${line}\n` });
 
@@ -78,6 +86,10 @@ describe('checkBranding', () => {
     ['packages/plugins/plugin-mcp/README.md', 'A dormant `payload-mcp-api-keys` collection.'],
     ['packages/frogbot/dist/README.md', 'Payload'],
     ['docs/node_modules/x/README.md', 'Payload'],
+    [
+      'examples/demo/src/migrations/1_init.ts',
+      'export async function up({ db, req }: MigrateUpArgs): Promise<void> {',
+    ],
   ])('accepts %s: %s', (file, line) => {
     const problems = check({ ...allowed, [file]: `${line}\n` });
 
