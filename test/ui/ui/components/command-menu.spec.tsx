@@ -62,6 +62,30 @@ describe('CommandMenu', () => {
     );
   });
 
+  it('keeps a label made of several nodes as one flex item, so it is not split by the gap', () => {
+    render(
+      <Harness
+        groups={[
+          {
+            id: 'go',
+            items: [
+              {
+                id: 'robot',
+                label: [<strong key="0">Rob</strong>, 'ot'],
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    const option = screen.getByRole('option');
+
+    expect(option.childNodes).toHaveLength(1);
+    expect(option.firstElementChild?.className).toBe('fb-command-menu__label');
+    expect(option.firstElementChild?.textContent).toBe('Robot');
+  });
+
   it('moves one active option across groups with the arrow keys and wraps', () => {
     render(<Harness />);
     input().focus();

@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 
 import type { ModelId } from '../../ai/types.js';
+import { pagedDelete } from '../../collections/bulkDelete.js';
 import { memoryTokens, PINNED_TOKEN_BUDGET } from '../budget.js';
 import { MemoryAdapterError } from '../errors.js';
 import type {
@@ -333,11 +334,11 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
       return { deleted: 1 };
     }
 
-    const { docs } = await payload.delete({
+    const { docs } = await pagedDelete(payload)({
       collection: MEMORIES_SLUG,
       where: inBucket(target),
       overrideAccess: true,
-      req,
+      req: target.req,
     });
 
     return { deleted: docs.length };

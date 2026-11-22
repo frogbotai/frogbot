@@ -2,7 +2,7 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { formsPlugin } from '@frogbotai/plugin-forms';
 import { buildConfig } from 'frogbot';
 
-import { applicationsSlug, leadsSlug } from '../shared';
+import { applicationsSlug, embedHost, leadsSlug } from '../shared';
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-forms-secret',
@@ -32,5 +32,11 @@ export default buildConfig({
       ],
     },
   ],
-  plugins: [formsPlugin({ collections: [leadsSlug, applicationsSlug] })],
+  plugins: [
+    formsPlugin({
+      collections: [leadsSlug, applicationsSlug],
+      analytics: true,
+      frameAncestors: [embedHost],
+    }),
+  ],
 });

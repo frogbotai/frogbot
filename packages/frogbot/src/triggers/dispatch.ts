@@ -4,6 +4,11 @@ import type { FrogBot } from '../frogbot.js';
 import { AGENT_TRIGGER_TASK_SLUG } from './task.js';
 import type { TriggerEvent, TriggerSubscriber } from './types.js';
 
+/** The queue an agent's events from one trigger run on. */
+export function triggerQueue(agentSlug: string, triggerSlug: string): string {
+  return `frogbot-trigger:${agentSlug}:${triggerSlug}`;
+}
+
 export async function dispatchTriggerEvents({
   events,
   frogbot,
@@ -35,7 +40,7 @@ export async function dispatchTriggerEvents({
 
         await frogbot.queue({
           task: AGENT_TRIGGER_TASK_SLUG,
-          queue: `frogbot-trigger:${subscriber.agentSlug}:${subscriber.trigger.trigger.slug}`,
+          queue: triggerQueue(subscriber.agentSlug, subscriber.trigger.trigger.slug),
           input: {
             agentSlug: subscriber.agentSlug,
             instanceSlug: subscriber.piece.slug,

@@ -18,8 +18,8 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
   slug: 'get_project_status',
   description: 'Return the current status of a project.',
   inputSchema,
-  async execute({ projectId }, { frogbot, req, overrideAccess }) {
-    const project = await frogbot.findByID({
+  async execute({ projectId }, { req, overrideAccess }) {
+    const project = await req.frogbot.findByID({
       collection: 'projects',
       id: projectId,
       req,
@@ -39,8 +39,7 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
 
 | Property         | Value                                                                         |
 | ---------------- | ----------------------------------------------------------------------------- |
-| `frogbot`        | The initialized FrogBot instance                                              |
-| `req`            | The current `FrogBotRequest`                                                  |
+| `req`            | The current `FrogBotRequest`; reach the app through `req.frogbot`             |
 | `agent`          | The current agent `slug`, `runId`, and optional `chatId`                      |
 | `overrideAccess` | Whether the run is trusted: `false` in chat and over MCP, `true` on schedules |
 

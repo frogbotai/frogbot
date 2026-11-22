@@ -56,7 +56,7 @@ export async function pinnedMemoryPrompt(source: MemoryRunSource): Promise<strin
 
   const pages = await Promise.all(
     scopes.map((scope) =>
-      source.frogbot.memory.list({ ...run.callArgs, scope, pinned: true, limit: PINNED_PAGE }),
+      source.req.frogbot.memory.list({ ...run.callArgs, scope, pinned: true, limit: PINNED_PAGE }),
     ),
   );
 
@@ -93,7 +93,12 @@ export async function recallMemories(
   const hits = (
     await Promise.all(
       scopes.map((scope) =>
-        source.frogbot.memory.search({ ...run.callArgs, scope, query, limit: RECALL_LIMIT * 2 }),
+        source.req.frogbot.memory.search({
+          ...run.callArgs,
+          scope,
+          query,
+          limit: RECALL_LIMIT * 2,
+        }),
       ),
     )
   )

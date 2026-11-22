@@ -1,7 +1,6 @@
 import type { Job, PayloadRequest, RequestContext } from 'payload';
 import { assert, describe, expect, it, vi } from 'vitest';
 
-import { resolveScheduleTasks } from '../../../../packages/frogbot/src/agents/resolveScheduleTasks.js';
 import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import {
   AGENT_TRIGGER_TASK_SLUG,
@@ -10,60 +9,13 @@ import {
 import { createEchoPiece } from './fixtures/createEchoPiece.js';
 
 describe('agent trigger task', () => {
-  it('installs an automatic all-queues runner for trigger-only configs', () => {
-    expect(resolveTriggerTasks().autoRun).toEqual([
-      { allQueues: true, cron: '* * * * *', silent: { info: true } },
-    ]);
-  });
-
-  it('preserves user tasks and runners', async () => {
+  it('adds its task and leaves the runners to sanitize', () => {
     const task = { slug: 'custom', handler: vi.fn() };
     const runner = { queue: 'custom', cron: '*/5 * * * *' };
     const jobs = resolveTriggerTasks({ tasks: [task], autoRun: [runner] });
 
-    expect(jobs.tasks).toContain(task);
-    expect(jobs.autoRun).toEqual([
-      runner,
-      { allQueues: true, cron: '* * * * *', silent: { info: true } },
-    ]);
-
-    const autoRun = vi.fn().mockResolvedValue([runner]);
-    const dynamic = resolveTriggerTasks({ autoRun }).autoRun;
-
-    expect(typeof dynamic).toBe('function');
-
-    const payload = {};
-
-    expect(await (dynamic as typeof autoRun)(payload)).toEqual([
-      runner,
-      { allQueues: true, cron: '* * * * *', silent: { info: true } },
-    ]);
-    expect(autoRun).toHaveBeenCalledWith(payload);
-  });
-
-  it.each([false, true])('reuses the schedule runner (dynamic: %s)', async (dynamic) => {
-    const runner = { queue: 'custom', cron: '*/5 * * * *' };
-    const jobs = resolveScheduleTasks({
-      agents: [
-        {
-          slug: 'ops',
-          triggers: [{ type: 'schedule', slug: 'tick', schedule: { every: '1m' }, prompt: 'tick' }],
-        },
-      ] as never,
-      jobs: { autoRun: dynamic ? () => Promise.resolve([runner]) : [runner] },
-    });
-
-    const resolved = resolveTriggerTasks(jobs);
-
-    const runners =
-      typeof resolved.autoRun === 'function'
-        ? await resolved.autoRun({} as never)
-        : resolved.autoRun;
-
-    expect(runners).toEqual([
-      runner,
-      { allQueues: true, cron: '* * * * *', silent: { info: true } },
-    ]);
+    expect(jobs.tasks?.map(({ slug }) => slug)).toEqual(['custom', AGENT_TRIGGER_TASK_SLUG]);
+    expect(jobs.autoRun).toEqual([runner]);
   });
 
   it('delivers event data and a trigger request to the addressed handler', async () => {

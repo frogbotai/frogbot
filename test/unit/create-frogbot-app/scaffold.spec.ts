@@ -21,6 +21,7 @@ import {
   validateValue,
 } from '../../../packages/create-frogbot-app/src/prompts.js';
 import { getTemplate, TEMPLATES } from '../../../packages/create-frogbot-app/src/templates.js';
+import { catalogVersion } from '../../../scripts/lib/workspace.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const template = templatePath('blank');
@@ -646,6 +647,16 @@ describe('packing matrix', () => {
     }
 
     expect(() => scaffoldMatrix(TEMPLATES, templates)).not.toThrow();
+  });
+
+  it('scaffolds next as a patch range from the catalog version', () => {
+    const next = catalogVersion('next');
+
+    for (const entry of TEMPLATES) {
+      const pkg = readPackage(templatePath(entry.name));
+
+      expect(pkg.dependencies.next, entry.name).toBe(`~${next}`);
+    }
   });
 
   it('leaves out generated types, build output, local databases and dev uploads', () => {

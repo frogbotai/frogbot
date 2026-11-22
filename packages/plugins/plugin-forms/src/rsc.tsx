@@ -34,8 +34,11 @@ export async function FormView(props: AdminViewServerProps) {
 
   const req = attachRegisteredFrogBot(initPageResult.req);
   const token = searchParams?.link;
-  const submitBase = (slug: string) =>
-    `${payload.config.routes.api}/${FORMS_SLUG}/${encodeURIComponent(slug)}/submit`;
+  const formApi = (slug: string) =>
+    `${payload.config.routes.api}/${FORMS_SLUG}/${encodeURIComponent(slug)}`;
+
+  const submitBase = (slug: string) => `${formApi(slug)}/submit`;
+  const eventsUrl = (slug: string) => `${formApi(slug)}/events`;
 
   if (token !== undefined) {
     const link = typeof token === 'string' ? token : '';
@@ -65,7 +68,11 @@ export async function FormView(props: AdminViewServerProps) {
 
   return (
     <main>
-      <Form definition={definition} submitUrl={submitBase(found.form.slug)} />
+      <Form
+        definition={definition}
+        eventUrl={definition.analytics ? eventsUrl(found.form.slug) : undefined}
+        submitUrl={submitBase(found.form.slug)}
+      />
     </main>
   );
 }

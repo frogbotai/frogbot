@@ -310,7 +310,6 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-hash', chatId },
       overrideAccess: false,
     };
@@ -461,7 +460,6 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-1', chatId },
       overrideAccess: false,
     };
@@ -486,7 +484,6 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-2' },
       overrideAccess: false,
     };
@@ -729,7 +726,6 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-office', chatId },
       overrideAccess: false,
     };
@@ -752,7 +748,6 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-office-then-upload', chatId },
       overrideAccess: false,
     };

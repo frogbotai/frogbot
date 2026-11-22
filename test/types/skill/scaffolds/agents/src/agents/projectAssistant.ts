@@ -9,8 +9,8 @@ export const searchProjects: Tool<typeof searchInput> = {
   description: 'Search projects by title.',
   inputSchema: searchInput,
   access: ({ req }) => Boolean(req.user),
-  async execute({ query }, { frogbot, req, overrideAccess }) {
-    const projects = await frogbot.find({
+  async execute({ query }, { req, overrideAccess }) {
+    const projects = await req.frogbot.find({
       collection: 'projects',
       where: { title: { contains: query } },
       req,

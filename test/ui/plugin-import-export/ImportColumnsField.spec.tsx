@@ -193,7 +193,11 @@ describe('ImportColumnsField', () => {
     respond(
       [columnsResponse],
       [
-        { columns: columnsResponse.columns, suggested: 0, error: 'AI suggestion failed: down' },
+        {
+          errors: [
+            { message: 'AI suggestion failed: down', data: { code: 'ai_suggestion_failed' } },
+          ],
+        },
         502,
       ],
     );
@@ -209,7 +213,17 @@ describe('ImportColumnsField', () => {
   });
 
   it("shows the endpoint's error when the file can't be read", async () => {
-    respond([{ error: 'Could not read the file: Invalid Closing Quote' }, 400]);
+    respond([
+      {
+        errors: [
+          {
+            message: 'Could not read the file: Invalid Closing Quote',
+            data: { code: 'file_unreadable' },
+          },
+        ],
+      },
+      400,
+    ]);
 
     render(<ImportColumnsField {...fieldProps} />);
     chooseFile();

@@ -13,3 +13,4 @@ export type {
   WorkflowConfig,
   WorkflowHandler,
 } from '../jobs/types.js';
+export type { RunInlineTaskFunction } from '../jobs/waitpoints/types.js';

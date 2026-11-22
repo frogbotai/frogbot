@@ -63,7 +63,6 @@ export async function streamTextOperation<
   const toolsContext = toolReq
     ? toAISDKToolsContext(tools, {
         req: toolReq,
-        frogbot,
         agent: { slug: 'direct', runId: generateId() },
         overrideAccess: overrideAccess === true,
       })

@@ -47,17 +47,19 @@ const intersects = (a: Box, b: Box) =>
 
 const top = async (page: Page, n: number) => (await box(turn(page, n))).y;
 
+async function reaches(page: Page, n: number, offset: number) {
+  await expect
+    .poll(async () => Math.abs((await top(page, n)) - (await box(scroller(page))).y - offset))
+    .toBeLessThanOrEqual(2);
+}
+
 const fromBottom = (page: Page) =>
   scroller(page).evaluate((node) => node.scrollHeight - node.scrollTop - node.clientHeight);
 
 test('clicking a tick scrolls its turn to the top of the list', async ({ page }) => {
   await openTurns(page);
   await tick(page, 2).click();
-  await settled(page);
-
-  const view = (await box(scroller(page))).y;
-
-  expect(Math.abs((await top(page, 2)) - (view + 16))).toBeLessThanOrEqual(2);
+  await reaches(page, 2, 16);
   await expect(tick(page, 2)).toHaveAttribute('aria-current', 'true');
   await expect(jump(page)).toBeVisible();
 });
@@ -83,13 +85,9 @@ test('a send after a jump puts the sent message at the top', async ({ page }) =>
   await openTurns(page);
   await holdSend(page);
   await tick(page, 2).click();
-  await settled(page);
+  await reaches(page, 2, 16);
   await send(page, 'A follow-up while reading turn two');
-  await settled(page);
-
-  const view = (await box(scroller(page))).y + (await pinOffset(page));
-
-  expect(Math.abs((await top(page, 7)) - view)).toBeLessThanOrEqual(2);
+  await reaches(page, 7, await pinOffset(page));
   await expect(tick(page, 7)).toHaveAttribute('aria-current', 'true');
   await expect(jump(page)).toBeHidden();
 });
@@ -102,7 +100,7 @@ test('a reply after a send from the last turn stays put as it grows', async ({ p
   await tick(page, 6).click();
   await settled(page);
   await send(page, 'A follow-up while reading the last turn');
-  await settled(page);
+  await reaches(page, 7, await pinOffset(page));
 
   const before = await top(page, 7);
 
@@ -227,7 +225,7 @@ test('after a click, the card keeps the hovered turn while the pointer moves ont
 }) => {
   await openTurns(page);
   await tick(page, 2).click();
-  await settled(page);
+  await reaches(page, 2, 16);
   await tick(page, 5).hover();
   await expect(card(page)).toContainText('Message 9.');
 

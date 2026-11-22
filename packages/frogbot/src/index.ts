@@ -434,6 +434,7 @@ export type { InitOptions, Logger } from './frogbot.js';
 export type { FrogBot as FrogBotInstance } from './frogbot.js';
 export { FrogBot } from './frogbot.js';
 export { getCachedFrogBot, getFrogBot } from './getFrogBot.js';
+export { FROGBOT_QUEUE } from './jobs/autoRun.js';
 export type {
   JobQueueArgs,
   Jobs,
@@ -442,6 +443,7 @@ export type {
   WorkflowConfig,
   WorkflowHandler,
 } from './jobs/types.js';
+export type { RunInlineTaskFunction } from './jobs/waitpoints/types.js';
 export type { DatabaseKVAdapterOptions } from './kv/adapters/DatabaseKVAdapter.js';
 export { databaseKVAdapter } from './kv/adapters/DatabaseKVAdapter.js';
 export { KVLeaseLostError, KVLockContentionError, KVUnsupportedError } from './kv/errors.js';

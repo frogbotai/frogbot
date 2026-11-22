@@ -86,7 +86,7 @@ When agents are configured, FrogBot automatically registers default `chats` and 
 
 ## 3. Agents run typed tool loops with user permissions
 
-An [agent](/agents/overview) is a code-defined `AgentConfig` object backed by an AI SDK `ToolLoopAgent`. Tools use [Zod](https://zod.dev) input schemas and receive a request-aware context (`ctx.frogbot` and `ctx.req`).
+An [agent](/agents/overview) is a code-defined `AgentConfig` object backed by an AI SDK `ToolLoopAgent`. Tools use [Zod](https://zod.dev) input schemas and receive a request-aware context: `ctx.req`, with the app on `ctx.req.frogbot`.
 
 ```ts
 import { z } from 'zod'
@@ -97,7 +97,7 @@ const findDeal: Tool = {
   description: 'Look up a deal by ID using the caller permissions.',
   inputSchema: z.object({ dealId: z.string() }),
   execute: async ({ dealId }, ctx) => {
-    return ctx.frogbot.findByID({
+    return ctx.req.frogbot.findByID({
       collection: 'deals',
       id: dealId,
       req: ctx.req,

@@ -117,6 +117,7 @@ export async function connectionSetup(pieceDefinition: OAuthPieceDefinition = de
 
   const frogbot = {
     kv,
+    logger: { warn: vi.fn() },
     config: {
       _internal: {
         payloadConfig: Promise.resolve({ admin: { user: 'users' }, routes: { api: '/api' } }),

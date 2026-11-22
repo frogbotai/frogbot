@@ -24,7 +24,6 @@ function makeCtx(...args: [] | [number | string | undefined]) {
   return {
     ctx: {
       req: { frogbot },
-      frogbot,
       agent: { slug: 'support', runId: 'run-1', chatId },
     },
     findByID,

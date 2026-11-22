@@ -10,7 +10,7 @@ import type { QuestionOptions } from './__helpers/questionTest';
 import { signedOut as signedOutState, type SignInOptions } from './__helpers/signIn';
 import { stopServersOnSignal } from './__helpers/stopServersOnSignal';
 import { dojoBuildEnv, dojoEnv } from './fixtures/dojo/shared';
-import { signInOnly } from './fixtures/sign-in/shared';
+import { firstUserFields, signInOnly } from './fixtures/sign-in/shared';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
@@ -222,6 +222,12 @@ const servers: Record<string, Server> = {
     database: 'frogbot.sign-in-only.db',
     env: { SIGN_IN_SETUP: signInOnly },
   },
+  'first-user-fields': {
+    fixture: 'sign-in',
+    port: testPort(3148),
+    database: 'frogbot.first-user-fields.db',
+    env: { SIGN_IN_SETUP: firstUserFields },
+  },
   'sign-in-two-factor': {
     fixture: 'sign-in',
     port: testPort(3147),
@@ -432,7 +438,14 @@ const testProjects = [
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
   project({ name: 'sign-in-two-factor', testMatch: 'twoFactor.browser.spec.ts', signedOut: true }),
   project({ name: 'linked-accounts', testMatch: 'linkedAccounts.browser.spec.ts' }),
-  project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
+  project({
+    name: 'forms',
+    testMatch: [
+      'forms.browser.spec.ts',
+      'formBuilder.browser.spec.ts',
+      'formEmbed.browser.spec.ts',
+    ],
+  }),
   project({
     name: 'crm',
     testMatch: [
@@ -464,6 +477,7 @@ const testProjects = [
     { name: 'first-user-blank', grep: /@blank/ },
     { name: 'sign-in-passwords', grep: /@passwords/ },
     { name: 'sign-in-only', grep: /@sign-in-only/ },
+    { name: 'first-user-fields', grep: /@fields/ },
   ].map((options) =>
     project({ ...options, testMatch: 'firstUser.browser.spec.ts', signedOut: true }),
   ),
