@@ -98,6 +98,54 @@ memory: databaseMemory({
 }),
 ```
 
+## Agents
+
+Set `memory: true` on an agent to let it remember. It needs the root `memory` adapter; without one, startup fails and names the fix.
+
+```ts
+agents: [{ slug: 'support', instructions: 'Help customers.', memory: true }],
+memory: databaseMemory(),
+```
+
+The agent gets three tools:
+
+| Tool | What it does | Asks first |
+| --- | --- | --- |
+| `memory_search` | Searches one scope, or every scope it can use. | No |
+| `memory_save` | Saves a memory, with an optional `key` and `pinned`. | No |
+| `memory_forget` | Forgets one memory by ID. | Yes |
+
+The tools take a scope word at most, never a scope ID, and FrogBot works out the scope from the run, as in [Scopes](#scopes). Without a scope, `memory_save` and `memory_forget` use `me` for a signed-in person and `agent` otherwise. Agent runs skip `access`, which guards server code that sets `overrideAccess: false`; use the agent's [`access`](/agents/overview#control-access) to limit who chats with it. `memory_search`, `memory_save` and `memory_forget` are reserved tool slugs on these agents.
+
+Change whether a tool asks first once, for every agent. A rule for one agent is a function that checks `agent.slug`:
+
+```ts
+memory: databaseMemory({
+  tools: {
+    memory_save: { approval: 'required' },
+    memory_forget: { approval: ({ agent }) => (agent.slug === 'admin' ? false : 'ask') },
+  },
+}),
+```
+
+Each turn's prompt is, in order:
+
+1. The agent's instructions.
+2. A Memory section listing the scope words, then the pinned memories of every scope the run can use, up to 2,000 tokens. They're ordered by scope, then by when they were saved, so the system prompt stays byte for byte the same, and cacheable, until a pinned memory changes.
+3. Up to 5 memories that aren't pinned and match the latest message, as one message right before it. They're never in the system prompt and never saved to the chat.
+
+When the adapter has `afterTurn`, FrogBot calls it after each finished turn with the run's scopes and the turn's messages. The reply never waits for it, and a throw is logged.
+
+### Memory over MCP
+
+`memoryTools` from `frogbot/memory` are the same three tools. List them in [`plugin-mcp`](/plugins/mcp)'s `tools` to serve memory to MCP clients. MCP calls have no agent, so the `agent` scope fails there with `invalid`, and `memory_forget` can't ask anyone, so it is refused unless you set its `approval` to `false`.
+
+```ts
+import { memoryTools } from 'frogbot/memory'
+
+mcpPlugin({ tools: [...memoryTools] })
+```
+
 ## Errors
 
 Adapters and `frogbot.memory` throw `MemoryAdapterError` with one of these codes:
@@ -122,6 +170,7 @@ Adapters and `frogbot.memory` throw `MemoryAdapterError` with one of these codes
 | `embeddingModel` | `ModelId` | — | Adds meaning search with this embedding model. Nothing picks one by default. |
 | `dimensions` | `number` | — | The embedding model's vector size, such as `1536`. Required with `embeddingModel`. |
 | `atlasSearch` | `boolean` | `false` | MongoDB only: search with Atlas Search indexes. Needs Atlas Search on the cluster. |
+| `tools` | `{ memory_search?, memory_save?, memory_forget? }` | — | Changes whether a memory tool asks first, for every agent: `{ memory_save: { approval: 'required' } }`. See [Agents](#agents). |
 
 It keeps memories tidy without AI:
 
@@ -161,6 +210,7 @@ A memory adapter is an object with six methods. FrogBot resolves the scope and c
 | `namespace` | `string` | `''` | Accept it in your factory options, so apps can set it. |
 | `scopes` | `Record<string, MemoryScope>` | — | Accept it in your factory options, so apps can declare scope words. |
 | `access` | `MemoryAccess` | — | Accept it in your factory options, so apps can set access. |
+| `tools` | `{ memory_search?, memory_save?, memory_forget? }` | — | Accept it in your factory options, so apps can change tool approval. |
 
 Throw `MemoryAdapterError` from `frogbot/memory` with the code that fits.
 

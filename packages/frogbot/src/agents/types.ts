@@ -101,6 +101,8 @@ export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerRef
   profile?: AgentProfile;
   channels?: readonly ChannelPieceInstance[];
   skills?: readonly SkillConfig[];
+  /** Gives the agent the memory tools and its memories in the prompt. Needs the root `memory` adapter. */
+  memory?: boolean;
   tools?: readonly (AnyTool | PieceAction | PieceInstance | MCPServer)[];
   inheritTools?: false;
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];

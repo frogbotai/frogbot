@@ -7,3 +7,5 @@ export const embedderModel = 'embedder';
 export const embeddingModel = `test/${embedderModel}` as CatalogModelId;
 export const dimensions = 3;
 export const modelPort = testPort(3115);
+export const chatPort = testPort(3116);
+export const chatModel = 'test-chat/chat';
