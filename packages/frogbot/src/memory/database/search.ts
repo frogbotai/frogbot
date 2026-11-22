@@ -7,8 +7,6 @@ import { findMemories, memoryBucket, type MemoryDoc, toMemory, toMemoryDoc } fro
 
 const FALLBACK_WORDS = 16;
 
-const FALLBACK_CANDIDATES = 500;
-
 /** Searches the memory index: lexical, and hybrid when a query vector is given. */
 export async function searchMemoryIndex({
   limit,
@@ -41,15 +39,19 @@ export async function searchMemoryIndex({
 
 /** Plain MongoDB: a case-insensitive substring match on text and key, ranked by the share of query words matched. */
 export async function searchMemoryFallback({
+  candidates,
   limit,
   query,
   target,
 }: {
+  candidates: number;
   limit: number;
   query: string;
   target: MemoryTarget;
 }): Promise<MemorySearchHit[]> {
-  const words = memoryWords(query).slice(0, FALLBACK_WORDS);
+  const words = memoryWords(query)
+    .filter((word) => word.length > 1)
+    .slice(0, FALLBACK_WORDS);
 
   if (!words.length) return [];
 
@@ -61,7 +63,7 @@ export async function searchMemoryFallback({
         { key: { contains: word } },
       ]),
     },
-    limit: FALLBACK_CANDIDATES,
+    limit: candidates,
     sort: '-updatedAt',
   });
 

@@ -127,6 +127,7 @@ It keeps memories tidy without AI:
 
 - A save with a `key` updates the scope's memory with that key.
 - A save without one updates a near duplicate instead of adding a memory: the same text once lowercased, stripped of punctuation and spaces collapsed, or text sharing at least 90% of its words with it.
+- Writes to one scope run one at a time in each server process, so the checks above and the cap hold under concurrent saves. Across several processes, a key or the same text still maps to one memory, but the cap can be passed by a few.
 - Pinned memories in one scope may hold about 2,000 tokens, counted as characters divided by 4. A save or update past that fails with `limit`.
 
 ### Search
@@ -139,7 +140,7 @@ Search matches any word of the query, ranked by the database's text search. With
 | MongoDB with `atlasSearch: true` | Yes | Yes, with `embeddingModel` |
 | MongoDB without Atlas Search | Substring match | No |
 
-Plain MongoDB has no text search, so there `search` matches each query word as a case-insensitive substring of a memory's text and key, ranks memories by how many words they match, and looks at the 500 most recently changed matches. `embeddingModel` is ignored there.
+Plain MongoDB has no text search, so there `search` matches each query word as a case-insensitive substring of a memory's text and key, ignores one-letter words, and ranks every matching memory in the scope by how many words it matches. `embeddingModel` is ignored there.
 
 ## Write an adapter
 

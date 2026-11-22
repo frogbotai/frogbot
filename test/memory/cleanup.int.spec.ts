@@ -77,6 +77,46 @@ describe('databaseMemory cleanup', () => {
     ).rejects.toMatchObject({ code: 'limit' });
   });
 
+  it('keeps one memory per key under concurrent saves', async () => {
+    const saved = await Promise.all(
+      ['a', 'b', 'c', 'd', 'e'].map((text) =>
+        frogbot.memory.save({ scope: 'team', key: 'k', text: `Value ${text}` }),
+      ),
+    );
+
+    expect(new Set(saved.map(({ id }) => id)).size).toBe(1);
+    expect(await count()).toBe(1);
+  });
+
+  it('keeps one memory under concurrent identical saves', async () => {
+    await Promise.all(
+      [1, 2, 3].map(() => frogbot.memory.save({ scope: 'team', text: 'Same fact' })),
+    );
+
+    expect(await count()).toBe(1);
+  });
+
+  it('holds the cap under concurrent saves', async () => {
+    const results = await Promise.allSettled(
+      ['Alpha one', 'Bravo two', 'Charlie three', 'Delta four', 'Echo five'].map((text) =>
+        frogbot.memory.save({ scope: 'team', text }),
+      ),
+    );
+
+    expect(results.filter(({ status }) => status === 'rejected')).toHaveLength(2);
+    expect(await count()).toBe(3);
+  });
+
+  it('rejects a text change that would repeat another memory', async () => {
+    await frogbot.memory.save({ scope: 'team', text: 'Coffee at nine' });
+
+    const other = await frogbot.memory.save({ scope: 'team', text: 'Standup at ten' });
+
+    await expect(
+      frogbot.memory.update({ scope: 'team', id: other.id, text: 'coffee at nine!' }),
+    ).rejects.toMatchObject({ code: 'invalid' });
+  });
+
   it('rejects saves past the per-scope cap', async () => {
     for (const text of ['Alpha one', 'Bravo two', 'Charlie three']) {
       await frogbot.memory.save({ scope: 'team', text });

@@ -42,7 +42,7 @@ describe('testMemoryAdapter(databaseMemory())', () => {
   });
 });
 
-describe.skipIf(database !== 'sqlite')(
+describe.skipIf(database === 'mongodb')(
   'testMemoryAdapter(databaseMemory({ embeddingModel }))',
   () => {
     const adapter = databaseMemory({ embeddingModel, dimensions });

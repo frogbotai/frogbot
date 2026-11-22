@@ -12,7 +12,10 @@ const billing = 'Invoices go out on Fridays';
 const paraphrase = 'How should I contact them?';
 
 describe(`memory search without AI (${database})`, () => {
-  const harness = createMemoryHarness({ memory: () => databaseMemory() });
+  const harness = createMemoryHarness({
+    memory: () => databaseMemory({ scopes: { client: ({ chat }) => chat?.client as string } }),
+  });
+
   let frogbot: FrogBotInstance;
 
   beforeAll(async () => {
@@ -52,12 +55,26 @@ describe(`memory search without AI (${database})`, () => {
     expect(mine.map(({ memory }) => memory.text)).toEqual(['Email is my favorite']);
   });
 
+  it('ranks the best match first in a large scope, however old it is', async () => {
+    const big = { scope: 'client', chat: { client: 'big' } };
+
+    await frogbot.memory.save({ ...big, text: 'Client email is ops@acme.test' });
+
+    for (let index = 0; index < 600; index++) {
+      await frogbot.memory.save({ ...big, key: `n${index}`, text: `Standup notes ${index}` });
+    }
+
+    const hits = await frogbot.memory.search({ ...big, query: "What's the client's email?" });
+
+    expect(hits[0]?.memory.text).toBe('Client email is ops@acme.test');
+  }, 120_000);
+
   it('returns nothing for a query with no matching words', async () => {
     expect(await frogbot.memory.search({ scope: 'team', query: 'zebra' })).toEqual([]);
   });
 });
 
-describe.skipIf(database !== 'sqlite')('memory search by meaning', () => {
+describe.skipIf(database === 'mongodb')('memory search by meaning', () => {
   const harness = createMemoryHarness({
     memory: () => databaseMemory({ embeddingModel, dimensions }),
   });
