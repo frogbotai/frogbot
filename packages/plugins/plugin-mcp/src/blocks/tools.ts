@@ -19,6 +19,7 @@ import {
   may,
   nestedIds,
   notSaved,
+  pairSeen,
   persist,
   place,
   resolve,
@@ -341,8 +342,19 @@ async function load({
     showHiddenFields: true,
   })) as Record<string, unknown>;
 
+  const seen = await frogbot.findByID({ ...args, overrideAccess: true });
   const all = collectBlockLists(stored, collection.flattenedFields, config);
-  const loaded: Loaded = { collection, config, ctx, doc: stored, lists: [], all, input };
+  const loaded: Loaded = {
+    collection,
+    config,
+    ctx,
+    doc: stored,
+    lists: [],
+    all,
+    input,
+    seen: pairSeen(stored, seen),
+  };
+
   const mayRead = await Promise.all(all.map((list) => may(loaded, list.chain, 'read')));
   const readable = new Set(all.filter((_, index) => mayRead[index]).map(({ path }) => path));
   const visible = collectBlockLists(checked, collection.flattenedFields, config).filter(

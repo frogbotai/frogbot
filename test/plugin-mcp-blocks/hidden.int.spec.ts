@@ -75,7 +75,7 @@ describe("block tools and fields the caller can't read because of a hidden field
     const moved = await member('moveBlock', { ...target(id), blockId: 'x1', field: 'other' });
 
     expect(moved).toMatchObject({ isError: true });
-    expect(moved.text).toContain('would lose');
+    expect(moved.text).toContain("fields you can't read");
     expect(moved.text).not.toMatch(/inner|hid/);
     expect(ids((await stored('probes', id)).body)).toEqual(['x1']);
   });

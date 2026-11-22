@@ -2,7 +2,7 @@ import type { ToolCtx } from 'frogbot';
 import { toPayloadRequest } from 'frogbot/internal';
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 
-import type { BlockData, BlockList, BlockSpot, FieldLink } from './tree.js';
+import type { BlockData, BlockList, BlockSpot, BoundField, FieldLink } from './tree.js';
 import {
   blockSpots,
   collectBlockLists,
@@ -30,7 +30,28 @@ export type Loaded = {
   lists: BlockList[];
   all: BlockList[];
   input: Target;
+  seen: WeakMap<object, Record<string, unknown>>;
 };
+
+/**
+ * Pairs each object in the stored document with the same object as Payload's field access sees it
+ * on a read: without `hidden` fields.
+ */
+export function pairSeen(
+  stored: unknown,
+  seen: unknown,
+  pairs = new WeakMap<object, Record<string, unknown>>(),
+): WeakMap<object, Record<string, unknown>> {
+  if (isRecord(stored) && isRecord(seen)) {
+    pairs.set(stored, seen);
+
+    for (const key of Object.keys(stored)) pairSeen(stored[key], seen[key], pairs);
+  } else if (Array.isArray(stored) && Array.isArray(seen)) {
+    stored.forEach((item: unknown, index) => pairSeen(item, seen[index], pairs));
+  }
+
+  return pairs;
+}
 
 export function takenIds(loaded: Loaded, except = new Set<string>()): Set<string> {
   return new Set(
@@ -56,9 +77,9 @@ export function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): 
   const { guarded, localized } = rowBoundFields(row, block, loaded.config);
   const lost = [
     ...(guarded.length && !loaded.ctx.overrideAccess
-      ? [`fields with their own edit access (${guarded.join(', ')})`]
+      ? [`fields with their own edit access (${names(guarded)})`]
       : []),
-    ...(localized.length ? [`the other locales of ${localized.join(', ')}`] : []),
+    ...(localized.length ? [`the other locales of ${names(localized)}`] : []),
   ];
 
   if (lost.length) {
@@ -68,13 +89,24 @@ export function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): 
   }
 }
 
+function names(fields: BoundField[]): string {
+  const shown = fields.filter(({ readable }) => readable).map(({ path }) => path);
+  const unread = shown.length < fields.length ? ["fields you can't read"] : [];
+
+  return [...shown, ...unread].join(', ');
+}
+
 export async function may(
   loaded: Loaded,
   chain: FieldLink[],
   operation: 'read' | 'update',
   sent?: Record<string, unknown>,
 ) {
-  const { collection, ctx, doc } = loaded;
+  const { collection, ctx } = loaded;
+  const view = (data: Record<string, unknown>) =>
+    operation === 'read' ? (loaded.seen.get(data) ?? data) : data;
+
+  const doc = view(loaded.doc);
 
   if (operation === 'read' && chain.some(({ field }) => 'hidden' in field && field.hidden)) {
     return false;
@@ -86,12 +118,12 @@ export async function may(
     const access = field.access?.[operation];
     const args = {
       id: doc.id as number | string,
-      blockData,
+      blockData: blockData && view(blockData),
       collection,
       data: sent ?? doc,
       doc,
       req: toPayloadRequest(ctx.req),
-      siblingData: sent && siblingData === doc ? sent : siblingData,
+      siblingData: sent && siblingData === loaded.doc ? sent : view(siblingData),
     };
 
     if (access && !(await access(args))) return false;
