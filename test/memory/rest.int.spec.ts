@@ -143,6 +143,19 @@ describe('memory REST and SDK', () => {
     );
   });
 
+  it.each(['abc', '99999999999999999999999', '2147483648'])(
+    'answers 404 for the malformed or out-of-range id %s',
+    async (id) => {
+      expect((await send('GET', `/${id}?scope=me`, { headers: ann })).status).toBe(404);
+      expect((await send('DELETE', `/${id}?scope=me`, { headers: ann })).status).toBe(404);
+
+      expect(
+        (await send('PATCH', `/${id}`, { headers: ann, body: { scope: 'me', pinned: true } }))
+          .status,
+      ).toBe(404);
+    },
+  );
+
   it('refuses me with 403 when nobody is signed in', async () => {
     expect((await send('GET', '?scope=me')).status).toBe(403);
     expect((await send('POST', '', { body: { scope: 'me', text: 'Anonymous' } })).status).toBe(403);
