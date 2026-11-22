@@ -200,7 +200,7 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
   async function findDuplicate(target: MemoryTarget, text: string) {
     if (!normalizeMemoryText(text)) return undefined;
 
-    const exact = await findMemory(target, { fingerprint: { equals: memoryFingerprint(text) } });
+    const exact = await findMemory(target, { slot: { equals: slotFor(target, undefined, text) } });
 
     if (exact) return exact;
 
@@ -213,6 +213,8 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
     let best: { doc: MemoryDoc; similarity: number } | undefined;
 
     for (const doc of candidates) {
+      if (doc.key) continue;
+
       const similarity = memorySimilarity(text, doc.text);
 
       if (similarity >= NEAR_DUPLICATE_SIMILARITY && similarity > (best?.similarity ?? 0)) {

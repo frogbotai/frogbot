@@ -1,3 +1,5 @@
+import { Forbidden } from 'payload';
+
 import type { FrogBot } from '../frogbot.js';
 import type { MemoryOperationKind } from './access.js';
 import { checkMemoryAccess } from './access.js';
@@ -7,6 +9,8 @@ import type { MemoryAdapter, MemoryCallArgs, MemoryTarget } from './types.js';
 
 const MAX_KEY_LENGTH = 200;
 
+export const MAX_TEXT_LENGTH = 4_000;
+
 export function invalid(message: string): MemoryAdapterError {
   return new MemoryAdapterError('invalid', message);
 }
@@ -15,6 +19,16 @@ export function requireText(value: unknown, name: string): string {
   const text = typeof value === 'string' ? value.trim() : '';
 
   if (!text) throw invalid(`Memory \`${name}\` must be a non-empty string.`);
+
+  return text;
+}
+
+export function requireMemoryText(value: unknown): string {
+  const text = requireText(value, 'text');
+
+  if (text.length > MAX_TEXT_LENGTH) {
+    throw invalid(`Memory \`text\` must be at most ${MAX_TEXT_LENGTH} characters.`);
+  }
 
   return text;
 }
@@ -103,6 +117,8 @@ export async function resolveMemoryTarget({
   const req = await frogbot.createRequest(args.req);
 
   if (args.user !== undefined) req.user = args.user;
+
+  if (args.overrideAccess === false && scope === 'me' && !req.user) throw new Forbidden(req.t);
 
   const scopeId = await resolveMemoryScope({
     options: adapter,

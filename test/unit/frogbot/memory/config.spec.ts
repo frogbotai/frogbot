@@ -62,6 +62,28 @@ describe('memory config', () => {
 
     expect(slugs).toEqual(['users', 'frogbot-waitpoints']);
     expect(sanitize(makeConfig()).memory).toBeUndefined();
+    expect(sanitize(makeConfig()).settings.map(({ path }) => path)).not.toContain('memory');
+  });
+
+  it('adds the Memory settings page when memory is set', () => {
+    const { settings } = sanitize(makeConfig({ memory: databaseMemory() }));
+
+    expect(settings).toContainEqual({
+      path: 'memory',
+      label: 'Memory',
+      Component: '@frogbotai/ui/admin/rsc#MemoryView',
+    });
+  });
+
+  it('rejects an app settings page at the memory path', () => {
+    expect(() =>
+      sanitize(
+        makeConfig({
+          memory: databaseMemory(),
+          settings: [{ path: 'memory', label: 'Mine', Component: './Mine#Mine' }],
+        }),
+      ),
+    ).toThrow("settings path 'memory' is reserved");
   });
 
   it('adds the hidden memories collection for databaseMemory()', async () => {
@@ -222,6 +244,15 @@ describe('frogbot.memory', () => {
     });
     await expect(memory.list({ scope: 'me', overrideAccess: false })).resolves.toBeDefined();
     expect(adapter.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses me with 403 when nobody is signed in and access is checked', async () => {
+    const adapter = stubAdapter();
+
+    await expect(
+      stubFrogBot(adapter).list({ scope: 'me', overrideAccess: false }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(adapter.list).not.toHaveBeenCalled();
   });
 
   it('calls the access function with the resolved scope', async () => {

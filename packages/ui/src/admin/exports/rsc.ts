@@ -19,6 +19,7 @@ export { CreateFirstUserView } from '../views/CreateFirstUser/index.js';
 export { CustomCollectionView } from '../views/CustomCollectionView.js';
 export { GalleryView } from '../views/Gallery/index.js';
 export { ListView } from '../views/List/ListView.js';
+export { MemoryView } from '../views/Memory/index.js';
 export {
   RENDER_RECORD_PANEL,
   type RenderRecordPanelArgs,

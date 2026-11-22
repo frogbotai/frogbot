@@ -1,3 +1,4 @@
+import type { SettingsEntry } from '../admin/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { MemoryAdapter } from './types.js';
@@ -71,17 +72,29 @@ function checkAdapter(memory: MemoryAdapter): void {
   }
 }
 
-/** Checks the root `memory` adapter and returns the collection it adds, if any. */
+/** Checks the root `memory` adapter, adds the Memory settings page, and returns the collection the adapter adds, if any. */
 export function sanitizeMemory({
   collections,
   db,
   memory,
+  settings,
 }: {
   collections: readonly CollectionConfig[];
   db: DatabaseAdapter;
   memory: MemoryAdapter;
+  settings: SettingsEntry[];
 }): CollectionConfig | undefined {
   checkAdapter(memory);
+
+  if (settings.some(({ path }) => path === 'memory' || path.startsWith('memory/'))) {
+    fail("settings path 'memory' is reserved for the Memory page");
+  }
+
+  settings.push({
+    path: 'memory',
+    label: 'Memory',
+    Component: '@frogbotai/ui/admin/rsc#MemoryView',
+  });
 
   const collection = memory.collection?.({ db });
 

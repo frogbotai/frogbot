@@ -62,7 +62,7 @@ await frogbot.memory.forget({ scope: 'me', user: req.user, id: memory.id })
 
 | Method | Does |
 | --- | --- |
-| `save({ text, key?, pinned? })` | Adds a memory. With a `key`, updates the scope's memory with that key instead. |
+| `save({ text, key?, pinned? })` | Adds a memory of up to 4,000 characters. With a `key`, updates the scope's memory with that key instead. |
 | `search({ query, limit? })` | Returns `{ memory, score }[]`, best first. `limit` is 1 to 100 and defaults to 10. |
 | `list({ pinned?, limit?, page? })` | Returns `{ docs, hasNextPage }`, newest first. `limit` is 1 to 1,000 and defaults to 100. |
 | `get({ id })` | Returns one memory in the scope. |
@@ -86,7 +86,7 @@ A memory is `{ id, scope, key?, text, pinned, createdAt, updatedAt }`, where `sc
 
 FrogBot ships no access rules for shared memories. When a call sets `overrideAccess: false`:
 
-- `me` always works for the signed-in person, and only reaches their own memories.
+- `me` always works for the signed-in person, and only reaches their own memories. With nobody signed in, it fails with `Forbidden`.
 - `agent`, `team` and your own words need the `access` function for the kind of call: `read` for `search`, `list` and `get`, `write` for `save`, `update` and `forget`. Without one, the call fails with `Forbidden`.
 
 ```ts
@@ -97,6 +97,32 @@ memory: databaseMemory({
   },
 }),
 ```
+
+## Use memories from the browser
+
+The same six operations are served over REST at `/api/frogbot/memory`, and the SDK calls them as `sdk.memory`. They always run as the signed-in person with `overrideAccess: false`, so [Access](#access) decides what each person reaches.
+
+```ts
+const sdk = createFrogBotSDK({ baseURL: '/api' })
+
+await sdk.memory.save({ scope: 'me', text: 'Prefers replies in Spanish', pinned: true })
+
+const hits = await sdk.memory.search({ scope: 'me', query: 'language' })
+```
+
+| Request | SDK | Parameters |
+| --- | --- | --- |
+| `POST /api/frogbot/memory` | `save` | JSON body: `scope`, `agent?`, `text`, `key?`, `pinned?` |
+| `GET /api/frogbot/memory/search` | `search` | Query: `scope`, `agent?`, `query`, `limit?` |
+| `GET /api/frogbot/memory` | `list` | Query: `scope`, `agent?`, `pinned?`, `limit?`, `page?` |
+| `GET /api/frogbot/memory/:id` | `get` | Query: `scope`, `agent?` |
+| `PATCH /api/frogbot/memory/:id` | `update` | JSON body: `scope`, `agent?`, `text?`, `key?`, `pinned?` |
+| `DELETE /api/frogbot/memory/:id` | `forget` with `id` | Query: `scope`, `agent?` |
+| `DELETE /api/frogbot/memory` | `forget` without `id` | Query: `scope`, `agent?` |
+
+Each answers with what the server-side method returns. Errors come back as `{ errors: [{ message }] }`: `invalid` is 400, `not-found` 404, `limit` 409, `unavailable` 503, and a refused call 403. Over REST, scope functions see the request but no chat.
+
+When memory is on, **Settings → Memory** in the admin lists the signed-in person's own `me` memories, newest first, and lets them forget any of them.
 
 ## Errors
 
@@ -126,7 +152,7 @@ Adapters and `frogbot.memory` throw `MemoryAdapterError` with one of these codes
 It keeps memories tidy without AI:
 
 - A save with a `key` updates the scope's memory with that key.
-- A save without one updates a near duplicate instead of adding a memory: the same text once lowercased, stripped of punctuation and spaces collapsed, or text whose shared words make up at least 90% of all the distinct words in both texts.
+- A save without one updates a near duplicate without a key instead of adding a memory: the same text once lowercased, stripped of punctuation and spaces collapsed, or text whose shared words make up at least 90% of all the distinct words in both texts. A memory with a key changes only through its key.
 - Writes to one scope run one at a time in each server process, so the checks above and the cap hold under concurrent saves. Across several processes, a key or the same text still maps to one memory, but the cap can be passed by a few.
 - Pinned memories in one scope may hold about 2,000 tokens, counted as characters divided by 4. A save or update past that fails with `limit`.
 
