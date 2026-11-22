@@ -1,0 +1,22 @@
+name: next-advisories
+
+# Next.js refuses to build a version with a known advisory when a coding agent runs it,
+# so FrogBot bumps the catalog before apps scaffolded from it break.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  next-advisories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .tool-versions
+      - run: node scripts/next-advisories.mjs

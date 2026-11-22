@@ -1,0 +1,36 @@
+---
+title: "Upgrading Next.js"
+description: "Take Next.js patch releases yourself, inside the range FrogBot supports, and wait for a FrogBot release for minor and major versions."
+keywords: ["next.js", "upgrade", "security advisory", "SecurityFatalError", "patch"]
+---
+
+A FrogBot app runs on Next.js, and `@frogbotai/next` declares which versions it works with as a peer dependency:
+
+```json
+"peerDependencies": {
+  "next": ">=16.4.0 <17.0.0"
+}
+```
+
+| Release | Example | Who upgrades |
+| --- | --- | --- |
+| Patch | `16.4.2` → `16.4.6` | You, whenever you like. No FrogBot release is needed. |
+| Minor or major | `16.4` → `16.5`, `16` → `17` | FrogBot. Wait for a FrogBot release that supports it, then upgrade both together. |
+
+New apps scaffold `next` as `~16.4.6`, so a fresh install picks up the latest patch on its own.
+
+## When Next.js reports a security advisory
+
+Next.js checks its version against npm's security advisories on every `next build`. When a coding agent runs the build, a version with an advisory fails it:
+
+```text
+SecurityFatalError: Your version of Next.js is affected by a known security vulnerability
+```
+
+Install the patched version inside the supported range:
+
+```bash
+pnpm add next@16.4.6
+```
+
+Each advisory names its first patched version. If the only fix is a newer minor or major, it needs a FrogBot release first. FrogBot checks its own Next.js version against npm every day and bumps it when an advisory lands.
