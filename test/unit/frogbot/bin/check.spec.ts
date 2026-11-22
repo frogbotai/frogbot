@@ -142,7 +142,18 @@ describe('frogbot check', () => {
       await withNext(fixture, '16.4.2');
 
       const result = await runCheck([], { fetch: registry });
+      const calls = await Promise.all(
+        registry.mock.calls.map(async ([input, init], i) => [
+          String(input),
+          String(init?.body),
+          await registry.mock.results[i]?.value?.then?.(
+            (response: Response) => response.status,
+            (error: Error) => `rejected ${error.message}`,
+          ),
+        ]),
+      );
 
+      expect({ calls, stdout: result.stdout, cwd: process.cwd(), dir: fixture.dir }).toEqual({});
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toEqual([
         '[frogbot] warning NEXT_ADVISORY package.json: next 16.4.2 has 2 security advisories (1 high, 1 moderate); run `pnpm add next@16.4.6` (no FrogBot release needed)',
