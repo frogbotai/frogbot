@@ -226,7 +226,7 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
   });
 
   it('keep watching after a refused first build, log the fix, and serve after the next change', async () => {
-    const dir = folder('frogbot-supervisor-first-');
+    const { dir } = nextApp('16.4.2');
     const state = folder('frogbot-supervisor-state-');
     const env = { ...process.env, XDG_STATE_HOME: state };
     const boots: (Error | undefined)[] = [];
@@ -235,8 +235,6 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
     );
 
     let builds = 0;
-
-    mkdirSync(join(dir, 'src'));
 
     const runtime: AppRuntime = {
       prepare: () => Promise.resolve({}),

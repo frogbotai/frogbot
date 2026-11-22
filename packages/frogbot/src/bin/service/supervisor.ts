@@ -3,6 +3,7 @@ import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
+import { installedNextVersion } from '../nextAdvisories.js';
 import {
   type AdvisoryResult,
   createAdvisor,
@@ -316,6 +317,7 @@ export async function supervise({
 
       log.write('supervisor', `update failed: ${summarize(error)}`);
       if (refused) noteAdvisory(advisory);
+      else void advise().then(noteAdvisory);
       if (known && (known !== registration.advisory || known === advised)) {
         log.write('supervisor', known);
       }
@@ -343,6 +345,7 @@ export async function supervise({
   }
 
   function noteAdvisory(result: AdvisoryResult | undefined) {
+    if (result?.version !== installedNextVersion(dir)) return;
     if (result?.offline && result.version === advisedVersion) return;
 
     const line = result?.offline ? undefined : result?.line;

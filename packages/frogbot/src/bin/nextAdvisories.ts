@@ -374,11 +374,17 @@ export function installedNextVersion(dir: string): string | undefined {
   }
 }
 
-/** The command that installs `next@<version>` with the package manager whose lockfile is in `dir`; pnpm when there is none. */
+/**
+ * The command that installs `next@<version>` with the package manager whose lockfile is nearest to
+ * `dir`, in it or a folder above it; pnpm when there is none.
+ */
 export function nextInstallCommand(dir: string, version: string): string {
-  const command = LOCKFILES.find(([file]) => existsSync(join(dir, file)))?.[1] ?? 'pnpm add';
+  for (let folder = dir; ; folder = dirname(folder)) {
+    const command = LOCKFILES.find(([file]) => existsSync(join(folder, file)))?.[1];
 
-  return `${command} next@${version}`;
+    if (command) return `${command} next@${version}`;
+    if (dirname(folder) === folder) return `pnpm add next@${version}`;
+  }
 }
 
 function severities(advisories: NextAdvisory[]): string {
