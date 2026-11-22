@@ -1,4 +1,4 @@
-import type { JobsConfig, WorkflowConfig, WorkflowHandler } from 'frogbot';
+import type { FrogBotRequest, JobsConfig, WorkflowConfig, WorkflowHandler } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
 type Args = Parameters<WorkflowHandler>[0];
@@ -42,7 +42,7 @@ export const workflow: WorkflowConfig<{ value: string }> = {
       task: ({ item, inlineTask, req }) => {
         expectTypeOf(item).toEqualTypeOf<{ id: string; total: number }>();
         expectTypeOf(inlineTask).toBeFunction();
-        expectTypeOf(req.payload).not.toBeAny();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
         return { output: { total: item.total } };
       },
