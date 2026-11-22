@@ -7,7 +7,11 @@ import { join } from 'node:path';
 
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
-import type { AdvisoryResult } from '../../../../../packages/frogbot/src/bin/service/advisory.js';
+import type { checkNextAdvisories } from '../../../../../packages/frogbot/src/bin/nextAdvisories.js';
+import {
+  type AdvisoryResult,
+  createAdvisor,
+} from '../../../../../packages/frogbot/src/bin/service/advisory.js';
 import { createLog } from '../../../../../packages/frogbot/src/bin/service/log.js';
 import {
   type AppRuntime,
@@ -238,6 +242,68 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
     expect(statusRows([readRegistration(file)!])[0][2]).toBe('running');
     expect(readRegistration(file)?.lastError).toBeUndefined();
     expect(readRegistration(file)?.advisory).toBe(ADVISORY);
+  });
+
+  it('drop the advisory once next is upgraded, even when npm cannot be asked then', async () => {
+    const dir = folder('frogbot-supervisor-upgraded-');
+    const env = { ...process.env, XDG_STATE_HOME: folder('frogbot-supervisor-state-') };
+    const installed = (version: string) =>
+      writeFileSync(join(dir, 'node_modules', 'next', 'package.json'), JSON.stringify({ version }));
+
+    const check = vi.fn<typeof checkNextAdvisories>(({ version }) =>
+      Promise.resolve(
+        version === '16.4.2'
+          ? {
+              advisories: [
+                {
+                  id: 1,
+                  severity: 'moderate',
+                  title: 't',
+                  url: 'u',
+                  vulnerableVersions: '<=16.4.4',
+                },
+              ],
+              fix: '16.4.6',
+              peerRange: '>=16.4.0 <17.0.0',
+              version,
+            }
+          : undefined,
+      ),
+    );
+
+    mkdirSync(join(dir, 'src'));
+    mkdirSync(join(dir, 'node_modules', 'next'), { recursive: true });
+    installed('16.4.2');
+
+    const before = new Set(process.listeners('SIGTERM'));
+
+    await supervise({
+      dir,
+      port: await freePort(),
+      autostart: false,
+      env,
+      runtime: { prepare: () => Promise.resolve({}), build: () => Promise.resolve(), start },
+      advise: createAdvisor({ dir, check }),
+    });
+
+    stops.push(
+      ...(process
+        .listeners('SIGTERM')
+        .filter((listener) => !before.has(listener)) as (() => void)[]),
+    );
+
+    const file = registrationFile(serviceId(dir), env);
+
+    await vi.waitFor(
+      () => expect(readRegistration(file)?.advisory).toMatch(/^next 16\.4\.2 has 1 security/),
+      WAIT,
+    );
+
+    installed('16.4.6');
+    writeFileSync(join(dir, 'package.json'), '{"dependencies":{"next":"16.4.6"}}\n');
+
+    await vi.waitFor(() => expect(check).toHaveBeenCalledTimes(2), WAIT);
+    await vi.waitFor(() => expect(readRegistration(file)?.advisory).toBeUndefined(), WAIT);
   });
 
   it('name the patched version range when npm cannot be asked', async () => {
