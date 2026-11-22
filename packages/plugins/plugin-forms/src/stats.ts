@@ -1,6 +1,6 @@
 import type { Access, CollectionConfig, Endpoint, FrogBot } from 'frogbot';
 
-import { formIsClosed, withLock } from './closing.js';
+import { formIsClosed } from './closing.js';
 import { findForm, type FormsRuntime } from './lookup.js';
 import type { FormDocument, FormEvent } from './types.js';
 
@@ -16,49 +16,43 @@ export function statsDay(now = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
-/** Adds one to the form's counter for `event` on today's row, under a lock per form and day. */
+/**
+ * Adds one to the form's counter for `event` on today's row in a single atomic statement, with
+ * no lock, so a burst of pings can never block or drop a completion. The unique (form, day) index
+ * settles two requests that both create the day's row: the loser increments the winner's row.
+ */
 export async function countEvent(
   frogbot: FrogBot,
   form: Pick<FormDocument, 'id'>,
   event: FormEvent,
   now = new Date(),
 ): Promise<void> {
+  const { db } = frogbot;
   const day = statsDay(now);
   const counter = COUNTERS[event];
 
-  await withLock(frogbot, `plugin-forms:stats:${form.id}:${day}`, async () => {
-    const { docs } = await frogbot.find({
+  const bump = () =>
+    db.updateOne({
       collection: FORM_STATS_SLUG,
       where: { and: [{ form: { equals: form.id } }, { day: { equals: day } }] },
-      limit: 1,
-      depth: 0,
-      pagination: false,
-      overrideAccess: true,
+      data: { [counter]: { $inc: 1 } },
+      options: { atomic: true },
     });
 
-    const row = docs[0] as ({ id: number | string } & Record<string, unknown>) | undefined;
-
-    if (row) {
-      const count = typeof row[counter] === 'number' ? row[counter] : 0;
-
-      await frogbot.update({
+  const create = () =>
+    db
+      .create({
         collection: FORM_STATS_SLUG,
-        id: row.id,
-        data: { [counter]: count + 1 },
-        depth: 0,
-        overrideAccess: true,
-      });
+        data: { form: form.id, day, views: 0, starts: 0, completions: 0, [counter]: 1 },
+      })
+      .then(() => true)
+      .catch(() => false);
 
-      return;
-    }
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if ((await bump()) || (await create())) return;
+  }
 
-    await frogbot.create({
-      collection: FORM_STATS_SLUG,
-      data: { form: form.id, day, views: 0, starts: 0, completions: 0, [counter]: 1 },
-      depth: 0,
-      overrideAccess: true,
-    });
-  });
+  throw new Error(`[plugin-forms] Could not count a ${event} on form ${String(form.id)}.`);
 }
 
 function isPing(value: unknown): value is 'start' | 'view' {
