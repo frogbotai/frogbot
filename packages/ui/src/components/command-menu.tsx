@@ -159,7 +159,7 @@ export function CommandMenu({
                       if (!isActive) setActiveId(item.id);
                     }}
                   >
-                    {item.label}
+                    <span className="fb-command-menu__label">{item.label}</span>
                   </div>
                 );
               })}
