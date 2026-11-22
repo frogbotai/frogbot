@@ -108,6 +108,14 @@ export function checkBranding({ files, allowlist = ALLOWLIST }) {
       .map((entry) => ({ entry, range: allowedLines(lines, entry.heading) }))
       .filter(({ range }) => range);
 
+    for (const match of content.matchAll(new RegExp(MIGRATION_ARGS.source, 'g'))) {
+      const index = content.slice(0, match.index).split('\n').length - 1;
+
+      if (!MIGRATION_ARGS.test(lines[index])) {
+        problems.push({ file, line: index + 1, text: lines[index].trim() });
+      }
+    }
+
     lines.forEach((line, index) => {
       if (!pattern.test(line)) return;
 

@@ -39,7 +39,12 @@ export {
   toPayloadFields,
   wrapPayloadPlugin,
 } from '../seams/config.js';
-export { hasFrogBot, toFrogBotRequest, toPayloadRequest } from '../seams/request.js';
+export {
+  hasFrogBot,
+  migrationPayloadRequest,
+  toFrogBotRequest,
+  toPayloadRequest,
+} from '../seams/request.js';
 export { canUseTool } from '../tools/access.js';
 export { NOT_APPROVABLE, resolveToolApproval, toApprovalStatus } from '../tools/approval.js';
 export { sanitizeToolList } from '../tools/config/sanitize.js';

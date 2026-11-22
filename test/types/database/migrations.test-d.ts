@@ -1,4 +1,5 @@
 import type * as mongodb from '@frogbotai/db-mongodb';
+import { migrationDatabase } from '@frogbotai/db-mongodb';
 import type * as postgres from '@frogbotai/db-postgres';
 import { postgresAdapter } from '@frogbotai/db-postgres';
 import type * as sqlite from '@frogbotai/db-sqlite';
@@ -33,3 +34,9 @@ const postgresMigration = {
 
 sqliteAdapter({ client: { url: 'file:./app.db' }, prodMigrations: [sqliteMigration] });
 postgresAdapter({ pool: { connectionString: '' }, prodMigrations: [postgresMigration] });
+
+export const mongoUp = async ({ req, session }: mongodb.MigrateUpArgs): Promise<void> => {
+  await migrationDatabase(req)
+    .collection('posts')
+    .updateMany({ summary: { $exists: false } }, { $set: { summary: '' } }, { session });
+};

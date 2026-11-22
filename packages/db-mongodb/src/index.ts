@@ -5,8 +5,9 @@ import type {
   MongooseAdapter,
 } from '@payloadcms/db-mongodb';
 import { mongooseAdapter as createMongooseAdapter } from '@payloadcms/db-mongodb';
-import type { MigrationArgs } from 'frogbot';
+import type { MigrationArgs, MigrationRequest } from 'frogbot';
 import type { AggregateAdapter } from 'frogbot/aggregate';
+import { migrationPayloadRequest } from 'frogbot/internal';
 import type { JobLogDatabase } from 'frogbot/jobs';
 import { jobLogOperations } from 'frogbot/jobs';
 import type { SearchAdapter } from 'frogbot/search';
@@ -26,6 +27,22 @@ export type MigrateUpArgs = MigrationArgs<PayloadMigrateUpArgs>;
 
 /** What a migration's `down` gets: `session`, the migration's transaction when the database runs them, and `req`. */
 export type MigrateDownArgs = MigrationArgs<PayloadMigrateDownArgs>;
+
+/** The MongoDB database a migration changes. */
+export type MigrationDatabase = NonNullable<MongooseAdapter['connection']['db']>;
+
+/**
+ * The database a migration changes, from its `req`: `migrationDatabase(req).collection('posts')`. Pass the
+ * migration's `session` to each call so the change joins its transaction when there is one.
+ */
+export function migrationDatabase(req: MigrationRequest): MigrationDatabase {
+  const { db } = migrationPayloadRequest(req).payload;
+  const database = db.name === 'mongoose' ? (db as MongooseAdapter).connection?.db : undefined;
+
+  if (!database) throw new Error('[frogbot] migrationDatabase needs a connected MongoDB adapter.');
+
+  return database;
+}
 
 export const mongooseAdapter = (
   args: Args,

@@ -44,7 +44,7 @@ Every migration gets the same two arguments:
 
 | Argument | What it is |
 | --- | --- |
-| `db` | The database driver, inside the migration's transaction: Drizzle on Postgres and SQLite. On MongoDB it is `session` instead (see below). |
+| `db` | The database driver, inside the migration's transaction: Drizzle on Postgres and SQLite. MongoDB gets `session` instead, and `migrationDatabase(req)` (see below). |
 | `req` | The migration's request. It carries the transaction. |
 
 Migrations run before the app starts, so `req.frogbot` isn't there and the [Local API](/local-api/overview) isn't available. Change data with `db`, the way `migrate:create` writes its SQL.
@@ -80,16 +80,13 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 
 ### MongoDB
 
-A MongoDB migration gets `{ req, session }`. `session` is the migration's transaction, and it is set when the database runs transactions (a replica set). Reach the database through it, and pass it to each call so the change stays in the transaction:
+A MongoDB migration gets `{ req, session }`. `migrationDatabase(req)` returns the database to change. Pass `session` to each call: `frogbot migrate` and `migrate:down` set it on a replica set, so the change joins the migration's transaction. `migrate:fresh`, `migrate:refresh` and a standalone server run without one.
 
 ```ts
-import { type MigrateUpArgs } from '@frogbotai/db-mongodb'
+import { type MigrateUpArgs, migrationDatabase } from '@frogbotai/db-mongodb'
 
-export async function up({ session }: MigrateUpArgs): Promise<void> {
-  if (!session) throw new Error('This migration needs a MongoDB replica set.')
-
-  await session.client
-    .db()
+export async function up({ req, session }: MigrateUpArgs): Promise<void> {
+  await migrationDatabase(req)
     .collection('posts')
     .updateMany({ summary: { $exists: false } }, { $set: { summary: '' } }, { session })
 }
