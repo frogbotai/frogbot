@@ -25,6 +25,7 @@ const allProjects = [
   'first-user-blank',
   'sign-in-passwords',
   'sign-in-only',
+  'first-user-fields',
   'sign-in-two-factor',
   'linked-accounts',
   'projects',
@@ -224,7 +225,7 @@ describe('browser project servers', () => {
     vi.resetModules();
 
     const { default: config } = await import('../../browser/playwright.config.js');
-    const names = ['first-user-blank', 'sign-in-passwords', 'sign-in-only'];
+    const names = ['first-user-blank', 'sign-in-passwords', 'sign-in-only', 'first-user-fields'];
     const projects = config.projects?.filter(({ name }) => names.includes(name!)) ?? [];
 
     expect(projects.map(({ name }) => name)).toEqual(names);
