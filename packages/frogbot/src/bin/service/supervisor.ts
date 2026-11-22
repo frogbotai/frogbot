@@ -132,6 +132,7 @@ export async function supervise({
   let building: PublicEnv | undefined;
   let booted = false;
   let bootReported = false;
+  let advisedVersion: string | undefined;
   let stopping = false;
 
   const skipped = await proxy.listen(port);
@@ -311,13 +312,17 @@ export async function supervise({
       const advisory = refused ? await advise() : undefined;
       const known = refused ? (advisory?.line ?? securityFallback(advisory?.version)) : undefined;
 
+      const advised = registration.advisory;
+
       log.write('supervisor', `update failed: ${summarize(error)}`);
-      if (known) log.write('supervisor', known);
+      if (refused) noteAdvisory(advisory);
+      if (known && (known !== registration.advisory || known === advised)) {
+        log.write('supervisor', known);
+      }
 
       save({
         state: current ? 'update failed' : 'build failed',
         lastError: known ?? summarize(error),
-        ...(advisory && { advisory: advisory.line }),
       });
 
       if (!booted) {
@@ -338,9 +343,14 @@ export async function supervise({
   }
 
   function noteAdvisory(result: AdvisoryResult | undefined) {
-    if (!result || result.line === registration.advisory) return;
-    if (result.line) log.write('supervisor', result.line);
-    save({ advisory: result.line });
+    if (result?.offline && result.version === advisedVersion) return;
+
+    const line = result?.offline ? undefined : result?.line;
+
+    advisedVersion = result?.version;
+    if (line === registration.advisory) return;
+    if (line) log.write('supervisor', line);
+    save({ advisory: line });
   }
 
   async function restartOnEnv(): Promise<void> {

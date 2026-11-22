@@ -14,8 +14,11 @@ export const isSecurityFailure = (output: string): boolean => output.includes('S
 export const securityFallback = (version = 'next'): string =>
   `Next refused to build: ${version === 'next' ? 'next' : `next ${version}`} has a security advisory; install a patched version inside ${NEXT_PEER_RANGE} (${DOCS})`;
 
-/** `line` is the advisory line, or `undefined` when the installed `next` has none. */
-export type AdvisoryResult = { version: string; line?: string };
+/**
+ * What npm said about the installed `next` `version`: `line` is the advisory line, `undefined` when it
+ * has none. `offline` when npm couldn't be asked, so nothing is known about this version.
+ */
+export type AdvisoryResult = { version: string; line?: string; offline?: true };
 
 /** Options for {@link createAdvisor}. */
 export type AdvisorCreateProps = {
@@ -25,7 +28,8 @@ export type AdvisorCreateProps = {
 
 /**
  * Asks npm about the app's installed `next` once per version. Resolves `undefined` when no `next`
- * is installed or npm can't be reached; a failed ask is tried again on the next call.
+ * is installed, and an `offline` result when npm can't be reached; a failed ask is tried again on the
+ * next call.
  */
 export function createAdvisor({
   dir,
@@ -47,7 +51,7 @@ export function createAdvisor({
           if (!report) {
             if (last === entry) last = undefined;
 
-            return undefined;
+            return { version, offline: true as const };
           }
 
           return { version, line: describeNextAdvisories(report, dir) };
