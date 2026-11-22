@@ -139,7 +139,6 @@ export function createAgentInstance(
       const agent = { slug: agentConfig.slug, runId: options.runId!, chatId: options.chatId };
       const ctx: ToolCtx = {
         req: options.req!,
-        frogbot,
         agent: agentConfig.memory ? markMemoryAgentRun(agent) : agent,
         overrideAccess: options.overrideAccess === true,
       };
@@ -150,7 +149,7 @@ export function createAgentInstance(
       const run = runs.get(options)!;
 
       const mcpToolNames = Object.keys(run.mcpTools);
-      const memory = agentConfig.memory ? { req, frogbot, agent: ctx.agent } : undefined;
+      const memory = agentConfig.memory ? { req, agent: ctx.agent } : undefined;
       const base = await resolveAgentInstructions(agentConfig, req);
       const instructions = memory ? `${base}\n\n${await pinnedMemoryPrompt(memory)}` : base;
 
@@ -471,10 +470,10 @@ export function createAgentInstance(
         : (((Array.isArray(call.prompt) ? call.prompt : call.messages) as
             ModelMessage[] | undefined) ?? []);
 
-    startAfterTurn(
-      { req: req!, frogbot, agent: markMemoryAgentRun({ slug: agentConfig.slug, chatId }) },
-      [...input, ...response],
-    );
+    startAfterTurn({ req: req!, agent: markMemoryAgentRun({ slug: agentConfig.slug, chatId }) }, [
+      ...input,
+      ...response,
+    ]);
   };
 
   const runGenerate = async <O extends AIOutput = never>(

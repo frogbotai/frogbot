@@ -14,6 +14,7 @@ export type FormsRuntime = {
   spam: SpamOptions;
   uploads: UploadLimits;
   links: LinkLimits;
+  analytics: boolean;
 };
 
 /** The runtime the plugin put on the `forms` collection. */
@@ -79,6 +80,7 @@ export async function definitionFor(
   return {
     ...definition,
     ...(values ? { hiddenParams: [], values: await values(keys) } : {}),
+    ...(runtime.analytics && !values ? { analytics: true as const } : {}),
     honeypot: HONEYPOT_FIELD,
     ...(turnstile ? { turnstile: { siteKey: turnstile.siteKey } } : {}),
   };

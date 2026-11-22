@@ -300,11 +300,24 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
   it('does not replace a row with malformed credentials or leak validation input', async () => {
     await link({ token: 'valid-secret' });
 
-    for (const body of [{ token: 42 }, { credential: { token: 'private' } }, {}]) {
+    for (const [body, issue] of [
+      [{ token: 42 }, 'token has the wrong type (expected string)'],
+      [{ credential: { token: 'private' } }, 'token is required (expected string)'],
+      [{}, 'token is required (expected string)'],
+    ] as const) {
       const response = await link(body);
+      const text = await response.text();
 
       expect(response.status).toBe(400);
-      expect(await response.json()).toEqual({ error: 'Invalid credentials' });
+      expect(JSON.parse(text)).toEqual({
+        errors: [
+          {
+            message: `Invalid credentials: ${issue}.`,
+            data: { code: 'invalid_credentials', fields: ['token'] },
+          },
+        ],
+      });
+      expect(text).not.toContain('private');
     }
 
     expect(await piece.read({ input: {}, req: request() })).toBe('valid-secret');
@@ -378,6 +391,23 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       scopes: [],
       expiresAt: '2000-01-01T00:00:00Z',
     });
+
+    const warn = vi.spyOn(payload.logger, 'warn');
+    const error = await frogbot.connections
+      .resolve({ piece, req: request() })
+      .catch((error: unknown) => error);
+
+    expect(error).toMatchObject({
+      message:
+        "Connection for 'example' could not be refreshed. Reconnect it in Settings → Linked accounts.",
+      cause: { code: 'refresh', cause: { message: 'No refresh token is stored.' } },
+    });
+    expect(warn).toHaveBeenCalledWith(
+      { err: (error as Error).cause, piece: 'example' },
+      "[frogbot] Connection for 'example' could not be refreshed",
+    );
+
+    warn.mockRestore();
 
     await expect(frogbot.connections.resolve({ piece, req: request() })).rejects.toMatchObject({
       name: 'ConnectionError',

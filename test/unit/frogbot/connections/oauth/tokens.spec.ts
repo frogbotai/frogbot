@@ -374,7 +374,11 @@ describe('OAuth token and account transport', () => {
 
     await expect(
       lookupOAuthAccount({ ...invalid, tokens: { access_token: 'fresh' } }),
-    ).rejects.toThrow('OAuth account validation failed.');
+    ).rejects.toMatchObject({
+      code: 'account',
+      message: "Couldn't read the signed-in account from Example.",
+      cause: expect.anything(),
+    });
 
     const auth = setup({
       ...definition,

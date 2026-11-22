@@ -80,7 +80,7 @@ const lookupDeal: Tool<typeof lookupDealSchema> = {
   description: 'Fetch a deal record using the signed-in user permissions.',
   inputSchema: lookupDealSchema,
   execute: ({ dealId }, ctx) =>
-    ctx.frogbot.findByID({
+    ctx.req.frogbot.findByID({
       collection: 'deals',
       id: dealId,
       req: ctx.req,

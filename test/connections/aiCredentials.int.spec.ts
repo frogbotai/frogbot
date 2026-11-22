@@ -94,7 +94,7 @@ describe(`AI calls on linked OpenAI accounts, with an app key [${process.env.FRO
     ]);
   });
 
-  it('fails a revoked account with "Reconnect OpenAI" and sends nothing on the app key', async () => {
+  it('fails a revoked account with the reconnect step and sends nothing on the app key', async () => {
     const carol = await booted.member('carol@example.com');
 
     await booted.link(carol, { apiKey: 'sk-carol' });
@@ -115,7 +115,9 @@ describe(`AI calls on linked OpenAI accounts, with an app key [${process.env.FRO
     const response = await booted.link(erin, { apiKey: 'sk-rejected' });
 
     expect(response.status).toBe(422);
-    expect(await response.json()).toEqual({ error: "OpenAI didn't accept this key." });
+    expect(await response.json()).toEqual({
+      errors: [{ message: "OpenAI didn't accept this key.", data: { code: 'rejected' } }],
+    });
     expect(modelListings()).toHaveLength(1);
 
     const rows = await booted.frogbot.find({

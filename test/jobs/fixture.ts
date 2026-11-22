@@ -174,7 +174,7 @@ export async function bootJobsFixture({
   transactions = false,
 }: {
   jobs?: FrogBotConfig['jobs'];
-  config?: Pick<FrogBotConfig, 'agents' | 'ai' | 'routes'>;
+  config?: Pick<FrogBotConfig, 'agents' | 'ai' | 'plugins' | 'routes'>;
   transactions?: boolean;
 } = {}) {
   process.env.PAYLOAD_DROP_DATABASE = 'false';
@@ -380,6 +380,7 @@ export async function bootJobsFixture({
     });
 
     const payloadConfig = await config._internal.payloadConfig;
+    const autoRun = payloadConfig.jobs.autoRun;
 
     payloadConfig.jobs.autoRun = [];
 
@@ -408,6 +409,7 @@ export async function bootJobsFixture({
     const worker = await initFrogBotFromPayload(workerPayload, config, { disableOnInit: true });
 
     return {
+      autoRun,
       frogbot,
       worker,
       payload,

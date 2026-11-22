@@ -87,8 +87,8 @@ const createTicket: Tool<typeof createTicketInput> = {
   slug: createTicketToolSlug,
   description: 'Create a ticket.',
   inputSchema: createTicketInput,
-  execute: async ({ title }, { frogbot, req }) => {
-    const ticket = await frogbot.create({
+  execute: async ({ title }, { req }) => {
+    const ticket = await req.frogbot.create({
       collection: ticketsSlug,
       data: { title },
       req,

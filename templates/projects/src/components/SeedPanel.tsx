@@ -7,7 +7,12 @@ import { SeedButton } from './SeedButton';
 export async function SeedPanel() {
   const frogbot = getCachedFrogBot();
 
-  if (frogbot && (await hasSampleData({ frogbot }))) return null;
+  if (
+    frogbot &&
+    (await hasSampleData({ req: await frogbot.createRequest() }))
+  ) {
+    return null;
+  }
 
   return <SeedButton />;
 }

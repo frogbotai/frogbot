@@ -1,4 +1,4 @@
-import type { Access, CollectionAccess, CollectionConfig } from 'frogbot';
+import type { Access, CollectionAccess, CollectionConfig, Endpoint } from 'frogbot';
 import { ValidationError } from 'payload';
 
 import { countKey } from './closing.js';
@@ -7,6 +7,7 @@ import { createDefinitionEndpoint, createSubmitEndpoint } from './endpoints.js';
 import { FORM_LINKS_SLUG } from './links/access.js';
 import type { FormsRuntime } from './lookup.js';
 import { checkForm } from './questions.js';
+import { createEventsEndpoint, FORM_STATS_SLUG } from './stats.js';
 import type { FormDocument } from './types.js';
 
 export const FORMS_SLUG = 'forms';
@@ -24,11 +25,14 @@ export function createFormsCollection({
   runtime,
   access,
   previewUrl,
+  embed,
 }: {
   runtime: FormsRuntime;
   access?: CollectionAccess;
   /** The admin's `/forms-preview` page. A string, since Payload skips a function URL on create. */
   previewUrl: string;
+  /** The embed page, its script tag and their assets. */
+  embed: Endpoint[];
 }): CollectionConfig {
   const { targets, uploads: limits } = runtime;
 
@@ -48,7 +52,12 @@ export function createFormsCollection({
       delete: signedIn,
       ...access,
     },
-    endpoints: [createDefinitionEndpoint(runtime), createSubmitEndpoint(runtime)],
+    endpoints: [
+      createDefinitionEndpoint(runtime),
+      createSubmitEndpoint(runtime),
+      ...(runtime.analytics ? [createEventsEndpoint(runtime)] : []),
+      ...embed,
+    ],
     hooks: {
       beforeValidate: [
         async ({ data, originalDoc, req }) => {
@@ -68,6 +77,15 @@ export function createFormsCollection({
             overrideAccess: true,
             req,
           });
+
+          if (runtime.analytics) {
+            await req.frogbot.delete({
+              collection: FORM_STATS_SLUG,
+              where: { form: { equals: id } },
+              overrideAccess: true,
+              req,
+            });
+          }
         },
       ],
       afterDelete: [

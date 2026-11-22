@@ -226,6 +226,25 @@ describe('frogbot check', () => {
     ]);
   });
 
+  it("reports a plugin's config issue by the plugin's code and path", async () => {
+    const internalURL = new URL(
+      '../../../../packages/frogbot/src/exports/internal.ts',
+      import.meta.url,
+    ).href;
+
+    await makeFixture(
+      `${USERS}\n  plugins: [async () => { const { ConfigIssueError } = await import(${JSON.stringify(internalURL)}); throw new ConfigIssueError({ code: 'IMPORT_EXPORT_HOOKS', path: 'plugins.importExport.overrideImportCollection', message: '[plugin-import-export] Expected 2 afterChange hooks.' }); }],`,
+    );
+
+    const result = await runCheck();
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toEqual([
+      '[frogbot] IMPORT_EXPORT_HOOKS plugins.importExport.overrideImportCollection: [plugin-import-export] Expected 2 afterChange hooks.',
+      '[frogbot] 1 issue found',
+    ]);
+  });
+
   it('reports types with one byte changed as TYPES_STALE', async () => {
     const fixture = await makeFixture(USERS);
     await writeTypes(fixture);

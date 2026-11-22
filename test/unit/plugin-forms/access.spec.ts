@@ -127,6 +127,10 @@ describe('formsPlugin', () => {
     expect(forms?.endpoints?.map(({ method, path }) => `${method} ${path}`)).toEqual([
       'get /:slug/definition',
       'post /:slug/submit',
+      'get /:slug/embed',
+      'get /:slug/embed.js',
+      'get /embed/form.js',
+      'get /embed/form.css',
     ]);
     expect(
       result.collections

@@ -5,17 +5,17 @@ import { pathToFileURL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-const subpath = '@payloadcms/ui/views/CreateFirstUser';
+const subpath = '@payloadcms/ui/utilities/buildFormState';
 const sourcePath = resolve('packages/ui/src');
 
-describe('Payload create-first-user subpath', () => {
-  it('still exports the CreateFirstUserView server component', async () => {
+describe('Payload buildFormState subpath', () => {
+  it('still exports buildFormState', async () => {
     const entry = createRequire(resolve('packages/ui/package.json')).resolve(subpath);
-    const { CreateFirstUserView } = (await import(pathToFileURL(entry).href)) as {
-      CreateFirstUserView: unknown;
+    const { buildFormState } = (await import(pathToFileURL(entry).href)) as {
+      buildFormState: unknown;
     };
 
-    expect(typeof CreateFirstUserView).toBe('function');
+    expect(typeof buildFormState).toBe('function');
   });
 
   it('is imported only by the FrogBot create-first-user view', () => {

@@ -1,5 +1,6 @@
 import { loadConfig } from '../config/load.js';
 import { formatCliError } from './formatCliError.js';
+import { migrateUsage } from './help.js';
 
 const COMMANDS = [
   'migrate',
@@ -45,25 +46,6 @@ function parseFlags(args: string[]): { flags: Flags; positional: string[] } {
   return { flags, positional };
 }
 
-const usage = (): string =>
-  `[frogbot] usage: frogbot <${COMMANDS.join('|')}> [name] [options]
-
-commands:
-  migrate                  apply pending migrations
-  migrate:create [name]    generate a new migration from the schema
-  migrate:down             roll back the last applied migration
-  migrate:fresh            drop tables and re-apply all migrations
-  migrate:refresh          drop tables and re-apply all migrations
-  migrate:reset            drop all tables (dev only)
-  migrate:status           show applied and pending migrations
-
-options:
-  --name <name>            name for the generated migration (migrate:create)
-  --file <path>            use a pre-defined migration file (migrate:create)
-  --force-accept-warning   skip interactive confirmation prompts (CI)
-  --skip-empty             skip empty migrations (migrate:create)
-  --help                   show this help`;
-
 /**
  * Thin wrapper around Payload's migration commands. Uses FrogBot's own
  * config loader (which handles frogbot.config.ts under modern Node), then
@@ -73,18 +55,18 @@ export async function migrate(args: string[]): Promise<void> {
   const command = args[0];
 
   if (!command || command === '--help' || command === '-h') {
-    console.error(usage());
+    console.error(migrateUsage);
     process.exit(command ? 0 : 2);
   }
 
   if (!(COMMANDS as readonly string[]).includes(command)) {
-    console.error(`[frogbot] unknown command: ${command}\n\n${usage()}`);
+    console.error(`[frogbot] unknown command: ${command}\n\n${migrateUsage}`);
     process.exit(2);
   }
 
   const { flags, positional } = parseFlags(args.slice(1));
   if (flags.help) {
-    console.log(usage());
+    console.log(migrateUsage);
     process.exit(0);
   }
 

@@ -153,7 +153,12 @@ describe(`Linked OpenAI keys stay with their user [${process.env.FROGBOT_DATABAS
     const response = await http(await token('dana@example.com'), 'dana-http');
 
     expect(response.status).toBe(401);
-    expect(await response.json()).toMatchObject({ error: { message: RECONNECT_ERROR } });
+    expect(await response.json()).toMatchObject({
+      error: {
+        message:
+          "Connection for 'openai' is in an error state. Reconnect it in Settings → Linked accounts.",
+      },
+    });
     expect(modelCalls()).toEqual([]);
   });
 
@@ -198,7 +203,12 @@ describe(`Linked OpenAI keys stay with their user [${process.env.FROGBOT_DATABAS
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({
-      error: "Couldn't reach OpenAI to check this key. Try again.",
+      errors: [
+        {
+          message: "Couldn't reach OpenAI to check this key. Try again.",
+          data: { code: 'unreachable' },
+        },
+      ],
     });
 
     const rows = await booted.frogbot.find({

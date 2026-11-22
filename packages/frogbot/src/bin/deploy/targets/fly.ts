@@ -119,6 +119,7 @@ async function hasVolume(context: DeployContext, fly: string, app: string): Prom
 /** `frogbot deploy fly`: one Fly.io machine, with a volume when the database is a SQLite file. */
 export const flyTarget: DeployTarget = {
   describe: 'Deploy to Fly.io with your fly login (one machine, SQLite on a volume)',
+  usage,
   preflight: async (context) => {
     const flags = parseTargetArgs(context, { target: 'fly', usage, options });
     const { command, issue } = await findTool(

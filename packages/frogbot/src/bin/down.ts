@@ -1,14 +1,13 @@
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { downUsage } from './help.js';
 import { uninstallLaunchAgent } from './service/launchAgent.js';
 import { appDir, appPaths, registrationFile, serviceId } from './service/paths.js';
 import { isAlive, owns, readRegistration, removeRegistration } from './service/registration.js';
 import { stopLeftServer, stopProcess } from './service/stop.js';
 
 type Deps = { uninstall?: typeof uninstallLaunchAgent; log?: (line: string) => void };
-
-const DOWN_USAGE = '[frogbot] usage: frogbot down [folder]';
 
 /**
  * Stops the app in `folder` (the current one by default): its LaunchAgent first, else launchd would
@@ -21,14 +20,14 @@ export async function down(
   const option = args.find((arg) => arg.startsWith('-'));
 
   if (option === '--help' || option === '-h') {
-    log(DOWN_USAGE);
+    log(downUsage);
 
     return;
   }
 
   if (option || args.length > 1) {
     throw new Error(
-      `[frogbot] ${option ? `unknown option ${option}` : 'too many folders'}; ${DOWN_USAGE.replace('[frogbot] ', '')}`,
+      `[frogbot] ${option ? `unknown option ${option}` : 'too many folders'}; ${downUsage.replace('[frogbot] ', '')}`,
     );
   }
 

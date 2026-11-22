@@ -64,8 +64,10 @@ async function setup({
     : undefined;
 
   const find = vi.fn(() => Promise.resolve({ docs: stored ? [stored] : [] }));
+  const warn = vi.fn();
   const frogbot = {
     find,
+    logger: { warn },
     config: {
       _internal: {
         payloadConfig: Promise.resolve({
@@ -87,7 +89,7 @@ async function setup({
   const req = { user: { id: 'owner', collection: 'users' }, frogbot } as unknown as FrogBotRequest;
   Object.assign(frogbot, { connections: api });
 
-  return { api, req, piece, factory, stored, encryption, find };
+  return { api, req, piece, factory, stored, encryption, find, warn };
 }
 
 describe('connections API', () => {
@@ -147,10 +149,65 @@ describe('connections API', () => {
     });
   });
 
-  it('rejects disabled stored methods', async () => {
+  it('tells a piece with no connections entry and no code credential to declare one', async () => {
+    const { api, req, factory } = await setup();
+    connectionsState(api).config.entries = {};
+
+    await expect(api.resolve({ piece: factory(), req })).rejects.toMatchObject({
+      name: 'ConnectionError',
+      code: 'missing',
+      message:
+        "No `connections` entry declares 'example': add it to the root `connections` config (`secret: true` or `oauth`).",
+    });
+  });
+
+  it.each([
+    [{ status: 'revoked' }, 'revoked', "Connection for 'example' is revoked."],
+    [{ status: 'error' }, 'error', "Connection for 'example' is in an error state."],
+  ])('ends an unusable row %j with the reconnect step', async (row, code, start) => {
+    const { api, req, piece } = await setup({ row: row as never });
+
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+      code,
+      message: `${start} Reconnect it in Settings → Linked accounts.`,
+    });
+  });
+
+  it('passes a read failure on as the cause, logs it, and names the next step', async () => {
+    const { api, req, piece, warn } = await setup({ row: { credential: 'broken-ciphertext' } });
+    const error = await api.resolve({ piece, req }).catch((error: unknown) => error);
+
+    expect(error).toMatchObject({
+      name: 'ConnectionError',
+      code: 'error',
+      message:
+        "Connection for 'example' could not be read. Check the server log; if the credential key changed, reconnect it in Settings → Linked accounts.",
+      cause: expect.any(Error),
+    });
+    expect(warn).toHaveBeenCalledWith(
+      { err: (error as Error).cause, piece: 'example' },
+      "[frogbot] Connection for 'example' could not be read",
+    );
+  });
+
+  it('rejects disabled stored methods and names the config to change', async () => {
     const { api, req, piece } = await setup({ secret: false, row: {}, auth: { token: 'factory' } });
 
-    await expect(api.resolve({ piece, req })).rejects.toMatchObject({ code: 'error' });
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+      code: 'error',
+      message:
+        "Connection for 'example' uses an unavailable method. Enable `secret` on its `connections` entry, or reconnect it in Settings → Linked accounts.",
+    });
+  });
+
+  it('ends an invalid expiry with the reconnect step', async () => {
+    const { api, req, piece } = await setup({ row: { expiresAt: 'not-a-date' } });
+
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+      code: 'error',
+      message:
+        "Connection for 'example' has an invalid expiry. Reconnect it in Settings → Linked accounts.",
+    });
   });
 
   it('converts OAuth tokens through the recipe and checks required scopes', async () => {

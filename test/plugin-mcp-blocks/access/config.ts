@@ -43,6 +43,23 @@ const intl: Block = {
   ],
 };
 
+const word: Block = {
+  slug: 'word',
+  fields: [
+    { name: 'text', type: 'text', localized: true },
+    { name: 'locked', type: 'text', access: { update: isAdmin } },
+  ],
+};
+
+const crate: Block = {
+  slug: 'crate',
+  fields: [
+    { name: 'text', type: 'text' },
+    { name: 'inner', type: 'blocks', blocks: ['word'], access: { read: isAdmin } },
+    { name: 'hid', type: 'blocks', blocks: ['word'], hidden: true },
+  ],
+};
+
 const Users: CollectionConfig = { slug: 'users', auth: true, access: openAccess, fields: [] };
 
 const Guarded: CollectionConfig = {
@@ -77,6 +94,12 @@ const Pages: CollectionConfig = {
     { name: 'frozen', type: 'blocks', blocks: ['tile'], access: { update: isAdmin } },
     { name: 'vault', type: 'blocks', blocks: ['tile'], access: { read: isAdmin } },
     { name: 'hiddenList', type: 'blocks', blocks: ['tile'], hidden: true },
+    {
+      name: 'secret',
+      type: 'group',
+      hidden: true,
+      fields: [{ name: 'list', type: 'blocks', blocks: ['tile'] }],
+    },
     { name: 'flag', type: 'checkbox' },
     {
       name: 'flagged',
@@ -84,6 +107,29 @@ const Pages: CollectionConfig = {
       blocks: ['tile'],
       access: { update: ({ siblingData }) => siblingData?.flag === true },
     },
+    { name: 'ownerKey', type: 'text', access: { read: isAdmin } },
+    {
+      name: 'keyed',
+      type: 'blocks',
+      blocks: ['tile'],
+      access: { read: ({ siblingData }) => siblingData?.ownerKey === 'k' },
+    },
+  ],
+};
+
+const Probes: CollectionConfig = {
+  slug: 'probes',
+  access: openAccess,
+  fields: [
+    { name: 'internal', type: 'checkbox', hidden: true },
+    {
+      name: 'list',
+      type: 'blocks',
+      blocks: ['tile'],
+      access: { read: ({ siblingData }) => siblingData?.internal === true },
+    },
+    { name: 'body', type: 'blocks', blocks: ['crate'] },
+    { name: 'other', type: 'blocks', blocks: ['crate'] },
   ],
 };
 
@@ -95,8 +141,8 @@ const Notes: CollectionConfig = {
 
 export default await buildTestConfig({
   admin: { user: 'users' },
-  blocks: [card, tile, box, intl],
-  collections: [Users, Guarded, Docs, Pages, Notes],
+  blocks: [card, tile, box, intl, word, crate],
+  collections: [Users, Guarded, Docs, Pages, Probes, Notes],
   localization: { locales: ['en', 'es'], defaultLocale: 'en' },
   plugins: [
     rolesPlugin(),

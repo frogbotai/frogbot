@@ -2,7 +2,9 @@ import { continueLook, continuePage } from '../auth/signIn/continuePage.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import { isPieceSignIn } from '../pieces/oauth.js';
+import type { PieceInstance } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { errorResponse } from './errors.js';
 import {
   consumeOAuthState,
   createOAuthState,
@@ -24,7 +26,13 @@ async function routeURLs({
   piece: string;
 }) {
   const config = await req.frogbot.config._internal.payloadConfig;
-  const server = new URL(config.serverURL || new URL(req.url!).origin);
+  let server: URL;
+  try {
+    server = new URL(config.serverURL || new URL(req.url!).origin);
+  } catch (cause) {
+    throw new OAuthError('configuration', { cause });
+  }
+
   if (
     !['http:', 'https:'].includes(server.protocol) ||
     server.username ||
@@ -78,8 +86,52 @@ export function buildConnectionOAuthEndpoints({
     return entry?.oauth && entry.piece.piece === slug ? entry : undefined;
   };
 
-  const failure = (status: number, headers: Headers, error = 'Connection operation failed') =>
-    Response.json({ error }, { status, headers });
+  const failure = (status: number, headers: Headers, message: string, code: string) =>
+    errorResponse({ status, message, code, headers });
+
+  const notFound = (headers: Headers) => failure(404, headers, 'Connection not found', 'not_found');
+
+  const oauthFailure = ({
+    req,
+    error,
+    piece,
+    headers,
+    provider,
+  }: {
+    req: FrogBotRequest;
+    error: unknown;
+    piece: PieceInstance;
+    headers: Headers;
+    provider?: string;
+  }) => {
+    req.frogbot.logger.warn(
+      { err: error, piece: piece.piece },
+      '[frogbot] Connection OAuth failed',
+    );
+
+    if (!(error instanceof OAuthError)) {
+      return failure(500, headers, "Couldn't link the account. Check the server log.", 'internal');
+    }
+
+    const { label } = pieceInstanceDefinition(piece);
+    const data = provider && /^[a-z_]+$/.test(provider) ? { provider } : undefined;
+    const messages: Partial<Record<OAuthError['code'], string>> = {
+      state: 'This sign-in expired or was already used. Start again.',
+      configuration: "This connection's OAuth setup is incomplete. Check the server log.",
+      tokens:
+        data?.provider === 'access_denied'
+          ? `The sign-in was cancelled or denied at ${label}.`
+          : `Couldn't finish signing in to ${label}. Try again.`,
+    };
+
+    return errorResponse({
+      status: error.code === 'configuration' ? 500 : 400,
+      message: messages[error.code] ?? error.message,
+      code: error.code,
+      data,
+      headers,
+    });
+  };
 
   const authorize =
     (slot: boolean): Endpoint['handler'] =>
@@ -87,9 +139,12 @@ export function buildConnectionOAuthEndpoints({
       const headers = new Headers({ 'cache-control': 'no-store' });
       const app = slot ? param(req, 'app') : undefined;
       const entry = slot && !app ? undefined : oauthEntry(app, param(req, 'piece'));
-      if (!entry) return failure(404, headers, 'Connection not found');
-      if (!req.user) return failure(401, headers, 'Authentication required');
-      if (req.user.collection !== userSlug) return failure(403, headers, 'Access denied');
+      if (!entry) return notFound(headers);
+      if (!req.user) return failure(401, headers, 'Authentication required', 'unauthorized');
+      if (req.user.collection !== userSlug) {
+        return failure(403, headers, 'Access denied', 'forbidden');
+      }
+
       try {
         const urls = await routeURLs({ req, slug: connections.slug!, piece: entry.piece.piece });
         const params = new URL(req.url!).searchParams;
@@ -105,7 +160,7 @@ export function buildConnectionOAuthEndpoints({
             (row) => String(row.id) === id && row.piece === entry.piece.piece,
           );
 
-          if (!row) return failure(404, headers, 'Connection not found');
+          if (!row) return notFound(headers);
           reconnect = row.id;
         }
 
@@ -117,16 +172,21 @@ export function buildConnectionOAuthEndpoints({
               : { app };
 
           const piece = entry.piece;
+          const absolute = new URL(safeReturnTo(returnTo, origin), origin).href;
+          let location: string;
 
-          headers.set(
-            'location',
-            await recipe.authorize({
+          try {
+            location = await recipe.authorize({
               req,
-              returnTo: new URL(safeReturnTo(returnTo, origin), origin).href,
+              returnTo: absolute,
               save: ({ tokens, account }) =>
                 saveOAuthConnection({ req, piece, holder, tokens, account, reconnect }),
-            }),
-          );
+            });
+          } catch (cause) {
+            throw cause instanceof OAuthError ? cause : new OAuthError('configuration', { cause });
+          }
+
+          headers.set('location', location);
 
           return new Response(null, { status: 302, headers });
         }
@@ -150,7 +210,7 @@ export function buildConnectionOAuthEndpoints({
 
         return new Response(null, { status: 302, headers });
       } catch (error) {
-        return failure(error instanceof OAuthError && error.code === 'state' ? 400 : 500, headers);
+        return oauthFailure({ req, error, piece: entry.piece, headers });
       }
     };
 
@@ -170,7 +230,10 @@ export function buildConnectionOAuthEndpoints({
             : [];
         });
 
-        if (!candidates.length) return failure(404, headers, 'Connection not found');
+        if (!candidates.length) return notFound(headers);
+
+        const params = new URL(req.url!).searchParams;
+        let piece = candidates[0].entry.piece;
 
         try {
           const { callbackUrl, cookiePrefix, config } = await routeURLs({
@@ -179,7 +242,6 @@ export function buildConnectionOAuthEndpoints({
             piece: slug!,
           });
 
-          const params = new URL(req.url!).searchParams;
           if (params.getAll('state').length !== 1) throw new OAuthError('state');
 
           let consumed;
@@ -211,6 +273,7 @@ export function buildConnectionOAuthEndpoints({
 
           if (!consumed) throw new OAuthError('state');
           const { app, entry, intent, clearCookie } = consumed;
+          piece = entry.piece;
 
           headers.set('set-cookie', clearCookie);
 
@@ -258,7 +321,13 @@ export function buildConnectionOAuthEndpoints({
             headers,
           });
         } catch (error) {
-          return failure(error instanceof OAuthError ? 400 : 500, headers);
+          return oauthFailure({
+            req,
+            error,
+            piece,
+            headers,
+            provider: params.get('error') ?? undefined,
+          });
         }
       },
     },

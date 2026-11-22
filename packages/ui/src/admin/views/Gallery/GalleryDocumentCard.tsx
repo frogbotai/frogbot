@@ -70,6 +70,7 @@ export function GalleryDocumentCard({
   return (
     <div
       className={`collection-gallery__card ${recordClassName({ done, selected })}`}
+      data-record-id={String(row.id)}
       onAuxClick={(event) => event.button === 1 && panel.open(row.id, event.nativeEvent)}
       onClick={(event) => panel.open(row.id, event.nativeEvent)}
       onKeyDown={onKeyDown}

@@ -180,6 +180,65 @@ test('asks before switching away from unsaved edits', async ({ page }) => {
   expect(recordParam(page)).toBe(String(b.id));
 });
 
+test('j and k step through records in view order, guarded like Esc', async ({ page }) => {
+  const a = await createTask(page, 'step A');
+  const b = await createTask(page, 'step B');
+  const c = await createTask(page, 'step C');
+  await page.goto(`${list}&sort=title`);
+  await page.locator('tbody tr', { hasText: a.title }).locator('td').last().click();
+  await expect(panelTitle(page)).toHaveValue(a.title);
+  const historyLength = await page.evaluate(() => history.length);
+
+  await page.keyboard.press('k');
+  await expect(panelTitle(page)).toHaveValue(a.title);
+  await page.keyboard.press('j');
+  await expect(panelTitle(page)).toHaveValue(b.title);
+  await expect.poll(() => recordParam(page)).toBe(String(b.id));
+  await page.keyboard.press('j');
+  await expect(panelTitle(page)).toHaveValue(c.title);
+  await page.keyboard.press('j');
+  await expect(panelTitle(page)).toHaveValue(c.title);
+  await page.keyboard.press('k');
+  await expect(panelTitle(page)).toHaveValue(b.title);
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+
+  await panelTitle(page).press('End');
+  await panelTitle(page).press('j');
+  await expect(panelTitle(page)).toHaveValue(`${b.title}j`);
+  expect(recordParam(page)).toBe(String(b.id));
+
+  await panelTitle(page).blur();
+  await page.keyboard.press('j');
+  const modal = page.locator('#fb-record-panel-leave');
+  await expect(modal).toBeVisible();
+  await page.keyboard.press('k');
+  await modal.getByRole('button', { name: 'Stay on this page' }).click();
+  await expect(modal).toBeHidden();
+  await expect(panelTitle(page)).toHaveValue(`${b.title}j`);
+
+  await panelTitle(page).blur();
+  await page.keyboard.press('k');
+  await modal.getByRole('button', { name: 'Leave anyway' }).click();
+  await expect(panelTitle(page)).toHaveValue(a.title);
+
+  await panel(page).getByRole('button', { name: 'More options' }).click();
+  await page.keyboard.press('j');
+  await expect(panelTitle(page)).toHaveValue(a.title);
+  await page.keyboard.press('Escape');
+
+  await page.goto(board);
+  const titles = await page.locator('.frog-board__card').allInnerTexts();
+  const order = [a, b, c].sort(
+    (x, y) =>
+      titles.findIndex((text) => text.includes(x.title)) -
+      titles.findIndex((text) => text.includes(y.title)),
+  );
+
+  await openOnBoard(page, order[0]);
+  await page.keyboard.press('j');
+  await expect(panelTitle(page)).toHaveValue(order[1].title);
+});
+
 test('lays out the title, the properties in order once, then the rest', async ({ page }) => {
   const a = await createTask(page, 'layout A');
   await page.goto(board);
