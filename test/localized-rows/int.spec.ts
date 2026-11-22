@@ -6,11 +6,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { draftySlug, plainSlug } from './config.js';
+import { draftySlug, plainSlug, strictSlug } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-type Slug = typeof draftySlug | typeof plainSlug;
+type Slug = typeof draftySlug | typeof plainSlug | typeof strictSlug;
 
 type Row = { id: string; blockType?: string; [key: string]: unknown };
 
@@ -20,6 +20,8 @@ type Doc = {
   layout?: Row[];
   items?: Row[];
   sections?: (Row & { content?: Row[] })[];
+  hero?: { heading?: string; ctas?: Row[] };
+  meta?: { summary?: string; links?: Row[] };
   _status?: string;
 };
 
@@ -276,5 +278,164 @@ describe('localized values inside reordered rows', () => {
     });
 
     expect(pick((await read(draftySlug, id, 'es')).layout, 'text')).toEqual(['m2 Chao', 'm1 Hola']);
+  });
+
+  it('leaves rows sent without ids as Payload writes them', async () => {
+    const id = await create(draftySlug);
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id,
+      locale: 'en',
+      data: {
+        layout: [
+          { blockType: 'intl', text: 'Hello', size: 's' },
+          { blockType: 'intl', text: 'Bye', size: 'l' },
+        ],
+      },
+    });
+
+    const es = await read(draftySlug, id, 'es');
+
+    expect(es.layout?.map((row) => row.text ?? null)).toEqual(['Hola', 'Adios']);
+  });
+
+  it('repairs a publish sent with draft and publishAllLocales, which Payload treats as one locale', async () => {
+    const id = await create(draftySlug);
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id,
+      locale: 'en',
+      draft: true,
+      publishAllLocales: true,
+      data: { ...reordered, _status: 'published' },
+    });
+
+    expect(pick((await read(draftySlug, id, 'es')).layout, 'text')).toEqual([
+      'm2 Adios',
+      'm1 Hola',
+    ]);
+  });
+
+  it('keeps the other locale title, group and tab text and statuses after a reorder inside a group and a named tab', async () => {
+    const doc = (await booted.frogbot.create({
+      collection: draftySlug,
+      locale: 'en',
+      data: {
+        title: 'Page',
+        hero: { heading: 'Head', ctas: [item('h1', 'Go', 's'), item('h2', 'Stop', 'l')] },
+        meta: {
+          summary: 'Sum',
+          links: [
+            { id: 'k1', text: 'A' },
+            { id: 'k2', text: 'B' },
+          ],
+        },
+        _status: 'published',
+      },
+    })) as Doc;
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id: doc.id,
+      locale: 'es',
+      data: {
+        title: 'Pagina',
+        hero: { heading: 'Titular', ctas: [item('h1', 'Ir', 's'), item('h2', 'Parar', 'l')] },
+        meta: {
+          summary: 'Resumen',
+          links: [
+            { id: 'k1', text: 'Ae' },
+            { id: 'k2', text: 'Be' },
+          ],
+        },
+        _status: 'published',
+      },
+    });
+
+    const before = await mainRow(draftySlug, doc.id);
+
+    await booted.frogbot.update({
+      collection: draftySlug,
+      id: doc.id,
+      locale: 'en',
+      data: {
+        hero: { heading: 'Head', ctas: [item('h2', 'Stop', 'l'), item('h1', 'Go', 's')] },
+        meta: {
+          summary: 'Sum',
+          links: [
+            { id: 'k2', text: 'B' },
+            { id: 'k1', text: 'A' },
+          ],
+        },
+      },
+    });
+
+    const row = await mainRow(draftySlug, doc.id);
+    const es = await read(draftySlug, doc.id, 'es');
+
+    expect({
+      title: es.title,
+      heading: es.hero?.heading,
+      summary: es.meta?.summary,
+      status: row?._status,
+    }).toEqual({
+      title: 'Pagina',
+      heading: 'Titular',
+      summary: 'Resumen',
+      status: before?._status,
+    });
+    expect(pick(es.hero?.ctas, 'label')).toEqual(['h2 Parar', 'h1 Ir']);
+    expect(pick(es.meta?.links, 'text')).toEqual(['k2 Be', 'k1 Ae']);
+  });
+
+  it('leaves no snapshot from a failed publish to revert a later publish of all locales on the same request', async () => {
+    const doc = (await booted.frogbot.create({
+      collection: strictSlug,
+      locale: 'en',
+      data: { code: 'x', layout: enDoc.layout, _status: 'published' },
+    })) as Doc;
+
+    await booted.frogbot.update({
+      collection: strictSlug,
+      id: doc.id,
+      locale: 'es',
+      data: { layout: esDoc.layout, _status: 'published' },
+    });
+
+    const req = {} as never;
+
+    await expect(
+      booted.frogbot.update({
+        collection: strictSlug,
+        id: doc.id,
+        locale: 'en',
+        req,
+        data: { code: null, layout: reordered.layout },
+      }),
+    ).rejects.toThrow();
+
+    await booted.frogbot.update({
+      collection: strictSlug,
+      id: doc.id,
+      locale: 'es',
+      draft: true,
+      data: { layout: [block('m1', 'Hola2', 's'), block('m2', 'Adios2', 'l')] },
+    });
+
+    await booted.frogbot.update({
+      collection: strictSlug,
+      id: doc.id,
+      locale: 'en',
+      req,
+      publishAllLocales: true,
+      data: { _status: 'published' },
+    });
+
+    expect(pick((await read(strictSlug, doc.id, 'es')).layout, 'text')).toEqual([
+      'm1 Hola2',
+      'm2 Adios2',
+    ]);
   });
 });
