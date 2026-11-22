@@ -294,7 +294,7 @@ With the list empty, the default, no site can frame a form: the embed page is se
 - The script has to run as a classic script, so `async` and `defer` work and `type="module"` doesn't.
 - A select question's list opens inside the iframe, so near the form's bottom it opens upward.
 
-To size or listen to the iframe yourself, frame `/api/forms/<slug>/embed` directly. It posts `{ type: 'frogbot:form:height', height }` whenever its height changes and `{ type: 'frogbot:form:submitted', confirmation }` after a submit, to its parent window; the `EmbedMessage` type describes both. Check that `event.origin` is your app's before using them.
+To size or listen to the iframe yourself, frame `/api/forms/<slug>/embed` directly. It posts `{ type: 'frogbot:form:height', height }` whenever its height changes and `{ type: 'frogbot:form:submitted', confirmation }` after a submit, to its parent window; the `EmbedMessage` type describes both. Check that `event.origin` is your app's before using them. Framed this way, a redirect confirmation is never followed for you: send the visitor to `confirmation.url` from your listener.
 
 ## Rendering a form in your own frontend
 

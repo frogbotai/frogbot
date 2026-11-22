@@ -134,3 +134,79 @@ test('a site that is not listed cannot frame the form', async ({ baseURL, browse
 
   await visitor.close();
 });
+
+test('async and deferred embeds size to fit, and preventDefault keeps the visitor on the page', async ({
+  baseURL,
+  browser,
+  page,
+}) => {
+  const stamp = Date.now();
+  const slugs = { head: `embed-head-${stamp}`, slot: `embed-slot-${stamp}` };
+
+  for (const slug of Object.values(slugs)) {
+    const created = await page.request.post('/api/forms', {
+      data: {
+        title: `Form ${slug}`,
+        slug,
+        collection: leadsSlug,
+        steps: [{ questions: [{ field: 'email', label: 'Email' }] }],
+        confirmation: { type: 'redirect', redirect: `${embedHost}/thanks` },
+      },
+    });
+
+    expect(created.ok()).toBe(true);
+  }
+
+  const visitor = await browser.newContext({
+    storageState: signedOut,
+    permissions: ['local-network-access'],
+  });
+
+  const host = await visitor.newPage();
+
+  await visitor.route(`${embedHost}/**`, (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: `<!doctype html><html><head>
+<script async src="${baseURL}/api/forms/${slugs.head}/embed.js" data-title="Head"></script>
+</head><body>
+<div id="slot"><script defer src="${baseURL}/api/forms/${slugs.slot}/embed.js" data-title="Slot"></script></div>
+<script>
+  window.submitted = 0;
+  document.addEventListener('frogbot:form-submitted', (event) => { window.submitted += 1; event.preventDefault(); });
+</script></body></html>`,
+    }),
+  );
+
+  await host.goto(`${embedHost}/page`);
+  await expect(host.locator('body > iframe[title="Head"]')).toHaveCount(1);
+  await expect(host.locator('#slot > iframe[title="Slot"]')).toHaveCount(1);
+
+  for (const title of ['Head', 'Slot']) {
+    const iframe = host.locator(`iframe[title="${title}"]`);
+    const frame = host.frameLocator(`iframe[title="${title}"]`);
+
+    await expect(frame.getByRole('heading', { name: /^Form embed-/ })).toBeVisible();
+
+    const fits = async () => {
+      const outer = (await iframe.boundingBox())?.height;
+      const inner = await frame.locator('html').evaluate((html) => html.scrollHeight);
+
+      return outer === inner;
+    };
+
+    await expect.poll(fits).toBe(true);
+    await frame.getByRole('button', { name: 'Submit' }).click();
+    await expect(frame.getByText('This field is required.')).toBeVisible();
+    await expect.poll(fits).toBe(true);
+    await frame.getByLabel('Email').fill(`${title.toLowerCase()}-${stamp}@example.com`);
+    await frame.getByRole('button', { name: 'Submit' }).click();
+  }
+
+  await expect
+    .poll(() => host.evaluate(() => (window as { submitted?: number }).submitted))
+    .toBe(2);
+  expect(host.url()).toBe(`${embedHost}/page`);
+
+  await visitor.close();
+});
