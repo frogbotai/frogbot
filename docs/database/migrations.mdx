@@ -44,7 +44,7 @@ Every migration gets the same two arguments:
 
 | Argument | What it is |
 | --- | --- |
-| `db` | The database driver, inside the migration's transaction: Drizzle on Postgres and SQLite. MongoDB gets `session` instead, and `migrationDatabase(req)` (see below). |
+| `db` | The database driver, inside the migration's transaction: Drizzle on Postgres and SQLite. On MongoDB, `migrationDatabase(req)` returns it (see below). |
 | `req` | The migration's request. It carries the transaction. |
 
 Migrations run before the app starts, so `req.frogbot` isn't there and the [Local API](/local-api/overview) isn't available. Change data with `db`, the way `migrate:create` writes its SQL.
@@ -80,13 +80,15 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 
 ### MongoDB
 
-A MongoDB migration gets `{ req, session }`. `migrationDatabase(req)` returns the database to change. Pass `session` to each call: `frogbot migrate` and `migrate:down` set it on a replica set, so the change joins the migration's transaction. `migrate:fresh`, `migrate:refresh` and a standalone server run without one.
+On MongoDB, `await migrationDatabase(req)` returns `{ db, session }`: the database, and the migration's transaction when the database runs one (a replica set). Pass `session` to each call so the change joins the transaction.
 
 ```ts
 import { type MigrateUpArgs, migrationDatabase } from '@frogbotai/db-mongodb'
 
-export async function up({ req, session }: MigrateUpArgs): Promise<void> {
-  await migrationDatabase(req)
+export async function up({ req }: MigrateUpArgs): Promise<void> {
+  const { db, session } = await migrationDatabase(req)
+
+  await db
     .collection('posts')
     .updateMany({ summary: { $exists: false } }, { $set: { summary: '' } }, { session })
 }
@@ -141,7 +143,7 @@ default, migrations will be named using a timestamp.
 npx frogbot migrate:create optional-name-here
 ```
 
-The file imports its types and `sql` from your adapter, and its `up` and `down` take `{ db, req }` (`{ req, session }` on MongoDB).
+The file imports its types and `sql` from your adapter, and its `up` and `down` take `{ db, req }` (MongoDB migrations get `{ req, session }`; use `migrationDatabase(req)`).
 
 See the [flags table](#commands) for `--name`, `--file`, `--skip-empty`, and `--force-accept-warning`.
 
