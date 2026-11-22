@@ -114,7 +114,7 @@ describe('localized values inside reordered rows', () => {
       where: { id: { equals: id } },
     })) as Record<string, unknown> | null;
 
-  describe.each([draftySlug, plainSlug])('%s', (collection) => {
+  describe.each([draftySlug, plainSlug] as const)('%s', (collection) => {
     it('keeps each block, array row and nested block with its own text after a reorder in one locale', async () => {
       const id = await create(collection);
 
