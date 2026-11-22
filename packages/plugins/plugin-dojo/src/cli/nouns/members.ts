@@ -7,7 +7,8 @@ import type { Workspace } from '../workspaces.js';
 import { findWorkspace } from '../workspaces.js';
 import { whereEquals } from './resolve.js';
 
-type Member = {
+/** One person's row in a workspace. */
+export type Member = {
   id: string | number;
   email: string;
   role: 'owner' | 'member';
@@ -46,7 +47,12 @@ async function listMembers(dojo: DojoClient, workspace: Workspace): Promise<Memb
   );
 }
 
-async function findMember(dojo: DojoClient, workspace: Workspace, email: string): Promise<Member> {
+/** The member with `email` in `workspace`, by email in any case. */
+export async function findMember(
+  dojo: DojoClient,
+  workspace: Workspace,
+  email: string,
+): Promise<Member> {
   const member = (await listMembers(dojo, workspace)).find(
     (candidate) => candidate.email.toLowerCase() === email.toLowerCase(),
   );
