@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
 import { stopJobs } from '../../packages/frogbot/dist/jobs/stop.js';
-import { bootJobsFixture } from './fixture.js';
+import { bootJobsFixture, type FrogBotJob } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 
@@ -48,7 +48,7 @@ it('two claims in one committed transaction do not make the stop hang', async ()
 
   await stopJobs({ payload: fixture.payload });
 
-  const { docs } = await db.find({
+  const { docs } = await db.find<FrogBotJob>({
     collection: 'payload-jobs',
     where: { queue: { equals: queue } },
     pagination: false,
