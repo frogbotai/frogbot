@@ -1,5 +1,6 @@
 import type { JobsConfig, KVAdapterResult } from 'payload';
 
+import { FROGBOT_QUEUE } from '../jobs/autoRun.js';
 import { DatabaseKVAdapter, kvDatabase } from './adapters/DatabaseKVAdapter.js';
 
 export const KV_CLEANUP_TASK_SLUG = 'frogbot-cleanup-kv';
@@ -25,7 +26,7 @@ export function resolveKVCleanupTask({
       {
         slug: KV_CLEANUP_TASK_SLUG,
         interfaceName: 'TaskFrogBotCleanupKv',
-        schedule: [{ cron: '0 * * * *', queue: 'default' }],
+        schedule: [{ cron: '0 * * * *', queue: FROGBOT_QUEUE }],
         handler: async ({ req }) => {
           if (!(req.payload.kv instanceof DatabaseKVAdapter)) {
             throw new Error('KV cleanup requires the database KV adapter');

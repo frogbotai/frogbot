@@ -114,7 +114,7 @@ for (const custom of [false, true]) {
       const tasks = config.jobs.tasks!.filter(({ slug }) => slug === 'frogbot-cleanup-kv');
 
       expect(tasks).toHaveLength(1);
-      expect(tasks[0].schedule).toMatchObject([{ cron: '0 * * * *', queue: 'default' }]);
+      expect(tasks[0].schedule).toMatchObject([{ cron: '0 * * * *', queue: 'frogbot' }]);
 
       const field = config.collections
         .find(({ slug }) => slug === collection)!

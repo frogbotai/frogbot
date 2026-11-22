@@ -120,6 +120,6 @@ const report = await frogbot.kv.lock('lock:report:weekly', 30_000, async ({ sign
 
 ## Expiration cleanup
 
-FrogBot's database KV factory registers `frogbot-cleanup-kv` hourly (`0 * * * *`) on the `default` jobs queue. Your existing jobs scheduler and runner must schedule and execute it; KV does not enable `autoRun` or create a separate runner. The task removes expired KV records only. Redis uses native expiration.
+FrogBot's database KV factory registers `frogbot-cleanup-kv` hourly (`0 * * * *`) on the `frogbot` jobs queue. It runs on FrogBot's runner when agents, triggers, channels or AI fields turn that on, or on a worker that covers `frogbot`; KV alone does not turn on a runner. The task removes expired KV records only. Redis uses native expiration.
 
 Cleanup reclaims storage; it is not a correctness dependency. Expired reads, claims, and ownership checks remain correct when cleanup is delayed or the jobs runner is stopped.

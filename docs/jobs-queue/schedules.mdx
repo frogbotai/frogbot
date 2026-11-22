@@ -52,6 +52,10 @@ Use one of these, covering the schedule's queue:
 | Schedules URL | `GET /api/payload-jobs/handle-schedules` | No |
 | Local API | `frogbot.jobs.handleSchedules({ queue, allQueues, req })` | No |
 
+### FrogBot's runner
+
+FrogBot's own tasks run on the `frogbot` queue and its `frogbot-*` queues, and plugins schedule theirs on `frogbot` (`FROGBOT_QUEUE`, exported from `frogbot`). Any of that work, including a plugin's scheduled task, turns on a per-minute runner for those queues with no `jobs` config; jobs on `default` or your own queues run only if you add `jobs.autoRun` or a worker.
+
 Handle schedules often, every minute or faster. The cron decides when a job runs; the handling interval only needs to be shorter than the gap between occurrences.
 
 Run schedule handling in one place, such as a single scheduler process. If web replicas also autorun, see [Disable web autorun](/jobs-queue/workers#disable-web-autorun).

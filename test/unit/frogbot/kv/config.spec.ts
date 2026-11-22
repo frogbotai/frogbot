@@ -217,7 +217,7 @@ describe('resolveKVCleanupTask', () => {
     expect(jobs?.tasks).toEqual([
       expect.objectContaining({
         slug: KV_CLEANUP_TASK_SLUG,
-        schedule: [{ cron: '0 * * * *', queue: 'default' }],
+        schedule: [{ cron: '0 * * * *', queue: 'frogbot' }],
         handler: expect.any(Function),
       }),
     ]);

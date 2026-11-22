@@ -55,7 +55,7 @@ describe('jobs schema', () => {
 
     expect(
       payload.config.jobs.tasks?.find(({ slug }) => slug === 'frogbot-sweep-waitpoints')?.schedule,
-    ).toEqual([expect.objectContaining({ cron: '* * * * *', queue: 'default' })]);
+    ).toEqual([expect.objectContaining({ cron: '* * * * *', queue: 'frogbot' })]);
   });
 
   it('preserves user overrides while protecting owned fields', async () => {
