@@ -2,6 +2,7 @@ import type { Payload } from 'payload';
 
 type JobsStopState = {
   held: Set<string>;
+  claims: Set<Promise<unknown>>;
   release: (tokens: string[]) => Promise<unknown>;
   stopped?: Promise<void>;
 };
@@ -50,7 +51,7 @@ export function trackJobs({
   payload: Payload;
   release: JobsStopState['release'];
 }): void {
-  states.set(payload, { held: new Set(), release });
+  states.set(payload, { held: new Set(), claims: new Set(), release });
 }
 
 /** Whether {@link stopJobs} has run for `payload`, so it must not claim jobs. */
@@ -66,6 +67,26 @@ export function holdLease({ payload, token }: { payload: Payload; token: string 
   states.get(payload)?.held.add(token);
 
   if (payload.crons.length) watchSignals(payload);
+}
+
+/** Runs a claim that {@link stopJobs} waits for, so it never misses a claim that hasn't committed. */
+export async function trackClaim<T>({
+  payload,
+  claim,
+}: {
+  payload: Payload;
+  claim: () => Promise<T>;
+}): Promise<T> {
+  const claims = states.get(payload)?.claims;
+  const pending = claim();
+
+  claims?.add(pending);
+
+  try {
+    return await pending;
+  } finally {
+    claims?.delete(pending);
+  }
 }
 
 /** Forgets leases whose run has finished. */
@@ -87,6 +108,8 @@ export function stopJobs({ payload }: { payload: Payload }): Promise<void> {
 
   state.stopped ??= (async () => {
     for (const cron of payload.crons.splice(0)) cron.stop();
+
+    await Promise.allSettled(state.claims);
 
     const tokens = [...state.held];
 

@@ -14,7 +14,7 @@ import { toPayloadRequest } from '../seams/request.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
 import { type JobLogDatabase, jobLogOperations } from './log.js';
 import { getJobRunContext, isJobClaim, targetJob, withJobRun } from './run.js';
-import { holdLease, isStopping, trackJobs } from './stop.js';
+import { dropLeases, holdLease, isStopping, trackClaim, trackJobs } from './stop.js';
 import type { Jobs, JobsRuntime } from './types.js';
 import { resumeWaitpoint } from './waitpoints/operations.js';
 import type { WaitpointReplay } from './waitpoints/types.js';
@@ -55,9 +55,10 @@ export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
   const nativeUpdateJobs = payload.db.updateJobs.bind(payload.db);
   const nativeDeleteMany = payload.db.deleteMany.bind(payload.db);
 
-  const release = (tokens: string[]) =>
+  const release = (tokens: string[], req?: Parameters<typeof nativeUpdateJobs>[0]['req']) =>
     nativeUpdateJobs({
       data: { processingToken: null, processingUntil: null },
+      req,
       returning: false,
       where: { processingToken: { in: tokens } },
     });
@@ -77,13 +78,19 @@ export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
 
       holdLease({ payload, token });
 
-      const claimed = await nativeUpdateJobs(args);
+      return trackClaim({
+        payload,
+        claim: async () => {
+          const claimed = await nativeUpdateJobs(args);
 
-      if (!isStopping(payload)) return claimed;
+          if (!isStopping(payload)) return claimed;
 
-      await release([token]);
+          await release([token], args.req);
+          dropLeases({ payload, tokens: [token] });
 
-      return unclaimed;
+          return unclaimed;
+        },
+      });
     }
 
     const target = targetJob(args);
