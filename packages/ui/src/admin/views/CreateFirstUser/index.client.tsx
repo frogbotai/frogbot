@@ -71,8 +71,12 @@ export function CreateFirstUserClient({
   const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
 
   const fields = useMemo(
-    () => requiredFields(getEntityConfig({ collectionSlug: userSlug })?.fields ?? []),
-    [getEntityConfig, userSlug],
+    () =>
+      requiredFields(
+        getEntityConfig({ collectionSlug: userSlug })?.fields ?? [],
+        loginWithUsername ? ['email', 'username'] : ['email'],
+      ),
+    [getEntityConfig, loginWithUsername, userSlug],
   );
 
   const formInitialState = useMemo<FormState>(

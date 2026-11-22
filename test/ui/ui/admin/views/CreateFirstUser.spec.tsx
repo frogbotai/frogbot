@@ -29,7 +29,12 @@ vi.mock('@payloadcms/ui', () => ({
     el === 'anchor' || el === 'link' ? <a href={url}>{children}</a> : <span>{children}</span>,
   ConfirmPasswordField: () => <input name="confirm-password" />,
   DocumentInfoProvider: ({ children }: { children: ReactNode }) => children,
-  EmailAndUsernameFields: () => <input name="email" />,
+  EmailAndUsernameFields: ({ loginWithUsername }: { loginWithUsername?: unknown }) => (
+    <>
+      <input name="email" />
+      {loginWithUsername ? <input name="username" /> : null}
+    </>
+  ),
   Form: ({
     children,
     handleResponse,
@@ -65,12 +70,18 @@ const text = (name: string, required = false) =>
   ({ name, type: 'text', ...(required ? { required } : {}) }) as ClientField;
 
 describe('requiredFields', () => {
-  it('keeps required fields, drops optional and auth fields', () => {
+  it('keeps required fields, drops optional ones and the ones the form draws', () => {
     const role = { name: 'role', type: 'select', required: true, options: [] } as ClientField;
 
     expect(
-      requiredFields([text('email', true), text('username', true), text('bio'), role]),
+      requiredFields(
+        [text('email', true), text('username', true), text('bio'), role],
+        ['email', 'username'],
+      ),
     ).toEqual([role]);
+    expect(requiredFields([text('email', true), text('username', true)], ['email'])).toEqual([
+      text('username', true),
+    ]);
   });
 
   it('keeps a container only with its required children', () => {
@@ -183,6 +194,27 @@ describe('create-first-user view', () => {
 
   const respond = (status: number, body: unknown, errorToast = vi.fn()) =>
     act(() => ui.handleResponse!(Response.json(body, { status }), vi.fn(), errorToast));
+
+  it.each([
+    [false, ['email', 'password', 'confirm-password', 'username']],
+    [{ requireEmail: false }, ['email', 'username', 'password', 'confirm-password']],
+  ])(
+    "draws an app's required username field once, with loginWithUsername %o",
+    (loginWithUsername, expected) => {
+      ui.fields = [{ name: 'username', type: 'text', required: true }];
+
+      const { container } = render(
+        <CreateFirstUserClient
+          docPermissions={{} as never}
+          initialState={{ 'confirm-password': {} }}
+          loginWithUsername={loginWithUsername}
+          userSlug="users"
+        />,
+      );
+
+      expect([...container.querySelectorAll('input')].map((input) => input.name)).toEqual(expected);
+    },
+  );
 
   it('signs the new user in and goes to the admin', async () => {
     renderClient();
