@@ -19,12 +19,26 @@ const advisory = (id: number, vulnerable_versions: string, severity = 'moderate'
   vulnerable_versions,
 });
 
+const PUBLISHED = [
+  '16.4.0',
+  '16.4.1',
+  '16.4.2',
+  '16.4.3',
+  '16.4.4',
+  '16.4.5',
+  '16.4.6',
+  '16.4.7',
+  '16.4.8',
+  '16.5.0',
+];
+
 type Registry = {
   advisories: Record<string, ReturnType<typeof advisory>[]>;
   missing?: string[];
+  published?: string[];
 };
 
-function fakeRegistry({ advisories, missing = [] }: Registry) {
+function fakeRegistry({ advisories, missing = [], published = PUBLISHED }: Registry) {
   return vi.fn<typeof fetch>((input, init) => {
     const url = String(input);
 
@@ -34,12 +48,12 @@ function fakeRegistry({ advisories, missing = [] }: Registry) {
       return Promise.resolve(Response.json({ next: advisories[body.next[0]] ?? [] }));
     }
 
-    const version = url.split('/').at(-1) ?? '';
+    const versions = published.filter((version) => !missing.includes(version));
 
     return Promise.resolve(
-      missing.includes(version)
-        ? new Response('not found', { status: 404 })
-        : Response.json({ version }),
+      url.endsWith('/next')
+        ? Response.json({ versions: Object.fromEntries(versions.map((version) => [version, {}])) })
+        : new Response('not found', { status: 404 }),
     );
   });
 }
@@ -125,6 +139,70 @@ describe('findNextFix', () => {
     ).toBe('16.5.0-canary.3');
   });
 
+  it('compares prerelease identifiers the way npm audit does', () => {
+    const covered = (version: string, range: string) =>
+      findNextFix({ peerRange: '>=0.0.0-0', version, vulnerableRanges: [range] }) !== version;
+
+    expect(covered('16.5.0-canary.3', '>=16.5.0-canary.0 <16.5.0-canary.7')).toBe(true);
+    expect(covered('16.5.0-canary.12', '>=16.5.0-canary.0 <16.5.0-canary.7')).toBe(false);
+    expect(covered('16.5.0-canary.3.1', '>=16.5.0-canary.0 <16.5.0-canary.7')).toBe(true);
+    expect(covered('16.5.0-rc.1', '>=16.5.0-canary.0 <16.5.0-canary.7')).toBe(false);
+    expect(covered('16.0.0-beta.5', '>=16.0.0-canary.0 <16.0.7')).toBe(false);
+    expect(covered('15.0.0-canary.300', '>=15.0.0-canary.0 <=15.0.0-canary.205')).toBe(false);
+    expect(covered('16.4.6-canary.1', '>16.4.6-canary.3 <16.4.7')).toBe(false);
+    expect(covered('16.4.6-canary.5', '>16.4.6-canary.3 <16.4.7')).toBe(true);
+  });
+
+  it('names a later canary as the fix for an installed canary', () => {
+    expect(
+      findNextFix({
+        peerRange: '>=16.4.0-0 <17.0.0',
+        version: '16.5.0-canary.3',
+        vulnerableRanges: ['>=16.5.0-canary.0 <16.5.0-canary.7'],
+      }),
+    ).toBe('16.5.0-canary.7');
+  });
+
+  it('never names a canary as the fix for a release', () => {
+    expect(
+      findNextFix({
+        peerRange: NEXT_PEER_RANGE,
+        version: '16.4.6',
+        vulnerableRanges: ['>=16.4.6 <16.5.0-canary.7'],
+      }),
+    ).toBe('16.5.0');
+  });
+
+  it('reads a space after an operator', () => {
+    expect(
+      findNextFix({
+        peerRange: NEXT_PEER_RANGE,
+        version: '16.4.4',
+        vulnerableRanges: ['>= 16.4.3 < 16.4.7'],
+      }),
+    ).toBe('16.4.7');
+  });
+
+  it('picks only published versions when given them', () => {
+    expect(
+      findNextFix({
+        peerRange: NEXT_PEER_RANGE,
+        published: ['16.4.4', '16.4.6', '16.5.0-canary.1', '16.5.0', '17.0.0'],
+        version: '16.4.2',
+        vulnerableRanges: ['>=16.0.0 <=16.4.4'],
+      }),
+    ).toBe('16.4.6');
+
+    expect(
+      findNextFix({
+        peerRange: NEXT_PEER_RANGE,
+        published: ['16.4.6', '17.0.0'],
+        version: '16.4.2',
+        vulnerableRanges: ['>=16.0.0 <=16.4.6'],
+      }),
+    ).toBeUndefined();
+  });
+
   it('throws on a range it cannot read', () => {
     expect(() =>
       findNextFix({ peerRange: NEXT_PEER_RANGE, version: '16.4.2', vulnerableRanges: ['^16'] }),
@@ -168,6 +246,64 @@ describe('checkNextAdvisories', () => {
 
     expect(report?.advisories.map((entry) => entry.id)).toEqual([1]);
     expect(report?.fix).toBe('16.4.7');
+  });
+
+  it('moves to the next minor when no later patch is published', async () => {
+    const fetch = fakeRegistry({
+      advisories: {
+        '16.4.6': [advisory(1, '>=16.0.0 <=16.4.6')],
+      },
+      published: ['16.4.5', '16.4.6', '16.5.0'],
+    });
+
+    expect(await checkNextAdvisories({ fetch, version: '16.4.6' })).toMatchObject({
+      fix: '16.5.0',
+    });
+  });
+
+  it('skips patches that were never published', async () => {
+    const fetch = fakeRegistry({
+      advisories: { '16.4.2': [advisory(1, '<=16.4.4')] },
+      published: ['16.4.2', '16.4.3', '16.4.4', '16.5.0'],
+    });
+
+    expect(await checkNextAdvisories({ fetch, version: '16.4.2' })).toMatchObject({
+      fix: '16.5.0',
+    });
+  });
+
+  it('says a FrogBot release is needed when nothing published in range is clean', async () => {
+    const fetch = fakeRegistry({
+      advisories: {
+        '16.4.2': [advisory(1, '<=16.4.4')],
+        '16.5.0': [advisory(2, '16.5.0')],
+      },
+      published: ['16.4.2', '16.4.4', '16.5.0', '17.0.0'],
+    });
+
+    expect(await checkNextAdvisories({ fetch, version: '16.4.2' })).toMatchObject({
+      fix: undefined,
+    });
+  });
+
+  it('reads an advisory range with a space after an operator', async () => {
+    const fetch = fakeRegistry({ advisories: { '16.4.2': [advisory(1, '>= 16.0.0 <16.4.5')] } });
+
+    expect(await checkNextAdvisories({ fetch, version: '16.4.2' })).toMatchObject({
+      fix: '16.4.5',
+    });
+  });
+
+  it('returns nothing when the published versions cannot be read', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>((input) =>
+      Promise.resolve(
+        String(input).endsWith('/advisories/bulk')
+          ? Response.json({ next: [advisory(1, '<=16.4.4')] })
+          : new Response('busy', { status: 503 }),
+      ),
+    );
+
+    expect(await checkNextAdvisories({ fetch, version: '16.4.2' })).toBeUndefined();
   });
 
   it('says a FrogBot release is needed when no fix is in range', async () => {
