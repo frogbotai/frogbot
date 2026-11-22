@@ -141,3 +141,52 @@ test('@sign-in-only an app without passwords sends the first user to the login b
 
   await signInWithStub(page);
 });
+
+test('@fields the form asks only for required fields, and two-factor sends the owner to sign in', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/');
+  await page.waitForURL((url) => url.pathname === '/create-first-user');
+
+  const form = page.locator('.create-first-user form');
+
+  await expect(emailInput(page)).toBeVisible();
+  await expect(page.locator('input[name="password"]')).toBeVisible();
+  await expect(page.locator('input[name="confirm-password"]')).toBeVisible();
+  await expect(form.locator('#field-role')).toBeVisible();
+  await expect(form.locator('[name="bio"], #field-bio')).toHaveCount(0);
+  await save(page, testInfo, 'fields');
+
+  await waitForHydrated(form);
+
+  const formStateSettled = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/create-first-user',
+  );
+
+  await emailInput(page).fill(user.email);
+  await page.locator('input[name="password"]').fill(user.password);
+  await page.locator('input[name="confirm-password"]').fill(user.password);
+  await formStateSettled;
+  await form.locator('#field-role').click();
+  await page.locator('.rs__option', { hasText: 'owner' }).click();
+
+  const registered = page.waitForResponse((response) =>
+    response.url().endsWith('/api/users/first-register'),
+  );
+
+  await submit(page).click();
+  expect((await registered).status()).toBe(202);
+
+  await expect(page.getByText('Account created. Sign in to set up two-factor.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/login');
+  await save(page, testInfo, 'fields-two-factor');
+
+  const me = await page.evaluate(async () => (await fetch('/api/users/me')).json());
+
+  expect(me.user).toBeNull();
+
+  await page.goto('/create-first-user');
+  await page.waitForURL((url) => url.pathname === '/login');
+});

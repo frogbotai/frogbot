@@ -1,4 +1,78 @@
 @layer frogbot {
+  .create-first-user {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-5);
+    align-items: center;
+    width: 100%;
+  }
+
+  .create-first-user__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-2);
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .create-first-user__header h1 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--text-heading-large-font-size);
+    font-weight: var(--text-heading-large-font-weight);
+    line-height: var(--text-heading-large-line-height);
+    letter-spacing: var(--text-heading-large-letter-spacing);
+  }
+
+  .create-first-user__header p,
+  .create-first-user__form__two-factor p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    letter-spacing: var(--text-body-medium-letter-spacing);
+  }
+
+  .create-first-user__form,
+  .create-first-user__form__two-factor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-5);
+    width: 100%;
+  }
+
+  .create-first-user__form__two-factor {
+    align-items: center;
+    text-align: center;
+  }
+
+  .create-first-user__form__inputWrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-3);
+  }
+
+  .create-first-user__form__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-2);
+    align-items: center;
+    width: 100%;
+  }
+
+  .create-first-user__form__actions .form-submit,
+  .create-first-user__form__two-factor .btn {
+    width: 100%;
+  }
+
+  .create-first-user__form__actions .form-submit .btn {
+    justify-content: center;
+    width: 100%;
+    height: var(--spacer-4);
+  }
+
   .fb-create-first-user__sign-in {
     margin-top: var(--spacer-5);
   }

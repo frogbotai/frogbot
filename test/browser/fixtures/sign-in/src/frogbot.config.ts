@@ -3,7 +3,7 @@ import { twoFactor } from '@frogbotai/plugin-two-factor';
 import { buildConfig, definePiece } from 'frogbot';
 import { z } from 'zod';
 
-import { firstUserEmail, signInOnly } from '../shared';
+import { firstUserEmail, firstUserFields, signInOnly } from '../shared';
 
 const port = process.env.PORT || 3000;
 const serverURL = `http://localhost:${port}`;
@@ -33,6 +33,8 @@ const stub = definePiece({
 
 let linkedCount = 0;
 
+const withFields = process.env.SIGN_IN_SETUP === firstUserFields;
+
 const linked = definePiece({
   slug: 'linked',
   label: 'Linked',
@@ -58,7 +60,13 @@ export default buildConfig({
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
   admin: { avatar: 'default', importMap: { autoGenerate: false } },
-  plugins: [twoFactor({ issuer: 'Sign-in Lab', canReset: ({ req }) => Boolean(req.user) })],
+  plugins: [
+    twoFactor({
+      issuer: 'Sign-in Lab',
+      canReset: ({ req }) => Boolean(req.user),
+      ...(withFields ? { require: ({ user }) => user.role === 'owner' } : {}),
+    }),
+  ],
   connections: [{ piece: linked, oauth: true }],
   collections: [
     {
@@ -69,7 +77,12 @@ export default buildConfig({
           ? { disableLocalStrategy: { enableFields: true as const } }
           : {}),
       },
-      fields: [],
+      fields: withFields
+        ? [
+            { name: 'bio', type: 'textarea' },
+            { name: 'role', type: 'select', required: true, options: ['owner', 'member'] },
+          ]
+        : [],
     },
   ],
   endpoints: [
