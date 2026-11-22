@@ -23,10 +23,10 @@ export type { Args, MongooseAdapter } from '@payloadcms/db-mongodb';
 export { compatibilityOptions } from '@payloadcms/db-mongodb';
 
 /** What a migration's `up` gets: `req`. `migrationDatabase(req)` returns the database and the transaction's session. */
-export type MigrateUpArgs = MigrationArgs<PayloadMigrateUpArgs>;
+export type MigrateUpArgs = Omit<MigrationArgs<PayloadMigrateUpArgs>, 'session'>;
 
 /** What a migration's `down` gets: `req`. `migrationDatabase(req)` returns the database and the transaction's session. */
-export type MigrateDownArgs = MigrationArgs<PayloadMigrateDownArgs>;
+export type MigrateDownArgs = Omit<MigrationArgs<PayloadMigrateDownArgs>, 'session'>;
 
 /** The MongoDB database a migration changes, and the session of its transaction when there is one. */
 export type MigrationDatabase = {
