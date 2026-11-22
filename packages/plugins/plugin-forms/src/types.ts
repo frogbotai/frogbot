@@ -34,6 +34,13 @@ export type FormsPluginOptions<S extends CollectionSlug = CollectionSlug> = {
    * @default false
    */
   analytics?: boolean;
+  /**
+   * Origins allowed to embed forms with `<script src="/api/forms/<slug>/embed.js">`, like
+   * `'https://www.example.com'`. Empty, the embed page is sent with `frame-ancestors 'none'`.
+   *
+   * @default []
+   */
+  frameAncestors?: string[];
 };
 
 /** What a `form-stats` row counts. The page sends `view` and `start`; the server counts `completion`. */

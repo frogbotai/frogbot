@@ -288,6 +288,35 @@ With `analytics` on, the **Form stats** collection (`form-stats`) holds one row 
 
 Views and starts come from visitors' browsers, which anyone can send or block, so the admin labels them estimates. Starts over views, and completions over starts, show where people drop off. Signed-in users can read and delete rows; nobody can edit them. Deleting a form deletes its rows. With `analytics` off, there is no collection and the events endpoint answers `404`.
 
+## Embedding a form on another site
+
+Put a form on any site, a WordPress page, a Webflow site or plain HTML, with one script tag where the form should appear:
+
+```html
+<script src="https://app.example.com/api/forms/contact/embed.js"></script>
+```
+
+The script puts the form in an iframe that grows and shrinks to fit it. It needs no React or Next.js on the site. Before a site can embed forms, list its origin in `frameAncestors`:
+
+```ts
+formsPlugin({
+  collections: ['leads'],
+  frameAncestors: ['https://www.example.com'],
+})
+```
+
+With the list empty, the default, no site can frame a form: the embed page is sent with `frame-ancestors 'none'`. Each entry is an origin, a scheme and host with an optional port and no path, and `https://*.example.com` allows every subdomain; anything else stops the app at boot.
+
+- The iframe's page is `GET /api/forms/<slug>/embed`. It shows the form without the admin, in the light theme, and loads it as the visitor, like [the form page](#the-form-page). A form that doesn't exist, can't be read, or is `update` only answers `404`.
+- The host page's query string is passed on, so `https://www.example.com/contact?utm_source=newsletter` saves `newsletter` to a [hidden parameter](#the-form-page).
+- `data-title` on the script tag sets the iframe's title for screen readers. It defaults to `Form`.
+- After a submit, the iframe fires a `frogbot:form-submitted` event that bubbles from it, with the confirmation as `event.detail.confirmation`. A redirect confirmation then sends the whole page to its URL; call `event.preventDefault()` to handle it yourself.
+- The script has to run as a classic script, so `async` and `defer` work and `type="module"` doesn't.
+- A select question's list opens inside the iframe, so near the form's bottom it opens upward.
+- With [`analytics`](#counting-views-starts-and-completions) on, an embedded form counts views and starts like the form page.
+
+To size or listen to the iframe yourself, frame `/api/forms/<slug>/embed` directly. It posts `{ type: 'frogbot:form:height', height }` whenever its height changes and `{ type: 'frogbot:form:submitted', confirmation }` after a submit, to its parent window; the `EmbedMessage` type describes both. Check that `event.origin` is your app's before using them. Framed this way, a redirect confirmation is never followed for you: send the visitor to `confirmation.url` from your listener.
+
 ## Rendering a form in your own frontend
 
 The same renderer is a React component in `@frogbotai/ui/forms`. It imports nothing from FrogBot's server or Next.js, so it works in any React app. Fetch the definition, then render it against the submit endpoint:
@@ -314,7 +343,7 @@ Load `@frogbotai/ui/styles.css` once for its styles. They sit in the `frogbot` c
 
 ## Endpoints
 
-The endpoints are public and check the form's `read` access as the visitor.
+The endpoints are public and check the form's `read` access as the visitor. The embed has its own [page and script](#embedding-a-form-on-another-site).
 
 ```http
 GET /api/forms/contact/definition
@@ -512,3 +541,4 @@ A hook on the collection that emails the person who submitted, such as a "we got
 | `trustProxy` | `boolean` | `false` | Read the visitor's address from the `x-forwarded-for` (last entry) or `x-real-ip` header your proxy sets. Off, submits aren't rate-limited and boot warns. |
 | `analytics` | `boolean` | `false` | Count views, starts and completions per form per day in the `form-stats` collection. See [Counting views, starts and completions](#counting-views-starts-and-completions). |
 | `links` | `{ defaultExpiry?; maxExpiry?; access? }` | `{ defaultExpiry: '7d', maxExpiry: '30d' }` | Edit links: how long they last, as seconds or a length like `'7d'`, and access for the `form-links` collection, merged over the default (people who can update a record manage its links). |
+| `frameAncestors` | `string[]` | `[]` | Origins allowed to [embed forms](#embedding-a-form-on-another-site), like `'https://www.example.com'`. Empty, no site can frame them. |

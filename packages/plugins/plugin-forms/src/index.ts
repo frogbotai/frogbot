@@ -3,6 +3,7 @@ import type { AdminViewConfig } from 'payload';
 
 import { wrapCreateAccess, wrapLinkAccess } from './access.js';
 import { createFormsCollection, FORMS_SLUG } from './collection.js';
+import { createEmbedEndpoints, resolveFrameAncestors } from './embed/endpoints.js';
 import { FORM_LINKS_SLUG } from './links/access.js';
 import { createFormLinksCollection } from './links/collection.js';
 import { resolveLinkLimits } from './links/token.js';
@@ -33,6 +34,7 @@ const PREVIEW_VIEW: AdminViewConfig = {
 
 export { isFormSubmission } from './access.js';
 export { FORMS_SLUG } from './collection.js';
+export type { EmbedMessage } from './embed/messages.js';
 export { FORM_LINKS_SLUG } from './links/access.js';
 export { createFormLink } from './links/create.js';
 export { FORM_STATS_SLUG } from './stats.js';
@@ -102,6 +104,8 @@ const forms = definePlugin<FormsPluginOptions>({
     }
 
     const adminRoute = config.routes?.admin ?? '/';
+    const apiRoute = (config.routes?.api ?? '/api').replace(/\/+$/, '');
+    const frameAncestors = resolveFrameAncestors(options.frameAncestors);
     const spam = resolveSpamOptions(options);
     const links = resolveLinkLimits(options.links);
     const targets = new Map<string, FormTarget>();
@@ -171,6 +175,11 @@ const forms = definePlugin<FormsPluginOptions>({
           runtime,
           access: options.access,
           previewUrl: `${adminRoute === '/' ? '' : adminRoute}${PREVIEW_PATH}`,
+          embed: createEmbedEndpoints({
+            runtime,
+            frameAncestors,
+            base: `${apiRoute}/${FORMS_SLUG}`,
+          }),
         }),
         createFormLinksCollection({ targets: [...allowed], access: options.links?.access }),
         ...(runtime.analytics ? [createFormStatsCollection()] : []),
@@ -197,9 +206,11 @@ const forms = definePlugin<FormsPluginOptions>({
  * Adds a `forms` collection whose forms create records in the listed collections, a public page
  * at `/forms/<slug>`, a definition endpoint (`GET /api/forms/:slug/definition`) and a submit
  * endpoint (`POST /api/forms/:slug/submit`) with a honeypot, optional Turnstile and a per-visitor
- * rate limit. File questions store visitors' files in listed upload collections. Forms in the
- * `update` or `both` mode edit one record through edit links that `createFormLink` makes. With
- * `analytics`, a `form-stats` collection counts views, starts and completions per form per day.
+ * rate limit. `<script src="/api/forms/<slug>/embed.js">` embeds a form on the `frameAncestors`
+ * origins, in an iframe that resizes to fit. File questions store visitors' files in listed upload
+ * collections. Forms in the `update` or `both` mode edit one record through edit links that
+ * `createFormLink` makes. With `analytics`, a `form-stats` collection counts views, starts and
+ * completions per form per day.
  */
 export function formsPlugin(options: FormsPluginOptions): Plugin {
   return forms(options);

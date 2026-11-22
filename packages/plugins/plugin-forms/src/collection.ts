@@ -1,4 +1,4 @@
-import type { Access, CollectionAccess, CollectionConfig } from 'frogbot';
+import type { Access, CollectionAccess, CollectionConfig, Endpoint } from 'frogbot';
 import { ValidationError } from 'payload';
 
 import { countKey } from './closing.js';
@@ -25,11 +25,14 @@ export function createFormsCollection({
   runtime,
   access,
   previewUrl,
+  embed,
 }: {
   runtime: FormsRuntime;
   access?: CollectionAccess;
   /** The admin's `/forms-preview` page. A string, since Payload skips a function URL on create. */
   previewUrl: string;
+  /** The embed page, its script tag and their assets. */
+  embed: Endpoint[];
 }): CollectionConfig {
   const { targets, uploads: limits } = runtime;
 
@@ -53,6 +56,7 @@ export function createFormsCollection({
       createDefinitionEndpoint(runtime),
       createSubmitEndpoint(runtime),
       ...(runtime.analytics ? [createEventsEndpoint(runtime)] : []),
+      ...embed,
     ],
     hooks: {
       beforeValidate: [

@@ -70,6 +70,15 @@ describe(`forms plugin analytics [${adapterLabel}]`, () => {
     expect(body.analytics).toBe(true);
   });
 
+  it('gives an embedded form the events URL, so embeds count views and starts too', async () => {
+    const html = await (await fetch(new URL('/api/forms/contact/embed', booted.baseUrl))).text();
+    const json = /<script type="application\/json" id="fb-form-data">(.*?)<\/script>/s.exec(html);
+
+    expect(JSON.parse(json?.[1] ?? 'null')).toMatchObject({
+      eventUrl: '/api/forms/contact/events',
+    });
+  });
+
   it('counts three completions, two of them concurrent, on one row for the day', async () => {
     expect((await submit('ada@example.com')).status).toBe(200);
 

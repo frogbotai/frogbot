@@ -438,7 +438,14 @@ const testProjects = [
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
   project({ name: 'sign-in-two-factor', testMatch: 'twoFactor.browser.spec.ts', signedOut: true }),
   project({ name: 'linked-accounts', testMatch: 'linkedAccounts.browser.spec.ts' }),
-  project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
+  project({
+    name: 'forms',
+    testMatch: [
+      'forms.browser.spec.ts',
+      'formBuilder.browser.spec.ts',
+      'formEmbed.browser.spec.ts',
+    ],
+  }),
   project({
     name: 'crm',
     testMatch: [
