@@ -33,7 +33,7 @@ pnpm frogbot generate:types
 | `pieces:port` | `<slug>` | Prepares a piece package in the FrogBot repository for porting. See [Port a piece](#port-a-piece). |
 | `jobs:run` | `--cron`, `--limit`, `--queue`, `--all-queues`, `--handle-schedules` | Runs a long-lived jobs worker without Next.js. See [Workers](/jobs-queue/workers). |
 | `channels:run` | — | Holds chat-channel gateway connections, such as Discord's, in their own process. See [Discord](/pieces/discord). |
-| `migrate` | — | Applies pending database migrations. See [Migrations](/database/migrations). |
+| `migrate` | `--force-accept-warning` | Applies pending database migrations. See [Migrations](/database/migrations). |
 | `migrate:create` | `[name]`, `--name`, `--file`, `--skip-empty`, `--force-accept-warning` | Creates a migration from the current schema. See [Migrations](/database/migrations). |
 | `migrate:status` | — | Lists applied and pending migrations. See [Migrations](/database/migrations). |
 | `migrate:down` | — | Rolls back the last batch of migrations. See [Migrations](/database/migrations). |

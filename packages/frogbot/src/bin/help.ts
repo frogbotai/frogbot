@@ -20,7 +20,7 @@ commands:
 options:
   --name <name>            name for the generated migration (migrate:create)
   --file <path>            use a pre-defined migration file (migrate:create)
-  --force-accept-warning   skip interactive confirmation prompts (CI)
+  --force-accept-warning   skip confirmation prompts and apply over dev-mode changes (migrate, migrate:create, migrate:fresh)
   --skip-empty             skip empty migrations (migrate:create)
   --help, -h               show this help`;
 
