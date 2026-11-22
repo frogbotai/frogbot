@@ -20,6 +20,39 @@ afterEach(() => {
   for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true });
 });
 
+it('reports a switch the supervisor already has pending as already up, asking for nothing', async () => {
+  const state = mkdtempSync(join(tmpdir(), 'frogbot-up-switch-state-'));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'frogbot-up-switch-app-')));
+  const lines: string[] = [];
+
+  folders.push(state, dir);
+  writeFileSync(join(dir, 'next.config.mjs'), 'export default {};\n');
+  mkdirSync(join(dir, '.frogbot'));
+  vi.stubEnv('XDG_STATE_HOME', state);
+  vi.stubEnv('FROGBOT_SERVICE', '');
+  vi.spyOn(process, 'cwd').mockReturnValue(dir);
+
+  writeRegistration(registrationFile(serviceId(dir)), {
+    id: serviceId(dir),
+    dir,
+    url: 'http://127.0.0.1:3007',
+    port: 3007,
+    pid: process.pid,
+    frogbot: '0.42.0',
+    startedAt: new Date().toISOString(),
+    state: 'starting',
+    mode: 'production',
+    switching: 'dev',
+    log: join(dir, '.frogbot', 'service.log'),
+    autostart: false,
+  });
+
+  await up(['--dev'], { log: (line) => lines.push(line) });
+
+  expect(lines).toEqual([expect.stringContaining('is already up at http://127.0.0.1:3007')]);
+  expect(existsSync(join(dir, '.frogbot', 'mode-request'))).toBe(false);
+});
+
 it('fails within seconds when a supervisor from an older FrogBot ignores the switch', async () => {
   const state = mkdtempSync(join(tmpdir(), 'frogbot-up-switch-state-'));
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'frogbot-up-switch-app-')));

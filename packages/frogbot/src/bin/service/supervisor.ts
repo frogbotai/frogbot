@@ -406,23 +406,24 @@ export async function supervise({
   });
 
   function switchMode() {
-    let wanted: string;
+    let wanted: ServiceMode | undefined;
 
     try {
-      wanted = readFileSync(paths.modeRequest, 'utf8').trim();
+      const text = readFileSync(paths.modeRequest, 'utf8').trim();
+
+      wanted = text === 'dev' || text === 'production' ? text : undefined;
     } catch {
       return;
     }
 
-    if (
-      !stopping &&
-      (wanted === 'dev' || wanted === 'production') &&
-      (wanted !== mode || switchTo)
-    ) {
+    if (wanted && !stopping && wanted !== mode) {
       switchTo = wanted;
       save({ switching: wanted });
       log.write('supervisor', `switching to ${wanted} mode`);
       if (booted) queue.trigger('update');
+    } else if (wanted && !stopping && switchTo) {
+      switchTo = undefined;
+      save({ switching: undefined });
     }
 
     rmSync(paths.modeRequest, { force: true });

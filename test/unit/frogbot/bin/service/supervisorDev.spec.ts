@@ -322,4 +322,30 @@ describe('the supervisor in dev mode', { timeout: 90_000 }, () => {
     expect(calls.devStarts).toBe(1);
     expect(supervisorLog(dir).filter((line) => line.includes('failed'))).toEqual([]);
   });
+
+  it('drops a switch to dev that a switch back cancels during the first build, building once', async () => {
+    const dir = app('frogbot-dev-boot-cancel-');
+    let first = true;
+    const request = (mode: string) => {
+      writeFileSync(join(dir, '.frogbot', 'mode-request'), `${mode}\n`);
+      process.emit(SETTINGS_SIGNAL, SETTINGS_SIGNAL);
+    };
+
+    const { calls, registration } = await superviseDev(dir, {
+      mode: 'production',
+      build() {
+        if (first) {
+          first = false;
+          request('dev');
+          request('production');
+        }
+
+        return Promise.resolve();
+      },
+    });
+
+    expect(registration()).toMatchObject({ mode: 'production', state: 'running' });
+    expect(registration().switching).toBeUndefined();
+    expect(calls).toEqual({ prepare: 0, build: 1, devStarts: 0 });
+  });
 });

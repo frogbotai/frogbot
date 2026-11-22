@@ -381,7 +381,7 @@ async function keepRunning(
 ): Promise<void> {
   const paths = appPaths(found.dir);
   const mode: ServiceMode = dev ? 'dev' : 'production';
-  const switching = mode !== (found.mode ?? 'production');
+  const switching = mode !== (found.switching ?? found.mode ?? 'production');
 
   if (requested === 'auto' || requested === found.port) {
     writeSavedPort(paths.port, { port: found.port, chosen: requested !== 'auto' });
