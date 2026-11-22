@@ -18,7 +18,6 @@ export function MemoryViewClient({
 }: MemoryViewClientProps) {
   const [memories, setMemories] = useState(initialMemories);
   const [hasNextPage, setHasNextPage] = useState(initialHasNextPage);
-  const [page, setPage] = useState(1);
   const [error, setError] = useState(initialError ?? '');
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<string>();
@@ -29,33 +28,44 @@ export function MemoryViewClient({
     `${memory.key ?? ''} ${memory.text}`.toLowerCase().includes(query),
   );
 
+  const fetchPage = async (page: number) => {
+    const params = new URLSearchParams({
+      scope: 'me',
+      limit: String(pageSize),
+      page: String(page),
+    });
+
+    const response = await fetch(`${apiPath}?${params}`, {
+      credentials: 'same-origin',
+      cache: 'no-store',
+    });
+
+    if (!response.ok) throw new Error('load');
+
+    return (await response.json()) as { docs: MemoryItem[]; hasNextPage: boolean };
+  };
+
   const loadMore = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const params = new URLSearchParams({
-        scope: 'me',
-        limit: String(pageSize),
-        page: String(page + 1),
-      });
+      const offset = memories.length;
+      const first = Math.floor(offset / pageSize) + 1;
+      const pages = offset % pageSize ? [first, first + 1] : [first];
+      const results: Awaited<ReturnType<typeof fetchPage>>[] = [];
 
-      const response = await fetch(`${apiPath}?${params}`, {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-
-      if (!response.ok) throw new Error('load');
-
-      const data = (await response.json()) as { docs: MemoryItem[]; hasNextPage: boolean };
+      for (const page of pages) results.push(await fetchPage(page));
 
       setMemories((current) => [
         ...current,
-        ...data.docs.filter(({ id }) => !current.some((memory) => memory.id === id)),
+        ...results
+          .flatMap(({ docs }) => docs)
+          .filter(({ id }, index, docs) => docs.findIndex((doc) => doc.id === id) === index)
+          .filter(({ id }) => !current.some((memory) => memory.id === id)),
       ]);
 
-      setHasNextPage(data.hasNextPage);
-      setPage((current) => current + 1);
+      setHasNextPage(results.at(-1)?.hasNextPage ?? false);
     } catch {
       setError('Could not load more memories. Please try again.');
     } finally {
