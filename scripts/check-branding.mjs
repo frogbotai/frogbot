@@ -16,9 +16,11 @@ export const ALLOWLIST = [
 
 const SCAFFOLD_ROOTS = ['templates', 'packages/create-frogbot-app/dist/templates', 'examples'];
 
-const SCAFFOLD_PATTERN = /Payload|@payloadcms\//;
+const MIGRATION_ARGS = /\{[^}]*\bpayload\b[^}]*\}\s*:\s*Migrate(?:Up|Down)Args/;
 
-const DOCS_PATTERN = /\bPayload\b|@payloadcms\//;
+const SCAFFOLD_PATTERN = new RegExp(`Payload|@payloadcms\\/|${MIGRATION_ARGS.source}`);
+
+const DOCS_PATTERN = new RegExp(`\\bPayload\\b|@payloadcms\\/|${MIGRATION_ARGS.source}`);
 
 const SKIPPED_DIRS = new Set(['node_modules', '.next', '.git', 'dist']);
 

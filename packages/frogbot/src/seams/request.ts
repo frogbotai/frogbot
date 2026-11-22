@@ -2,7 +2,7 @@ import type { FrogBot } from '../frogbot.js';
 import type { FrogBotLocalAPI } from '../localAPI.js';
 import type { TypedUser } from '../types/generated.js';
 import type { Payload, PayloadRequest } from '../types/payload.js';
-import type { FrogBotRequest } from '../types/request.js';
+import type { FrogBotRequest, MigrationRequest } from '../types/request.js';
 import type { Check, Extends, Mutual } from './check.js';
 
 export type _RequestChecks = [
@@ -13,6 +13,11 @@ export type _RequestChecks = [
 ];
 
 export function toPayloadRequest(req: FrogBotRequest): PayloadRequest {
+  return req as unknown as PayloadRequest;
+}
+
+/** A migration's request is Payload's migration request, typed without `payload`. */
+export function migrationPayloadRequest(req: MigrationRequest): PayloadRequest {
   return req as unknown as PayloadRequest;
 }
 

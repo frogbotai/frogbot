@@ -17,3 +17,12 @@ export interface FrogBotRequest extends Omit<PayloadRequest, 'payload' | 'user'>
 }
 
 export type FrogBotArgs<TArgs> = Omit<TArgs, 'req'> & { req: FrogBotRequest };
+
+/**
+ * The request a migration gets. It carries the migration's transaction. Migrations run before the app
+ * exists, so it has no `frogbot`: change data through the adapter's `db` (or `session` on MongoDB).
+ */
+export type MigrationRequest = Omit<FrogBotRequest, 'frogbot'>;
+
+/** A database adapter's migration arguments as a migration file sees them: its own `req`, no `payload`. */
+export type MigrationArgs<TArgs> = Omit<TArgs, 'payload' | 'req'> & { req: MigrationRequest };

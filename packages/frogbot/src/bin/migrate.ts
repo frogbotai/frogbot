@@ -1,5 +1,6 @@
 import { loadConfig } from '../config/load.js';
 import { formatCliError } from './formatCliError.js';
+import { rewriteMigrationFile } from './migrationFile.js';
 
 const COMMANDS = [
   'migrate',
@@ -129,8 +130,8 @@ export async function migrate(args: string[]): Promise<void> {
         await adapter.migrate({});
 
         break;
-      case 'migrate:create':
-        await adapter.createMigration({
+      case 'migrate:create': {
+        const created = await adapter.createMigration({
           file: flags.file,
           forceAcceptWarning: flags.forceAcceptWarning,
           migrationName: flags.name ?? positional[0],
@@ -138,7 +139,11 @@ export async function migrate(args: string[]): Promise<void> {
           skipEmpty: flags.skipEmpty,
         });
 
+        if (created?.path) await rewriteMigrationFile(created.path);
+
         break;
+      }
+
       case 'migrate:down':
         await adapter.migrateDown();
         break;

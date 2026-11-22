@@ -3,10 +3,12 @@ import path from 'node:path';
 
 import type { DrizzleAdapter } from '@payloadcms/drizzle';
 import { sql } from 'drizzle-orm';
-import type { DynamicMigrationTemplate, Payload, PayloadRequest } from 'payload';
+import type { DynamicMigrationTemplate, Payload } from 'payload';
 import toSnakeCase from 'to-snake-case';
 
 import { assertDrizzleAdapter } from '../database/guards.js';
+import { migrationPayloadRequest } from '../seams/request.js';
+import type { MigrationRequest } from '../types/request.js';
 
 /** One stored author column from FrogBot 0.33 or earlier and the authorship field it copies into. */
 export type AuthorshipColumn = {
@@ -368,7 +370,7 @@ export const dynamic: DynamicMigrationTemplate = async ({ filePath, payload }) =
 
 /** Author columns from FrogBot 0.33 and the field each copies into: 'createdBy', 'updatedBy' or null to drop it. */
 const authorship: AuthorshipColumn[] = ${describe(columns)}`,
-    upSQL: `${up.length ? `${writer.sanitizeStatements({ sqlExecute, statements: up })}\n` : ''}await authorshipMigration({ db, payload, req, columns: authorship })`,
+    upSQL: `${up.length ? `${writer.sanitizeStatements({ sqlExecute, statements: up })}\n` : ''}await authorshipMigration({ db, req, columns: authorship })`,
     downSQL: down.length
       ? writer.sanitizeStatements({ sqlExecute, statements: down })
       : '// Migration code',
@@ -381,7 +383,7 @@ export const imports = `import { authorshipMigration, type AuthorshipKeys } from
 /** Author fields from FrogBot 0.33 and the field each moves to: 'createdBy', 'updatedBy' or null to keep it. */
 const authorship: AuthorshipKeys = { createdBy: 'createdBy', lastModifiedBy: 'updatedBy' }`;
 
-export const upSQL = `  await authorshipMigration({ payload, req, keys: authorship })
+export const upSQL = `  await authorshipMigration({ req, keys: authorship })
 `;
 
 export const downSQL = `  // Migration code
@@ -434,10 +436,10 @@ async function moveKeys({
 }: {
   keys: AuthorshipKeys;
   payload: Payload;
-  req?: Partial<PayloadRequest>;
+  req: MigrationRequest;
 }): Promise<void> {
   const relationTo = authCollection(payload);
-  const transactionID = await req?.transactionID;
+  const transactionID = await req.transactionID;
   const sessions = 'sessions' in payload.db ? payload.db.sessions : undefined;
   const session =
     transactionID && sessions && typeof sessions === 'object'
@@ -475,15 +477,15 @@ export async function authorshipMigration({
   columns,
   db,
   keys,
-  payload,
   req,
 }: {
   columns?: AuthorshipColumn[];
   db?: unknown;
   keys?: AuthorshipKeys;
-  payload: Payload;
-  req?: Partial<PayloadRequest>;
+  req: MigrationRequest;
 }): Promise<void> {
+  const { payload } = migrationPayloadRequest(req);
+
   if (isDrizzle(payload)) {
     await copyColumns({ columns: columns ?? [], db, payload });
 
