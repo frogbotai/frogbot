@@ -98,6 +98,7 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
     },
     aggregate: sqliteAggregateAdapter,
     search: sqliteSearchAdapter,
+    url: args.client?.url,
     ...(isFileDatabase(args.client?.url) && { snapshot: sqliteSnapshot(args.client) }),
     ...(sync && { syncSchema }),
   };

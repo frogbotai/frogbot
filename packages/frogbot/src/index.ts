@@ -174,6 +174,8 @@ export type {
   TranscribeAudio,
   TranscribeOpts,
 } from './ai/types.js';
+export type { FirstUser, FirstUserArgs } from './auth/firstUser.js';
+export { firstUser } from './auth/firstUser.js';
 export type { FinishSignInArgs } from './auth/signIn/finish.js';
 export { finishSignIn } from './auth/signIn/finish.js';
 export type {

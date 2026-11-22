@@ -55,34 +55,17 @@ Keep the first version small. One screen they recognise beats ten they don't.
 
 ## 4. Start it and make their login
 
-Run `frogbot up` and read the URL it prints. Then create the first login with a run-once script, and delete the script after:
+Run `frogbot up` and read the URL it prints. Then create the first login:
 
-```ts
-// scripts/first-login.ts: run with `npx frogbot run scripts/first-login.ts you@example.com`
-import { randomBytes } from 'node:crypto';
-
-import { getFrogBot } from 'frogbot';
-
-import config from '../src/frogbot.config';
-
-const email = process.argv[2];
-if (!email) throw new Error('Pass an email.');
-
-const frogbot = await getFrogBot({ config });
-const { totalDocs } = await frogbot.count({ collection: 'users', overrideAccess: true });
-if (totalDocs > 0) throw new Error('This app already has users.');
-
-const password = randomBytes(12).toString('base64url');
-await frogbot.create({
-  collection: 'users',
-  data: { email, name: email.split('@')[0], password },
-  overrideAccess: true,
-});
-console.log(`Login: ${email} / ${password}`);
+```sh
+npx frogbot users create you@example.com --set name=You
 ```
 
-- Use the person's email if you know it, else `you@example.com`. Match `data` to the auth collection's required fields; the templates' users have a `name`.
-- A new random password for each app, never a fixed one, so no two FrogBot apps share a login someone could guess.
+It prints the database, then `Password: <password>` once. Give the person that email and password.
+
+- Use the person's email if you know it, else `you@example.com`. Pass each required field of the auth collection with `--set <field>=<value>`; the templates' users need a `name`. If it names a missing field, add it and run again.
+- Never write a password yourself, in a script, a seed or a config. The command makes a new random one for each app, so no two FrogBot apps share a login someone could guess.
+- It works only while the collection has no users, and only on a local SQLite file unless you pass `--yes`. Don't pass `--yes` without asking the person: it writes to whatever database `DATABASE_URL` points at.
 - The login lives in the local database. `frogbot deploy` sends it only with `--data`, and the skill's deploy rules make that the person's choice. On Dojo they sign in with **Continue with Dojo**, so a first deploy doesn't need `--data` for their login.
 
 ## 5. Show it

@@ -291,6 +291,7 @@ Use `frogbot.config.ts` as the configuration entry, `req.frogbot` in request cal
 ## Working Rules
 
 - Verify imports against installed public exports; do not invent package subpaths.
+- Make the first login with `npx frogbot users create <email>` (add `--set <field>=<value>` for required fields): it prints a random password once. Never write a password into a script, seed, template or config. After making a local login, ask the person before `frogbot deploy --data`, which copies users with their passwords.
 - Keep server credentials, database adapters, pieces, and gateway construction out of client components.
 - Pass `req` through nested operations and decide explicitly whether access should be overridden.
 - Prefer indexed query constraints over per-record or network checks in access functions.

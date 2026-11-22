@@ -36,6 +36,14 @@ export function postgresAdapter(args: PostgresAdapterArgs) {
     },
     aggregate: postgresAggregateAdapter,
     search: postgresSearchAdapter,
+    url: poolUrl(args.pool),
     ...(args.prodMigrations === undefined && { syncSchema }),
   };
+}
+
+function poolUrl(pool: PostgresAdapterArgs['pool']): string | undefined {
+  if (pool.connectionString) return pool.connectionString;
+  if (!pool.host) return undefined;
+
+  return `postgres://${pool.host}${pool.port ? `:${String(pool.port)}` : ''}/${pool.database ?? ''}`;
 }
