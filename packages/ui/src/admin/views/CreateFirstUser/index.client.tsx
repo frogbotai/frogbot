@@ -13,6 +13,7 @@ import {
   RenderFields,
   useAuth,
   useConfig,
+  useForm,
   useRouter,
   useRouteTransition,
   type UserWithToken,
@@ -20,7 +21,7 @@ import {
 } from '@payloadcms/ui';
 import type { FormState, LoginWithUsernameOptions, SanitizedDocumentPermissions } from 'payload';
 import { formatAdminURL } from 'payload/shared';
-import { useMemo, useState } from 'react';
+import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 import { requiredFields } from './requiredFields.js';
 
@@ -33,20 +34,33 @@ export type CreateFirstUserClientProps = {
   userSlug: string;
 };
 
+type ServerError = { message?: string; path?: string };
+
 type FirstRegisterResponse = UserWithToken & {
   message?: string;
-  errors?: { message?: string; data?: { errors?: { path?: string; message?: string }[] } }[];
+  errors?: (ServerError & { data?: { errors?: ServerError[] } })[];
 };
 
-const errorText = ({ message, data }: NonNullable<FirstRegisterResponse['errors']>[number]) =>
-  [message, ...(data?.errors ?? []).map((error) => error.message ?? error.path)]
-    .filter(Boolean)
-    .join(' ');
+type FormActions = Pick<
+  ReturnType<typeof useForm>,
+  'dispatchFields' | 'setIsValid' | 'setSubmitted'
+>;
+
+function FormActionsRef({ actions }: { actions: RefObject<FormActions | null> }) {
+  const form = useForm();
+
+  useEffect(() => {
+    actions.current = form;
+  }, [actions, form]);
+
+  return null;
+}
 
 /**
  * Payload's first-user form, asking only for email, password and the fields the collection
  * marks required. It handles the response itself: a `202` from two-factor's `require` shows a
  * sign-in link, and no after-save form refresh runs, since that needs the session a `202` withholds.
+ * A failed save puts each field error on its field, as Payload's form does, and toasts the rest.
  */
 export function CreateFirstUserClient({
   docPermissions,
@@ -69,6 +83,7 @@ export function CreateFirstUserClient({
   const router = useRouter();
   const { startRouteTransition } = useRouteTransition();
   const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
+  const formActions = useRef<FormActions>(null);
 
   const fields = useMemo(
     () =>
@@ -122,7 +137,31 @@ export function CreateFirstUserClient({
       return;
     }
 
-    errorToast(json.errors?.map(errorText).join(' ') || json.message || t('error:unknown'));
+    const serverErrors = (json.errors ?? []).flatMap(({ data, ...error }) => [
+      error,
+      ...(data?.errors ?? []),
+    ]);
+
+    const fieldErrors = serverErrors.filter((error): error is Required<ServerError> =>
+      Boolean(error.path && error.message),
+    );
+
+    if (fieldErrors.length && formActions.current) {
+      formActions.current.dispatchFields({ type: 'ADD_SERVER_ERRORS', errors: fieldErrors });
+      formActions.current.setIsValid(false);
+      formActions.current.setSubmitted(true);
+    }
+
+    errorToast(
+      serverErrors
+        .filter((error) => !error.path)
+        .map((error) => error.message)
+        .join(' ')
+        .trim() ||
+        json.message?.trim() ||
+        res.statusText ||
+        t('error:unknown'),
+    );
   };
 
   return (
@@ -150,6 +189,7 @@ export function CreateFirstUserClient({
           schemaPath={userSlug}
           validationOperation="create"
         >
+          <FormActionsRef actions={formActions} />
           <div className={`${baseClass}__inputWrap`}>
             <EmailAndUsernameFields
               loginWithUsername={loginWithUsername}
