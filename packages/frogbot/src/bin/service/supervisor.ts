@@ -265,7 +265,8 @@ export async function supervise({
     switchTo = undefined;
     if (requested) mode = requested;
 
-    const dev = mode === 'dev';
+    const target = mode;
+    const dev = target === 'dev';
     const slot: Slot = !dev && current?.slot === 'a' ? 'b' : 'a';
     let stopped = false;
 
@@ -282,7 +283,7 @@ export async function supervise({
         rmSync(paths.build(slot), { recursive: true, force: true });
       }
 
-      const prepared = (await runtimes[mode].prepare(app)).typesFile;
+      const prepared = (await runtimes[target].prepare(app)).typesFile;
 
       if (prepared && prepared !== typesFile) {
         typesFile = prepared;
@@ -299,7 +300,7 @@ export async function supervise({
 
       stopped = dev && (await stopDevServer());
 
-      const server = await launch(slot, mode);
+      const server = await launch(slot, target);
 
       if (stopping) {
         await stopServer(server.child);
@@ -421,7 +422,7 @@ export async function supervise({
       switchTo = wanted;
       save({ switching: wanted });
       log.write('supervisor', `switching to ${wanted} mode`);
-      queue.trigger('update');
+      if (booted) queue.trigger('update');
     }
 
     rmSync(paths.modeRequest, { force: true });
@@ -465,6 +466,8 @@ export async function supervise({
 
     return;
   }
+
+  if (switchTo) queue.trigger('update');
 
   watcher = watchApp({
     dir,

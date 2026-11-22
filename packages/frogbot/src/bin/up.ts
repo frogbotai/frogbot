@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 
 import nextEnvImport from '@next/env';
 
@@ -407,11 +407,14 @@ async function keepRunning(
   if (switching) {
     log(`[frogbot] switching ${found.dir} to ${mode} mode`);
 
-    const done = await waitFor(
-      found,
-      (now) => !existsSync(paths.modeRequest) && !now.switching,
-      SWITCH_MS,
-    );
+    await waitFor(found, () => !existsSync(paths.modeRequest), MOVE_MS).catch(() => {
+      rmSync(paths.modeRequest, { force: true });
+      throw new Error(
+        `[frogbot] ${found.dir}'s supervisor didn't take the switch; one from an older FrogBot can't switch modes. Run \`frogbot down\`, then \`frogbot up${dev ? ' --dev' : ''}\``,
+      );
+    });
+
+    const done = await waitFor(found, (now) => !now.switching, SWITCH_MS);
 
     if (done.mode !== mode) {
       throw new Error(

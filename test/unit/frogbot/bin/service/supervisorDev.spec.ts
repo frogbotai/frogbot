@@ -85,7 +85,8 @@ async function superviseDev(
   {
     mode = 'dev' as const,
     prepare = () => {},
-  }: { mode?: 'dev' | 'production'; prepare?: () => void } = {},
+    build = () => Promise.resolve(),
+  }: { mode?: 'dev' | 'production'; prepare?: () => void; build?: () => Promise<void> } = {},
 ) {
   const before = new Set(process.listeners('SIGTERM'));
   const port = await freePort();
@@ -104,7 +105,7 @@ async function superviseDev(
         build: () => {
           calls.build += 1;
 
-          return Promise.resolve();
+          return build();
         },
         start: (app: App, _slot, serverPort) => server(PROD_SERVER, app.dir, serverPort),
       },
@@ -292,5 +293,33 @@ describe('the supervisor in dev mode', { timeout: 90_000 }, () => {
 
     expect(await get()).toMatch(/^prod /);
     expect(calls.build).toBe(2);
+  });
+
+  it('switches to dev once the first build lands when the switch comes during it, with one dev server', async () => {
+    const dir = app('frogbot-dev-boot-switch-');
+    let first = true;
+    const { calls, registration, get } = await superviseDev(dir, {
+      mode: 'production',
+      async build() {
+        if (!first) return;
+        first = false;
+        writeFileSync(join(dir, '.frogbot', 'mode-request'), 'dev\n');
+        process.emit(SETTINGS_SIGNAL, SETTINGS_SIGNAL);
+
+        await vi.waitFor(
+          () => expect(supervisorLog(dir).join('\n')).toContain('switching to dev'),
+          WAIT,
+        );
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(registration()).toMatchObject({ mode: 'dev', state: 'running' });
+      expect(registration().switching).toBeUndefined();
+    }, WAIT);
+
+    expect(await get()).toBe(`dev ${registration().serverPid}`);
+    expect(calls.devStarts).toBe(1);
+    expect(supervisorLog(dir).filter((line) => line.includes('failed'))).toEqual([]);
   });
 });
