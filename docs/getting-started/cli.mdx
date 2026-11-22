@@ -392,7 +392,7 @@ The app listens on `127.0.0.1` and `::1`, so `localhost` reaches it whichever ad
 frogbot status
 # FOLDER          URL                    MODE        STATE          UPTIME  LAST ERROR
 # /Users/me/crm   http://127.0.0.1:9696  production  running        2h 5m
-# /Users/me/hr    http://127.0.0.1:9697  dev         update failed  12m     generate:importmap failed (exit 1): SyntaxError: Unexpected token
+# /Users/me/hr    http://127.0.0.1:9697  dev         update failed  12m     importmap failed (exit 1): SyntaxError: Unexpected token
 ```
 
 `frogbot status` works from any folder. `MODE` is `production` or `dev`. The states are `starting`, `running`, `building`, `update failed`, `crashed`, and `stopped`. Three of them say more than their name:

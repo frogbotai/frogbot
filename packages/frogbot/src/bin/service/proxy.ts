@@ -93,7 +93,7 @@ export function createProxy() {
     const upstream = current;
 
     if (!upstream) {
-      socket.end('HTTP/1.1 503 Service Unavailable\r\n\r\n');
+      socket.end('HTTP/1.1 503 Service Unavailable\r\nRetry-After: 1\r\nContent-Length: 0\r\n\r\n');
 
       return;
     }

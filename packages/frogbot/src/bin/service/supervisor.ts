@@ -89,11 +89,12 @@ export async function supervise({
   const app: App = { dir, env, log };
   const proxy = createProxy();
   const backoff = createBackoff();
-  const draining = new Map<Slot, Set<ChildProcess>>();
+  const draining = new Map<Slot | 'dev', Set<ChildProcess>>();
   const reported: { kept?: string } = {};
   let current: Server | undefined;
   let mode = startMode;
   let switchTo: ServiceMode | undefined;
+  let queuedBySwitch = false;
   let relaunching: Promise<void> = Promise.resolve();
   let typesFile: string | undefined;
   let publicEnv = readPublicEnv(dir, env);
@@ -175,17 +176,17 @@ export async function supervise({
     watchCrash(server);
 
     if (previous && previous.child !== server.child) {
-      const servers = draining.get(previous.slot) ?? new Set();
+      const dev = previous.mode === 'dev';
+      const key = dev ? 'dev' : previous.slot;
+      const servers = draining.get(key) ?? new Set();
 
-      draining.set(previous.slot, servers.add(previous.child));
+      draining.set(key, servers.add(previous.child));
 
-      void (old ? drained(old, DRAIN_MS) : Promise.resolve())
+      void (old && !dev ? drained(old, DRAIN_MS) : Promise.resolve())
         .then(() => stopServer(previous.child))
         .finally(() => {
           servers.delete(previous.child);
-          if (!servers.size && draining.get(previous.slot) === servers) {
-            draining.delete(previous.slot);
-          }
+          if (!servers.size && draining.get(key) === servers) draining.delete(key);
         });
     }
 
@@ -268,7 +269,6 @@ export async function supervise({
     const target = mode;
     const dev = target === 'dev';
     const slot: Slot = !dev && current?.slot === 'a' ? 'b' : 'a';
-    let stopped = false;
 
     save({ state: booted ? 'building' : 'starting' });
 
@@ -278,10 +278,8 @@ export async function supervise({
     );
 
     try {
-      if (!dev) {
-        await Promise.all([...(draining.get(slot) ?? [])].map(exited));
-        rmSync(paths.build(slot), { recursive: true, force: true });
-      }
+      await Promise.all([...(draining.get(dev ? 'dev' : slot) ?? [])].map(exited));
+      if (!dev) rmSync(paths.build(slot), { recursive: true, force: true });
 
       const prepared = (await runtimes[target].prepare(app)).typesFile;
 
@@ -298,7 +296,7 @@ export async function supervise({
         await syncSchema(app, reported);
       }
 
-      stopped = dev && (await stopDevServer());
+      if (dev) await stopDevServer();
 
       const server = await launch(slot, target);
 
@@ -334,7 +332,7 @@ export async function supervise({
       }
 
       save({
-        state: current || stopped ? 'update failed' : 'crashed',
+        state: current || dev ? 'update failed' : 'crashed',
         lastError: summarize(error),
       });
     } finally {
@@ -371,9 +369,16 @@ export async function supervise({
     }
   }
 
-  const queue = createBuildQueue((kind: RunKind) =>
-    kind === 'restart' && mode === 'production' && !switchTo ? restartOnEnv() : update(),
-  );
+  const queue = createBuildQueue((kind: RunKind) => {
+    queuedBySwitch = false;
+
+    return kind === 'restart' && mode === 'production' && !switchTo ? restartOnEnv() : update();
+  });
+
+  const trigger = (kind: RunKind) => {
+    queuedBySwitch = false;
+    queue.trigger(kind);
+  };
 
   let watcher: ReturnType<typeof watchApp> | undefined;
   let stopOwnership = () => {};
@@ -420,10 +425,14 @@ export async function supervise({
       switchTo = wanted;
       save({ switching: wanted });
       log.write('supervisor', `switching to ${wanted} mode`);
-      if (booted) queue.trigger('update');
+      if (booted) {
+        queuedBySwitch = queue.busy && !queue.pending;
+        queue.trigger('update');
+      }
     } else if (wanted && !stopping && switchTo) {
       switchTo = undefined;
       save({ switching: undefined });
+      if (queuedBySwitch) queue.drop();
     }
 
     rmSync(paths.modeRequest, { force: true });
@@ -468,7 +477,7 @@ export async function supervise({
     return;
   }
 
-  if (switchTo) queue.trigger('update');
+  if (switchTo) trigger('update');
 
   watcher = watchApp({
     dir,
@@ -480,7 +489,7 @@ export async function supervise({
         if (!roots.length) return;
 
         log.write('supervisor', `${roots.join(', ')} changed; restarting the dev server`);
-        queue.trigger('update');
+        trigger('update');
 
         return;
       }
@@ -496,7 +505,7 @@ export async function supervise({
 
         if (!keys.length) {
           log.write('supervisor', 'only .env changed; restarting on the current build');
-          queue.trigger('restart');
+          trigger('restart');
 
           return;
         }
@@ -506,7 +515,7 @@ export async function supervise({
         log.write('supervisor', 'change seen; rebuilding');
       }
 
-      queue.trigger('update');
+      trigger('update');
     },
   });
 }
