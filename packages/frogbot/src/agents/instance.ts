@@ -35,6 +35,7 @@ import type { MCPConnections } from '../mcp/connections.js';
 import { resolveMCPTools } from '../mcp/tools.js';
 import { startAfterTurn } from '../memory/agent.js';
 import { pinnedMemoryPrompt, recallMemories, withRecalled } from '../memory/prompt.js';
+import { markMemoryAgentRun } from '../memory/run-context.js';
 import { canUseTool, NO_TOOL_ACCESS } from '../tools/access.js';
 import type { ToolApprovalOption } from '../tools/approval.js';
 import { resolveToolApproval, toApprovalStatus } from '../tools/approval.js';
@@ -135,14 +136,11 @@ export function createAgentInstance(
     stopWhen: agentConfig.stopWhen,
     ...(output === undefined ? {} : { output }),
     prepareCall: async ({ options, ...call }) => {
+      const agent = { slug: agentConfig.slug, runId: options.runId!, chatId: options.chatId };
       const ctx: ToolCtx = {
         req: options.req!,
         frogbot,
-        agent: {
-          slug: agentConfig.slug,
-          runId: options.runId!,
-          chatId: options.chatId,
-        },
+        agent: agentConfig.memory ? markMemoryAgentRun(agent) : agent,
         overrideAccess: options.overrideAccess === true,
       };
 
@@ -473,10 +471,10 @@ export function createAgentInstance(
         : (((Array.isArray(call.prompt) ? call.prompt : call.messages) as
             ModelMessage[] | undefined) ?? []);
 
-    startAfterTurn({ req: req!, frogbot, agent: { slug: agentConfig.slug, chatId } }, [
-      ...input,
-      ...response,
-    ]);
+    startAfterTurn(
+      { req: req!, frogbot, agent: markMemoryAgentRun({ slug: agentConfig.slug, chatId }) },
+      [...input, ...response],
+    );
   };
 
   const runGenerate = async <O extends AIOutput = never>(

@@ -100,6 +100,28 @@ describe('agent memory', () => {
     );
   });
 
+  it("skips memory.access on its own runs, which the app's default refuses for shared scopes", async () => {
+    model.respond(
+      {
+        toolCalls: [
+          {
+            id: 'call-agent',
+            name: 'memory_save',
+            input: { text: 'Agent run fact.', scope: 'agent', key: 'own-run' },
+          },
+        ],
+      },
+      { text: 'Saved.' },
+    );
+
+    await chat('Remember this for everyone.');
+
+    const { docs } = await frogbot.memory.list({ scope: 'agent', agent: agentSlug });
+
+    expect(docs.map(({ text }) => text)).toContain('Agent run fact.');
+    expect(contents(model.requests[1], 'tool').join('\n')).toContain('Saved [');
+  });
+
   it('puts pinned memories in the system prompt and recalled ones before the last user message', async () => {
     await frogbot.memory.save({ scope: 'me', user, text: 'Call me Sam.', pinned: true });
     await frogbot.memory.save({ scope: 'agent', agent: agentSlug, text: 'Acme pays net 30.' });

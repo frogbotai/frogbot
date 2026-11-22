@@ -1,5 +1,8 @@
+import { Forbidden } from 'payload';
+
 import type { FrogBot } from '../frogbot.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { checkMemoryAccess } from './access.js';
 import { isMemoryAdapterError } from './errors.js';
 import { memoryScopeWords, resolveMemoryScope } from './scopes.js';
 import type { MemoryCallArgs } from './types.js';
@@ -19,7 +22,7 @@ export type MemoryResolvedScope = { scope: string; scopeId: string };
 export type MemoryRun = {
   /** Spread into `frogbot.memory.*`. Runs of a `memory: true` agent skip `memory.access`; other callers keep theirs. */
   callArgs: Omit<MemoryCallArgs, 'scope'>;
-  /** The scope words this run can use, built-in words first, then custom words in declaration order. */
+  /** The scope words this run can read, built-in words first, then custom words in declaration order. */
   available: () => Promise<string[]>;
   /** Each available word with its scope ID, in the same order. */
   resolved: () => Promise<MemoryResolvedScope[]>;
@@ -28,6 +31,14 @@ export type MemoryRun = {
 };
 
 const runs = new WeakMap<FrogBotRequest, Map<string, Promise<MemoryRun>>>();
+const agentRuns = new WeakSet<MemoryRunSource['agent']>();
+
+/** Marks `agent` as a `memory: true` agent's own run, so its memory calls skip `memory.access`. */
+export function markMemoryAgentRun<T extends MemoryRunSource['agent']>(agent: T): T {
+  agentRuns.add(agent);
+
+  return agent;
+}
 
 async function loadChat({
   agent,
@@ -59,9 +70,10 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
     );
   }
 
-  const known = frogbot.config.agents?.find(({ slug }) => slug === source.agent.slug);
+  const own = agentRuns.has(source.agent);
   const chat = await loadChat(source);
-  const agent = known ? { slug: source.agent.slug } : undefined;
+  const agent = own ? { slug: source.agent.slug } : undefined;
+  const overrideAccess = own || source.overrideAccess !== false;
 
   let resolved: Promise<MemoryResolvedScope[]> | undefined;
 
@@ -69,12 +81,19 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
     const results = await Promise.all(
       memoryScopeWords(memory).map(async (scope) => {
         try {
-          return {
-            scope,
-            scopeId: await resolveMemoryScope({ options: memory, scope, req, agent, chat }),
-          };
+          const scopeId = await resolveMemoryScope({ options: memory, scope, req, agent, chat });
+
+          if (!overrideAccess && scope !== 'me') {
+            await checkMemoryAccess({
+              adapter: memory,
+              kind: 'read',
+              target: { req, namespace: memory.namespace ?? '', scope, scopeId },
+            });
+          }
+
+          return { scope, scopeId };
         } catch (error) {
-          if (isMemoryAdapterError(error)) return undefined;
+          if (isMemoryAdapterError(error) || error instanceof Forbidden) return undefined;
 
           throw error;
         }
@@ -89,7 +108,7 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
       req,
       ...(agent ? { agent: agent.slug } : {}),
       ...(chat ? { chat } : {}),
-      overrideAccess: known?.memory === true || source.overrideAccess !== false,
+      overrideAccess,
     },
     resolved: () => (resolved ??= resolveAll()),
     available: async () => (await (resolved ??= resolveAll())).map(({ scope }) => scope),
@@ -106,9 +125,12 @@ export function memoryRun(source: MemoryRunSource): Promise<MemoryRun> {
     runs.set(source.req, byAgent);
   }
 
-  const key = [source.agent.slug, source.agent.chatId ?? '', source.overrideAccess !== false].join(
-    '\u0000',
-  );
+  const key = [
+    source.agent.slug,
+    source.agent.chatId ?? '',
+    source.overrideAccess !== false,
+    agentRuns.has(source.agent),
+  ].join('\u0000');
 
   let run = byAgent.get(key);
 

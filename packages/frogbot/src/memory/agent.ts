@@ -55,6 +55,6 @@ export function startAfterTurn(source: MemoryRunSource, messages: readonly Model
       messages,
     });
   })().catch((error: unknown) => {
-    source.frogbot.logger.error({ error }, '[frogbot] Memory afterTurn failed.');
+    source.frogbot.logger.error({ err: error }, '[frogbot] Memory afterTurn failed.');
   });
 }
