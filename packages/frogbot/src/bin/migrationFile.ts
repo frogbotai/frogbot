@@ -4,14 +4,17 @@ const SIGNATURE = /(export async function (?:up|down)\(\{)([^}]*)(\}: Migrate(?:
 
 const ADAPTER_IMPORT = /from '@payloadcms\/(db-[\w-]+)'/g;
 
-/** Gives a generated migration FrogBot's shape: no `payload` argument, types from the `@frogbotai` adapter. */
+/**
+ * Gives a generated migration FrogBot's shape: no `payload` argument, and no `session` (MongoDB's comes from
+ * `migrationDatabase(req)`), with types from the `@frogbotai` adapter.
+ */
 export function toFrogBotMigration(source: string): string {
   return source
     .replace(SIGNATURE, (_, open: string, names: string, close: string) => {
       const kept = names
         .split(',')
         .map((name) => name.trim())
-        .filter((name) => name && name !== 'payload');
+        .filter((name) => name && name !== 'payload' && name !== 'session');
 
       return `${open} ${kept.join(', ')} ${close}`;
     })

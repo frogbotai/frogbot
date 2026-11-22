@@ -145,7 +145,7 @@ default, migrations will be named using a timestamp.
 npx frogbot migrate:create optional-name-here
 ```
 
-The file imports its types and `sql` from your adapter, and its `up` and `down` take `{ db, req }` (MongoDB migrations get `{ req, session }`; use `migrationDatabase(req)`).
+The file imports its types and `sql` from your adapter, and its `up` and `down` take `{ db, req }` (`{ req }` on MongoDB, with `const { db, session } = await migrationDatabase(req)`).
 
 See the [flags table](#commands) for `--name`, `--file`, `--skip-empty`, and `--force-accept-warning`.
 

@@ -56,11 +56,11 @@ describe('toFrogBotMigration', () => {
     },
   );
 
-  it('gives a MongoDB migration { req, session } from @frogbotai/db-mongodb', () => {
+  it('gives a MongoDB migration { req } from @frogbotai/db-mongodb', () => {
     const source = toFrogBotMigration(mongo);
 
-    expect(source).toContain('export async function up({ req, session }: MigrateUpArgs)');
-    expect(source).toContain('export async function down({ req, session }: MigrateDownArgs)');
+    expect(source).toContain('export async function up({ req }: MigrateUpArgs)');
+    expect(source).toContain('export async function down({ req }: MigrateDownArgs)');
     expect(source).toContain("} from '@frogbotai/db-mongodb'");
     expect(source).not.toMatch(/payload/);
   });
