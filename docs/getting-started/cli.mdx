@@ -118,12 +118,14 @@ It is shown only this once. Change it on the account page after signing in.
 ```
 
 - **Collection.** It writes to `admin.user`'s collection, or the auth collection `--collection <slug>` names.
-- **Only the first user.** It refuses, exiting `1`, when the collection has any user, trashed ones included, as the create-first-user page does. Add more users in the admin.
+- **Only the first user.** It refuses, exiting `1`, when the collection has any user, trashed ones included, as the create-first-user page does. It takes the same per-collection lock as sign-in, so two runs, or a run and a sign-in, can't both make the first user. Add more users in the admin.
 - **Password.** Each run makes a new random password (32 random bytes). There is no option or variable to set one, and it is stored only as the collection's usual hash. Change it on the account page.
 - **Required fields.** The collection's hooks, validation and required fields apply. When one has no value, it exits `1` and names the field; pass string fields with `--set <field>=<value>` (repeatable).
 - **Verification.** On a collection with `auth.verify`, the user is created already verified and no verification email is sent.
 - **Database.** It first prints the database it will write to: a SQLite `file:` path, or the host and database name without credentials. For anything but a local `file:` SQLite database it exits `1` without writing, unless you pass `--yes`.
 - **Local only.** It runs only in the terminal, against the app's code, database and `FROGBOT_SECRET`. No HTTP endpoint or admin button does the same. A login made this way reaches a deployed app only if you deploy with `--data`, which asks first.
+
+## Deploy
 
 
 ```bash

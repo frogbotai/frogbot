@@ -4,6 +4,7 @@ import { firstUser } from '../auth/firstUser.js';
 import type { FrogBotSanitizedConfig } from '../config/sanitized.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { FrogBot } from '../frogbot.js';
+import { toPayloadRequest } from '../seams/request.js';
 import { formatCliError } from './formatCliError.js';
 
 export const usersUsage =
@@ -92,6 +93,15 @@ function fieldErrors(error: unknown): string | undefined {
   return fields?.length ? fields.join(', ') : undefined;
 }
 
+function createError(slug: string, error: unknown): string {
+  const fields = fieldErrors(error);
+
+  if (!fields) return formatCliError(error).replace(/^\[frogbot\] (error: )?/, '');
+  if (fields.startsWith('email ')) return `${slug} rejected the email: ${fields}.`;
+
+  return `${slug} rejected the user: ${fields}. Pass a missing field with --set <field>=<value>.`;
+}
+
 function fail(message: string): number {
   console.error(`[frogbot] users create: ${message}`);
 
@@ -147,37 +157,45 @@ export async function users(
   let frogbot: FrogBot | undefined;
 
   try {
-    const { FrogBot } = await import('../frogbot.js');
+    const [{ FrogBot }, { withSessionOperation }] = await Promise.all([
+      import('../frogbot.js'),
+      import('../auth/operation.js'),
+    ]);
 
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
 
-    const { docs } = await frogbot.db.find({ collection: slug, limit: 1, pagination: false });
+    const instance = frogbot;
+    const req = await instance.createRequest();
+    const created = await withSessionOperation({
+      req,
+      collectionSlug: slug,
+      fn: async () => {
+        const { docs } = await instance.db.find({
+          collection: slug,
+          limit: 1,
+          pagination: false,
+          req: toPayloadRequest(req),
+        });
 
-    if (docs.length > 0) {
-      return fail(
-        `the ${slug} collection already has users, so nothing was written. Sign in with one of them, or add users in the admin.`,
-      );
-    }
+        if (docs.length > 0) {
+          return `the ${slug} collection already has users, so nothing was written. Sign in with one of them, or add users in the admin.`;
+        }
 
-    const { password, create } = firstUser({
-      collection,
-      email: options.email,
-      data: options.data,
+        const user = firstUser({ collection, email: options.email, data: options.data });
+
+        try {
+          await instance.create({ ...user.create, req });
+        } catch (error) {
+          return createError(slug, error);
+        }
+
+        return user;
+      },
     });
 
-    try {
-      await frogbot.create(create);
-    } catch (error) {
-      const fields = fieldErrors(error);
+    if (typeof created === 'string') return fail(created);
 
-      if (fields) {
-        return fail(
-          `${slug} rejected the user: ${fields}. Pass a missing field with --set <field>=<value>.`,
-        );
-      }
-
-      return fail(formatCliError(error).replace(/^\[frogbot\] (error: )?/, ''));
-    }
+    const { password } = created;
 
     console.log(`Created ${options.email} in ${slug}.`);
     console.log(`Password: ${password}`);
