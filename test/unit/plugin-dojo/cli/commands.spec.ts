@@ -262,7 +262,12 @@ const destructive: { args: string[]; asked: string; replies?: Record<string, unk
     args: ['handovers', 'remove-access', 'h1'],
     asked: 'Remove 1 person outside Acme from Deals? ada@example.com',
     replies: {
-      'GET /api/handovers/h1/details': { ...handover, status: 'accepted', toWorkspace: 'Acme' },
+      'GET /api/handovers/h1/details': {
+        ...handover,
+        status: 'accepted',
+        toWorkspace: 'Acme',
+        canRemove: true,
+      },
     },
   },
   {
