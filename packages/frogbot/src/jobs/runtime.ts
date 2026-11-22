@@ -13,7 +13,8 @@ import { compareAndSet } from '../database/compareAndSet.js';
 import { toPayloadRequest } from '../seams/request.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
 import { type JobLogDatabase, jobLogOperations } from './log.js';
-import { getJobRunContext, targetJob, withJobRun } from './run.js';
+import { getJobRunContext, isJobClaim, targetJob, withJobRun } from './run.js';
+import { dropLeases, holdLease, isStopping, trackClaim, trackJobs } from './stop.js';
 import type { Jobs, JobsRuntime } from './types.js';
 import { resumeWaitpoint } from './waitpoints/operations.js';
 import type { WaitpointReplay } from './waitpoints/types.js';
@@ -54,8 +55,77 @@ export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
   const nativeUpdateJobs = payload.db.updateJobs.bind(payload.db);
   const nativeDeleteMany = payload.db.deleteMany.bind(payload.db);
 
+  const release = (tokens: string[], req?: Parameters<typeof nativeUpdateJobs>[0]['req']) =>
+    nativeUpdateJobs({
+      data: { processingToken: null, processingUntil: null },
+      req,
+      returning: false,
+      where: { processingToken: { in: tokens } },
+    });
+
+  trackJobs({ payload, release });
+
+  const transactions = new Map<number | string, (() => void)[]>();
+
+  const endTransaction = (end: typeof payload.db.commitTransaction): typeof end => {
+    const nativeEnd = end.bind(payload.db);
+
+    return async (id) => {
+      try {
+        return await nativeEnd(id);
+      } finally {
+        const key = await id;
+
+        for (const resolve of transactions.get(key) ?? []) resolve();
+
+        transactions.delete(key);
+      }
+    };
+  };
+
+  payload.db.commitTransaction = endTransaction(payload.db.commitTransaction);
+  payload.db.rollbackTransaction = endTransaction(payload.db.rollbackTransaction);
+
   payload.db.updateJobs = async (args) => {
     const context = getJobRunContext();
+
+    if (isJobClaim(args.data)) {
+      const token = args.data.processingToken;
+      const unclaimed = args.returning === false ? null : [];
+
+      if (isStopping(payload)) return unclaimed;
+
+      if (context?.payload === payload) context.tokens.add(token);
+
+      holdLease({ payload, token });
+
+      const transactionID = await args.req?.transactionID;
+      const ended =
+        transactionID === undefined
+          ? undefined
+          : new Promise<void>((resolve) => {
+              transactions.set(transactionID, [
+                ...(transactions.get(transactionID) ?? []),
+                resolve,
+              ]);
+            });
+
+      const claim = (async () => {
+        const claimed = await nativeUpdateJobs(args);
+
+        if (!isStopping(payload)) return claimed;
+
+        await release([token], args.req);
+        dropLeases({ payload, tokens: [token] });
+
+        return unclaimed;
+      })();
+
+      trackClaim({ payload, settled: ended ? Promise.all([claim, ended]) : claim });
+
+      return claim;
+    }
+
     const target = targetJob(args);
     const rearm =
       context?.payload === payload && target.id !== undefined

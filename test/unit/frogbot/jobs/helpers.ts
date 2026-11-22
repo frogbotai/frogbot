@@ -61,6 +61,8 @@ export async function setup({
       Promise.resolve({ docs: rows.filter((row) => matches(row, where)) }),
     ),
     deleteMany: vi.fn(() => Promise.resolve()),
+    commitTransaction: vi.fn(() => Promise.resolve()),
+    rollbackTransaction: vi.fn(() => Promise.resolve()),
   } as unknown as DatabaseAdapter;
 
   payload.logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Payload['logger'];
