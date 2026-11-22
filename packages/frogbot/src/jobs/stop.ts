@@ -69,24 +69,17 @@ export function holdLease({ payload, token }: { payload: Payload; token: string 
   if (payload.crons.length) watchSignals(payload);
 }
 
-/** Runs a claim that {@link stopJobs} waits for, so it never misses a claim that hasn't committed. */
-export async function trackClaim<T>({
-  payload,
-  claim,
-}: {
-  payload: Payload;
-  claim: () => Promise<T>;
-}): Promise<T> {
+/**
+ * Makes {@link stopJobs} wait for a claim until `settled`, when its transaction has committed or
+ * rolled back, so the release never misses a claim it can't see yet.
+ */
+export function trackClaim({ payload, settled }: { payload: Payload; settled: Promise<unknown> }) {
   const claims = states.get(payload)?.claims;
-  const pending = claim();
+  const pending = settled.catch(() => undefined);
 
   claims?.add(pending);
 
-  try {
-    return await pending;
-  } finally {
-    claims?.delete(pending);
-  }
+  void pending.then(() => claims?.delete(pending));
 }
 
 /** Forgets leases whose run has finished. */
