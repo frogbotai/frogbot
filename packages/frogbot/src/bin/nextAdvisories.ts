@@ -5,7 +5,7 @@ const REGISTRY = 'https://registry.npmjs.org';
 
 const MAX_ROUNDS = 5;
 
-type Version = [number, number, number];
+type Version = [major: number, minor: number, patch: number, release: 0 | 1];
 
 type Comparator = { op: '<' | '<=' | '=' | '>' | '>='; version: Version };
 
@@ -43,22 +43,56 @@ export type NextFixFindProps = {
   version: string;
 };
 
-function parseVersion(text: string): undefined | Version {
-  const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(text.trim());
+const VERSION = /^v?(\d+)\.(\d+)\.(\d+)(-[\w.-]+)?(\+[\w.-]+)?$/;
 
-  return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : undefined;
+const PARTIAL = /^v?(\d+)(?:\.(\d+))?(?:\.[x*])?$/i;
+
+function parseVersion(text: string): undefined | Version {
+  const match = VERSION.exec(text.trim());
+
+  return match
+    ? [Number(match[1]), Number(match[2]), Number(match[3]), match[4] ? 0 : 1]
+    : undefined;
 }
 
 function formatVersion(version: Version): string {
-  return version.join('.');
+  return version.slice(0, 3).join('.');
 }
 
 function compare(a: Version, b: Version): number {
-  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3];
 }
 
 function nextPatch(version: Version): Version {
-  return [version[0], version[1], version[2] + 1];
+  return [version[0], version[1], version[2] + 1, 1];
+}
+
+function release(version: Version): Version {
+  return [version[0], version[1], version[2], 1];
+}
+
+function parseComparator(op: Comparator['op'], text: string): Comparator[] | undefined {
+  const version = parseVersion(text);
+
+  if (version) return [{ op, version }];
+
+  const partial = PARTIAL.exec(text.trim());
+
+  if (!partial) return undefined;
+
+  const major = Number(partial[1]);
+  const minor = partial[2] === undefined ? undefined : Number(partial[2]);
+  const low: Version = [major, minor ?? 0, 0, 0];
+  const high: Version = minor === undefined ? [major + 1, 0, 0, 0] : [major, minor + 1, 0, 0];
+
+  if (op === '<' || op === '>=') return [{ op, version: low }];
+  if (op === '<=') return [{ op: '<', version: high }];
+  if (op === '>') return [{ op: '>=', version: high }];
+
+  return [
+    { op: '>=', version: low },
+    { op: '<', version: high },
+  ];
 }
 
 function parseRange(range: string): Comparator[][] | undefined {
@@ -71,11 +105,11 @@ function parseRange(range: string): Comparator[][] | undefined {
       if (token === '*') continue;
 
       const match = /^(<=|>=|<|>|=)?(.+)$/.exec(token);
-      const version = match && parseVersion(match[2]);
+      const comparators = match && parseComparator((match[1] ?? '=') as Comparator['op'], match[2]);
 
-      if (!match || !version) return undefined;
+      if (!comparators) return undefined;
 
-      set.push({ op: (match[1] ?? '=') as Comparator['op'], version });
+      set.push(...comparators);
     }
 
     sets.push(set);
@@ -101,6 +135,7 @@ function satisfies(version: Version, sets: Comparator[][]): boolean {
 
 function boundaries(sets: Comparator[][]): Version[] {
   return sets.flat().flatMap(({ op, version }) => {
+    if (version[3] === 0) return [release(version)];
     if (op === '<' || op === '>=') return [version];
     if (op === '<=' || op === '>') return [nextPatch(version)];
 
@@ -149,49 +184,63 @@ type BulkAdvisory = {
   vulnerable_versions: string;
 };
 
+type RegistryProps = Required<Pick<NextAdvisoriesCheckProps, 'fetch' | 'registry' | 'timeoutMs'>>;
+
+async function request(
+  props: RegistryProps,
+  path: string,
+  init: RequestInit = {},
+): Promise<Response | undefined> {
+  try {
+    return await props.fetch(`${props.registry}${path}`, {
+      ...init,
+      signal: AbortSignal.timeout(props.timeoutMs),
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 async function queryAdvisories(
-  props: Required<Pick<NextAdvisoriesCheckProps, 'fetch' | 'registry' | 'timeoutMs'>>,
+  props: RegistryProps,
   version: string,
-): Promise<NextAdvisory[]> {
-  const response = await props.fetch(`${props.registry}/-/npm/v1/security/advisories/bulk`, {
+): Promise<NextAdvisory[] | undefined> {
+  const response = await request(props, '/-/npm/v1/security/advisories/bulk', {
     body: JSON.stringify({ next: [version] }),
     headers: { 'content-type': 'application/json' },
     method: 'POST',
-    signal: AbortSignal.timeout(props.timeoutMs),
   });
 
-  if (!response.ok) throw new Error(`npm advisories answered ${response.status}`);
+  if (!response?.ok) return undefined;
 
-  const body = (await response.json()) as { next?: BulkAdvisory[] };
+  const body = (await response.json().catch(() => undefined)) as
+    undefined | { next?: BulkAdvisory[] };
 
-  return (body.next ?? []).map((advisory) => ({
-    id: advisory.id,
-    severity: advisory.severity,
-    title: advisory.title,
-    url: advisory.url,
-    vulnerableVersions: advisory.vulnerable_versions,
-  }));
+  return (
+    body?.next?.map((advisory) => ({
+      id: advisory.id,
+      severity: advisory.severity,
+      title: advisory.title,
+      url: advisory.url,
+      vulnerableVersions: advisory.vulnerable_versions,
+    })) ?? (body ? [] : undefined)
+  );
 }
 
-async function published(
-  props: Required<Pick<NextAdvisoriesCheckProps, 'fetch' | 'registry' | 'timeoutMs'>>,
-  version: string,
-): Promise<boolean> {
-  const response = await props.fetch(`${props.registry}/next/${version}`, {
+async function published(props: RegistryProps, version: string): Promise<boolean | undefined> {
+  const response = await request(props, `/next/${version}`, {
     headers: { accept: 'application/json' },
-    signal: AbortSignal.timeout(props.timeoutMs),
   });
 
-  if (response.status === 404) return false;
-  if (!response.ok) throw new Error(`npm registry answered ${response.status}`);
+  if (response?.status === 404) return false;
 
-  return true;
+  return response?.ok ? true : undefined;
 }
 
 /**
  * Asks npm's bulk advisory endpoint about a `next` version and finds the version that fixes it.
  * Each candidate fix is checked against npm too, so an advisory that only covers newer versions still counts.
- * Returns `undefined` when the registry can't be reached or answers with an error.
+ * Returns `undefined` when the registry can't be reached or answers with an error, and throws when an advisory's range can't be read.
  */
 export async function checkNextAdvisories({
   fetch = globalThis.fetch,
@@ -202,31 +251,28 @@ export async function checkNextAdvisories({
 }: NextAdvisoriesCheckProps): Promise<NextAdvisoryReport | undefined> {
   const props = { fetch, registry, timeoutMs };
 
-  try {
-    const advisories = await queryAdvisories(props, version);
+  const advisories = await queryAdvisories(props, version);
 
-    if (advisories.length === 0) return { advisories, fix: version, peerRange, version };
+  if (!advisories) return undefined;
+  if (advisories.length === 0) return { advisories, fix: version, peerRange, version };
 
-    const ranges = new Set(advisories.map((advisory) => advisory.vulnerableVersions));
+  const ranges = new Set(advisories.map((advisory) => advisory.vulnerableVersions));
 
-    for (let round = 0; round < MAX_ROUNDS; round++) {
-      const fix = findNextFix({ peerRange, version, vulnerableRanges: [...ranges] });
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const fix = findNextFix({ peerRange, version, vulnerableRanges: [...ranges] });
 
-      if (!fix) return { advisories, fix: undefined, peerRange, version };
+    if (!fix) return { advisories, fix: undefined, peerRange, version };
 
-      const fixAdvisories = await queryAdvisories(props, fix);
+    const fixAdvisories = await queryAdvisories(props, fix);
+    const exists = fixAdvisories?.length === 0 ? await published(props, fix) : false;
 
-      if (fixAdvisories.length === 0 && (await published(props, fix))) {
-        return { advisories, fix, peerRange, version };
-      }
+    if (!fixAdvisories || exists === undefined) return undefined;
+    if (exists) return { advisories, fix, peerRange, version };
 
-      ranges.add(fix);
+    ranges.add(fix);
 
-      for (const advisory of fixAdvisories) ranges.add(advisory.vulnerableVersions);
-    }
-
-    return undefined;
-  } catch {
-    return undefined;
+    for (const advisory of fixAdvisories) ranges.add(advisory.vulnerableVersions);
   }
+
+  return undefined;
 }

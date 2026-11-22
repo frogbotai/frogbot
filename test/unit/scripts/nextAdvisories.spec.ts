@@ -62,6 +62,16 @@ describe('next-advisories', () => {
     expect(result.lines.at(-1)).toContain('peer range has to move');
   });
 
+  it('names a range it cannot read instead of blaming the registry', async () => {
+    const fetch = bulk([{ severity: 'high', title: 'odd', vulnerable_versions: '^16.0.0' }]);
+    const result = await nextAdvisories({ fetch, version: '16.4.6' });
+
+    expect(result).toEqual({
+      code: 1,
+      lines: ["✖ Couldn't check next 16.4.6: can't read the ranges for next 16.4.6."],
+    });
+  });
+
   it('fails when npm cannot be reached', async () => {
     const fetch = vi.fn<typeof fetch>(() => Promise.reject(new TypeError('fetch failed')));
 

@@ -5,7 +5,11 @@ import { checkNextAdvisories } from '../packages/frogbot/src/bin/nextAdvisories.
 import { catalogVersion } from './lib/workspace.mjs';
 
 export async function nextAdvisories({ fetch, version = catalogVersion('next') } = {}) {
-  const report = await checkNextAdvisories({ fetch, version });
+  const report = await checkNextAdvisories({ fetch, version }).catch((error) => error);
+
+  if (report instanceof Error) {
+    return { code: 1, lines: [`✖ Couldn't check next ${version}: ${report.message}.`] };
+  }
 
   if (!report) {
     return {

@@ -85,6 +85,38 @@ describe('findNextFix', () => {
     ).toBe('16.4.4');
   });
 
+  it('reads prerelease and partial bounds the way npm writes them', () => {
+    expect(
+      findNextFix({
+        peerRange: NEXT_PEER_RANGE,
+        version: '16.4.6',
+        vulnerableRanges: ['>=16.4.0-canary.0 <16.4.8', '>=16.4 <16.4.7'],
+      }),
+    ).toBe('16.4.8');
+
+    expect(
+      findNextFix({
+        peerRange: NEXT_PEER_RANGE,
+        version: '16.4.2',
+        vulnerableRanges: ['>=16.0.0-canary.0 <16.4.9-canary.0', '<=16.3'],
+      }),
+    ).toBe('16.4.9');
+
+    expect(
+      findNextFix({ peerRange: '>=15.0.0 <16.0.0', version: '15.0.0', vulnerableRanges: ['15.0'] }),
+    ).toBe('15.1.0');
+  });
+
+  it('finds a release fix for an installed canary', () => {
+    expect(
+      findNextFix({
+        peerRange: '>=16.4.0-0 <17.0.0',
+        version: '16.5.0-canary.3',
+        vulnerableRanges: ['>=16.5.0-canary.0 <16.5.0'],
+      }),
+    ).toBe('16.5.0');
+  });
+
   it('throws on a range it cannot read', () => {
     expect(() =>
       findNextFix({ peerRange: NEXT_PEER_RANGE, version: '16.4.2', vulnerableRanges: ['^16'] }),
@@ -147,6 +179,24 @@ describe('checkNextAdvisories', () => {
       fix: '16.4.6',
       peerRange: NEXT_PEER_RANGE,
       version: '16.4.6',
+    });
+  });
+
+  it('throws instead of reporting offline when a range cannot be read', async () => {
+    const fetch = fakeRegistry({ advisories: { '16.4.2': [advisory(1, '^16.0.0')] } });
+
+    await expect(checkNextAdvisories({ fetch, version: '16.4.2' })).rejects.toThrow(
+      "can't read the ranges",
+    );
+  });
+
+  it('names the fix for a canary-bounded advisory', async () => {
+    const fetch = fakeRegistry({
+      advisories: { '16.4.6': [advisory(1, '>=16.4.0-canary.0 <16.4.8')] },
+    });
+
+    expect(await checkNextAdvisories({ fetch, version: '16.4.6' })).toMatchObject({
+      fix: '16.4.8',
     });
   });
 
