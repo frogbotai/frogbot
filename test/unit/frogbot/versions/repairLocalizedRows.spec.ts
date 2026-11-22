@@ -47,8 +47,10 @@ const row = (id: string, en: string, es?: string) => ({
   text: es === undefined ? { en } : { en, es },
 });
 
+const sent = new Set(['m1', 'm2', 'm3']);
+
 const repair = (before: Record<string, unknown>, after: Record<string, unknown>) =>
-  repairLocalizedRows({ fields, blocks: [intl], before, after, locales: ['es'] });
+  repairLocalizedRows({ fields, blocks: [intl], before, after, locales: ['es'], sent });
 
 describe('repairLocalizedRows', () => {
   it('re-pairs the other locale by row id in blocks, block references, arrays in tabs and nested blocks', () => {
@@ -93,6 +95,13 @@ describe('repairLocalizedRows', () => {
     });
   });
 
+  it('leaves a row whose id the caller did not send as Payload wrote it', () => {
+    const before = { layout: [row('m1', 'Hello', 'Hola'), row('m2', 'Bye', 'Adios')] };
+    const after = { layout: [row('g1', 'Hello', 'Hola'), row('g2', 'Bye', 'Adios')] };
+
+    expect(repair(before, after)).toBeNull();
+  });
+
   it('restores a locale Payload dropped when the row moved past the old length', () => {
     const before = { layout: [row('m1', 'Hello', 'Hola')] };
     const after = { layout: [row('m3', 'New', 'Hola'), row('m1', 'Hello')] };
@@ -123,7 +132,9 @@ describe('repairLocalizedRows', () => {
     const before = { layout: [row('m1', 'Hello', 'Hola'), row('m2', 'Bye', 'Adios')] };
     const after = { layout: [row('m2', 'Bye', 'Hola'), row('m1', 'Hello', 'Adios')] };
 
-    expect(repairLocalizedRows({ fields, blocks: [intl], before, after, locales: [] })).toBeNull();
+    expect(
+      repairLocalizedRows({ fields, blocks: [intl], before, after, locales: [], sent }),
+    ).toBeNull();
   });
 });
 

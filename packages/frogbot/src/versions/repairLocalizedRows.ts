@@ -83,6 +83,7 @@ type RepairArgs = {
   fields: readonly Field[];
   blocks: Blocks;
   locales: readonly string[];
+  sent: ReadonlySet<string>;
 };
 
 function repairValue(value: unknown, before: unknown, locales: readonly string[]): unknown {
@@ -117,7 +118,10 @@ function repairRows(rows: unknown, beforeRows: unknown, field: Field, args: Repa
         ? blockFields(field.blocks, args.blocks, row.blockType)
         : rowFields(field, args.blocks);
 
-    const before = row.id == null ? undefined : previous.get(String(row.id));
+    const id = row.id == null ? undefined : String(row.id);
+    const before = id === undefined ? undefined : previous.get(id);
+
+    if (!before && (id === undefined || !args.sent.has(id))) return row;
 
     return fieldSets.reduce<Data>(
       (acc, fields) => repairLevel(acc, isRecord(before) ? before : undefined, fields, args, true),
@@ -203,7 +207,9 @@ function repairLevel(
  * single-locale publish, `before` the main row before that write, both read
  * with `locale: 'all'`. `locales` are the locales to restore from `before`:
  * the ones Payload kept, other than the saved one. A row with no match in
- * `before` gets none of them. Returns the changed top-level fields, or `null`.
+ * `before` gets none of them when its id is in `sent`, the row ids the caller
+ * sent; a row Payload gave an id is left as Payload wrote it. Returns the
+ * changed top-level fields, or `null`.
  *
  * Works around https://github.com/frogbotai/frogbot/issues/579 (Payload's
  * `mergeLocalizedData` pairs rows by position). Delete with its hooks once
@@ -225,15 +231,61 @@ export function repairLocalizedRows({
   return Object.keys(changed).length ? changed : null;
 }
 
-type RepairState = { publishes: Set<string>; before: Map<string, Data> };
+function mainLocalized(fields: readonly Field[], refs: Blocks): boolean {
+  return fields.some((field) => {
+    if (field.type === 'array' || field.type === 'blocks') return false;
 
-const states = new WeakMap<PayloadRequest, RepairState>();
+    if ('localized' in field && field.localized) return true;
 
-function stateFor(req: PayloadRequest): RepairState {
+    if (field.type === 'tabs') return field.tabs.some((tab) => mainLocalized(tab.fields, refs));
+
+    return 'fields' in field && mainLocalized(field.fields, refs);
+  });
+}
+
+function mainLocalizedKeys(fields: readonly Field[], refs: Blocks): string[] {
+  return fields.flatMap((field) => {
+    if (field.type === 'tabs') {
+      return field.tabs.flatMap((tab) => {
+        if (!('name' in tab) || !tab.name) return mainLocalizedKeys(tab.fields, refs);
+
+        return tab.localized || mainLocalized(tab.fields, refs) ? [tab.name] : [];
+      });
+    }
+
+    if (!('name' in field) || !field.name) {
+      return 'fields' in field ? mainLocalizedKeys(field.fields, refs) : [];
+    }
+
+    return mainLocalized([field], refs) ? [field.name] : [];
+  });
+}
+
+function rowIds(value: unknown, ids: Set<string>): Set<string> {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      if (isRecord(entry) && (typeof entry.id === 'string' || typeof entry.id === 'number')) {
+        ids.add(String(entry.id));
+      }
+
+      rowIds(entry, ids);
+    }
+  } else if (isRecord(value)) {
+    for (const entry of Object.values(value)) rowIds(entry, ids);
+  }
+
+  return ids;
+}
+
+type Publish = { before: Map<string, Data>; sent: Set<string> };
+
+const states = new WeakMap<PayloadRequest, Map<string, Publish>>();
+
+function stateFor(req: PayloadRequest): Map<string, Publish> {
   let state = states.get(req);
 
   if (!state) {
-    state = { publishes: new Set(), before: new Map() };
+    state = new Map();
     states.set(req, state);
   }
 
@@ -248,13 +300,19 @@ const markPublish: CollectionBeforeOperationHook = ({ args, collection, operatio
   const options: Data = isRecord(args) ? args : {};
   const data = isRecord(options.data) ? options.data : {};
   const locale = options.locale ?? req.locale;
-  const savingDraft = truthy(options.draft) && data._status !== 'published';
-  const allLocales = truthy(options.publishAllLocales) || truthy(options.unpublishAllLocales);
+  const draft = truthy(options.draft);
+  const savingDraft = draft && data._status !== 'published';
+  const allLocales =
+    (truthy(options.publishAllLocales) && !draft) || truthy(options.unpublishAllLocales);
+
   const singleLocale = typeof locale === 'string' && locale !== 'all';
   const state = stateFor(req);
 
-  if (!savingDraft && !allLocales && singleLocale) state.publishes.add(collection.slug);
-  else state.publishes.delete(collection.slug);
+  if (!savingDraft && !allLocales && singleLocale) {
+    state.set(collection.slug, { before: new Map(), sent: rowIds(data, new Set()) });
+  } else {
+    state.delete(collection.slug);
+  }
 
   return args;
 };
@@ -278,13 +336,13 @@ const keepBefore: CollectionBeforeChangeHook = async ({
 
   if (operation !== 'update' || (typeof id !== 'string' && typeof id !== 'number')) return data;
 
-  const state = stateFor(req);
+  const publish = states.get(req)?.get(collection.slug);
 
-  if (!state.publishes.has(collection.slug)) return data;
+  if (!publish) return data;
 
   const before = await mainRow(req, collection.slug, id);
 
-  if (before) state.before.set(`${collection.slug}:${id}`, before);
+  if (before) publish.before.set(String(id), before);
 
   return data;
 };
@@ -305,29 +363,42 @@ const repairAfter: CollectionAfterChangeHook = async ({ collection, doc, operati
 
   if (operation !== 'update' || (typeof id !== 'string' && typeof id !== 'number')) return doc;
 
-  const state = states.get(req);
-  const key = `${collection.slug}:${id}`;
-  const before = state?.before.get(key);
+  const publish = states.get(req)?.get(collection.slug);
+  const before = publish?.before.get(String(id));
   const { localization } = req.payload.config;
   const locale = req.locale;
 
-  state?.before.delete(key);
+  publish?.before.delete(String(id));
 
-  if (!before || !localization || !locale || locale === 'all') return doc;
+  if (!publish || !before || !localization || !locale || locale === 'all') return doc;
 
   const after = await mainRow(req, collection.slug, id);
 
   if (!after) return doc;
 
-  const data = repairLocalizedRows({
+  const blocks = req.payload.config.blocks ?? [];
+  const changed = repairLocalizedRows({
     after,
     before,
-    blocks: req.payload.config.blocks ?? [],
+    blocks,
     fields: collection.fields,
     locales: keptLocales(before, after, locale, localization.localeCodes),
+    sent: publish.sent,
   });
 
-  if (data) await req.payload.db.updateOne({ id, collection: collection.slug, data, locale, req });
+  if (!changed) return doc;
+
+  const mainKeys = [...mainLocalizedKeys(collection.fields, blocks), '_status'];
+  const data = mainKeys.some((key) => key in changed)
+    ? {
+        ...Object.fromEntries(
+          mainKeys.filter((key) => key in after).map((key) => [key, after[key]]),
+        ),
+        ...changed,
+      }
+    : changed;
+
+  await req.payload.db.updateOne({ id, collection: collection.slug, data, locale, req });
 
   return doc;
 };
