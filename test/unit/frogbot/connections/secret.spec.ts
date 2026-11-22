@@ -122,6 +122,26 @@ describe('static connection endpoints', () => {
     expect(text).not.toContain('extra');
   });
 
+  it('names the field of a preprocessed auth schema', async () => {
+    const { endpoints, request } = setup(
+      z.preprocess((value) => value, z.object({ token: z.string().min(1) })),
+    );
+
+    const response = await endpoints[0].handler(request({ body: { token: 42 } }));
+    const text = await response.text();
+
+    expect(JSON.parse(text)).toEqual(
+      failed(
+        'Invalid credentials: token has the wrong type (expected string).',
+        'invalid_credentials',
+        {
+          fields: ['token'],
+        },
+      ),
+    );
+    expect(text).not.toContain('42');
+  });
+
   it('never names a key that came from the body', async () => {
     const { endpoints, request } = setup(
       z.object({ token: z.string(), headers: z.record(z.string(), z.string()) }).strict(),

@@ -190,10 +190,24 @@ describe('connections API', () => {
     );
   });
 
-  it('rejects disabled stored methods', async () => {
+  it('rejects disabled stored methods and names the config to change', async () => {
     const { api, req, piece } = await setup({ secret: false, row: {}, auth: { token: 'factory' } });
 
-    await expect(api.resolve({ piece, req })).rejects.toMatchObject({ code: 'error' });
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+      code: 'error',
+      message:
+        "Connection for 'example' uses an unavailable method. Enable `secret` on its `connections` entry, or reconnect it in Settings → Linked accounts.",
+    });
+  });
+
+  it('ends an invalid expiry with the reconnect step', async () => {
+    const { api, req, piece } = await setup({ row: { expiresAt: 'not-a-date' } });
+
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+      code: 'error',
+      message:
+        "Connection for 'example' has an invalid expiry. Reconnect it in Settings → Linked accounts.",
+    });
   });
 
   it('converts OAuth tokens through the recipe and checks required scopes', async () => {
