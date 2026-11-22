@@ -140,6 +140,15 @@ describe('deployments get', () => {
     );
   });
 
+  it("exits 1 when the reply isn't a deployment, without printing empty fields", async () => {
+    const { run } = await setup({ 'GET /api/deployments/count': { body: { totalDocs: 3 } } });
+    const result = await run(['deployments', 'get', 'count']);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr()[0]).toContain('No deployment count');
+    expect(result.stdout().join('\n')).not.toContain('undefined');
+  });
+
   it('names the access a 403 needs', async () => {
     const { run } = await setup({
       'GET /api/deployments/41': { status: 403, body: { errors: [{ message: 'Forbidden' }] } },
