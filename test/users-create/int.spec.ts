@@ -175,13 +175,16 @@ describe('frogbot users create on a Postgres database', () => {
 
   describe.runIf(getCurrentDatabaseAdapter() === 'postgres')('with the Postgres service', () => {
     let database: Awaited<ReturnType<typeof createPostgresDatabase>> | undefined;
+    let raced: Awaited<ReturnType<typeof createPostgresDatabase>> | undefined;
 
     beforeAll(async () => {
       database = await createPostgresDatabase('users_create');
+      raced = await createPostgresDatabase('users_create_race');
     });
 
     afterAll(async () => {
       await database?.drop();
+      await raced?.drop();
     });
 
     it('creates the user with --yes', async () => {
@@ -195,6 +198,21 @@ describe('frogbot users create on a Postgres database', () => {
         `[frogbot] users create: database postgres://${url.host}${url.pathname}\n`,
       );
       expect(await login(env, 'a@b.co', password(result))).toEqual({ status: 200, users: 1 });
+    });
+
+    it('lets only one of two runs started together create a user', async () => {
+      const env = {
+        USERS_CREATE_DATABASE_URL: raced!.url.toString(),
+        USERS_CREATE_SCENARIO: 'plain',
+      };
+
+      const runs = await Promise.all([
+        frogbot(['users', 'create', 'b@b.co', '--yes'], env),
+        frogbot(['users', 'create', 'c@b.co', '--yes'], env),
+      ]);
+
+      expect(runs.map(({ code }) => code).sort()).toEqual([0, 1]);
+      expect(await login(env, 'x@b.co', 'x')).toMatchObject({ users: 1 });
     });
   });
 });
