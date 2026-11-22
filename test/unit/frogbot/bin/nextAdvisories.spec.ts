@@ -405,6 +405,16 @@ describe('describing a report', () => {
     expect(nextInstallCommand(dir, '16.4.6')).toBe('npm install next@16.4.6');
   });
 
+  it('finds the lockfile at the workspace root for an app in a subfolder', () => {
+    const root = app();
+    const dir = join(root, 'apps', 'crm');
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(root, 'package-lock.json'), '{}');
+
+    expect(nextInstallCommand(dir, '16.4.6')).toBe('npm install next@16.4.6');
+  });
+
   it('reads the installed next from the app folder', () => {
     const dir = app();
 

@@ -138,6 +138,54 @@ function fakeNextApp(): string {
   return dir;
 }
 
+const TYPE_ERROR = new StepError('build failed (exit 1)', 'Type error: x is not a string\n');
+
+const vulnerable: typeof checkNextAdvisories = ({ version }) =>
+  Promise.resolve({
+    advisories:
+      version === '16.4.2'
+        ? [{ id: 1, severity: 'moderate', title: 't', url: 'u', vulnerableVersions: '<=16.4.4' }]
+        : [],
+    fix: '16.4.6',
+    peerRange: '>=16.4.0 <17.0.0',
+    version,
+  });
+
+function nextApp(version: string): { dir: string; install: (version: string) => void } {
+  const dir = folder('frogbot-supervisor-next-');
+  const install = (next: string) => {
+    writeFileSync(
+      join(dir, 'node_modules', 'next', 'package.json'),
+      JSON.stringify({ version: next }),
+    );
+
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: { next } }));
+  };
+
+  mkdirSync(join(dir, 'src'));
+  mkdirSync(join(dir, 'node_modules', 'next'), { recursive: true });
+  install(version);
+
+  return { dir, install };
+}
+
+async function up(
+  dir: string,
+  runtime: AppRuntime,
+  advise: () => Promise<AdvisoryResult | undefined>,
+): Promise<string> {
+  const env = { ...process.env, XDG_STATE_HOME: folder('frogbot-supervisor-state-') };
+  const before = new Set(process.listeners('SIGTERM'));
+
+  await supervise({ dir, port: await freePort(), autostart: false, env, runtime, advise });
+
+  stops.push(
+    ...(process.listeners('SIGTERM').filter((listener) => !before.has(listener)) as (() => void)[]),
+  );
+
+  return registrationFile(serviceId(dir), env);
+}
+
 describe('builds under frogbot up', { timeout: 90_000 }, () => {
   it('drop the coding-agent markers Next reads, and keep the rest', () => {
     expect(
@@ -340,5 +388,82 @@ describe('builds under frogbot up', { timeout: 90_000 }, () => {
       /^Next refused to build: next has a security advisory; install a patched version inside >=16\.4\.0 <17\.0\.0/,
     );
     expect(readRegistration(registrationFile(serviceId(dir), env))?.state).toBe('build failed');
+  });
+
+  it('show the advisory when the first build fails for another reason', async () => {
+    const { dir } = nextApp('16.4.2');
+    const file = await up(
+      dir,
+      { prepare: () => Promise.resolve({}), build: () => Promise.reject(TYPE_ERROR), start },
+      createAdvisor({ dir, check: vulnerable }),
+    );
+
+    expect(readRegistration(file)?.state).toBe('build failed');
+
+    await vi.waitFor(
+      () => expect(readRegistration(file)?.advisory).toMatch(/^next 16\.4\.2 has 1 security/),
+      WAIT,
+    );
+  });
+
+  it('drop the old advisory when next is upgraded and that build fails', async () => {
+    const { dir, install } = nextApp('16.4.2');
+    let count = 0;
+    const file = await up(
+      dir,
+      {
+        prepare: () => Promise.resolve({}),
+        build: () => (++count === 1 ? Promise.resolve() : Promise.reject(TYPE_ERROR)),
+        start,
+      },
+      createAdvisor({ dir, check: vulnerable }),
+    );
+
+    await vi.waitFor(() => expect(readRegistration(file)?.advisory).toMatch(/16\.4\.2/), WAIT);
+
+    install('16.4.6');
+
+    await vi.waitFor(() => expect(readRegistration(file)?.state).toBe('update failed'), WAIT);
+    await vi.waitFor(() => expect(readRegistration(file)?.advisory).toBeUndefined(), WAIT);
+  });
+
+  it("keep the newer next's answer when a slower lookup for the old one lands after it", async () => {
+    const { dir, install } = nextApp('16.4.2');
+    let release = () => {};
+
+    const slow = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    const check = vi.fn<typeof checkNextAdvisories>(async (props) => {
+      if (props.version === '16.4.2') await slow;
+
+      return vulnerable(props);
+    });
+
+    const advisor = createAdvisor({ dir, check });
+    const answered: (string | undefined)[] = [];
+    const file = await up(
+      dir,
+      { prepare: () => Promise.resolve({}), build: () => Promise.resolve(), start },
+      () =>
+        advisor().then((result) => {
+          answered.push(result?.version);
+
+          return result;
+        }),
+    );
+
+    await vi.waitFor(() => expect(readRegistration(file)?.state).toBe('running'), WAIT);
+
+    install('16.4.6');
+
+    await vi.waitFor(() => expect(answered).toEqual(['16.4.6']), WAIT);
+
+    release();
+
+    await vi.waitFor(() => expect(answered).toEqual(['16.4.6', '16.4.2']), WAIT);
+
+    expect(readRegistration(file)?.advisory).toBeUndefined();
   });
 });
