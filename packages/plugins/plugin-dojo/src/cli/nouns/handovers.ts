@@ -46,9 +46,13 @@ export const intoFlag: VerbFlag = {
 
 /** The handover id in `ref`: the id itself, or the last path segment of the emailed link. */
 export function handoverId(ref: string): string {
-  const [path = ''] = ref.trim().split(/[?#]/);
+  const text = ref.trim();
+  const [path = ''] = text.replace(/^[a-z][\w+.-]*:\/\/[^/?#]*/i, '').split(/[?#]/);
+  const id = path.split('/').filter(Boolean).at(-1);
 
-  return path.split('/').filter(Boolean).at(-1) ?? '';
+  if (!id) throw new ShareError(`"${text}" names no handover. Pass its id or the emailed link.`, 2);
+
+  return id;
 }
 
 /** `--to`, required: a missing or blank one is refused before any request. */
@@ -243,6 +247,12 @@ const removeAccess: Verb = {
     if (handover.status !== 'accepted') {
       throw new ShareError(
         `This handover is ${handover.status}. Access is removed only after it's accepted.`,
+      );
+    }
+
+    if (!handover.canRemove && handover.people.length > 0) {
+      throw new ShareError(
+        `Removing access to ${subject(handover)} needs Admin access to ${handover.toWorkspace ? `${handover.toWorkspace}, ` : ''}the workspace it moved into.`,
       );
     }
 

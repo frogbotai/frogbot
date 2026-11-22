@@ -104,6 +104,14 @@ export async function resolveProject({
   return only;
 }
 
+function movable(project: Project): Project {
+  if (project.isDefault) {
+    throw new ShareError("The workspace's default project can't move. Move its apps one by one.");
+  }
+
+  return project;
+}
+
 async function findProject({ io, dojo, positionals: [ref = ''], values }: VerbInput) {
   const slug = slugOf(values);
   const workspace = slug ? await findWorkspace({ dojo: dojo(), io, slug }) : undefined;
@@ -232,7 +240,7 @@ export const projects: Noun = {
           throw new ShareError('Name the workspace it moves into with --workspace <slug>.', 2);
         }
 
-        const project = await resolveProject({ dojo: dojo(), ref });
+        const project = movable(await resolveProject({ dojo: dojo(), ref }));
         const workspace = await findWorkspace({ dojo: dojo(), io, slug });
 
         await confirm(
@@ -265,7 +273,7 @@ export const projects: Noun = {
       confirm: true,
       run: async (input) => {
         const email = recipient(input.values.to);
-        const project = await findProject(input);
+        const project = movable(await findProject(input));
 
         await input.confirm(
           `Hand the project ${project.name} and its apps to ${email}? Once they accept, their workspace pays for them.`,
