@@ -189,7 +189,9 @@ const accept: Verb = {
       throw new ShareError(`This handover is ${handover.status}. Ask for a new one.`);
     }
 
-    const slug = typeof values.workspace === 'string' ? values.workspace : undefined;
+    const slug =
+      typeof values.workspace === 'string' ? values.workspace.trim() || undefined : undefined;
+
     const workspace = await acceptInto(dojo(), io, handover, slug);
 
     await confirm(

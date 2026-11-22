@@ -91,6 +91,18 @@ describe('handovers accept', () => {
     ]);
   });
 
+  it('trims --workspace, as the move verbs do', async () => {
+    const { dojo, run } = await setup({
+      'GET /api/handovers/h1/details': { body: pending },
+      'POST /api/handovers/h1/accept': { body: { moved: [7] } },
+    });
+
+    expect((await run(['handovers', 'accept', 'h1', '--workspace', ' acme ', '--yes'])).code).toBe(
+      0,
+    );
+    expect(bodyOf(dojo, 'POST /api/handovers/h1/accept')).toEqual({ workspace: 2 });
+  });
+
   it('without a terminal and with two workspaces to choose, names them and sends nothing', async () => {
     const { dojo, run } = await setup({
       'GET /api/handovers/h1/details': {
