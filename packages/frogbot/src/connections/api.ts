@@ -264,12 +264,20 @@ export class Connections {
     if (row.status !== 'active') return fail('error', 'is in an error state', { next: reconnect });
     if (row.expiresAt) {
       const expiresAt = Date.parse(row.expiresAt);
-      if (!Number.isFinite(expiresAt)) return fail('error', 'has an invalid expiry');
+      if (!Number.isFinite(expiresAt)) {
+        return fail('error', 'has an invalid expiry', { next: reconnect });
+      }
+
       if (expiresAt <= Date.now()) return fail('expired', 'is expired', { next: reconnect });
     }
 
     if ((row.method !== 'secret' && row.method !== 'oauth') || !entry[row.method]) {
-      return fail('error', 'uses an unavailable method');
+      return fail('error', 'uses an unavailable method', {
+        next:
+          row.method === 'secret' || row.method === 'oauth'
+            ? `Enable \`${row.method}\` on its \`connections\` entry, or reconnect it in Settings → Linked accounts.`
+            : reconnect,
+      });
     }
 
     const requiredScopes = scopes ?? (row.method === 'oauth' ? oauthScopes(entry.piece) : []);

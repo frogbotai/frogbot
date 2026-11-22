@@ -64,7 +64,10 @@ function defOf(node: unknown): Def | undefined {
 function unwrap(node: unknown): Def | undefined {
   let def = defOf(node);
 
-  while (def && (def.innerType || def.in)) def = defOf(def.innerType ?? def.in);
+  while (def && (def.innerType || def.in)) {
+    const inner = def.innerType ?? def.in;
+    def = def.type === 'pipe' && unwrap(inner)?.type !== 'object' ? defOf(def.out) : defOf(inner);
+  }
 
   return def;
 }
