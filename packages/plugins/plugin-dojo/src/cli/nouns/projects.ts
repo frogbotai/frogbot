@@ -3,9 +3,9 @@ import type { DojoClient } from '../dojo.js';
 import { dojoJSON, dojoList, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done } from '../io.js';
-import type { Workspace } from '../workspaces.js';
 import { findWorkspace } from '../workspaces.js';
-import { relationId, whereEquals } from './resolve.js';
+import { intoFlag, recipient, sendHandover, toFlag, withPayLink } from './handovers.js';
+import { count, relationId, whereEquals } from './resolve.js';
 
 type Project = {
   id: string | number;
@@ -57,8 +57,8 @@ const line = ({ id, name, isDefault }: Shown) => `${id}  ${name}${isDefault ? ' 
 const slugOf = (values: VerbInput['values']) =>
   typeof values.workspace === 'string' ? values.workspace : undefined;
 
-async function listProjects(dojo: DojoClient, workspace?: Workspace): Promise<Project[]> {
-  const filter = workspace ? `&${whereEquals('workspace', workspace.id)}` : '';
+async function listProjects(dojo: DojoClient, workspace?: string | number): Promise<Project[]> {
+  const filter = workspace === undefined ? '' : `&${whereEquals('workspace', workspace)}`;
 
   return dojoList<Project>(dojo, `/api/projects?depth=0&limit=100&sort=name${filter}`, {
     what: "Couldn't list your projects",
@@ -66,13 +66,19 @@ async function listProjects(dojo: DojoClient, workspace?: Workspace): Promise<Pr
 }
 
 /**
- * The project `ref` names: its id, or its name among the projects the person can see (in `--workspace` when given).
- * A name two projects share is refused with their ids.
+ * The project `ref` names: its id, or its name among the projects the person can see (in `workspace` when given,
+ * named `label` in a refusal). A name two projects share is refused with their ids.
  */
-export async function findProject({ io, dojo, positionals: [ref = ''], values }: VerbInput) {
-  const slug = slugOf(values);
-  const workspace = slug ? await findWorkspace({ dojo: dojo(), io, slug }) : undefined;
-  const projects = await listProjects(dojo(), workspace);
+export async function resolveProject({
+  dojo,
+  ref,
+  workspace,
+}: {
+  dojo: DojoClient;
+  ref: string;
+  workspace?: { id: string | number; label: string };
+}): Promise<Project> {
+  const projects = await listProjects(dojo, workspace?.id);
   const byId = projects.find(({ id }) => String(id) === ref);
 
   if (byId) return byId;
@@ -90,7 +96,7 @@ export async function findProject({ io, dojo, positionals: [ref = ''], values }:
   }
 
   if (!only) {
-    const where = workspace ? ` in ${workspace.slug}` : '';
+    const where = workspace ? ` in ${workspace.label}` : '';
 
     throw new ShareError(`No project "${ref}"${where}. projects list shows yours.`);
   }
@@ -98,9 +104,20 @@ export async function findProject({ io, dojo, positionals: [ref = ''], values }:
   return only;
 }
 
-/** `projects list | create | rename | delete | danger`: folders of apps inside a workspace. */
+async function findProject({ io, dojo, positionals: [ref = ''], values }: VerbInput) {
+  const slug = slugOf(values);
+  const workspace = slug ? await findWorkspace({ dojo: dojo(), io, slug }) : undefined;
+
+  return resolveProject({
+    dojo: dojo(),
+    ref,
+    ...(workspace && { workspace: { id: workspace.id, label: workspace.slug } }),
+  });
+}
+
+/** `projects list | create | rename | delete | danger | move | handover`: folders of apps inside a workspace. */
 export const projects: Noun = {
-  summary: "List, create, rename and delete a workspace's projects.",
+  summary: "List, create, rename, delete, move and hand over a workspace's projects.",
   verbs: {
     list: {
       summary: 'List the projects you can see.',
@@ -108,7 +125,7 @@ export const projects: Noun = {
       run: async ({ io, dojo, values }) => {
         const slug = slugOf(values);
         const workspace = slug ? await findWorkspace({ dojo: dojo(), io, slug }) : undefined;
-        const listed = (await listProjects(dojo(), workspace)).map(shown);
+        const listed = (await listProjects(dojo(), workspace?.id)).map(shown);
 
         done(io, listed, listed.map(line));
       },
@@ -200,6 +217,68 @@ export const projects: Noun = {
             ? [`Handover to ${handover.email} waits until ${handover.expiresAt} (${handover.id})`]
             : []),
         ]);
+      },
+    },
+    move: {
+      summary:
+        'Move a project and its apps to another workspace you admin, at once. That workspace pays for them from then on.',
+      args: '<project>',
+      flags: { workspace: { ...intoFlag, help: `${intoFlag.help} Required.` } },
+      confirm: true,
+      run: async ({ io, dojo, confirm, values, positionals: [ref = ''] }) => {
+        const slug = slugOf(values)?.trim();
+
+        if (!slug) {
+          throw new ShareError('Name the workspace it moves into with --workspace <slug>.', 2);
+        }
+
+        const project = await resolveProject({ dojo: dojo(), ref });
+        const workspace = await findWorkspace({ dojo: dojo(), io, slug });
+
+        await confirm(
+          `Move the project ${project.name} and its apps to ${workspace.name} (${workspace.slug}) now? They keep running at the same addresses; ${workspace.name} pays for them from then on.`,
+        );
+
+        const { moved } = await withPayLink(() =>
+          dojoJSON<{ moved: (string | number)[] }>(
+            dojo(),
+            `/api/projects/${segment(project.id)}/move`,
+            {
+              method: 'POST',
+              body: { workspace: workspace.id },
+              what: `Dojo couldn't move ${project.name}`,
+              needs: `${adminNeeded}, and Admin access to ${workspace.slug}`,
+            },
+          ),
+        );
+
+        done(io, { project: shown(project), workspace: workspace.slug, moved }, [
+          `[frogbot] Moved the project ${project.name} and ${count(moved.length, 'app')} to ${workspace.slug}.`,
+        ]);
+      },
+    },
+    handover: {
+      summary:
+        'Hand a project and its apps to someone. Dojo emails them a link to accept it into a workspace they admin; it waits 7 days.',
+      args: '<project>',
+      flags: { to: toFlag, workspace: inFlag },
+      confirm: true,
+      run: async (input) => {
+        const email = recipient(input.values.to);
+        const project = await findProject(input);
+
+        await input.confirm(
+          `Hand the project ${project.name} and its apps to ${email}? Once they accept, their workspace pays for them.`,
+        );
+
+        await sendHandover({
+          io: input.io,
+          dojo: input.dojo(),
+          path: `/api/projects/${segment(project.id)}/handover`,
+          name: `the project ${project.name}`,
+          email,
+          needs: adminNeeded,
+        });
       },
     },
   },
