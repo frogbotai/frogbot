@@ -1,8 +1,14 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { Job, RunInlineTaskFunction } from 'payload';
+import type { Job } from 'payload';
 
-import type { Foreach, Parallel, StepRetries, StepTaskArgs } from './types.js';
+import type {
+  Foreach,
+  Parallel,
+  RunInlineTaskFunction,
+  StepRetries,
+  StepTaskArgs,
+} from './types.js';
 
 type StepTask = (args: StepTaskArgs) => { output: object } | Promise<{ output: object }>;
 

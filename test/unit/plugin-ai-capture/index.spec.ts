@@ -495,16 +495,16 @@ describe('capture retention', () => {
     expect(await pruneTask(false)).toBeUndefined();
   });
 
-  it('schedules on the default queue at midnight', async () => {
+  it('schedules on the frogbot queue at midnight', async () => {
     const task = await pruneTask({ days: 30 });
 
     expect(task?.slug).toBe('frogbot-prune-ai-captures');
-    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'default' }]);
+    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'frogbot' }]);
   });
 
   it('keeps a custom cron', async () => {
     expect((await pruneTask({ days: 30, cron: '0 3 * * *' }))?.schedule).toEqual([
-      { cron: '0 3 * * *', queue: 'default' },
+      { cron: '0 3 * * *', queue: 'frogbot' },
     ]);
   });
 

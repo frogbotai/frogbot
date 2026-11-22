@@ -53,6 +53,13 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 | `workspaces list` | — | Lists the workspaces you're in. |
 | `workspaces create` | `<name>` | Creates a workspace you own. |
 | `workspaces rename` | `<slug> <name>` | Renames a workspace you own. |
+| `workspaces delete` | `<slug>`, `--yes` | Deletes an empty workspace for good, with its projects, members, keys and plan. Owner only. |
+| `workspaces owner` | `<slug> <email>`, `--yes` | Makes a member the Owner at once; you become an Admin. |
+| `projects list` | `--workspace` | Lists the projects you can see, with their ids. |
+| `projects create` | `<name>`, `--workspace` | Adds a project. Needs Business features on the workspace. |
+| `projects rename` | `<project> <name>`, `--workspace` | Renames a project, named by id or name. |
+| `projects delete` | `<project>`, `--workspace`, `--yes` | Deletes an empty project for good. |
+| `projects danger` | `<project>`, `--workspace` | Shows whether you may move, hand over, leave or delete a project. |
 | `members list` | `--workspace` | Lists a workspace's members and roles. |
 | `members add` | `<email>`, `--role owner\|member`, `--workspace` | Adds someone by email; they join when they sign in with it. |
 | `members role` | `<email> <role>`, `--workspace` | Changes a member's role. |
@@ -105,7 +112,7 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 
 - **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr. A failed command prints `{ "ok": false, "code", "error" }` on stdout, with Dojo's `status` and `url` when Dojo refused it, and exits `1`, or `2` for bad usage (`USAGE_ERROR`, including an unknown command or verb), `3` for a sign-in (`SIGN_IN_REQUIRED`) or `4` for a payment (`payment_required`) that nobody is there to give. The codes are the ones in [When a deploy stops](/deployment/overview#when-a-deploy-stops). [`frogbot deploy --json`](/deployment/overview) prints its own `{ target, ok, dryRun, issues, result }` object, even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
 - **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `3` instead of starting a browser sign-in; `whoami` exits `1`, because it only reports who is signed in. In CI (`CI` set, no terminal), a command with no token and no stored sign-in exits `3` at once, naming the variable. `FROGBOT_DOJO_URL` targets another Dojo. A deploy never uploads either one from `.env` as an app key.
-- **No terminal.** Every question has a flag, or fails naming it. `apps delete`, `apps stop`, `members remove`, `keys revoke`, `sharing leave`, `env unset`, `domains clear`, and `domains set` when it replaces a domain, ask before acting, and need `--yes` without a terminal. `apps delete` looks the app up first and names it in the question.
+- **No terminal.** Every question has a flag, or fails naming it. `apps delete`, `apps stop`, `members remove`, `projects delete`, `workspaces delete`, `workspaces owner`, `keys revoke`, `sharing leave`, `env unset`, `domains clear`, and `domains set` when it replaces a domain, ask before acting, and need `--yes` without a terminal. `apps delete` looks the app up first and names it in the question.
 - **Nobody to wait for.** Without a terminal, a command that needs a sign-in exits `3` with the link and code, and keeps the code so the next run signs in once the person confirms it; one that needs a payment exits `4` with the upgrade link. Under `--json` the error adds `needs`, `link` and, for a sign-in, `userCode`. `--wait` waits instead.
 - **Refusals.** A `402` prints Dojo's upgrade link. A `403` says which access the command needs, such as owner access to the app.
 - **Creating keys.** `keys create` mints a key with the CLI's sign-in, using the API keys plugin's [keys that mint keys](/plugins/api-keys#keys-that-mint-keys): the new key is never broader than the sign-in, and `keys list` shows which key made it. When Dojo doesn't let the sign-in create keys, the command says which sign-ins can (a browser sign-in, or a key made with `--can-mint`) and exits with code `1`.

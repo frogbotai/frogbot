@@ -150,6 +150,70 @@ test('a question appears for one answer and its value is not saved once hidden',
   expect(lead.name ?? null).toBeNull();
 });
 
+test('a reload keeps a visitor’s answers until they submit, and the form counts the visit', async ({
+  browser,
+  page,
+}) => {
+  const slug = `resume-${Date.now()}`;
+
+  const created = await page.request.post('/api/forms', {
+    data: {
+      title: 'Join the waitlist',
+      slug,
+      collection: leadsSlug,
+      steps: [{ questions: [{ field: 'email', label: 'Email' }, { field: 'name' }] }],
+    },
+  });
+
+  expect(created.ok()).toBe(true);
+
+  const { doc } = (await created.json()) as { doc: { id: number } };
+  const visitor = await browser.newContext({ storageState: signedOut });
+  const form = await visitor.newPage();
+  const errors: string[] = [];
+
+  form.on('pageerror', (error) => errors.push(error.message));
+
+  form.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+
+  await form.goto(`/forms/${slug}`);
+  await waitForHydratedForm(form);
+  await form.getByLabel('Email').fill(`${slug}@example.com`);
+  await form.getByLabel('Name').fill('Ada');
+
+  await form.reload();
+  await waitForHydratedForm(form);
+
+  await expect(form.getByLabel('Email')).toHaveValue(`${slug}@example.com`);
+  await expect(form.getByLabel('Name')).toHaveValue('Ada');
+
+  await form.getByRole('button', { name: 'Submit' }).click();
+  await expect(form.locator('.fb-form').getByRole('status')).toBeVisible();
+
+  await form.reload();
+  await waitForHydratedForm(form);
+
+  await expect(form.getByLabel('Email')).toHaveValue('');
+  expect(errors).toEqual([]);
+
+  await visitor.close();
+
+  await expect
+    .poll(async () => {
+      const stats = await page.request.get(`/api/form-stats?where[form][equals]=${doc.id}`);
+      const [row] = (await stats.json()).docs as Record<string, unknown>[];
+
+      return row && { views: row.views, starts: row.starts, completions: row.completions };
+    })
+    .toEqual({ views: 3, starts: 1, completions: 1 });
+
+  await page.goto('/collections/form-stats');
+
+  await expect(page.getByRole('columnheader', { name: 'Views (estimate)' })).toBeVisible();
+});
+
 test('an unknown form shows visitors the not-found page', async ({ browser }) => {
   const visitor = await browser.newContext({ storageState: signedOut });
   const page = await visitor.newPage();

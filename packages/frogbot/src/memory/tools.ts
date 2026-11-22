@@ -78,7 +78,7 @@ export const memoryTools: readonly AnyTool[] = [
         const hits = (
           await Promise.all(
             scopes.map((word) =>
-              ctx.frogbot.memory.search({ ...base, scope: word, query, limit: SEARCH_LIMIT }),
+              ctx.req.frogbot.memory.search({ ...base, scope: word, query, limit: SEARCH_LIMIT }),
             ),
           )
         )
@@ -114,7 +114,7 @@ export const memoryTools: readonly AnyTool[] = [
 
         if (!(await memory.mayWrite(target))) return FORBIDDEN;
 
-        const saved = await ctx.frogbot.memory.save({
+        const saved = await ctx.req.frogbot.memory.save({
           ...base,
           scope: target,
           text,
@@ -140,7 +140,7 @@ export const memoryTools: readonly AnyTool[] = [
 
         if (!(await memory.mayWrite(target))) return FORBIDDEN;
 
-        await ctx.frogbot.memory.forget({ ...base, scope: target, id });
+        await ctx.req.frogbot.memory.forget({ ...base, scope: target, id });
 
         return `Forgot memory ${id}.`;
       }),

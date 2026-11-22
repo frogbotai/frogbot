@@ -219,7 +219,7 @@ describe('importExportPlugin', () => {
     { kind: 'import', option: 'overrideImportCollection', expected: 2 },
     { kind: 'export', option: 'overrideExportCollection', expected: 1 },
   ] as const)(
-    'a Payload $kind collection with a different afterChange hook count fails the build',
+    'a Payload $kind collection with a different afterChange hook count fails the build with a code, path and next step',
     async ({ kind, option, expected }) => {
       vi.doMock('@payloadcms/plugin-import-export', () => ({
         importExportPlugin: (options: ImportExportPluginOptions) => async (config: unknown) => {
@@ -234,9 +234,18 @@ describe('importExportPlugin', () => {
       const { importExportPlugin: mockedPlugin } =
         await import('../../../packages/plugins/plugin-import-export/src/index.js');
 
-      await expect(mockedPlugin({ collections: [] })({} as FrogBotConfig)).rejects.toThrow(
-        `[plugin-import-export] Expected ${expected} afterChange hooks on Payload's ${kind} collection '${kind}s', found 0.`,
-      );
+      await expect(mockedPlugin({ collections: [] })({} as FrogBotConfig)).rejects.toMatchObject({
+        name: 'ConfigIssueError',
+        code: 'IMPORT_EXPORT_HOOKS',
+        path: `plugins.importExport.${option}`,
+        message: expect.stringMatching(
+          new RegExp(
+            `^\\[plugin-import-export\\] Expected ${expected} afterChange hooks on Payload's ${kind} collection '${kind}s', found 0\\. ` +
+              `Your ${option} runs after this check, so it isn't the cause: add your own hooks to the collection it returns\\. ` +
+              `The installed @payloadcms/plugin-import-export is a different version than this plugin supports \\(.+\\): install that version\\.$`,
+          ),
+        ),
+      });
     },
   );
 });

@@ -28,6 +28,10 @@ export function stringFlag(values: Record<string, unknown>, name: string): strin
   return typeof value === 'string' ? value : undefined;
 }
 
+/** The usage of every cloud target's flags, then `usage`, the target's own. */
+export const cloudUsage = (usage: string): string =>
+  `[--region <region>] [--service <name>] [--min-instances 0|1] ${usage}`;
+
 /** The flags every cloud target takes, plus the target's own `options`. */
 export function readCloudFlags<T extends ParseArgsOptionsConfig>(
   context: DeployContext,
@@ -35,7 +39,7 @@ export function readCloudFlags<T extends ParseArgsOptionsConfig>(
 ): CloudFlags {
   const values: Record<string, unknown> = parseTargetArgs(context, {
     target,
-    usage: `[--region <region>] [--service <name>] [--min-instances 0|1] ${usage}`.trim(),
+    usage: cloudUsage(usage),
     options: { ...cloudOptions, ...options },
   });
 

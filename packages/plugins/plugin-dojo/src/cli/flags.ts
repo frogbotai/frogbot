@@ -2,8 +2,11 @@ import { parseArgs } from 'node:util';
 
 import { ShareError } from './error.js';
 
-const usage = (program: string) =>
-  `Usage: ${program} deploy [dojo] [--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys] [--wait]`;
+/** The `dojo` target's own flags, for `frogbot deploy --help`. */
+export const shareUsage =
+  '[--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys] [--wait]';
+
+const usage = (program: string) => `Usage: ${program} deploy [dojo] ${shareUsage}`;
 
 /** The `dojo` deploy target's own flags. */
 export type ShareFlags = {

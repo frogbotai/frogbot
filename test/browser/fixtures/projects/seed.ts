@@ -14,7 +14,6 @@ const owner = await frogbot.create({
 });
 
 await seed({
-  frogbot,
   req: await frogbot.createRequest({ user: { ...owner, collection: 'users' } }),
   today,
 });

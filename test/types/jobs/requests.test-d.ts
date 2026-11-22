@@ -47,9 +47,17 @@ export const handlerRequests: JobsConfig = {
   tasks: [
     {
       slug: 'request-task',
-      handler: async ({ req }) => {
+      handler: async ({ req, inlineTask }) => {
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
         await req.frogbot.find({ collection: 'users', limit: 1 });
+
+        await inlineTask('task-step', {
+          task: ({ req: stepReq }) => {
+            expectTypeOf(stepReq).toEqualTypeOf<FrogBotRequest>();
+
+            return { output: {} };
+          },
+        });
 
         return { output: {} };
       },
@@ -60,9 +68,49 @@ export const handlerRequests: JobsConfig = {
   workflows: [
     {
       slug: 'request-workflow',
-      handler: async ({ req, inlineTask }) => {
+      handler: async ({ req, inlineTask, foreach, parallel }) => {
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-        await inlineTask('step', { task: () => ({ output: {} }) });
+
+        const { count } = await inlineTask('step', {
+          input: { limit: 1 },
+          task: async ({ input, req: stepReq, inlineTask: nested }) => {
+            expectTypeOf(stepReq).toEqualTypeOf<FrogBotRequest>();
+
+            await nested('nested', {
+              task: ({ req: nestedReq }) => {
+                expectTypeOf(nestedReq).toEqualTypeOf<FrogBotRequest>();
+
+                return { output: {} };
+              },
+            });
+
+            const { totalDocs } = await stepReq.frogbot.find({
+              collection: 'users',
+              limit: input.limit,
+            });
+
+            return { output: { count: totalDocs } };
+          },
+        });
+
+        expectTypeOf(count).toEqualTypeOf<number>();
+
+        await foreach('each', [1, 2], {
+          key: (item) => item,
+          task: ({ req: itemReq }) => {
+            expectTypeOf(itemReq).toEqualTypeOf<FrogBotRequest>();
+
+            return { output: {} };
+          },
+        });
+
+        await parallel('both', {
+          one: ({ req: branchReq }) => {
+            expectTypeOf(branchReq).toEqualTypeOf<FrogBotRequest>();
+
+            return { output: {} };
+          },
+        });
       },
     },
   ],

@@ -1,4 +1,10 @@
-import type { JobsConfig, WorkflowConfig, WorkflowHandler } from 'frogbot';
+import type {
+  FrogBotRequest,
+  JobsConfig,
+  RunInlineTaskFunction,
+  WorkflowConfig,
+  WorkflowHandler,
+} from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
 type Args = Parameters<WorkflowHandler>[0];
@@ -8,6 +14,8 @@ type WaitOptions = Parameters<Args['waitFor']>[1];
 expectTypeOf<keyof Args>().toEqualTypeOf<
   'foreach' | 'inlineTask' | 'job' | 'parallel' | 'req' | 'tasks' | 'waitFor'
 >();
+
+expectTypeOf<Args['inlineTask']>().toEqualTypeOf<RunInlineTaskFunction>();
 
 expectTypeOf<{ onWait: () => void; expiresIn: number }>().toMatchTypeOf<WaitOptions>();
 expectTypeOf<{ onWait: () => void; expiresIn: string }>().not.toMatchTypeOf<WaitOptions>();
@@ -42,7 +50,7 @@ export const workflow: WorkflowConfig<{ value: string }> = {
       task: ({ item, inlineTask, req }) => {
         expectTypeOf(item).toEqualTypeOf<{ id: string; total: number }>();
         expectTypeOf(inlineTask).toBeFunction();
-        expectTypeOf(req.payload).not.toBeAny();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
         return { output: { total: item.total } };
       },

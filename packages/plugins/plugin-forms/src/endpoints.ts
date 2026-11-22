@@ -20,6 +20,7 @@ import {
 import { definitionFor, findForm, type FormsRuntime } from './lookup.js';
 import type { FormTarget } from './questions.js';
 import { clientIp, takeRateLimit, verifyTurnstile } from './spam.js';
+import { countEvent } from './stats.js';
 import type {
   FormDocument,
   FormFieldError,
@@ -269,6 +270,15 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
         });
 
         if (outcome.closed) return closed();
+
+        if (runtime.analytics) {
+          await countEvent(req.frogbot, form, 'completion').catch((error: unknown) => {
+            req.frogbot.logger.error(
+              { err: error, form: form.slug },
+              '[plugin-forms] Counting a completion failed',
+            );
+          });
+        }
 
         return confirmed(form, picked.ignored);
       } catch (error) {

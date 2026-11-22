@@ -9,6 +9,7 @@ import { resolveLinkLimits } from './links/token.js';
 import type { FormsRuntime } from './lookup.js';
 import { collectFields, type FormTarget } from './questions.js';
 import { resolveSpamOptions, spamWarnings } from './spam.js';
+import { createFormStatsCollection, FORM_STATS_SLUG } from './stats.js';
 import type { FormsPluginOptions } from './types.js';
 import { resolveUploadLimits, uploadWarnings } from './uploads.js';
 
@@ -34,12 +35,14 @@ export { isFormSubmission } from './access.js';
 export { FORMS_SLUG } from './collection.js';
 export { FORM_LINKS_SLUG } from './links/access.js';
 export { createFormLink } from './links/create.js';
+export { FORM_STATS_SLUG } from './stats.js';
 export type {
   CreatedFormLink,
   CreateFormLinkOptions,
   FormConfirmation,
   FormDefinition,
   FormDocument,
+  FormEvent,
   FormFieldError,
   FormIgnoredAnswer,
   FormLinkContext,
@@ -81,7 +84,11 @@ const forms = definePlugin<FormsPluginOptions>({
       );
     }
 
-    for (const taken of [FORMS_SLUG, FORM_LINKS_SLUG]) {
+    for (const taken of [
+      FORMS_SLUG,
+      FORM_LINKS_SLUG,
+      ...(options.analytics ? [FORM_STATS_SLUG] : []),
+    ]) {
       if (config.collections.some(({ slug }) => slug === taken)) {
         throw new Error(`[plugin-forms] Collection slug '${taken}' already exists.`);
       }
@@ -145,6 +152,7 @@ const forms = definePlugin<FormsPluginOptions>({
       spam,
       uploads: resolveUploadLimits(config),
       links,
+      analytics: options.analytics === true,
     };
 
     const warnings = [
@@ -166,6 +174,7 @@ const forms = definePlugin<FormsPluginOptions>({
           previewUrl: `${adminRoute === '/' ? '' : adminRoute}${PREVIEW_PATH}`,
         }),
         createFormLinksCollection({ targets: [...allowed], access: options.links?.access }),
+        ...(runtime.analytics ? [createFormStatsCollection()] : []),
       ],
       admin: {
         ...config.admin,
@@ -190,7 +199,8 @@ const forms = definePlugin<FormsPluginOptions>({
  * at `/forms/<slug>`, a definition endpoint (`GET /api/forms/:slug/definition`) and a submit
  * endpoint (`POST /api/forms/:slug/submit`) with a honeypot, optional Turnstile and a per-visitor
  * rate limit. File questions store visitors' files in listed upload collections. Forms in the
- * `update` or `both` mode edit one record through edit links that `createFormLink` makes.
+ * `update` or `both` mode edit one record through edit links that `createFormLink` makes. With
+ * `analytics`, a `form-stats` collection counts views, starts and completions per form per day.
  */
 export function formsPlugin(options: FormsPluginOptions): Plugin {
   return forms(options);

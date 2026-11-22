@@ -1,11 +1,14 @@
-import type { Job, PayloadRequest, RunInlineTaskFunction } from 'payload';
+import type { Job, PayloadRequest } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createSteps } from '../../../packages/frogbot/src/jobs/waitpoints/steps.js';
+import type { RunInlineTaskFunction } from '../../../packages/frogbot/src/jobs/waitpoints/types.js';
 import { createWaitFor } from '../../../packages/frogbot/src/jobs/waitpoints/waitFor.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 
 const job = { id: 1, workflowSlug: 'steps' } as unknown as Job;
 const req = {} as PayloadRequest;
+const stepReq = {} as FrogBotRequest;
 
 function deferred() {
   let resolve!: () => void;
@@ -29,7 +32,13 @@ function runner(saved = new Map<string, object>()) {
     peak = Math.max(peak, active);
 
     try {
-      const { output } = await task({ inlineTask, input: undefined as never, job, req, tasks: {} });
+      const { output } = await task({
+        inlineTask,
+        input: undefined as never,
+        job,
+        req: stepReq,
+        tasks: {},
+      });
 
       saved.set(id, output);
       log.push({ id, state: 'succeeded' });

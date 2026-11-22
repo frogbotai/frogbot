@@ -1,4 +1,4 @@
-import type { TaskConfig } from 'frogbot';
+import { FROGBOT_QUEUE, type TaskConfig } from 'frogbot';
 
 import { type Period, SPEND_COUNTERS_SLUG } from './counters.js';
 
@@ -14,7 +14,7 @@ export function createResetTask(period: Period): TaskConfig {
   return {
     slug: RESET_TASK_SLUG,
     interfaceName: 'TaskPluginAiPolicyResetSpend',
-    schedule: [{ cron: '0 * 1,2,28-31 * *', queue: RESET_TASK_SLUG }],
+    schedule: [{ cron: '0 * 1,2,28-31 * *', queue: FROGBOT_QUEUE }],
     handler: async ({ req }) => {
       const current = period();
       const { db } = req.frogbot;

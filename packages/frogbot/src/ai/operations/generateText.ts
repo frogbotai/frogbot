@@ -42,7 +42,6 @@ export async function generateTextOperation<O extends AIOutput = Output.Output<s
   const toolsContext = toolReq
     ? toAISDKToolsContext(tools, {
         req: toolReq,
-        frogbot,
         agent: { slug: 'direct', runId: generateId() },
         overrideAccess: overrideAccess === true,
       })

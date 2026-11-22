@@ -200,7 +200,26 @@ curl --request POST http://localhost:3000/api/connections/linear \
   --data '{"apiKey":"lin_api_..."}'
 ```
 
-FrogBot validates the body against the schema, encrypts the original input, and returns metadata without the credential. Schema transformations run when the credential is resolved. Invalid JSON or schema input returns `400`; a piece without static linking enabled returns `404`. The authenticated user determines ownership.
+FrogBot validates the body against the schema, encrypts the original input, and returns metadata without the credential. Schema transformations run when the credential is resolved. A piece without static linking enabled returns `404`. The authenticated user determines ownership.
+
+### Errors
+
+Every connection endpoint answers a failure with the shape core uses, plus a `data.code` to branch on:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Invalid credentials: apiKey is required (expected string).",
+      "data": { "code": "invalid_credentials", "fields": ["apiKey"] }
+    }
+  ]
+}
+```
+
+A body that fails the piece's schema returns `400` with code `invalid_credentials`, naming each field's path and expected type in `message` and the paths in `fields`. Submitted values never appear in the response. Other codes from a static link are `invalid_json` (`400`), `no_credentials` (`400`, the piece declares no key schema), `rejected` (`422`, the provider refused the key), `unreachable` (`502`, the key couldn't be checked), `busy` (`409`) and `not_found` (`404`).
+
+An OAuth authorize or callback failure returns the `OAuthError` code: `state` (`400`, the sign-in expired or was already used), `tokens` (`400`, the provider denied the sign-in or the code exchange failed), `account` (`400`, including reconnecting with a different provider account) or `configuration` (`500`, such as an invalid `serverURL` or a recipe `authorize()` that throws). The routes also answer `unauthorized` (`401`, no signed-in user), `forbidden` (`403`, a user outside the admin user collection), `not_found` (`404`, an unknown piece or reconnect target) and `internal` (`500`, an unexpected error). When the provider redirects back with an RFC 6749 `error` such as `access_denied`, it appears as `data.provider`; its `error_description` never does. The server logs each failure's cause as a warning.
 
 Static forms support primitive values, nested objects, and arrays with supported item schemas. The piece's input schema defines the body shape; credentials do not use a common envelope.
 
@@ -314,7 +333,7 @@ if (work) {
 - **Failed refresh.** A failed refresh marks the connection `error` and throws. It never switches to factory `auth`. Reconnect to replace the failing credential.
 - **Disconnect.** Disconnecting removes the row, so the user's next call throws `missing`. It revokes access at the provider only when the recipe defines `revoke`.
 
-`ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, `scopes`, `ambiguous`, or `forbidden`. Scope errors include `missingScopes`. `ambiguous` means the user has several accounts and none is the default; `forbidden` means a pinned `connection` isn't one of the caller's accounts for that piece, including an unknown ID. `authorizations` throws both instead of listing the piece, since linking another account wouldn't fix them. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
+`ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, `scopes`, `ambiguous`, or `forbidden`. Its message ends with the next step, such as "Reconnect it in Settings → Linked accounts.", and an AI call on a linked provider key shows that message. When reading or refreshing the stored credential fails, the original error is the `cause` and is logged. A piece used with no `connections` entry and no factory `auth` throws `missing` and names the root `connections` config to add it to. Scope errors include `missingScopes`. `ambiguous` means the user has several accounts and none is the default; `forbidden` means a pinned `connection` isn't one of the caller's accounts for that piece, including an unknown ID. `authorizations` throws both instead of listing the piece, since linking another account wouldn't fix them. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
 
 ## Storage and access
 

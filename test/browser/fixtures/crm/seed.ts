@@ -25,7 +25,7 @@ await frogbot.create({
   overrideAccess: true,
 });
 
-const seeded: Seeded = { ...(await seed({ frogbot, today })), frogbot };
+const seeded: Seeded = { ...(await seed({ req: await frogbot.createRequest(), today })), frogbot };
 
 await seedCompanies(seeded);
 await seedContacts(seeded);

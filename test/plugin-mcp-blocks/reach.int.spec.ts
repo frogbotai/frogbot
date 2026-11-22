@@ -289,4 +289,61 @@ describe('block tools and blocks fields the caller may not update or read', () =
     expect(ids(after.body)).toEqual([]);
     expect(ids(after.hiddenList)).toEqual(['h0', 'n1', 'm1']);
   });
+
+  it("listBlocks leaves out every blocks field the caller can't read, empty or not", async () => {
+    const tile = (id: string) => ({ id, blockType: 'tile', label: 'Secret' });
+    const empty = await page({ body: [{ id: 'c1', blockType: 'box', inner: [] }] });
+    const full = await page({
+      body: [{ id: 'c2', blockType: 'box', inner: [tile('i1')] }],
+      vault: [tile('v1')],
+      hiddenList: [tile('h1')],
+      secret: { list: [tile('s1')] },
+    });
+
+    const paths = async (caller: typeof member, id: number | string) => {
+      const { data } = await caller('listBlocks', target(id));
+
+      return (data as { fields: { path: string }[] }).fields.map(({ path }) => path);
+    };
+
+    const shown = ['body', 'body.0.items', 'body.0.more', 'body.0.slots', 'frozen', 'flagged'];
+
+    expect(await paths(member, empty)).toEqual(shown);
+    expect(await paths(member, full)).toEqual(shown);
+    expect(await paths(admin, empty)).toEqual([
+      ...shown.slice(0, 4),
+      'body.0.inner',
+      'frozen',
+      'vault',
+      'flagged',
+    ]);
+  });
+
+  it("listBlocks and insertBlock agree that a blocks field in a hidden group isn't there", async () => {
+    const id = await page({});
+    const { data } = await member('listBlocks', target(id));
+    const inserted = await member('insertBlock', {
+      ...target(id),
+      field: 'secret.list',
+      block: { blockType: 'tile' },
+    });
+
+    expect(JSON.stringify(data)).not.toContain('secret');
+    expect(inserted).toMatchObject({ isError: true });
+    expect(inserted.text).toContain("'secret.list' is not a blocks field");
+  });
+
+  it('the read tools show a blocks field whose read access looks at a field the caller cannot read', async () => {
+    const id = await page({
+      ownerKey: 'k',
+      keyed: [{ id: 'k1', blockType: 'tile', label: 'Key' }],
+    });
+
+    const listed = await member('listBlocks', target(id));
+    const got = await member('getBlock', { ...target(id), blockId: 'k1' });
+
+    expect(JSON.stringify(listed.data)).toContain('"path":"keyed"');
+    expect(got).toMatchObject({ isError: false, data: { path: 'keyed', index: 0 } });
+    expect(JSON.stringify(listed.data)).not.toContain('ownerKey');
+  });
 });

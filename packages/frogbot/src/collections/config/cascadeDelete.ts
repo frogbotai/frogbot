@@ -1,4 +1,5 @@
 import { toPayloadRequest } from '../../seams/request.js';
+import { pagedDelete } from '../bulkDelete.js';
 import type { CollectionConfig } from './types.js';
 
 export type CascadeDeleteProps = {
@@ -18,12 +19,10 @@ export function cascadeDelete(
       beforeDelete: [
         ...(config.hooks?.beforeDelete ?? []),
         async ({ id, req }) => {
-          const payloadReq = toPayloadRequest(req);
-
-          const result = await payloadReq.payload.delete({
+          const result = await pagedDelete(toPayloadRequest(req).payload)({
             collection,
             where: { [field]: { equals: id } },
-            req: payloadReq,
+            req,
             overrideAccess: true,
             trash: true,
             depth: 0,

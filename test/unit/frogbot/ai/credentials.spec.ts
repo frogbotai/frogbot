@@ -142,14 +142,18 @@ describe('linked provider credential', () => {
     expect(authorizations).toEqual([]);
   });
 
-  it('fails with "Reconnect" and never falls back to the app key for an unusable account', async () => {
-    for (const code of ['revoked', 'expired', 'error', 'scopes'] as const) {
+  it("passes the connection's own message and never falls back to the app key for an unusable account", async () => {
+    for (const code of ['revoked', 'expired', 'error'] as const) {
       await expect(run({ apiKey: 'sk-app', req: failing(code) })).resolves.toMatchObject({
         status: 401,
-        message: 'Reconnect OpenAI in Settings → Linked accounts.',
+        message: 'Connection failed.',
       });
     }
 
+    await expect(run({ apiKey: 'sk-app', req: failing('scopes') })).resolves.toMatchObject({
+      status: 401,
+      message: 'Reconnect OpenAI in Settings → Linked accounts.',
+    });
     expect(authorizations).toEqual([]);
   });
 

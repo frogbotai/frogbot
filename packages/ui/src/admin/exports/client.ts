@@ -28,6 +28,10 @@ export { PhoneCell, PhoneField } from '../fields/Phone/index.client.js';
 export { RatingCell, RatingField } from '../fields/Rating/index.client.js';
 export { UrlCell } from '../fields/Url/index.client.js';
 export { shallowRouteState } from '../utilities/shallowRoute.js';
+export {
+  CreateFirstUserClient,
+  type CreateFirstUserClientProps,
+} from '../views/CreateFirstUser/index.client.js';
 export { DefaultListView } from '../views/List/DefaultListView.client.js';
 export {
   type RecordPanelContextValue,

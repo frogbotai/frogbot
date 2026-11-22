@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const count = vi.fn();
+const frogbot = { count, createRequest: () => Promise.resolve(req) };
+const req = { frogbot };
 
-vi.mock('frogbot', () => ({ getCachedFrogBot: () => ({ count }) }));
+vi.mock('frogbot', () => ({ getCachedFrogBot: () => frogbot }));
 
 vi.mock('../../../templates/projects/src/components/SeedButton', () => ({
   SeedButton: () => null,
@@ -20,7 +22,7 @@ describe("the projects template's Seed panel", () => {
     count.mockResolvedValue({ totalDocs: 0 });
 
     expect((await SeedPanel())?.type).toBe(SeedButton);
-    expect(count).toHaveBeenCalledWith({ collection: 'projects', overrideAccess: true });
+    expect(count).toHaveBeenCalledWith({ collection: 'projects', overrideAccess: true, req });
   });
 
   it('renders nothing once a project exists', async () => {

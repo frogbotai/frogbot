@@ -1,6 +1,5 @@
 import { Forbidden } from 'payload';
 
-import type { FrogBot } from '../frogbot.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { checkMemoryAccess } from './access.js';
 import { isMemoryAdapterError } from './errors.js';
@@ -10,7 +9,6 @@ import type { MemoryCallArgs } from './types.js';
 /** What a memory call from an agent run needs: who runs it, the agent and the chat. */
 export type MemoryRunSource = {
   req: FrogBotRequest;
-  frogbot: FrogBot;
   agent: { slug: string; chatId?: number | string };
   /** Whether a caller outside an agent run, such as MCP, skips `memory.access`. Defaults to `true`. */
   overrideAccess?: boolean;
@@ -44,9 +42,9 @@ export function markMemoryAgentRun<T extends MemoryRunSource['agent']>(agent: T)
 
 async function loadChat({
   agent,
-  frogbot,
   req,
 }: MemoryRunSource): Promise<Record<string, unknown> | undefined> {
+  const { frogbot } = req;
   const chat = frogbot.config.chat;
 
   if (agent.chatId === undefined || !chat.enabled || !frogbot.config.memory?.scopes) {
@@ -63,8 +61,8 @@ async function loadChat({
 }
 
 async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
-  const { frogbot, req } = source;
-  const memory = frogbot.config.memory;
+  const { req } = source;
+  const memory = req.frogbot.config.memory;
 
   if (!memory) {
     throw new Error(

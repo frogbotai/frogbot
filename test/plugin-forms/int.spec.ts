@@ -202,6 +202,15 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     });
   });
 
+  it('takes no view or start counts without analytics', async () => {
+    await createForm();
+
+    const { status } = await booted.restClient.post('/api/forms/contact/events', { type: 'view' });
+
+    expect(status).toBe(404);
+    expect(booted.frogbot.config.collections.some(({ slug }) => slug === 'form-stats')).toBe(false);
+  });
+
   it('answers 404 alike for missing forms and forms the visitor cannot read', async () => {
     await createForm({ slug: staffFormSlug });
 

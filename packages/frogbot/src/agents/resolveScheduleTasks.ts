@@ -2,7 +2,6 @@ import { Cron } from 'croner';
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { getFrogBotInstance } from '../instanceRegistry.js';
-import { withFrogBotAutoRun } from '../jobs/autoRun.js';
 import { isRecord } from '../utilities/isRecord.js';
 import type { AgentConfig, AgentScheduleTrigger } from './types.js';
 
@@ -138,7 +137,6 @@ export function resolveScheduleTasks({
         await agent.generate({ prompt: trigger.prompt, req: scheduleReq, overrideAccess: true });
       } else if (trigger.handler) {
         await trigger.handler({
-          frogbot,
           agent,
           req: scheduleReq,
           job: {
@@ -155,6 +153,5 @@ export function resolveScheduleTasks({
   return {
     ...jobs,
     tasks: [...(jobs?.tasks ?? []), task],
-    autoRun: withFrogBotAutoRun(jobs?.autoRun),
   };
 }

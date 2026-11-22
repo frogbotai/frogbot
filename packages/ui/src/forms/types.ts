@@ -47,6 +47,8 @@ export type FormDefinition = {
   turnstile?: { siteKey: string };
   /** Through an edit link: the record's current answers, which the form starts from. */
   values?: Record<string, unknown>;
+  /** Set when the app counts views and starts, which `<Form>` sends to its `eventUrl`. */
+  analytics?: true;
 };
 
 export type FormFieldError = {

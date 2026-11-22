@@ -294,7 +294,7 @@ describe('resolveAIFieldModel', () => {
 });
 
 describe('AI field task', () => {
-  const everyMinute = { allQueues: true, cron: '* * * * *', silent: { info: true } };
+  const everyMinute = { cron: '* * * * *', queue: 'frogbot', silent: { info: true } };
 
   async function jobsOf(config: FrogBotConfig) {
     const payloadConfig = await sanitize(config)._internal.payloadConfig;
@@ -306,7 +306,7 @@ describe('AI field task', () => {
     return jobs.tasks?.find(({ slug }) => slug === 'frogbot-run-ai-field');
   }
 
-  it('registers the task and the every-minute autoRun with an AI field', async () => {
+  it('registers the task and the frogbot queue runner with an AI field', async () => {
     const jobs = await jobsOf(makeConfig());
 
     expect(aiTask(jobs)).toMatchObject({ interfaceName: 'TaskFrogBotRunAIField' });
@@ -320,7 +320,7 @@ describe('AI field task', () => {
     expect(jobs.autoRun).toBeUndefined();
   });
 
-  it('does not repeat the autoRun entry a schedule already added', async () => {
+  it('adds the frogbot queue runner once beside a schedule queue', async () => {
     const scheduled: AgentConfig = {
       slug: 'support',
       model: 'openai/gpt-5-nano',
@@ -337,7 +337,10 @@ describe('AI field task', () => {
 
     const jobs = await jobsOf(makeConfig({ agents: [scheduled] }));
 
-    expect(jobs.autoRun).toEqual([everyMinute]);
+    expect(jobs.autoRun).toEqual([
+      everyMinute,
+      { ...everyMinute, queue: 'frogbot-schedule:support:run' },
+    ]);
   });
 
   it('keeps an app autoRun function and adds the entry once', async () => {
