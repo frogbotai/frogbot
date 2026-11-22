@@ -94,12 +94,12 @@ export function verbHelp(program: string, name: string, verb: Verb | RawVerb): s
   return [`Usage: ${verbUsage(program, name, verb)}`, '', verb.summary, '', 'Flags:', ...flags];
 }
 
-function arity(args: string | undefined): { min: number; max: number } {
+function arity(args: string | undefined): { min: number; max: number; names: string[] } {
   const parts = args?.split(' ').filter(Boolean) ?? [];
-  const required = parts.filter((part) => part.startsWith('<')).length;
+  const required = parts.filter((part) => part.startsWith('<'));
   const variadic = parts.some((part) => part.endsWith('...'));
 
-  return { min: required, max: variadic ? Infinity : parts.length };
+  return { min: required.length, max: variadic ? Infinity : parts.length, names: required };
 }
 
 /** Parses `args` against the verb, confirms a destructive one, and runs it. */
@@ -129,11 +129,17 @@ export async function runVerb(
     throw new ShareError(`${(error as Error).message} Usage: ${usage}`, 2);
   }
 
-  const { min, max } = arity(verb.args);
+  const { min, max, names } = arity(verb.args);
   const { positionals, values } = parsed;
 
   if (positionals.length < min || positionals.length > max) {
     throw new ShareError(`Usage: ${usage}`, 2);
+  }
+
+  const blank = positionals.slice(0, min).findIndex((value) => value.trim() === '');
+
+  if (blank !== -1) {
+    throw new ShareError(`${names[blank]} can't be blank. Usage: ${usage}`, 2);
   }
 
   let client: DojoClient | undefined;

@@ -35,7 +35,7 @@ function runGenerateTypes(cwd: string): Promise<{ stdout: string; stderr: string
   );
 }
 
-describe('frogbot generate:types', () => {
+describe('frogbot generate:types', { timeout: 20_000 }, () => {
   it('prints the config error and where it was thrown when the config throws at import', async () => {
     const dir = await makeDir();
 

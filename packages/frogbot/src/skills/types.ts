@@ -1,6 +1,6 @@
 import type { ToolCtx } from '../tools/types.js';
 
-export type SkillCtx = Pick<ToolCtx, 'req' | 'frogbot'>;
+export type SkillCtx = Pick<ToolCtx, 'req'>;
 
 export type SkillContent = string | ((ctx: SkillCtx) => string | Promise<string>);
 

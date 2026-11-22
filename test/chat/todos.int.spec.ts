@@ -56,7 +56,6 @@ describe('chat persistence: todos', () => {
 
     const ctx = {
       req,
-      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: id, chatId: first.chatId },
     };
 

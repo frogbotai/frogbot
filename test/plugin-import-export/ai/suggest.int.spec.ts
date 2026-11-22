@@ -55,7 +55,9 @@ describe('AI column suggestions', () => {
   });
 
   function suggest(columns: ImportColumn[]) {
-    return booted.restClient.post<SuggestColumnsResponse>(
+    return booted.restClient.post<
+      SuggestColumnsResponse & { errors?: { message: string; data: Record<string, unknown> }[] }
+    >(
       `/api/${importsSlug}/suggest-columns`,
       {
         collectionSlug: contactsSlug,
@@ -114,15 +116,18 @@ describe('AI column suggestions', () => {
     expect(fields).not.toContain('email');
   });
 
-  it('returns the mapping unchanged with a message when the model fails', async () => {
+  it('fails with ai_suggestion_failed when the model fails', async () => {
     model.respondTitle({ text: '', error: { status: 400, body: { error: { message: 'bad' } } } });
 
     const response = await suggest(sent);
 
     expect(response.status).toBe(502);
-    expect(response.body.columns).toEqual(sent);
-    expect(response.body.suggested).toBe(0);
-    expect(response.body.error).toMatch(/^AI suggestion failed: /);
+    expect(response.body.errors).toMatchObject([
+      {
+        message: expect.stringMatching(/^AI suggestion failed: /),
+        data: { code: 'ai_suggestion_failed' },
+      },
+    ]);
   });
 
   it('calls no model when no column is "Skip"', async () => {

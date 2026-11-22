@@ -18,6 +18,19 @@ type Case = {
 const app = { id: 7, name: 'Deals', slug: 'deals', workspace: 1, startedAt: null };
 const member = { id: 3, email: 'ada@example.com', role: 'member' };
 const workspace = { id: 1, name: 'Trend Capital', slug: 'trend-capital' };
+const project = { id: 'p1', name: 'Deals', workspace: 1, isDefault: false };
+const projectList = { 'GET /api/projects': { body: { docs: [project] } } };
+const danger = {
+  kind: 'project',
+  name: 'Deals',
+  canManage: true,
+  canLeave: true,
+  onlyAdmin: false,
+  hasApps: true,
+  workspace: { id: 1, name: 'Trend Capital' },
+  targets: [{ id: 2, name: 'Acme' }],
+  handover: { id: 'h1', email: 'bo@example.com', expiresAt: '2026-11-29T00:00:00Z' },
+};
 
 const cases: Case[] = [
   {
@@ -33,6 +46,52 @@ const cases: Case[] = [
     route: 'PATCH /api/workspaces/1',
     body: { name: 'Trend' },
     replies: { 'PATCH /api/workspaces/1': { body: { doc: { ...workspace, name: 'Trend' } } } },
+  },
+  {
+    args: ['workspaces', 'delete', 'trend-capital', '--yes'],
+    route: 'POST /api/workspaces/1/delete',
+    body: { name: 'Trend Capital' },
+    replies: { 'POST /api/workspaces/1/delete': { body: { deleted: true } } },
+  },
+  {
+    args: ['workspaces', 'owner', 'trend-capital', 'ADA@example.com', '--yes'],
+    route: 'POST /api/workspaces/1/owner',
+    body: { memberId: 3 },
+    replies: {
+      'GET /api/members': { body: { docs: [member] } },
+      'POST /api/workspaces/1/owner': { body: { owner: 3, previous: 1 } },
+    },
+  },
+  {
+    args: ['projects', 'list', '--workspace', 'trend-capital'],
+    route: 'GET /api/projects',
+    search: 'where[workspace][equals]=1',
+    replies: projectList,
+  },
+  {
+    args: ['projects', 'create', 'Deals'],
+    route: 'POST /api/projects',
+    body: { workspace: 1, name: 'Deals' },
+    replies: { 'POST /api/projects': { status: 201, body: { doc: project } } },
+  },
+  {
+    args: ['projects', 'rename', 'deals', 'Deal Room'],
+    route: 'PATCH /api/projects/p1',
+    body: { name: 'Deal Room' },
+    replies: {
+      ...projectList,
+      'PATCH /api/projects/p1': { body: { doc: { ...project, name: 'Deal Room' } } },
+    },
+  },
+  {
+    args: ['projects', 'delete', 'p1', '--yes'],
+    route: 'DELETE /api/projects/p1',
+    replies: { ...projectList, 'DELETE /api/projects/p1': { body: { doc: project } } },
+  },
+  {
+    args: ['projects', 'danger', 'Deals'],
+    route: 'GET /api/projects/p1/danger',
+    replies: { ...projectList, 'GET /api/projects/p1/danger': { body: danger } },
   },
   {
     args: ['members', 'list'],
@@ -436,10 +495,157 @@ describe('frogbot dojo <noun> <verb>', () => {
     expect(dojo.paths().filter((route) => !route.startsWith('GET '))).toEqual([]);
   });
 
+  it("shows a project's Danger zone in words, and the same facts as JSON", async () => {
+    const replies = { ...projectList, 'GET /api/projects/p1/danger': { body: danger } };
+    const { env, cwd } = await setup(replies);
+    const human = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'danger', 'deals'], human.io)).toBe(0);
+    expect(human.stdout()).toEqual([
+      'Deals  in Trend Capital',
+      'Move, hand over, delete: yes',
+      'Leave: yes',
+      'Delete waits until it has no apps, Trash included.',
+      'Can move to: Acme',
+      'Handover to bo@example.com waits until 2026-11-29T00:00:00Z (h1)',
+    ]);
+
+    const json = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'danger', 'deals', '--json'], json.io)).toBe(0);
+    expect(JSON.parse(json.stdout().join('\n'))).toMatchObject({
+      id: 'p1',
+      hasApps: true,
+      handover: { id: 'h1' },
+    });
+  });
+
+  it('lists projects with their ids, and JSON carries the same ids', async () => {
+    const other = { ...project, id: 'p0', name: 'General', isDefault: true };
+    const { env, cwd } = await setup({ 'GET /api/projects': { body: { docs: [other, project] } } });
+    const human = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'list'], human.io)).toBe(0);
+    expect(human.stdout()).toEqual(['p0  General  (default)', 'p1  Deals']);
+
+    const json = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'list', '--json'], json.io)).toBe(0);
+    expect(JSON.parse(json.stdout().join('\n'))).toEqual([
+      { id: 'p0', name: 'General', workspace: 1, isDefault: true },
+      { id: 'p1', name: 'Deals', workspace: 1, isDefault: false },
+    ]);
+  });
+
+  it('refuses a project name two projects share, naming their ids', async () => {
+    const twin = { ...project, id: 'p2', workspace: 2 };
+    const { dojo, env, cwd } = await setup({
+      'GET /api/projects': { body: { docs: [project, twin] } },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'delete', 'Deals', '--yes'], result.io)).toBe(1);
+    expect(result.stderr()).toEqual([
+      '[frogbot] "Deals" names 2 projects (p1, p2). Name one by its id.',
+    ]);
+    expect(dojo.paths().filter((route) => !route.startsWith('GET '))).toEqual([]);
+  });
+
+  it("prints Dojo's reason and exits 1 when a project still holds apps", async () => {
+    const { env, cwd } = await setup({
+      ...projectList,
+      'DELETE /api/projects/p1': {
+        status: 409,
+        body: { errors: [{ message: 'Move or delete its apps first, Trash included.' }] },
+      },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'delete', 'Deals', '--yes'], result.io)).toBe(1);
+    expect(result.stderr()).toEqual([
+      "[frogbot] Dojo couldn't delete Deals: Move or delete its apps first, Trash included.",
+    ]);
+  });
+
+  it('names the Owner a workspace delete needs on a 403', async () => {
+    const { env, cwd } = await setup({
+      'POST /api/workspaces/1/delete': {
+        status: 403,
+        body: { errors: [{ message: 'Only the workspace Owner can delete it.' }] },
+      },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['workspaces', 'delete', 'trend-capital', '--yes'], result.io)).toBe(1);
+    expect(result.stderr()).toEqual([
+      "[frogbot] Dojo couldn't delete trend-capital: Only the workspace Owner can delete it. It needs the workspace's Owner.",
+    ]);
+  });
+
+  it.each([
+    [
+      ['workspaces', 'delete', 'nope', '--yes'],
+      'No workspace "nope" in Dojo. Yours: trend-capital.',
+    ],
+    [['workspaces', 'owner', 'nope', 'ada@example.com', '--yes'], 'No workspace "nope" in Dojo.'],
+    [
+      ['workspaces', 'owner', 'trend-capital', 'zed@example.com', '--yes'],
+      "zed@example.com isn't a member of trend-capital.",
+    ],
+    [['projects', 'rename', 'nope', 'X'], 'No project "nope". projects list shows yours.'],
+  ])('fails %j before changing anything', async (args, message) => {
+    const { dojo, env, cwd } = await setup({
+      ...projectList,
+      'GET /api/members': { body: { docs: [member] } },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(args, result.io)).toBe(1);
+    expect(result.stderr()[0]).toContain(message);
+    expect(dojo.paths().filter((route) => !route.startsWith('GET '))).toEqual([]);
+  });
+
+  it.each([
+    [['workspaces', 'delete', '', '--yes'], "<slug> can't be blank."],
+    [['workspaces', 'owner', ' ', 'ada@example.com', '--yes'], "<slug> can't be blank."],
+    [['workspaces', 'owner', 'trend-capital', '', '--yes'], "<email> can't be blank."],
+    [['projects', 'delete', '', '--yes'], "<project> can't be blank."],
+  ])('refuses a blank argument in %j, as an unset shell variable gives', async (args, message) => {
+    const { dojo, env, cwd } = await setup({ 'GET /api/members': { body: { docs: [member] } } });
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(args, result.io)).toBe(2);
+    expect(result.stderr()[0]).toContain(message);
+    expect(dojo.requests).toEqual([]);
+  });
+
+  it("prints Dojo's Business-features refusal without blaming access", async () => {
+    const { env, cwd } = await setup({
+      'POST /api/projects': {
+        status: 403,
+        body: {
+          errors: [{ message: 'Adding projects needs Business features on the workspace.' }],
+        },
+      },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['projects', 'create', 'Deals'], result.io)).toBe(1);
+    expect(result.stderr()).toEqual([
+      "[frogbot] Dojo couldn't create the project in trend-capital: Adding projects needs Business features on the workspace.",
+    ]);
+  });
+
   it.each([
     ['apps', '/api/apps'],
     ['keys', '/api/api-keys'],
     ['members', '/api/members'],
+    ['projects', '/api/projects'],
     ['workspaces', '/api/workspaces'],
   ])('%s list reads every page', async (noun, route) => {
     const { dojo, env, cwd } = await setup();

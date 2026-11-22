@@ -143,7 +143,7 @@ describe('aiField runs', () => {
   }
 
   function runJobs() {
-    return booted.frogbot.jobs.run({ queue: 'default', overrideAccess: true });
+    return booted.frogbot.jobs.run({ queue: 'frogbot', overrideAccess: true });
   }
 
   async function createUser(role: string, data: Record<string, unknown> = {}): Promise<Doc> {

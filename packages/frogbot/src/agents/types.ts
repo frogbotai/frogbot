@@ -20,7 +20,6 @@ import type { ChannelChatAccess } from '../chat/channelAccess.js';
 import type { CompactionOptions } from '../chat/compaction/run.js';
 import type { ClientToolsOption, MessageDelivery } from '../chat/turn/types.js';
 import type { DocID } from '../collections/config/types.js';
-import type { FrogBot } from '../frogbot.js';
 import type { MCPServer } from '../mcp/types.js';
 import type {
   ChannelPieceInstance,
@@ -51,7 +50,6 @@ export type AgentSchedule =
   | { cron: string; every?: never; timezone?: string };
 
 export type AgentScheduleContext = {
-  frogbot: FrogBot;
   agent: AgentInstance;
   req: FrogBotRequest;
   job: { id: DocID; scheduledFor: Date };

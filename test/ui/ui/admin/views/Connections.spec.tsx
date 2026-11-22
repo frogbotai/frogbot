@@ -551,10 +551,14 @@ describe('linked accounts', () => {
   });
 
   it.each([
+    [400, 'Invalid credentials: token is required (expected string).'],
     [422, "OpenAI didn't accept this key."],
     [502, "Couldn't reach OpenAI to check this key. Try again."],
-  ])("shows the server's message when the key check answers %i", async (status, message) => {
-    fetchMock.mockResolvedValueOnce(Response.json({ error: message }, { status }));
+  ])("shows the server's message when the link answers %i", async (status, message) => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ errors: [{ message, data: { code: 'x' } }] }, { status }),
+    );
+
     render(<ConnectionsViewClient {...props} />);
     fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
     fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));

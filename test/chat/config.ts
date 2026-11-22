@@ -117,7 +117,7 @@ const readNotes: Tool<typeof notesInput, string> = {
   description: 'Read the members-only notes.',
   inputSchema: notesInput,
   execute: async (_input, ctx) => {
-    const { docs } = await ctx.frogbot.find({
+    const { docs } = await ctx.req.frogbot.find({
       collection: notesSlug,
       depth: 0,
       req: ctx.req,
@@ -127,7 +127,7 @@ const readNotes: Tool<typeof notesInput, string> = {
     return docs.map((doc) => String((doc as { text?: string }).text)).join(', ');
   },
   sources: async (_result, ctx) => {
-    const { docs } = await ctx.frogbot.find({
+    const { docs } = await ctx.req.frogbot.find({
       collection: notesSlug,
       depth: 0,
       req: ctx.req,
