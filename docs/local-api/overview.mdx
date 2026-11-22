@@ -29,7 +29,7 @@ You can gain access to the currently running `frogbot` object via two ways:
 
 Every callback that receives a `req` reaches FrogBot through `req.frogbot`: [Hooks](/hooks/overview), [Access Control](/access-control/overview), [validation functions](/fields/overview#validation), endpoints, job handlers, and agent tools, skill content and schedule handlers. None of them gets a separate `frogbot` argument.
 
-A separate `frogbot` exists only where there is no request: the config's [`onInit(frogbot)`](/configuration/overview#run-initialization-steps) and [auth strategies](/authentication/custom-strategies), whose `req` is optional.
+A separate `frogbot` exists only where there may be no request: the config's [`onInit(frogbot)`](/configuration/overview#run-initialization-steps), a [memory adapter's](/memory/overview) `init({ frogbot })`, and [auth strategies](/authentication/custom-strategies), whose `req` is optional.
 
 Example:
 
