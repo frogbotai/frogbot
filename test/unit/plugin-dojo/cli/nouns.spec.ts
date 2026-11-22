@@ -32,6 +32,40 @@ const danger = {
   handover: { id: 'h1', email: 'bo@example.com', expiresAt: '2026-11-29T00:00:00Z' },
 };
 
+const acme = { id: 2, name: 'Acme', slug: 'acme' };
+const twoWorkspaces = { 'GET /api/workspaces': { body: { docs: [workspace, acme] } } };
+const sentHandover = {
+  body: {
+    handover: { id: 'h1', email: 'bo@example.com', expiresAt: '2026-11-29T00:00:00Z' },
+    sent: true,
+  },
+};
+
+const handover = {
+  id: 'h1',
+  kind: 'app',
+  name: 'Deals',
+  sender: 'Ada',
+  fromWorkspace: 'Trend Capital',
+  email: 'bo@example.com',
+  expiresAt: '2026-11-29T00:00:00Z',
+  status: 'pending',
+  recipient: true,
+  workspaces: [{ id: 2, name: 'Acme' }],
+  toWorkspace: null,
+  people: [{ email: 'ada@example.com', level: 'owner' }],
+  canRemove: false,
+};
+
+const accepted = {
+  ...handover,
+  status: 'accepted',
+  recipient: false,
+  workspaces: [],
+  toWorkspace: 'Acme',
+  canRemove: true,
+};
+
 const cases: Case[] = [
   {
     args: ['workspaces', 'create', 'Acme'],
@@ -92,6 +126,78 @@ const cases: Case[] = [
     args: ['projects', 'danger', 'Deals'],
     route: 'GET /api/projects/p1/danger',
     replies: { ...projectList, 'GET /api/projects/p1/danger': { body: danger } },
+  },
+  {
+    args: ['projects', 'move', 'Deals', '--workspace', 'acme', '--yes'],
+    route: 'POST /api/projects/p1/move',
+    body: { workspace: 2 },
+    replies: {
+      ...projectList,
+      ...twoWorkspaces,
+      'POST /api/projects/p1/move': { body: { moved: [7] } },
+    },
+  },
+  {
+    args: ['projects', 'handover', 'Deals', '--to', 'bo@example.com', '--yes'],
+    route: 'POST /api/projects/p1/handover',
+    body: { email: 'bo@example.com' },
+    replies: { ...projectList, 'POST /api/projects/p1/handover': sentHandover },
+  },
+  {
+    args: ['apps', 'move', 'deals', '--workspace', 'acme', '--yes'],
+    route: 'POST /api/apps/7/move',
+    body: { workspace: 2 },
+    replies: { ...twoWorkspaces, 'POST /api/apps/7/move': { body: { moved: [7] } } },
+  },
+  {
+    args: ['apps', 'move', 'deals', '--project', 'deals', '--yes'],
+    route: 'PATCH /api/apps/7',
+    body: { project: 'p1' },
+    replies: { ...projectList, 'PATCH /api/apps/7': { body: { doc: app } } },
+  },
+  {
+    args: ['apps', 'handover', 'deals', '--to', 'bo@example.com', '--yes'],
+    route: 'POST /api/apps/7/handover',
+    body: { email: 'bo@example.com' },
+    replies: { 'POST /api/apps/7/handover': sentHandover },
+  },
+  {
+    args: ['handovers', 'details', 'https://dojo.example/admin/handover/h1?from=email'],
+    route: 'GET /api/handovers/h1/details',
+    replies: { 'GET /api/handovers/h1/details': { body: handover } },
+  },
+  {
+    args: ['handovers', 'accept', 'h1', '--yes'],
+    route: 'POST /api/handovers/h1/accept',
+    body: { workspace: 2 },
+    replies: {
+      ...twoWorkspaces,
+      'GET /api/handovers/h1/details': { body: handover },
+      'POST /api/handovers/h1/accept': { body: { moved: [7] } },
+    },
+  },
+  {
+    args: ['handovers', 'accept', 'h1', '--workspace', 'acme', '--yes'],
+    route: 'POST /api/handovers/h1/accept',
+    body: { workspace: 2 },
+    replies: {
+      ...twoWorkspaces,
+      'GET /api/handovers/h1/details': { body: handover },
+      'POST /api/handovers/h1/accept': { body: { moved: [7] } },
+    },
+  },
+  {
+    args: ['handovers', 'cancel', 'h1'],
+    route: 'POST /api/handovers/h1/cancel',
+    replies: { 'POST /api/handovers/h1/cancel': { body: { cancelled: true } } },
+  },
+  {
+    args: ['handovers', 'remove-access', 'h1', '--yes'],
+    route: 'POST /api/handovers/h1/remove-access',
+    replies: {
+      'GET /api/handovers/h1/details': { body: accepted },
+      'POST /api/handovers/h1/remove-access': { body: { removed: 1 } },
+    },
   },
   {
     args: ['members', 'list'],
@@ -425,6 +531,19 @@ describe('frogbot dojo <noun> <verb>', () => {
       'Pass --cascade or --no-cascade, not both.',
     ],
     [['deployments', 'logs', '..'], '".." can\'t name anything on Dojo.'],
+    [['apps', 'move', 'deals', '--yes'], 'Pass --workspace <slug> or --project <project>'],
+    [
+      ['apps', 'move', 'deals', '--workspace', 'acme', '--project', 'Ops', '--yes'],
+      'Pass --workspace <slug> or --project <project>',
+    ],
+    [['apps', 'handover', 'deals', '--yes'], 'Name who it goes to with --to <email>.'],
+    [['apps', 'handover', 'deals', '--to', ' ', '--yes'], 'Name who it goes to with --to <email>.'],
+    [['projects', 'move', 'Deals', '--yes'], 'Name the workspace it moves into with --workspace'],
+    [['projects', 'handover', 'Deals', '--yes'], 'Name who it goes to with --to <email>.'],
+    [
+      ['handovers', 'cancel', 'https://dojo.example/admin/handover/..'],
+      '".." can\'t name anything on Dojo.',
+    ],
     [['deployments', 'logs', '..', '--follow'], '".." can\'t name anything on Dojo.'],
   ])('exits 2 before calling Dojo for %j', async (args, message) => {
     const { dojo, env, cwd } = await setup();

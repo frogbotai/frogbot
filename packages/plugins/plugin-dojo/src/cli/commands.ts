@@ -11,6 +11,7 @@ import { billing } from './nouns/billing.js';
 import { deployments } from './nouns/deployments.js';
 import { domains } from './nouns/domains.js';
 import { env } from './nouns/env.js';
+import { handovers } from './nouns/handovers.js';
 import { members } from './nouns/members.js';
 import { projects } from './nouns/projects.js';
 import { sharing } from './nouns/sharing.js';
@@ -24,6 +25,7 @@ export const dojoCommands: Record<string, Verb | RawVerb | Noun> = {
   members,
   projects,
   apps,
+  handovers,
   templates,
   deployments,
   env,
