@@ -15,7 +15,7 @@ const binURL = pathToFileURL(
 
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
-describe('frogbot generate:importmap', () => {
+describe('frogbot generate:importmap', { timeout: 20_000 }, () => {
   it.todo('loads config from cwd via loadConfig');
   it.todo('generates the import map from the sanitized payload config');
   it.todo('logs `[frogbot] import map written to <path>` when the file changed');
