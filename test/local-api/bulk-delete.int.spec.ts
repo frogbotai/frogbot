@@ -6,6 +6,7 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import type { Payload } from 'payload';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { cascadeDelete } from '../../packages/frogbot/src/collections/config/cascadeDelete.js';
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
 import { FrogBot, getFrogBotPayload } from '../../packages/frogbot/src/frogbot.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
@@ -48,13 +49,13 @@ describe(`bulk delete at scale [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, (
     }
   };
 
-  const insertRows = (rows: Record<string, unknown>[]) => {
+  const insertRows = (slug: string, rows: Record<string, unknown>[]) => {
     const db: unknown = payload.db;
 
     return insert(rows, (page) =>
       isDrizzle(db)
-        ? db.drizzle.insert(db.tables.rows).values(page)
-        : (db as MongoDatabase).collections.rows.collection.insertMany(page),
+        ? db.drizzle.insert(db.tables[slug]).values(page)
+        : (db as MongoDatabase).collections[slug].collection.insertMany(page),
     );
   };
 
@@ -73,7 +74,10 @@ describe(`bulk delete at scale [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, (
   };
 
   const seed = async (batch: string) => {
-    await insertRows(Array.from({ length: ROWS }, (_, index) => ({ batch, index })));
+    await insertRows(
+      'rows',
+      Array.from({ length: ROWS }, (_, index) => ({ batch, index })),
+    );
 
     const { docs } = await payload.find({
       collection: 'rows',
@@ -109,6 +113,14 @@ describe(`bulk delete at scale [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, (
       typescript: { autoGenerate: false },
       collections: [
         { slug: 'editors', auth: true, fields: [] },
+        cascadeDelete(
+          { slug: 'parents', fields: [{ name: 'name', type: 'text' }] },
+          { collection: 'children', field: 'parent' },
+        ),
+        {
+          slug: 'children',
+          fields: [{ name: 'parent', type: 'relationship', relationTo: 'parents' }],
+        },
         {
           slug: 'rows',
           versions: true,
@@ -189,5 +201,24 @@ describe(`bulk delete at scale [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, (
     expect(result.errors.map(({ id }) => id).sort()).toEqual([...locked].sort());
     expect(result.docs).toHaveLength(ROWS - locked.length);
     expect(await count('locked')).toBe(locked.length);
+  }, 300_000);
+
+  it('cascades a delete by id to 20k children', async () => {
+    const parent = await frogbot.create({
+      collection: 'parents',
+      data: { name: 'parent' },
+      overrideAccess: true,
+    });
+
+    await insertRows(
+      'children',
+      Array.from({ length: ROWS }, () => ({ parent: parent.id })),
+    );
+
+    await frogbot.delete({ collection: 'parents', id: parent.id, overrideAccess: true });
+
+    expect((await frogbot.count({ collection: 'children', overrideAccess: true })).totalDocs).toBe(
+      0,
+    );
   }, 300_000);
 });
