@@ -35,8 +35,10 @@ const postgresMigration = {
 sqliteAdapter({ client: { url: 'file:./app.db' }, prodMigrations: [sqliteMigration] });
 postgresAdapter({ pool: { connectionString: '' }, prodMigrations: [postgresMigration] });
 
-export const mongoUp = async ({ req, session }: mongodb.MigrateUpArgs): Promise<void> => {
-  await migrationDatabase(req)
+export const mongoUp = async ({ req }: mongodb.MigrateUpArgs): Promise<void> => {
+  const { db, session } = await migrationDatabase(req);
+
+  await db
     .collection('posts')
     .updateMany({ summary: { $exists: false } }, { $set: { summary: '' } }, { session });
 };

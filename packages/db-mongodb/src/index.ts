@@ -22,26 +22,35 @@ import { createUpdateJobs } from './updateJobs.js';
 export type { Args, MongooseAdapter } from '@payloadcms/db-mongodb';
 export { compatibilityOptions } from '@payloadcms/db-mongodb';
 
-/** What a migration's `up` gets: `session`, the migration's transaction when the database runs them, and `req`. */
+/** What a migration's `up` gets: `req`. `migrationDatabase(req)` returns the database and the transaction's session. */
 export type MigrateUpArgs = MigrationArgs<PayloadMigrateUpArgs>;
 
-/** What a migration's `down` gets: `session`, the migration's transaction when the database runs them, and `req`. */
+/** What a migration's `down` gets: `req`. `migrationDatabase(req)` returns the database and the transaction's session. */
 export type MigrateDownArgs = MigrationArgs<PayloadMigrateDownArgs>;
 
-/** The MongoDB database a migration changes. */
-export type MigrationDatabase = NonNullable<MongooseAdapter['connection']['db']>;
+/** The MongoDB database a migration changes, and the session of its transaction when there is one. */
+export type MigrationDatabase = {
+  db: NonNullable<MongooseAdapter['connection']['db']>;
+  session?: MongooseAdapter['sessions'][string];
+};
 
 /**
- * The database a migration changes, from its `req`: `migrationDatabase(req).collection('posts')`. Pass the
- * migration's `session` to each call so the change joins its transaction when there is one.
+ * The database a migration changes, from its `req`: `const { db, session } = await migrationDatabase(req)`.
+ * Pass `session` to each call so the change joins the migration's transaction when there is one.
  */
-export function migrationDatabase(req: MigrationRequest): MigrationDatabase {
-  const { db } = migrationPayloadRequest(req).payload;
-  const database = db.name === 'mongoose' ? (db as MongooseAdapter).connection?.db : undefined;
+export async function migrationDatabase(req: MigrationRequest): Promise<MigrationDatabase> {
+  const { db: adapter } = migrationPayloadRequest(req).payload;
+  const mongoose = adapter.name === 'mongoose' ? (adapter as MongooseAdapter) : undefined;
+  const db = mongoose?.connection?.db;
 
-  if (!database) throw new Error('[frogbot] migrationDatabase needs a connected MongoDB adapter.');
+  if (!mongoose || !db) {
+    throw new Error('[frogbot] migrationDatabase needs a connected MongoDB adapter.');
+  }
 
-  return database;
+  const transactionID = await req.transactionID;
+  const session = transactionID === undefined ? undefined : mongoose.sessions[transactionID];
+
+  return session ? { db, session } : { db };
 }
 
 export const mongooseAdapter = (
