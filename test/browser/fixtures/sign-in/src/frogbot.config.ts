@@ -77,12 +77,10 @@ export default buildConfig({
           ? { disableLocalStrategy: { enableFields: true as const } }
           : {}),
       },
-      fields: withFields
-        ? [
-            { name: 'bio', type: 'textarea' },
-            { name: 'role', type: 'select', required: true, options: ['owner', 'member'] },
-          ]
-        : [],
+      fields: [
+        { name: 'bio', type: 'textarea' },
+        { name: 'role', type: 'select', required: withFields, options: ['owner', 'member'] },
+      ],
     },
   ],
   endpoints: [

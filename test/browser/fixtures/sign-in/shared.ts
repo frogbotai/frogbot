@@ -4,7 +4,7 @@ export const firstUserEmail = 'first@example.com';
 export const signInOnly = 'sign-in-only';
 
 /**
- * `SIGN_IN_SETUP` value for the server whose users have an optional `bio`, a required `role`, and
- * two-factor required for owners.
+ * `SIGN_IN_SETUP` value for the server whose users' `role` is required (`bio` stays optional) and
+ * whose owners must use two-factor. The fields exist on every server so they share one schema.
  */
 export const firstUserFields = 'first-user-fields';
