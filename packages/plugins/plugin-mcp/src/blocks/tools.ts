@@ -19,6 +19,7 @@ import {
   may,
   nestedIds,
   notSaved,
+  pairSeen,
   persist,
   place,
   resolve,
@@ -335,24 +336,38 @@ async function load({
     overrideAccess: ctx.overrideAccess,
   })) as Record<string, unknown>;
 
-  const doc = writes
-    ? ((await frogbot.findByID({
-        ...args,
-        overrideAccess: true,
-        showHiddenFields: true,
-      })) as Record<string, unknown>)
-    : checked;
+  const stored = (await frogbot.findByID({
+    ...args,
+    overrideAccess: true,
+    showHiddenFields: true,
+  })) as Record<string, unknown>;
 
-  const all = collectBlockLists(doc, collection.flattenedFields, config);
-  const lists = writes
-    ? readable(all, collectBlockLists(checked, collection.flattenedFields, config))
-    : all;
+  const seen = await frogbot.findByID({ ...args, overrideAccess: true });
+  const all = collectBlockLists(stored, collection.flattenedFields, config);
+  const loaded: Loaded = {
+    collection,
+    config,
+    ctx,
+    doc: stored,
+    lists: [],
+    all,
+    input,
+    seen: pairSeen(stored, seen),
+  };
 
-  return { collection, config, ctx, doc, lists, all, input };
+  const mayRead = await Promise.all(all.map((list) => may(loaded, list.chain, 'read')));
+  const readable = new Set(all.filter((_, index) => mayRead[index]).map(({ path }) => path));
+  const visible = collectBlockLists(checked, collection.flattenedFields, config).filter(
+    ({ path }) => readable.has(path),
+  );
+
+  return writes
+    ? { ...loaded, lists: sameRows(all, visible) }
+    : { ...loaded, doc: checked, lists: visible, all: visible };
 }
 
-function readable(all: BlockList[], seen: BlockList[]): BlockList[] {
-  const rowsAt = new Map(seen.map((list) => [list.path, rowKey(list)]));
+function sameRows(all: BlockList[], visible: BlockList[]): BlockList[] {
+  const rowsAt = new Map(visible.map((list) => [list.path, rowKey(list)]));
 
   return all.filter((list) => rowsAt.get(list.path) === rowKey(list));
 }
