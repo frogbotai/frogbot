@@ -1,0 +1,181 @@
+---
+title: Memory
+sidebarTitle: Overview
+description: Keep facts that people and agents save, by person, agent, team or your own scope.
+keywords: [memory, memories, agents, scopes, adapters, remember]
+---
+
+Memory keeps short facts, such as "the client prefers email", so later work can use them. Turn it on once in your config with a memory adapter, then read and write memories with `frogbot.memory`.
+
+```ts
+import { buildConfig } from 'frogbot'
+import { databaseMemory } from 'frogbot/memory'
+
+export default buildConfig({
+  // ...
+  memory: databaseMemory(),
+})
+```
+
+`memory` is unset by default. Without it, FrogBot adds no memory collection and `frogbot.memory` calls fail with a message that names the fix.
+
+## Scopes
+
+Every memory belongs to one scope. You name a scope with a word, and FrogBot works out which scope that is from the request, never from the caller's input.
+
+| Word | Means | Needs |
+| --- | --- | --- |
+| `me` | The signed-in person, keyed by their user ID, never their email | A signed-in user |
+| `agent` | One agent in this app | An agent slug |
+| `team` | Everyone in the app | Nothing |
+| Your own word | Whatever your scope function returns | Your function to return a value |
+
+Declare your own words, or replace `team`, with `scopes`. A function gets `{ req, agent, chat }` and returns the value that tells one scope from another:
+
+```ts
+memory: databaseMemory({
+  scopes: {
+    client: ({ chat }) => chat?.client,
+    team: ({ req }) => req.user?.company,
+  },
+}),
+```
+
+A function that returns `undefined`, `null` or `''` makes the word unavailable for that request, and a call that uses it fails with `invalid`. So does a word you didn't declare. `me` and `agent` can't be replaced.
+
+Set `namespace` when two apps share a database and use the same agent names, so their memories stay apart.
+
+## Use memories from server code
+
+```ts
+const memory = await frogbot.memory.save({
+  scope: 'me',
+  user: req.user,
+  text: 'Prefers replies in Spanish',
+  pinned: true,
+})
+
+const hits = await frogbot.memory.search({ scope: 'me', user: req.user, query: 'language' })
+
+await frogbot.memory.forget({ scope: 'me', user: req.user, id: memory.id })
+```
+
+| Method | Does |
+| --- | --- |
+| `save({ text, key?, pinned? })` | Adds a memory. With a `key`, updates the scope's memory with that key instead. |
+| `search({ query, limit? })` | Returns `{ memory, score }[]`, best first. `limit` is 1 to 100 and defaults to 10. |
+| `list({ pinned?, limit?, page? })` | Returns `{ docs, hasNextPage }`, newest first. `limit` is 1 to 1,000 and defaults to 100. |
+| `get({ id })` | Returns one memory in the scope. |
+| `update({ id, text?, key?, pinned? })` | Changes one memory. `key: null` removes its key. |
+| `forget({ id? })` | Removes one memory, or every memory in the scope without an `id`. Returns `{ deleted }`. |
+
+Every method also takes `scope`, and these to say who the call runs as:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `scope` | `string` | — | The scope word. |
+| `agent` | `string` | — | The agent slug the `agent` scope and scope functions see. |
+| `chat` | `Record<string, unknown>` | — | The chat document scope functions see. |
+| `req` | `Partial<FrogBotRequest>` | — | The request to run in, for its user and transaction. |
+| `user` | `TypedUser` | — | The user the `me` scope belongs to. Replaces the request's user. |
+| `overrideAccess` | `boolean` | `true` | Skips `access`, like every server-side operation. |
+
+A memory is `{ id, scope, key?, text, pinned, createdAt, updatedAt }`, where `scope` is the word it was saved under.
+
+## Access
+
+FrogBot ships no access rules for shared memories. When a call sets `overrideAccess: false`:
+
+- `me` always works for the signed-in person, and only reaches their own memories.
+- `agent`, `team` and your own words need the `access` function for the kind of call: `read` for `search`, `list` and `get`, `write` for `save`, `update` and `forget`. Without one, the call fails with `Forbidden`.
+
+```ts
+memory: databaseMemory({
+  access: {
+    read: ({ req }) => Boolean(req.user),
+    write: ({ req, scope }) => scope === 'team' && req.user?.role === 'admin',
+  },
+}),
+```
+
+## Errors
+
+Adapters and `frogbot.memory` throw `MemoryAdapterError` with one of these codes:
+
+| Code | When |
+| --- | --- |
+| `invalid` | The input is wrong, or the scope word isn't declared or has no value for the request. |
+| `limit` | The scope is full, or pinned memories would pass their budget. |
+| `not-found` | No memory has that ID in the scope. |
+| `unavailable` | The backend or the embedding model failed. |
+
+## The database adapter
+
+`databaseMemory()` stores memories in a hidden collection, `frogbot-memories`, in your own database.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `namespace` | `string` | `''` | Part of every memory's key, so apps that share a database keep their memories apart. |
+| `scopes` | `Record<string, MemoryScope>` | — | Your own scope words, or a replacement for `team`. See [Scopes](#scopes). |
+| `access` | `MemoryAccess` | — | `read` and `write` functions for shared scopes. See [Access](#access). |
+| `maxPerScope` | `number` | `10000` | Most memories one scope may hold. A save past it fails with `limit`. |
+| `embeddingModel` | `ModelId` | — | Adds meaning search with this embedding model. Nothing picks one by default. |
+| `dimensions` | `number` | — | The embedding model's vector size, such as `1536`. Required with `embeddingModel`. |
+| `atlasSearch` | `boolean` | `false` | MongoDB only: search with Atlas Search indexes. Needs Atlas Search on the cluster. |
+
+It keeps memories tidy without AI:
+
+- A save with a `key` updates the scope's memory with that key.
+- A save without one updates a near duplicate instead of adding a memory: the same text once lowercased, stripped of punctuation and spaces collapsed, or text sharing at least 90% of its words with it.
+- Pinned memories in one scope may hold about 2,000 tokens, counted as characters divided by 4. A save or update past that fails with `limit`.
+
+### Search
+
+Search matches any word of the query, ranked by the database's text search. With `embeddingModel`, it also ranks by meaning, so "how should I contact them?" finds "the client prefers email".
+
+| Database | Word search | Meaning search |
+| --- | --- | --- |
+| SQLite and Postgres | Yes | Yes, with `embeddingModel` |
+| MongoDB with `atlasSearch: true` | Yes | Yes, with `embeddingModel` |
+| MongoDB without Atlas Search | Substring match | No |
+
+Plain MongoDB has no text search, so there `search` matches each query word as a case-insensitive substring of a memory's text and key, ranks memories by how many words they match, and looks at the 500 most recently changed matches. `embeddingModel` is ignored there.
+
+## Write an adapter
+
+A memory adapter is an object with six methods. FrogBot resolves the scope and checks access before it calls one, so every method gets a checked `{ req, namespace, scope, scopeId }` and never a scope word it has to trust. Key memories by `namespace` and `scopeId`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `save` | `(args: MemorySaveArgs) => Promise<Memory>` | — | Adds a memory, or updates the scope's memory with the same `key`. |
+| `search` | `(args: MemorySearchArgs) => Promise<MemorySearchHit[]>` | — | Returns hits for `query`, best first, at most `limit`. |
+| `list` | `(args: MemoryListArgs) => Promise<MemoryList>` | — | Returns one page of the scope, filtered by `pinned` when set. |
+| `get` | `(args: MemoryGetArgs) => Promise<Memory>` | — | Returns one memory, or throws `not-found`. |
+| `update` | `(args: MemoryUpdateArgs) => Promise<Memory>` | — | Changes one memory, or throws `not-found`. |
+| `forget` | `(args: MemoryForgetArgs) => Promise<{ deleted: number }>` | — | Removes one memory by `id`, or the whole scope without one. |
+| `init` | `(args: { frogbot }) => void \| Promise<void>` | — | Runs once at startup, to open clients. |
+| `afterTurn` | `(args: MemoryAfterTurnArgs) => void \| Promise<void>` | — | Runs after a finished agent turn, to learn from it. The reply never waits for it, and a throw is logged. |
+| `sync` | `MemorySync` | — | A `push(changes)` and `pull(cursor)` pair FrogBot keeps on `frogbot.memory.sync`, with no behavior of its own. |
+| `collection` | `(args: { db }) => CollectionConfig` | — | A collection the adapter stores memories in, added to the app's database. |
+| `namespace` | `string` | `''` | Accept it in your factory options, so apps can set it. |
+| `scopes` | `Record<string, MemoryScope>` | — | Accept it in your factory options, so apps can declare scope words. |
+| `access` | `MemoryAccess` | — | Accept it in your factory options, so apps can set access. |
+
+Throw `MemoryAdapterError` from `frogbot/memory` with the code that fits.
+
+### Test an adapter
+
+`testMemoryAdapter()` from `frogbot/memory/testing` runs the same cases against any adapter: a round trip through the six methods, upsert by key, scope and namespace isolation, `not-found`, and `init` and `afterTurn` when the adapter has them. It throws on the first case that fails. Pass a request from a FrogBot instance booted with the adapter, and a call for each other error code your adapter can produce:
+
+```ts
+import { testMemoryAdapter } from 'frogbot/memory/testing'
+
+it('passes the memory adapter kit', async () => {
+  await testMemoryAdapter(adapter, {
+    req: await frogbot.createRequest(),
+    errors: {
+      limit: (target) => adapter.save({ ...target, text: 'x'.repeat(10_000), pinned: true }),
+    },
+  })
+})
+```

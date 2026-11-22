@@ -45,6 +45,7 @@ import { defaultWaitpointsCollection, WAITPOINTS_SLUG } from '../jobs/waitpoints
 import { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
 import { resolveKVCleanupTask } from '../kv/resolveCleanupTask.js';
 import { sanitizeMCPServers } from '../mcp/server.js';
+import { sanitizeMemory } from '../memory/sanitize.js';
 import { collectPieceInstances } from '../pieces/config/sanitize.js';
 import { fromPayloadJobs } from '../seams/config.js';
 import { buildSearchManyEndpoint } from '../search/endpoints.js';
@@ -368,6 +369,10 @@ export function sanitize(
     );
   }
 
+  const memoryCollection = config.memory
+    ? sanitizeMemory({ collections: config.collections, db: config.db, memory: config.memory })
+    : undefined;
+
   const chatResult = resolveChatCollections({ ...config, agents });
   const { collections: usageCollections, slug: usageSlug } = resolveUsageCollection(
     { ...config, agents, collections: chatResult.collections },
@@ -393,6 +398,7 @@ export function sanitize(
       ...connectionsResult.collections,
       ...(Object.keys(triggers).length ? [defaultTriggerSubscriptionsCollection()] : []),
       defaultWaitpointsCollection(),
+      ...(memoryCollection ? [memoryCollection] : []),
     ],
   });
 
@@ -552,6 +558,7 @@ export function sanitize(
     cli: { commands: config.cli?.commands ?? {}, deployTargets: config.cli?.deployTargets ?? {} },
     connections,
     files,
+    ...(config.memory ? { memory: config.memory } : {}),
     pieces,
     settings,
     typescript: {

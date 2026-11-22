@@ -18,6 +18,7 @@ import { generateVideoOperation } from './ai/operations/generateVideo.js';
 import { rerankOperation } from './ai/operations/rerank.js';
 import { streamTextOperation } from './ai/operations/streamText.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
+import { registerAITelemetry } from './ai/telemetry.js';
 import type {
   AIOutput,
   EmbedManyOpts,
@@ -30,7 +31,6 @@ import type {
   GenerateTextOpts,
   GenerateVideoOpts,
   RerankOpts,
-  SanitizedAIConfig,
   StreamTextOpts,
   TranscribeOpts,
 } from './ai/types.js';
@@ -76,6 +76,8 @@ import type { KV } from './kv/types.js';
 import type { FrogBotLocalAPI } from './localAPI.js';
 import { createFrogBotLocalAPI } from './localAPI.js';
 import { MCPConnections } from './mcp/connections.js';
+import { createMemory } from './memory/index.js';
+import type { FrogBotMemory } from './memory/types.js';
 import { toPayloadRequest } from './seams/request.js';
 import { searchManyOperation, searchOperation } from './search/operation.js';
 import type {
@@ -130,6 +132,7 @@ type FrogBotState = {
   kv: KV;
   local: FrogBotLocalAPI;
   mcp?: MCPConnections;
+  memory: FrogBotMemory;
   payload: Payload;
 };
 
@@ -179,6 +182,11 @@ export class FrogBot {
 
   get kv(): KV {
     return state(this).kv;
+  }
+
+  /** Memories for agents and people. Calls fail until the config sets `memory`. */
+  get memory(): FrogBotMemory {
+    return state(this).memory;
   }
 
   get email(): Payload['email'] {
@@ -442,12 +450,14 @@ async function initialize(
   states.set(frogbot, {
     kv: createKV({ adapter: payload.kv }),
     local: createFrogBotLocalAPI(payload),
+    memory: createMemory(frogbot),
     payload,
   });
 
   registerFrogBotInstance(payload, frogbot, config, async (next) => {
     await state(frogbot).mcp?.closeAll();
     refresh(frogbot, next);
+    await next.memory?.init?.({ frogbot });
   });
 
   frogbot.secret = payload.secret;
@@ -461,6 +471,8 @@ async function initialize(
   }
 
   refresh(frogbot, config);
+
+  await config.memory?.init?.({ frogbot });
 
   await initializeChannelHost(frogbot, options.startChannelGateway !== false);
 
@@ -568,32 +580,6 @@ function aiDeps(frogbot: FrogBot) {
     frogbot,
     logger: frogbot.logger,
   };
-}
-
-async function registerAITelemetry(ai: SanitizedAIConfig): Promise<void> {
-  if (!ai.telemetry.enabled) return;
-
-  let otelModule: typeof import('@ai-sdk/otel') | undefined; // eslint-disable-line @typescript-eslint/consistent-type-imports -- the optional peer is imported lazily
-  try {
-    otelModule = await import('@ai-sdk/otel');
-  } catch {
-    return;
-  }
-
-  const { registerTelemetry } = await import('ai');
-  const { OpenTelemetry } = otelModule;
-
-  const deploymentId = ai._internal.deploymentId;
-  const userEnrichSpan = ai.telemetry.enrichSpan;
-
-  registerTelemetry(
-    new OpenTelemetry({
-      enrichSpan: (args) => ({
-        'frogbot.deployment': deploymentId,
-        ...(userEnrichSpan?.(args) ?? {}),
-      }),
-    }),
-  );
 }
 
 function toCollection(frogbot: FrogBot, c: Payload['config']['collections'][number]): Collection {

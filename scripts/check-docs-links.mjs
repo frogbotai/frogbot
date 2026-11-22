@@ -31,6 +31,7 @@ const generalRoots = new Set([
   'local-api',
   'live-preview',
   'mcp',
+  'memory',
   'pieces',
   'plugins',
   'queries',

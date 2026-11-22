@@ -10,6 +10,7 @@ import type { Block } from '../fields/config/types.js';
 import type { FrogBot, InitOptions } from '../frogbot.js';
 import type { JobsConfig } from '../jobs/types.js';
 import type { MCPServer } from '../mcp/types.js';
+import type { MemoryAdapter } from '../memory/types.js';
 import type { EmailPiece } from '../pieces/email.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
@@ -134,6 +135,8 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   tools?: readonly (AnyTool | MCPServer)[];
   /** Third-party account linking — which providers users can connect. */
   connections?: ConnectionsConfig;
+  /** Memory adapter, such as `databaseMemory()`. Unset by default: no memory collection, no memory API. */
+  memory?: MemoryAdapter;
   /** File storage adapters from `@frogbotai/storage-*`. The first also serves FrogBot's upload collections. */
   storage?: StorageAdapter[];
   /** Plugin pipeline — runs serially, in order, before sanitization. */

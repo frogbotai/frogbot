@@ -5,6 +5,7 @@ import type { DeployTarget } from '../bin/deploy/types.js';
 import type { SanitizedChatConfig } from '../chat/types.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
 import type { FrogBot } from '../frogbot.js';
+import type { MemoryAdapter } from '../memory/types.js';
 import type { SanitizedPiecesConfig } from '../pieces/types.js';
 import type { SearchIndexDescriptors } from '../search/types.js';
 import type { IngressRegistry } from '../triggers/types.js';
@@ -33,6 +34,7 @@ export type FrogBotSanitizedConfig = {
   cli: { commands: Record<string, CLICommand>; deployTargets: Record<string, DeployTarget> };
   connections: SanitizedConnectionsConfig;
   files?: SanitizedFilesConfig;
+  memory?: MemoryAdapter;
   pieces: SanitizedPiecesConfig;
   settings: SettingsEntry[];
   typescript?: {

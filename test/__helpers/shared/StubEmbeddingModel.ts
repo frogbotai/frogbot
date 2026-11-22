@@ -48,14 +48,19 @@ function listen(server: Server, port: number): Promise<void> {
 export async function startStubEmbeddingModel({
   dimensions,
   port,
+  vectors = {},
 }: {
   dimensions: number;
   port: number;
+  /** Fixed vectors for some texts, so a test can say which texts mean the same thing. */
+  vectors?: Record<string, number[]>;
 }): Promise<StubEmbeddingModel> {
   const requests: StubEmbeddingRequest[] = [];
   const responses: StubEmbeddingResponse[] = [];
 
   const vectorFor = (text: string, size = dimensions): number[] => {
+    if (Object.hasOwn(vectors, text) && size === dimensions) return vectors[text];
+
     const vector = Array.from({ length: size }, () => 1);
 
     for (const [index, char] of [...text].entries()) {
