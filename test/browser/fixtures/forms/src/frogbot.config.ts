@@ -32,5 +32,5 @@ export default buildConfig({
       ],
     },
   ],
-  plugins: [formsPlugin({ collections: [leadsSlug, applicationsSlug] })],
+  plugins: [formsPlugin({ collections: [leadsSlug, applicationsSlug], analytics: true })],
 });
