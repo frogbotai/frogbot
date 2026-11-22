@@ -111,6 +111,17 @@ describe('frogbot users create on a local SQLite app', () => {
     expect(await login(env, 'b@b.co', 'x')).toMatchObject({ users: 1 });
   });
 
+  it('lets only one of two runs started together create a user', async () => {
+    const env = sqlite('together');
+    const runs = await Promise.all([
+      frogbot(['users', 'create', 'a@b.co'], env),
+      frogbot(['users', 'create', 'b@b.co'], env),
+    ]);
+
+    expect(runs.map(({ code }) => code).sort()).toEqual([0, 1]);
+    expect(await login(env, 'x@b.co', 'x')).toMatchObject({ users: 1 });
+  });
+
   it('names a missing required field, and creates the user once --set gives it', async () => {
     const env = sqlite('required', 'name');
     const missing = await frogbot(['users', 'create', 'a@b.co'], env);
