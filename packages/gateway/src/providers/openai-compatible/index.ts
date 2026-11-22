@@ -17,7 +17,8 @@ export type OpenAICompatibleConfig = {
 
 /**
  * Build a single openai-compatible provider instance from a config entry.
- * Called by the registry builder — not intended for direct use.
+ * Called by the registry builder — not intended for direct use. Streamed
+ * calls ask for `stream_options.include_usage`, so the gateway can meter them.
  */
 export function buildOpenAICompatibleProvider(
   name: string,
@@ -26,6 +27,7 @@ export function buildOpenAICompatibleProvider(
   return createOpenAICompatible({
     name,
     baseURL: cfg.baseURL,
+    includeUsage: true,
     ...(cfg.apiKey !== undefined && { apiKey: cfg.apiKey }),
     ...(cfg.headers !== undefined && { headers: cfg.headers }),
     ...(cfg.queryParams !== undefined && { queryParams: cfg.queryParams }),
