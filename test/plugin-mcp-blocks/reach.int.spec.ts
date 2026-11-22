@@ -243,4 +243,51 @@ describe('block tools and blocks fields the caller may not update or read', () =
     expect([ids(a.body), ids(a.flagged)]).toEqual([['m1'], []]);
     expect([ids(b.body), ids(b.flagged)]).toEqual([[], ['f1']]);
   });
+
+  it('treats a hidden blocks field as unreadable: no index, no row count, no block in replies', async () => {
+    const id = await page({
+      hiddenList: [
+        { id: 'h0', blockType: 'tile', label: 'Secret' },
+        { id: 'h1', blockType: 'tile', label: 'Secret' },
+      ],
+    });
+
+    for (const caller of [member, admin]) {
+      const result = await caller('insertBlock', {
+        ...target(id),
+        field: 'hiddenList',
+        index: 5,
+        block: { blockType: 'tile' },
+      });
+
+      expect(result).toMatchObject({ isError: true });
+      expect(result.text).not.toMatch(/\d+ blocks/);
+    }
+
+    expect(JSON.stringify(await member('listBlocks', target(id)))).not.toContain('hiddenList');
+    expect(ids((await stored('pages', id)).hiddenList)).toEqual(['h0', 'h1']);
+  });
+
+  it('insertBlock and moveBlock into a hidden blocks field save once and answer only its path', async () => {
+    const id = await page({
+      body: [{ id: 'm1', blockType: 'tile', label: 'Mine' }],
+      hiddenList: [{ id: 'h0', blockType: 'tile', label: 'Secret' }],
+    });
+
+    const inserted = await member('insertBlock', {
+      ...target(id),
+      field: 'hiddenList',
+      block: { id: 'n1', blockType: 'tile', label: 'New' },
+    });
+
+    const moved = await member('moveBlock', { ...target(id), blockId: 'm1', field: 'hiddenList' });
+    const after = await stored('pages', id);
+
+    expect(inserted).toMatchObject({ isError: false, data: { path: 'hiddenList' } });
+    expect(moved).toMatchObject({ isError: false, data: { path: 'hiddenList' } });
+    expect(inserted.data).not.toHaveProperty('index');
+    expect(moved.data).not.toHaveProperty('block');
+    expect(ids(after.body)).toEqual([]);
+    expect(ids(after.hiddenList)).toEqual(['h0', 'n1', 'm1']);
+  });
 });
