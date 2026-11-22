@@ -67,6 +67,7 @@ import { resolveStorageAdapters } from '../uploads/storage.js';
 import { attachFrogBotInstance } from './attachFrogBot.js';
 import { buildPayloadConfig } from './buildPayloadConfig.js';
 import { hideBuiltInGraphQL } from './hideBuiltInGraphQL.js';
+import { resolveFrogBotRunner } from './resolveFrogBotRunner.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import type {
   AutonumberEntry,
@@ -333,7 +334,7 @@ export function sanitize(
     ? resolveChannelTask(resolvedJobs)
     : resolvedJobs;
 
-  const jobs = resolveAIFieldTask({
+  const resolved = resolveAIFieldTask({
     collections: config.collections,
     jobs: {
       ...resolvedJobs,
@@ -349,7 +350,9 @@ export function sanitize(
     },
   });
 
-  assertJobs(jobs);
+  assertJobs(resolved);
+
+  const jobs = resolveFrogBotRunner({ agents, jobs: resolved, triggers });
 
   if (config.collections.some(({ slug }) => slug === WAITPOINTS_SLUG)) {
     throw new Error(`FrogBot collection '${WAITPOINTS_SLUG}' is reserved for durable waits.`);

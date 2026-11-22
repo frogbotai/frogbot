@@ -434,6 +434,7 @@ export type { InitOptions, Logger } from './frogbot.js';
 export type { FrogBot as FrogBotInstance } from './frogbot.js';
 export { FrogBot } from './frogbot.js';
 export { getCachedFrogBot, getFrogBot } from './getFrogBot.js';
+export { FROGBOT_QUEUE } from './jobs/autoRun.js';
 export type {
   JobQueueArgs,
   Jobs,

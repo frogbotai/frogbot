@@ -78,10 +78,7 @@ describe('agent schedule tasks', () => {
 
     expect(first?.tasks?.[0]).toBe(userTask);
     expect(first?.workflows).toEqual([]);
-    expect(first?.autoRun).toEqual([
-      userAutoRun,
-      { allQueues: true, cron: '* * * * *', silent: { info: true } },
-    ]);
+    expect(first?.autoRun).toEqual([userAutoRun]);
     expect(task(first).schedule?.map(({ queue }) => queue)).toEqual([
       'frogbot-schedule:reporter:hourly',
       'frogbot-schedule:reporter:daily',
@@ -106,29 +103,6 @@ describe('agent schedule tasks', () => {
       input: { agentSlug: 'reporter', triggerSlug: 'hourly' },
       shouldSchedule: true,
     });
-  });
-
-  it('composes a user autoRun function', async () => {
-    const payload = {} as never;
-    const jobs = resolveScheduleTasks({
-      agents: [
-        {
-          ...baseAgent,
-          triggers: [{ type: 'schedule', slug: 'run', schedule: { every: '1h' }, prompt: 'Run' }],
-        },
-      ],
-      jobs: {
-        autoRun: (value) => Promise.resolve([{ queue: value === payload ? 'user' : 'wrong' }]),
-      },
-    });
-
-    const autoRun = jobs?.autoRun;
-    assert(typeof autoRun === 'function', 'Expected autoRun function');
-
-    expect(await autoRun(payload)).toEqual([
-      { queue: 'user' },
-      { allQueues: true, cron: '* * * * *', silent: { info: true } },
-    ]);
   });
 
   it('executes prompt and handler triggers with schedule context', async () => {

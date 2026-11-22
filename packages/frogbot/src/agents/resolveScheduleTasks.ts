@@ -2,7 +2,6 @@ import { Cron } from 'croner';
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { getFrogBotInstance } from '../instanceRegistry.js';
-import { withFrogBotAutoRun } from '../jobs/autoRun.js';
 import { isRecord } from '../utilities/isRecord.js';
 import type { AgentConfig, AgentScheduleTrigger } from './types.js';
 
@@ -155,6 +154,5 @@ export function resolveScheduleTasks({
   return {
     ...jobs,
     tasks: [...(jobs?.tasks ?? []), task],
-    autoRun: withFrogBotAutoRun(jobs?.autoRun),
   };
 }

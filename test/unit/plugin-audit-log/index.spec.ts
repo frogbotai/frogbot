@@ -137,17 +137,17 @@ describe('auditLogPlugin', () => {
     expect((await apply({ retention: false })).jobs?.tasks ?? []).toHaveLength(0);
   });
 
-  it('schedules retention on the default queue at midnight', async () => {
+  it('schedules retention on the frogbot queue at midnight', async () => {
     const task = (await apply({ retention: { days: 30 } })).jobs?.tasks?.at(-1);
 
     expect(task?.slug).toBe('frogbot-prune-audit-logs');
-    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'default' }]);
+    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'frogbot' }]);
   });
 
   it('keeps a custom retention cron', async () => {
     const task = (await apply({ retention: { days: 30, cron: '0 1 * * *' } })).jobs?.tasks?.at(-1);
 
-    expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'default' }]);
+    expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'frogbot' }]);
   });
 
   it.each([0, 1.5])('rejects retention.days of %s', (days) => {

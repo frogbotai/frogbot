@@ -3,6 +3,7 @@ import {
   type AccessResult,
   definePlugin,
   type Endpoint,
+  FROGBOT_QUEUE,
   type FrogBotConfig,
   type FrogBotRequest,
   type Plugin,
@@ -224,7 +225,7 @@ const aiUsage = definePlugin<AIUsagePluginOptions>({
         ? {
             slug: `frogbot-prune-${usage.slug}`,
             interfaceName: `TaskFrogBot-prune-${usage.slug}`,
-            schedule: [{ cron: retention.cron ?? '0 0 * * *', queue: 'default' }],
+            schedule: [{ cron: retention.cron ?? '0 0 * * *', queue: FROGBOT_QUEUE }],
             handler: async ({ req }) => {
               const cutoff = new Date(Date.now() - retention.days * 86_400_000).toISOString();
 

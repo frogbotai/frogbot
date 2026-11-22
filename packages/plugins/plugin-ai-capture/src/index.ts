@@ -1,4 +1,4 @@
-import { definePlugin, type Field, type JobsConfig, type Plugin } from 'frogbot';
+import { definePlugin, type Field, FROGBOT_QUEUE, type JobsConfig, type Plugin } from 'frogbot';
 
 import { createCapturesCollection } from './collection.js';
 import { exportCapturesCommand } from './commands/exportCaptures.js';
@@ -73,7 +73,7 @@ const aiCapture = definePlugin<CaptureResolvedOptions>({
       ? {
           slug: `frogbot-prune-${collectionSlug}`,
           interfaceName: `TaskFrogBot-prune-${collectionSlug}`,
-          schedule: [{ cron: retention.cron ?? '0 0 * * *', queue: 'default' }],
+          schedule: [{ cron: retention.cron ?? '0 0 * * *', queue: FROGBOT_QUEUE }],
           handler: async ({ req }) => {
             const cutoff = new Date(Date.now() - retention.days * 86_400_000).toISOString();
 

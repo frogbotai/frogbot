@@ -428,11 +428,11 @@ describe('usage retention', () => {
     expect(await pruneTask({ retention: false })).toBeUndefined();
   });
 
-  it('schedules on the default queue at midnight for the resolved usage collection', async () => {
+  it('schedules on the frogbot queue at midnight for the resolved usage collection', async () => {
     const task = await pruneTask({ retention: { days: 30 } });
 
     expect(task?.slug).toBe('frogbot-prune-ai-usage');
-    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'default' }]);
+    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'frogbot' }]);
   });
 
   it('falls back to usage-logs when no usage collection is configured', async () => {
@@ -446,7 +446,7 @@ describe('usage retention', () => {
 
   it('keeps a custom cron', async () => {
     expect((await pruneTask({ retention: { days: 30, cron: '0 4 * * *' } }))?.schedule).toEqual([
-      { cron: '0 4 * * *', queue: 'default' },
+      { cron: '0 4 * * *', queue: 'frogbot' },
     ]);
   });
 
