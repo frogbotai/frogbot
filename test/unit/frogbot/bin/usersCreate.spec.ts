@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
 import {
   describeDatabase,
   parseUsersArgs,
@@ -59,22 +60,40 @@ describe('describeDatabase', () => {
       'mongodb+srv://u:p@cluster0.example.net/app',
       { local: false, label: 'mongodb+srv://cluster0.example.net/app' },
     ],
+    [
+      'mongodb://app:s3cret@db1.example.com:27017,db2.example.com:27017/app?replicaSet=rs0',
+      { local: false, label: 'mongodb://db1.example.com:27017/app' },
+    ],
+    [
+      'postgres://admin:2024/Spring@db.example.com/app',
+      { local: false, label: 'a database URL that could not be read' },
+    ],
     ['not a url', { local: false, label: 'a database URL that could not be read' }],
     [undefined, { local: false, label: "the adapter's database (it doesn't say where)" }],
   ])('names %s without credentials', (url, expected) => {
     expect(describeDatabase(url)).toEqual(expected);
   });
+
+  it('counts an embedded replica as remote, and names the remote it syncs to', () => {
+    expect(
+      describeDatabase('file:./replica.db', 'libsql://prod-org.turso.io?authToken=turso-secret'),
+    ).toEqual({
+      local: false,
+      label: 'file:./replica.db, a replica of libsql://prod-org.turso.io',
+    });
+  });
 });
 
 describe('users', () => {
-  function app(url: string | undefined): FrogBotSanitizedConfig {
+  function app(db: string | object | undefined): FrogBotSanitizedConfig {
     const payloadConfig = {
       admin: { user: 'users' },
       collections: [
         { slug: 'users', auth: {} },
         { slug: 'posts', auth: false },
+        { slug: 'sso', auth: { disableLocalStrategy: { enableFields: true } } },
       ],
-      db: { url },
+      db: typeof db === 'object' ? db : { url: db },
     };
 
     return { _internal: { payloadConfig: Promise.resolve(payloadConfig) } } as never;
@@ -100,6 +119,40 @@ describe('users', () => {
 
     expect(error).toHaveBeenCalledWith(
       '[frogbot] users create: "posts" isn\'t an auth collection in this app.',
+    );
+  });
+
+  it('refuses a collection that signs in without a password, and prints none', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(
+      users(['create', 'a@b.co', '--collection', 'sso'], { config: app('file:./x.db') }),
+    ).resolves.toBe(1);
+
+    expect(log.mock.calls.flat().join('\n')).not.toContain('Password:');
+    expect(error.mock.calls.flat().join('\n')).toContain('"sso" signs in without a password');
+  });
+
+  it('asks for --yes on an embedded replica that syncs to a remote libsql database', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const db = sqliteAdapter({
+      client: {
+        url: 'file:./replica.db',
+        syncUrl: 'libsql://prod-org.turso.io',
+        authToken: 'turso-secret-token',
+      },
+    });
+
+    await expect(users(['create', 'a@b.co'], { config: app(db) })).resolves.toBe(1);
+
+    expect(log.mock.calls.flat()).toEqual([
+      '[frogbot] users create: database file:./replica.db, a replica of libsql://prod-org.turso.io',
+    ]);
+    expect(error.mock.calls.flat().join('\n')).toContain('Run again with --yes');
+    expect([...log.mock.calls, ...error.mock.calls].flat().join('\n')).not.toContain(
+      'turso-secret-token',
     );
   });
 

@@ -17,7 +17,12 @@ export default buildConfig({
   collections: [
     {
       slug: 'users',
-      auth: scenario === 'verify' ? { verify: true } : true,
+      auth:
+        scenario === 'verify'
+          ? { verify: true }
+          : scenario === 'no-local'
+            ? { disableLocalStrategy: { enableFields: true } }
+            : true,
       trash: true,
       fields: scenario === 'name' ? [{ name: 'name', type: 'text', required: true }] : [],
     },

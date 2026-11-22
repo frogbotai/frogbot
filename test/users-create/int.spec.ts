@@ -154,6 +154,14 @@ describe('frogbot users create on a local SQLite app', () => {
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('"notes" isn\'t an auth collection in this app.');
   });
+
+  it('refuses a collection that signs in without a password, and prints none', async () => {
+    const result = await frogbot(['users', 'create', 'a@b.co'], sqlite('no-local', 'no-local'));
+
+    expect(result.code, result.stdout + result.stderr).toBe(1);
+    expect(result.stdout).not.toContain('Password:');
+    expect(result.stderr).toContain('"users" signs in without a password');
+  });
 });
 
 describe('frogbot users create on a Postgres database', () => {
