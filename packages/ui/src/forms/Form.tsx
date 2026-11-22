@@ -1,9 +1,10 @@
 'use client';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '../components/button.js';
 import { fileProblem } from './files.js';
 import { FormQuestion } from './FormQuestion.js';
+import { clearAnswers, loadAnswers, ping, saveAnswers } from './resume.js';
 import { visibleQuestions } from './rules.js';
 import { useTurnstile } from './turnstile.js';
 import type {
@@ -26,6 +27,11 @@ export type FormProps = {
   submitUrl?: string;
   /** Called with the confirmation after a successful submit. When set, a redirect is left to you. */
   onSubmitted?: (confirmation: FormConfirmation) => void;
+  /**
+   * Where view and start counts are posted, such as `/api/forms/<slug>/events`, when the definition
+   * has `analytics`. Without it nothing is counted.
+   */
+  eventUrl?: string;
   className?: string;
 };
 
@@ -111,10 +117,15 @@ async function post(
   );
 }
 
-/** Renders a form definition step by step and posts the answers to `submitUrl`. */
-export function Form({ definition, submitUrl, onSubmitted, className }: FormProps) {
-  const { steps } = definition;
+/**
+ * Renders a form definition step by step and posts the answers to `submitUrl`. A form that takes
+ * new responses keeps the visitor's answers, not files, in this browser until they are sent.
+ */
+export function Form({ definition, submitUrl, onSubmitted, eventUrl, className }: FormProps) {
+  const { slug, steps } = definition;
   const questions = useMemo(() => steps.flatMap((step) => step.questions), [steps]);
+  const resumes = submitUrl !== undefined && definition.values === undefined && !definition.closed;
+  const counts = eventUrl !== undefined && definition.analytics === true && !definition.closed;
 
   const [values, setValues] = useState<Record<string, FormValue>>(() =>
     Object.fromEntries(
@@ -128,6 +139,37 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string>();
   const [trap, setTrap] = useState('');
+  const [restored, setRestored] = useState(!resumes);
+  const started = useRef(false);
+  const viewed = useRef(false);
+
+  useEffect(() => {
+    if (restored) return;
+
+    const saved = loadAnswers(slug, questions);
+    const defaults = Object.fromEntries(
+      questions.map((question) => [question.key, initialValue(question, undefined)]),
+    );
+
+    const shownNow = visibleQuestions(steps, { ...defaults, ...saved });
+    const kept = Object.entries(saved).filter(([key]) => shownNow.has(key));
+
+    if (kept.some(([, value]) => !isEmpty(value))) started.current = true;
+
+    setValues((current) => ({ ...current, ...Object.fromEntries(kept) }));
+    setRestored(true);
+  }, [restored, slug, questions, steps]);
+
+  useEffect(() => {
+    if (resumes && restored && message === undefined) saveAnswers(slug, questions, values);
+  }, [resumes, restored, message, slug, questions, values]);
+
+  useEffect(() => {
+    if (!counts || viewed.current || !eventUrl) return;
+
+    viewed.current = true;
+    ping(eventUrl, 'view');
+  }, [counts, eventUrl]);
 
   const shown = visibleQuestions(steps, values);
   const shownSteps = steps.flatMap((item, index) =>
@@ -169,6 +211,11 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
 
   const change = (key: string, value: FormValue) => {
     setValues((current) => ({ ...current, [key]: value }));
+
+    if (counts && eventUrl && !started.current) {
+      started.current = true;
+      ping(eventUrl, 'start');
+    }
 
     setErrors(({ [key]: _removed, ...rest }) => rest);
   };
@@ -248,6 +295,8 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
       );
 
       if ('confirmation' in result) {
+        if (resumes) clearAnswers(slug);
+
         onSubmitted?.(result.confirmation);
 
         if (result.confirmation.type === 'redirect' && !onSubmitted) {

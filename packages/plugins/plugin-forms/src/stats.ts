@@ -1,0 +1,128 @@
+import type { Access, CollectionConfig, Endpoint, FrogBot } from 'frogbot';
+
+import { formIsClosed, withLock } from './closing.js';
+import { findForm, type FormsRuntime } from './lookup.js';
+import type { FormDocument, FormEvent } from './types.js';
+
+export const FORM_STATS_SLUG = 'form-stats';
+
+const COUNTERS = { view: 'views', start: 'starts', completion: 'completions' } as const;
+
+const never = () => false;
+const signedIn: Access = ({ req }) => Boolean(req.user);
+
+/** The UTC day a count lands on, as `YYYY-MM-DD`. */
+export function statsDay(now = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/** Adds one to the form's counter for `event` on today's row, under a lock per form and day. */
+export async function countEvent(
+  frogbot: FrogBot,
+  form: Pick<FormDocument, 'id'>,
+  event: FormEvent,
+  now = new Date(),
+): Promise<void> {
+  const day = statsDay(now);
+  const counter = COUNTERS[event];
+
+  await withLock(frogbot, `plugin-forms:stats:${form.id}:${day}`, async () => {
+    const { docs } = await frogbot.find({
+      collection: FORM_STATS_SLUG,
+      where: { and: [{ form: { equals: form.id } }, { day: { equals: day } }] },
+      limit: 1,
+      depth: 0,
+      pagination: false,
+      overrideAccess: true,
+    });
+
+    const row = docs[0] as ({ id: number | string } & Record<string, unknown>) | undefined;
+
+    if (row) {
+      const count = typeof row[counter] === 'number' ? row[counter] : 0;
+
+      await frogbot.update({
+        collection: FORM_STATS_SLUG,
+        id: row.id,
+        data: { [counter]: count + 1 },
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      return;
+    }
+
+    await frogbot.create({
+      collection: FORM_STATS_SLUG,
+      data: { form: form.id, day, views: 0, starts: 0, completions: 0, [counter]: 1 },
+      depth: 0,
+      overrideAccess: true,
+    });
+  });
+}
+
+function isPing(value: unknown): value is 'start' | 'view' {
+  return value === 'view' || value === 'start';
+}
+
+/** `POST /api/forms/:slug/events` with `{ type: 'view' | 'start' }`. Answers 204, or 404 with analytics off. */
+export function createEventsEndpoint(runtime: FormsRuntime): Endpoint {
+  return {
+    method: 'post',
+    path: '/:slug/events',
+    handler: async (req) => {
+      if (!runtime.analytics) return Response.json({ error: 'Not found' }, { status: 404 });
+
+      const body = (await req.json?.().catch(() => null)) as { type?: unknown } | null;
+      const type = body?.type;
+
+      if (!isPing(type)) {
+        return Response.json({ error: 'The request body is invalid.' }, { status: 400 });
+      }
+
+      const found = await findForm(req, runtime, req.routeParams?.slug);
+
+      if (!found || found.form.mode === 'update') {
+        return Response.json({ error: 'Not found' }, { status: 404 });
+      }
+
+      if (!(await formIsClosed(req.frogbot, found.form))) {
+        await countEvent(req.frogbot, found.form, type);
+      }
+
+      return new Response(null, { status: 204 });
+    },
+  };
+}
+
+/** One row per form per UTC day. Views and starts come from browser pings, so they are estimates. */
+export function createFormStatsCollection(): CollectionConfig {
+  return {
+    slug: FORM_STATS_SLUG,
+    labels: { singular: 'Form stats', plural: 'Form stats' },
+    disableDuplicate: true,
+    versions: false,
+    admin: {
+      icon: 'chart-bar',
+      description:
+        'Views, starts and completions per form per day (UTC). Completions are exact; views and starts come from visitors’ browsers, so they are estimates.',
+      views: [{ type: 'list', defaultFields: ['form', 'day', 'views', 'starts', 'completions'] }],
+    },
+    defaultSort: '-day',
+    access: { read: signedIn, delete: signedIn, create: never, update: never },
+    indexes: [{ fields: ['form', 'day'], unique: true }],
+    fields: [
+      {
+        name: 'form',
+        type: 'relationship',
+        relationTo: 'forms',
+        required: true,
+        index: true,
+      },
+      { name: 'day', type: 'text', required: true, index: true },
+      { name: 'views', type: 'number', label: 'Views (estimate)', defaultValue: 0 },
+      { name: 'starts', type: 'number', label: 'Starts (estimate)', defaultValue: 0 },
+      { name: 'completions', type: 'number', defaultValue: 0 },
+    ],
+  };
+}
