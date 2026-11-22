@@ -11,7 +11,7 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists
 - **Being asked is enough** for every command here, except the ones below. Run it, then report what it printed.
 - **Invites.** Before `sharing invite` or `members add`, read back the addresses and the level or role, and wait for a yes: "I'll invite sam@acme.com with use access (they can open the app, not edit it). Send it?" An invite emails each person and can't be unsent, and an address added to a workspace joins it when someone signs in with it.
 - **Destructive commands** need `--yes`, because your shell has no terminal to confirm in; without it they exit `2` and change nothing. Ask the user the question the CLI would ask, from the table below, and pass `--yes` only after a yes in this conversation. Never pass `--yes` because a command failed without it.
-- **`--replace-data`.** Never try `frogbot deploy --replace-data`: only an owner typing the app's name at a terminal can confirm it. Tell the user the command to run themselves.
+- **`--replace-data`.** `npx frogbot deploy --replace-data --confirm <app-slug>` replaces all of a live app's data with this computer's, and anything written live since is lost. Run it only when the user asks, after asking "This replaces all of `<app>`'s live data with this computer's; anything written live since is lost. Type `<app>` to confirm." and getting the slug back in this conversation. Never fill in `--confirm` yourself.
 - **Key values.** Never repeat a key's value in a reply, even one the user just gave you. `env list` shows keys masked; keep it that way.
 - **Refusals.** When a command stops because the user lacks access (`It needs owner access to the app.`), or because a step needs a person (terms, payment, a plan upgrade), pass on the reason and any link it prints, and don't retry. Never open a link yourself: links are for the user.
 
@@ -32,6 +32,7 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists
 | `apps handover <app>`, `projects handover <project>` | Hand `<app>` to `<email>`? Once they accept, their workspace pays for it.                                       |
 | `handovers accept <handover>`                        | Accept `<name>` from `<sender>` into `<workspace>`? You become its Admin, and it pays.                          |
 | `handovers remove-access <handover>`                 | Remove `<n>` people outside `<workspace>` from `<name>`?                                                        |
+| `git disconnect <app>`                               | Disconnect `<app>`'s repo? Pushes stop deploying it; deployments already made stay.                             |
 | `keys revoke <id>`                                   | Revoke key `<id>` and the keys it made? (with `--no-cascade`: only that key)                                    |
 
 ## Output And Exit Codes
@@ -75,10 +76,20 @@ Add `--json` whenever you read a result to act on it: stdout then holds one JSON
 
 For an app the user owns or edits:
 
-- `npx frogbot dojo deployments list <app>` prints `<id>  <created>  <status>` per deployment, newest first.
+- `npx frogbot dojo deployments list <app> [--page <n>]` prints `<id>  <created>  <status>` per deployment, newest first, 20 a page, then `Page 1 of 3. Add --page 2 for older ones.` when there are more. Under `--json`, a page past the last is an empty list.
+- `npx frogbot dojo deployments get <id>` prints a deployment's status, its times, the commit it came from, and the error when there is one. It exits `1` when the build failed or the version didn't start, so it can gate a script; `--json` carries `failed`.
 - `npx frogbot dojo deployments logs <id>` prints the end of that build's log, then `[frogbot] <status>` with the error when the build failed. Add `--follow` to stream it until the build ends; a failed build then exits `1` with `Build failed:` and the reason. Fix the cause and deploy again.
 - `npx frogbot dojo deployments rollback <app> <id>` puts an earlier live version back as a new deployment, without a build, keeping today's data and keys. If it can't start, the current version keeps running. Run `deployments list` to see when it's live.
 - `npx frogbot dojo deployments cancel <id>` cancels a queued or building deployment; the app stays as it was. Owners only.
+
+## Repos
+
+A connected repo deploys the app on every push to its branch.
+
+- `npx frogbot dojo git status <app>` prints the provider, repo, branch and folder, and whether pushes deploy. `needs-reconnect` means Dojo lost access: an Admin connects it again.
+- `npx frogbot dojo git connect <app>` connects GitHub. Dojo connects GitHub only for a person signed in to it, so this prints a link: give it to the user to open and pick the repo there. Don't open it yourself.
+- `npx frogbot dojo git connect <app> --provider gitlab --repo <project-id> [--branch <branch>] [--folder <path>] [--instance <url>]` connects GitLab with an access token read from stdin. Ask the user to run it themselves, or to pipe the token from where they keep it; never put a token in an argument or repeat it. Admins only.
+- `npx frogbot dojo git disconnect <app> --yes` removes the link, after the question above; deployments already made stay. Admins only.
 
 ## Keys
 

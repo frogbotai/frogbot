@@ -139,7 +139,8 @@ With [`dojo()`](/plugins/dojo) in `plugins`, `frogbot deploy` (or `frogbot deplo
 | `--app` | app slug or id | — | Ships to this existing app and links the folder to it in `.frogbot/app.json`, for a fresh clone or CI. Stops if the folder is linked to another app. Can't be combined with `--workspace` or `--name`. |
 | `--data` | flag | — | On the first deploy, uploads local SQLite data and files without prompting. |
 | `--no-data` | flag | — | On the first deploy, uploads code only without prompting. |
-| `--replace-data` | flag | — | On a live app, replaces all of its data with this computer's. Owners only, after typing the app's name; needs a terminal. |
+| `--replace-data` | flag | — | On a live app, replaces all of its data with this computer's. Owners only, after typing the app's slug at a terminal or passing it as `--confirm`. |
+| `--confirm` | app slug | — | Answers `--replace-data`'s question, so a script or agent can replace live data without a terminal. A slug that doesn't match stops before any upload. |
 | `--workspace` | workspace slug | — | Dojo workspace to create the app in on the first deploy (when you belong to multiple). |
 | `--name` | name | `package.json` `name` | Subdomain slug for `https://<name>.frogbot.app` on the first deploy (lowercased, alphanumeric + dashes). |
 | `--no-keys` | flag | — | Uploads no `.env` keys. |
@@ -163,7 +164,7 @@ With [`dojo()`](/plugins/dojo) in `plugins`, `frogbot deploy` (or `frogbot deplo
   </Accordion>
   <Accordion title="Bringing local database & upload files (--data)">
     - **First deploy only:** On the first deploy of a local `file:` SQLite app, it asks `Bring your data? 42 deals, 3 users, 12 files` (or requires `--data` / `--no-data` when non-interactive). Once a version of the app has started on Dojo, later deploys send code only; `--data` then says to use `--replace-data`.
-    - **Replacing live data:** `frogbot deploy --replace-data` on a live app asks `This replaces all of deals's live data with this computer's (42 deals, 3 users, 12 files). Anything written live since will be lost. Type deals to confirm:` and ships the data with the new version. Only the app's owners can do it, and only at a terminal: without one it exits `1` with `Replacing live data needs a person at a terminal.`, and `--yes` doesn't skip the question. Dojo snapshots the app's volume first, and brought files overwrite files with the same name; none are deleted.
+    - **Replacing live data:** `frogbot deploy --replace-data` on a live app asks `This replaces all of deals's live data with this computer's (42 deals, 3 users, 12 files). Anything written live since will be lost. Type deals to confirm:` and ships the data with the new version. Only the app's owners can do it. Without a terminal, `--confirm <app-slug>` answers the question; with neither it exits `1` with `Replacing live data needs a person at a terminal, or --confirm <app-slug> to answer the prompt.`, and a wrong slug exits `1` before anything is uploaded. `--yes` doesn't skip the question. Dojo snapshots the app's volume first, and brought files overwrite files with the same name; none are deleted.
     - **Safe live copy:** The deploy copies your SQLite database so it works while `frogbot dev` is running, stripping local-only state (queued jobs, locks, sessions, trigger subscriptions) while preserving users, password hashes, and `FROGBOT_SECRET` so existing connections keep working.
     - **Upload collections:** Files inside upload directories within your project root are uploaded with progress output and automatic 3x retries. `.env*`, `.git`, `node_modules`, and database files inside upload folders are excluded.
   </Accordion>
@@ -280,7 +281,8 @@ Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which add
 | `apps list`, `get`, `create`, `rename`, `delete`, `trash`, `restore` | Manages your apps, from a template too, and Trash. |
 | `apps move`, `apps handover`, `projects move`, `projects handover`, `handovers` | Moves an app or project to another workspace or project, or hands it to someone, who accepts it with `handovers accept`. |
 | `apps restart`, `stop`, `start`, `keep`, `usage`, `export-data` | Runs and stops an app, keeps a free preview, shows its AI spend, and downloads its data. |
-| `deployments`, `env`, `domains`, `sharing` | An app's deployments, build logs, rollbacks and cancels, environment keys, custom domain, and who it's shared with. |
+| `deployments`, `env`, `domains`, `sharing` | An app's deployments (20 a page, or one by id, exiting `1` when it failed), build logs, rollbacks and cancels, environment keys, custom domain, and who it's shared with. |
+| `git` | Shows, connects and disconnects the repo whose pushes deploy an app. |
 | `templates`, `activity` | The templates a new app can start from, and a workspace's activity log. |
 | `keys`, `billing` | Your Dojo API keys, and the workspace's plan, AI balance, and billing and AI funds links. |
 

@@ -43,6 +43,12 @@ export const apps: Noun = {
     pull: {
       summary: "Download an app's live source into a new folder.",
       args: '<app>',
+      flags: {
+        data: {
+          type: 'boolean',
+          help: "Owners only: bring the live database, files and the app's secret too.",
+        },
+      },
       raw: async (args, io) => (await import('../pull.js')).runPull(args, io),
     },
     logs: {

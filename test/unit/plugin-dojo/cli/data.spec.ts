@@ -406,7 +406,7 @@ describe('frogbot deploy --replace-data', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toContain(
-      '[frogbot] Replacing live data needs a person at a terminal.',
+      '[frogbot] Replacing live data needs a person at a terminal, or --confirm <app-slug> to answer the prompt.',
     );
     expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
     expect(after().some(({ path }) => path.endsWith('/deployments'))).toBe(false);
@@ -450,6 +450,65 @@ describe('frogbot deploy --replace-data', () => {
     expect(result.code).toBe(1);
     expect(result.stderr()[0]).toContain('nothing was replaced');
     expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
+  });
+
+  it('req. 16: --confirm <app-slug> replaces the data without a terminal, asking nothing', async () => {
+    const { dojo, run, slug, after, uploadedDeals } = await started();
+    const result = await run(['--replace-data', '--confirm', slug]);
+
+    expect(result.code).toBe(0);
+    expect(result.asked).toEqual([]);
+    expect(after().some(({ path }) => path.endsWith('/data-uploads'))).toBe(true);
+    expect(dojo.data.sent.at(-1)).toBe('replace');
+    expect(await uploadedDeals()).toBe(42);
+  });
+
+  it('req. 16: --confirm answers the prompt with a terminal too', async () => {
+    const { dojo, run, slug } = await started();
+    const result = await run(['--replace-data', `--confirm=${slug}`], { isTTY: true });
+
+    expect(result.code).toBe(0);
+    expect(result.asked).toEqual([]);
+    expect(dojo.data.sent.at(-1)).toBe('replace');
+  });
+
+  it.each([[{}], [{ isTTY: true, text: 'deals' }]])(
+    'req. 16: a wrong --confirm refuses before any upload or deployment (%j)',
+    async (options) => {
+      const { run, slug, after } = await started();
+      const result = await run(['--replace-data', '--confirm', `${slug}-x`], options);
+
+      expect(result.code).toBe(1);
+      expect(result.stderr()[0]).toBe(
+        `[frogbot] --confirm is "${slug}-x", not ${slug}; nothing was replaced.`,
+      );
+      expect(result.asked).toEqual([]);
+      expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
+      expect(after().some(({ path }) => path.endsWith('/deployments'))).toBe(false);
+    },
+  );
+
+  it('req. 16: an editor is refused even with the right --confirm', async () => {
+    const { dojo, run, slug, after } = await started();
+
+    dojo.level = 'editor';
+
+    const result = await run(['--replace-data', '--confirm', slug]);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr()).toContain(
+      "[frogbot] Only this app's Admins can replace its live data.",
+    );
+    expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
+  });
+
+  it('refuses --confirm without --replace-data before any request', async () => {
+    const { dojo, run } = await setup();
+    const result = await run(['--confirm', 'deals']);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr()[0]).toContain('--confirm answers --replace-data; use them together.');
+    expect(dojo.requests).toEqual([]);
   });
 
   it('refuses --replace-data with --no-data, on a first share and a started app, before any request', async () => {

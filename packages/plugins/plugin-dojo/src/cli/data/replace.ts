@@ -19,7 +19,8 @@ const clackText: TextPrompt = async (message) => {
 
 export const replaceMessages = {
   editor: "Only this app's Admins can replace its live data.",
-  noTerminal: 'Replacing live data needs a person at a terminal.',
+  noTerminal:
+    'Replacing live data needs a person at a terminal, or --confirm <app-slug> to answer the prompt.',
   unsupported: 'Replacing live data works only for SQLite apps for now.',
   nothing: "There's no local data to bring, so nothing was replaced.",
   firstShareOnly:
@@ -27,33 +28,41 @@ export const replaceMessages = {
 } as const;
 
 /**
- * `frogbot deploy --replace-data` on a started app: an owner's local data, once they type the app's name to
- * confirm. It never runs without a person at a terminal, so an agent can't replace live data alone;
- * `--yes` doesn't skip it. The caller disposes of the inventory it gets back.
+ * `frogbot deploy --replace-data` on a started app: an owner's local data, once the app's slug is typed to confirm,
+ * at the prompt or as `--confirm <app-slug>`. A wrong `--confirm`, or none without a terminal, stops before the
+ * inventory and any upload; `--yes` never answers it. The caller disposes of the inventory it gets back.
  */
 export async function askReplace({
   slug,
   level,
   root,
   config,
+  confirm,
   io,
 }: {
   slug: string;
   level: 'editor' | 'owner';
   root: string;
   config: DeployConfig;
+  /** `--confirm`: the typed slug, given as a flag. */
+  confirm?: string;
   io: DojoIO;
 }): Promise<DataInventory> {
   if (level === 'editor') throw new ShareError(replaceMessages.editor);
-  if (!io.isTTY) throw new ShareError(replaceMessages.noTerminal);
+
+  if (confirm !== undefined && confirm.trim() !== slug) {
+    throw new ShareError(`--confirm is "${confirm.trim()}", not ${slug}; nothing was replaced.`);
+  }
+
+  if (confirm === undefined && !io.isTTY) throw new ShareError(replaceMessages.noTerminal);
 
   const inventory = await takeInventory({ root, config });
 
   if (inventory === 'unsupported') throw new ShareError(replaceMessages.unsupported);
   if (!inventory) throw new ShareError(replaceMessages.nothing);
+  if (confirm !== undefined) return inventory;
 
   let confirmed = false;
-
   try {
     const text = (io.prompts as { text?: TextPrompt }).text ?? clackText;
     const answer = await text(

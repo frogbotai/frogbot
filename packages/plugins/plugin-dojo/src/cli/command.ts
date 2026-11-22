@@ -39,7 +39,10 @@ export type Verb = {
   run: (input: VerbInput) => Promise<number | void>;
 };
 
-/** A verb that parses its own arguments, like `pull`; `flags` only feed its help. */
+/**
+ * A verb that reads its own positionals, like `pull`. Its arguments are checked against `flags` first, the table
+ * its help comes from, so a flag it reads but doesn't declare is refused instead of missing from `--help`.
+ */
 export type RawVerb = Omit<Verb, 'run' | 'confirm'> & {
   raw: (args: string[], io: DojoIO) => Promise<number>;
 };
@@ -102,19 +105,12 @@ function arity(args: string | undefined): { min: number; max: number; names: str
   return { min: required.length, max: variadic ? Infinity : parts.length, names: required };
 }
 
-/** Parses `args` against the verb, confirms a destructive one, and runs it. */
-export async function runVerb(
-  verb: Verb,
-  args: string[],
-  io: DojoIO,
-  usage: string,
-): Promise<number> {
-  const flags = verbFlags(verb);
-  const { json: _json, wait: _wait, ...options } = flags;
-  let parsed;
+/** Parses `args` against the verb's flags, the same table its help lists; an undeclared flag is a usage error. */
+export function parseVerbArgs(verb: Verb | RawVerb, args: string[], usage: string) {
+  const { json: _json, wait: _wait, ...options } = verbFlags(verb);
 
   try {
-    parsed = parseArgs({
+    return parseArgs({
       args,
       options: Object.fromEntries(
         Object.entries(options).map(([name, { type, multiple }]) => [
@@ -128,7 +124,16 @@ export async function runVerb(
   } catch (error) {
     throw new ShareError(`${(error as Error).message} Usage: ${usage}`, 2);
   }
+}
 
+/** Parses `args` against the verb, confirms a destructive one, and runs it. */
+export async function runVerb(
+  verb: Verb,
+  args: string[],
+  io: DojoIO,
+  usage: string,
+): Promise<number> {
+  const parsed = parseVerbArgs(verb, args, usage);
   const { min, max, names } = arity(verb.args);
   const { positionals, values } = parsed;
 

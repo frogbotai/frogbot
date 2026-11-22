@@ -2,7 +2,7 @@ import type { Noun } from '../command.js';
 import { dojoJSON, followBuild, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { dojoProgram, done, say } from '../io.js';
-import { findApp, whereEquals } from './resolve.js';
+import { findApp, relationId, whereEquals } from './resolve.js';
 
 type Deployment = {
   id: string | number;
@@ -11,23 +11,56 @@ type Deployment = {
   createdAt: string;
   finishedAt?: string | null;
   error?: string | null;
+  runtimeError?: string | null;
+  liveAt?: string | null;
+  trigger?: string | null;
+  commit?: string | null;
+  branch?: string | null;
 };
+
+const pageSize = 20;
+
+function pageNumber(value: unknown): number {
+  if (value === undefined) return 1;
+
+  const page = Number(value);
+
+  if (typeof value !== 'string' || !/^\d+$/.test(value) || page < 1) {
+    throw new ShareError(`--page needs a page number from 1 up, not "${String(value)}".`, 2);
+  }
+
+  return page;
+}
+
+const failed = ({ status, runtimeStatus }: Deployment) =>
+  status === 'failed' || runtimeStatus === 'failed';
 
 const editorNeeded = 'editor or owner access to the app';
 
-/** `deployments list | logs | rollback | cancel`: an app's versions, their build logs, going back and stopping a build. */
+/**
+ * `deployments list | get | logs | rollback | cancel`: an app's versions, one version's status, their build logs,
+ * going back and stopping a build.
+ */
 export const deployments: Noun = {
-  summary: "List an app's deployments, read their build logs, roll back or cancel a build.",
+  summary:
+    "List an app's deployments, check one, read their build logs, roll back or cancel a build.",
   verbs: {
     list: {
-      summary: "List an app's deployments, newest first.",
+      summary: `List an app's deployments, newest first, ${pageSize} a page.`,
       args: '<app>',
-      run: async ({ io, dojo, positionals: [ref = ''] }) => {
+      flags: {
+        page: { type: 'string', value: 'n', help: 'Show this page of older deployments.' },
+      },
+      run: async ({ io, dojo, positionals: [ref = ''], values }) => {
+        const page = pageNumber(values.page);
         const app = await findApp(dojo(), ref);
 
-        const { docs } = await dojoJSON<{ docs: Deployment[] }>(
+        const { docs, totalPages = 1 } = await dojoJSON<{
+          docs: Deployment[];
+          totalPages?: number;
+        }>(
           dojo(),
-          `/api/deployments?depth=0&limit=20&sort=-createdAt&${whereEquals('app', app.id)}`,
+          `/api/deployments?depth=0&limit=${pageSize}&page=${page}&sort=-createdAt&${whereEquals('app', app.id)}`,
           { what: `Couldn't list the deployments of ${app.slug}`, needs: editorNeeded },
         );
 
@@ -44,12 +77,69 @@ export const deployments: Noun = {
           io,
           listed,
           listed.length
-            ? listed.map(
-                ({ id, status, runtimeStatus, createdAt }) =>
-                  `${id}  ${createdAt}  ${status}${runtimeStatus ? `/${runtimeStatus}` : ''}`,
-              )
-            : [`[frogbot] ${app.slug} has no deployments yet.`],
+            ? [
+                ...listed.map(
+                  ({ id, status, runtimeStatus, createdAt }) =>
+                    `${id}  ${createdAt}  ${status}${runtimeStatus ? `/${runtimeStatus}` : ''}`,
+                ),
+                ...(page < totalPages
+                  ? [
+                      `[frogbot] Page ${page} of ${totalPages}. Add --page ${page + 1} for older ones.`,
+                    ]
+                  : []),
+              ]
+            : [
+                page > 1
+                  ? `[frogbot] ${app.slug} has no deployments on page ${page}.`
+                  : `[frogbot] ${app.slug} has no deployments yet.`,
+              ],
         );
+      },
+    },
+    get: {
+      summary: "Show one deployment's status. Exits 1 when its build failed or it didn't start.",
+      args: '<id>',
+      run: async ({ io, dojo, positionals: [id = ''] }) => {
+        const deployment = await dojoJSON<Deployment & { app?: unknown }>(
+          dojo(),
+          `/api/deployments/${segment(id)}?depth=0`,
+          { what: `Couldn't read deployment ${id}`, needs: editorNeeded },
+        );
+
+        const shown = {
+          id: deployment.id,
+          app: relationId(deployment.app) ?? null,
+          status: deployment.status,
+          runtimeStatus: deployment.runtimeStatus ?? null,
+          failed: failed(deployment),
+          trigger: deployment.trigger ?? null,
+          commit: deployment.commit ?? null,
+          branch: deployment.branch ?? null,
+          createdAt: deployment.createdAt,
+          finishedAt: deployment.finishedAt ?? null,
+          liveAt: deployment.liveAt ?? null,
+          error: deployment.error ?? null,
+          runtimeError: deployment.runtimeError ?? null,
+        };
+
+        const problem = shown.error ?? shown.runtimeError;
+        const running = shown.status === 'queued' || shown.status === 'building';
+
+        done(io, shown, [
+          `${shown.id}  ${shown.status}${shown.runtimeStatus ? `/${shown.runtimeStatus}` : ''}`,
+          `Started ${shown.createdAt}${shown.finishedAt ? `, finished ${shown.finishedAt}` : ''}${shown.liveAt ? `, live ${shown.liveAt}` : ''}`,
+          ...(shown.commit
+            ? [`From ${shown.commit.slice(0, 7)}${shown.branch ? ` on ${shown.branch}` : ''}`]
+            : []),
+          ...(problem ? [`[frogbot] ${problem}`] : []),
+          ...(running
+            ? [
+                `${dojoProgram(io.program)} deployments logs ${shown.id} --follow watches the build.`,
+              ]
+            : []),
+        ]);
+
+        return shown.failed ? 1 : 0;
       },
     },
     logs: {
