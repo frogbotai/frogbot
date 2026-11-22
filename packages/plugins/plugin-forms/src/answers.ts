@@ -30,6 +30,10 @@ function isEmpty(value: unknown): boolean {
   return value === null || value === undefined || value === '';
 }
 
+function unanswered(value: unknown): boolean {
+  return isEmpty(value) || (Array.isArray(value) && value.length === 0);
+}
+
 function checkAnswer(field: QuestionField, value: unknown): Checked | undefined {
   if (isEmpty(value)) return;
 
@@ -189,7 +193,9 @@ export function pickSubmission(
     const checked = checkAnswer(field, answers[name]);
 
     if (!state.shown.has(name)) {
-      if (checked) ignored.push({ field: name, reason: hiddenReason(question, questions, state) });
+      if (!unanswered(answers[name])) {
+        ignored.push({ field: name, reason: hiddenReason(question, questions, state) });
+      }
     } else if (!checked) {
       if (edit) data[name] = null;
     } else if ('expected' in checked) {
@@ -203,12 +209,10 @@ export function pickSubmission(
 
   if (errors.length) return { errors };
 
-  const asked = new Set(
-    (form.steps ?? []).flatMap((step) => step.questions ?? []).map((q) => q.field),
-  );
+  const asked = new Set(questions.map(({ name }) => name));
 
   for (const [name, value] of Object.entries(answers)) {
-    if (!asked.has(name) && !isEmpty(value)) {
+    if (!asked.has(name) && !unanswered(value)) {
       ignored.push({ field: name, reason: 'not a question on this form' });
     }
   }

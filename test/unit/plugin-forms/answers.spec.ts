@@ -151,6 +151,43 @@ describe('pickSubmission', () => {
     });
   });
 
+  it('lists an answer to a question whose field is no longer usable', () => {
+    const stale = {
+      slug: 'signup',
+      steps: [{ questions: [{ field: 'email' }, { field: 'gone' }] }],
+    } as FormDocument;
+
+    expect(pickSubmission(stale, target, { data: { email: 'a@b.co', gone: 'x' } })).toEqual({
+      data: { email: 'a@b.co' },
+      ignored: [{ field: 'gone', reason: 'not a question on this form' }],
+    });
+  });
+
+  it('does not list an empty array or no answer to a hidden question, but lists false', () => {
+    const hidden = {
+      slug: 'signup',
+      steps: [
+        {
+          questions: [
+            { field: 'email' },
+            { field: 'age' },
+            { field: 'topics', rules: [{ question: 'age', operator: 'equals', value: '3' }] },
+            { field: 'subscribe', rules: [{ question: 'age', operator: 'equals', value: '3' }] },
+          ],
+        },
+      ],
+    } as FormDocument;
+
+    expect(
+      pickSubmission(hidden, target, {
+        data: { email: 'a@b.co', age: 5, topics: [], subscribe: false, extra: [] },
+      }),
+    ).toEqual({
+      data: { email: 'a@b.co', age: 5 },
+      ignored: [{ field: 'subscribe', reason: 'hidden: age equals 3' }],
+    });
+  });
+
   it('cuts a long value in the message', () => {
     const result = pickSubmission(form, target, { data: { age: 'x'.repeat(300) } });
 
