@@ -70,4 +70,9 @@ it('after a stop, a sequential run does not start a job whose lease it gave back
   });
 
   expect(effects.docs).toHaveLength(0);
+  expect(await readJob(job2.id)).toMatchObject({
+    processingToken: null,
+    totalTried: 0,
+    hasError: false,
+  });
 });

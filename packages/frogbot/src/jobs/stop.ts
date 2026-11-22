@@ -1,4 +1,4 @@
-import type { Payload } from 'payload';
+import type { Job, Payload } from 'payload';
 
 type JobsStopState = {
   held: Set<string>;
@@ -22,8 +22,12 @@ function onSignal(signal: NodeJS.Signals) {
   watching = false;
 
   const stopped = Promise.allSettled([...servers].map((payload) => stopJobs({ payload })));
-  const grace = new Promise((resolve) => setTimeout(resolve, EXIT_GRACE_MS).unref());
-  const settled = Promise.race([stopped, grace]);
+  let timer: NodeJS.Timeout | undefined;
+  const grace = new Promise((resolve) => {
+    timer = setTimeout(resolve, EXIT_GRACE_MS);
+  });
+
+  const settled = Promise.race([stopped, grace]).finally(() => clearTimeout(timer));
   const exit = process.exit.bind(process);
 
   process.exit = ((code) => {
@@ -40,7 +44,7 @@ function watchSignals(payload: Payload) {
 
   watching = true;
 
-  for (const name of SIGNALS) process.on(name, onSignal);
+  for (const name of SIGNALS) process.prependListener(name, onSignal);
 }
 
 /** Starts tracking the job leases `payload` claims; `release` clears the leases with these tokens. */
@@ -57,6 +61,19 @@ export function trackJobs({
 /** Whether {@link stopJobs} has run for `payload`, so it must not claim jobs. */
 export function isStopping(payload: Payload): boolean {
   return states.get(payload)?.stopped !== undefined;
+}
+
+/**
+ * Keeps a job from starting once `payload` is stopping, because its lease was given back and
+ * another server runs it. Clearing the token makes Payload drop the job as it does after a lost
+ * lease, without writing to it.
+ */
+export function assertNotStopping({ payload, job }: { payload: Payload; job: Job }): void {
+  if (!isStopping(payload)) return;
+
+  job.processingToken = null;
+
+  throw new Error(`Job ${job.id} was given back to the queue because this server is stopping.`);
 }
 
 /**

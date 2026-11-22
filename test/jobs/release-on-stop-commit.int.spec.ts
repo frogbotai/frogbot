@@ -3,9 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
 import { stopJobs } from '../../packages/frogbot/dist/jobs/stop.js';
-import { bootJobsFixture, deferred, type FrogBotJob } from './fixture.js';
+import { bootJobsFixture, type FrogBotJob } from './fixture.js';
 
-const started = deferred();
+let started = false;
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 
 beforeAll(async () => {
@@ -17,7 +17,7 @@ beforeAll(async () => {
           slug: 'keyed',
           concurrency: ({ input }) => String(input.key),
           handler: async () => {
-            started.resolve();
+            started = true;
             await new Promise(() => undefined);
           },
         },
@@ -54,14 +54,13 @@ it('a stop that lands while the claim transaction commits leaves the job free', 
     return commit(id);
   };
 
-  void fixture.frogbot.jobs.run({ queue, overrideAccess: true }).catch(() => undefined);
-
-  await started.promise;
+  await fixture.frogbot.jobs.run({ queue, overrideAccess: true });
   await stopped;
 
   db.commitTransaction = commit;
 
   expect(stopped).toBeDefined();
+  expect(started).toBe(false);
 
   const { docs } = await db.find<FrogBotJob>({
     collection: 'payload-jobs',

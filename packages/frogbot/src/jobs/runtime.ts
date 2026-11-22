@@ -65,7 +65,7 @@ export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
 
   trackJobs({ payload, release });
 
-  const transactions = new Map<number | string, () => void>();
+  const transactions = new Map<number | string, (() => void)[]>();
 
   const endTransaction = (end: typeof payload.db.commitTransaction): typeof end => {
     const nativeEnd = end.bind(payload.db);
@@ -76,7 +76,8 @@ export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
       } finally {
         const key = await id;
 
-        transactions.get(key)?.();
+        for (const resolve of transactions.get(key) ?? []) resolve();
+
         transactions.delete(key);
       }
     };
@@ -102,7 +103,12 @@ export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
       const ended =
         transactionID === undefined
           ? undefined
-          : new Promise<void>((resolve) => transactions.set(transactionID, resolve));
+          : new Promise<void>((resolve) => {
+              transactions.set(transactionID, [
+                ...(transactions.get(transactionID) ?? []),
+                resolve,
+              ]);
+            });
 
       const claim = (async () => {
         const claimed = await nativeUpdateJobs(args);
