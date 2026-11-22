@@ -123,6 +123,68 @@ describe('frogbot up', () => {
     expect(lines).toEqual([]);
   });
 
+  it('exits 1 on a failed first build but leaves the supervisor watching', async () => {
+    const unref = vi.fn();
+    const spawnSupervisor = () => {
+      const child = Object.assign(new EventEmitter(), { stderr: new PassThrough(), unref });
+
+      setImmediate(() => {
+        writeRegistration(registrationFile(serviceId(dir)), {
+          id: serviceId(dir),
+          dir,
+          url: 'http://127.0.0.1:9698',
+          port: 9698,
+          pid: process.pid,
+          frogbot: '0.42.0',
+          startedAt: new Date().toISOString(),
+          state: 'build failed',
+          lastError: 'build failed (exit 1)',
+          log: join(dir, '.frogbot', 'service.log'),
+          autostart: false,
+        });
+
+        child.stderr.write('[frogbot] up failed: build failed (exit 1)\nType error: nope\n');
+      });
+
+      return child as unknown as ChildProcess;
+    };
+
+    await expect(up([], { log, spawnSupervisor })).rejects.toThrow(
+      `[frogbot] up failed:\nbuild failed (exit 1)\nType error: nope\n\n[frogbot] still watching ${dir} at http://127.0.0.1:9698; it rebuilds on your next change (\`frogbot down\` to stop)`,
+    );
+    expect(unref).toHaveBeenCalled();
+  });
+
+  it('keeps the LaunchAgent installed when the first build fails under --autostart', async () => {
+    const uninstall = vi.fn();
+    const install = vi.fn(() => {
+      writeFileSync(
+        join(dir, '.frogbot', 'launchd.log'),
+        '[frogbot] up failed: build failed (exit 1)\n',
+      );
+
+      writeRegistration(registrationFile(serviceId(dir)), {
+        id: serviceId(dir),
+        dir,
+        url: 'http://127.0.0.1:9699',
+        port: 9699,
+        pid: process.pid,
+        frogbot: '0.42.0',
+        startedAt: new Date().toISOString(),
+        state: 'build failed',
+        log: join(dir, '.frogbot', 'service.log'),
+        autostart: true,
+      });
+
+      return Promise.resolve();
+    });
+
+    await expect(
+      up(['--autostart'], { log, platform: 'darwin', install, uninstall }),
+    ).rejects.toThrow(/still watching .* at http:\/\/127\.0\.0\.1:9699/);
+    expect(uninstall).not.toHaveBeenCalled();
+  });
+
   it('needs a Next app in the folder', async () => {
     rmSync(join(dir, 'next.config.mjs'));
 
@@ -205,6 +267,15 @@ describe('the already-up line', () => {
       ),
     ).toEqual([
       '[frogbot] /apps/crm is already up at http://127.0.0.1:9696, watching for changes (last build 45 s ago)',
+      '[frogbot] last error: build failed (exit 1)',
+    ]);
+  });
+
+  it('says a supervisor whose first build failed rebuilds on the next change', () => {
+    expect(
+      alreadyUp({ ...found, state: 'build failed', lastError: 'build failed (exit 1)' }, now),
+    ).toEqual([
+      '[frogbot] /apps/crm is already up at http://127.0.0.1:9696, but its build failed; it rebuilds on your next change',
       '[frogbot] last error: build failed (exit 1)',
     ]);
   });
