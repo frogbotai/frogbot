@@ -115,7 +115,7 @@ The agent gets three tools:
 | `memory_save` | Saves a memory, with an optional `key` and `pinned`. | No |
 | `memory_forget` | Forgets one memory by ID. | Yes |
 
-The tools take a scope word at most, never a scope ID, and FrogBot works out the scope from the run, as in [Scopes](#scopes). Without a scope, `memory_save` and `memory_forget` use `me` for a signed-in person and `agent` otherwise. Agent runs skip `access`, which guards server code that sets `overrideAccess: false`; use the agent's [`access`](/agents/overview#control-access) to limit who chats with it. `memory_search`, `memory_save` and `memory_forget` are reserved tool slugs on these agents.
+The tools take a scope word at most, never a scope ID, and FrogBot works out the scope from the run, as in [Scopes](#scopes). Without a scope, `memory_save` and `memory_forget` use `me` for a signed-in person and `agent` otherwise. Agent runs skip `access.read`; use the agent's [`access`](/agents/overview#control-access) to limit who chats with it. When the app sets `access.write`, `memory_save` and `memory_forget` on a shared scope check it as the person in the chat, so a member can't get around a team rule through chat, and a refused call returns `Memory forbidden` to the model. `me` always works for its owner. `memory_search`, `memory_save` and `memory_forget` are reserved tool slugs on these agents.
 
 Change whether a tool asks first once, for every agent. A rule for one agent is a function that checks `agent.slug`:
 

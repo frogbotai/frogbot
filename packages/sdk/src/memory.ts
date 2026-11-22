@@ -78,7 +78,11 @@ function withQuery(base: string, query: Record<string, unknown>): string {
 }
 
 function itemPath(id: number | string): string {
-  return `${path}/${encodeURIComponent(String(id))}`;
+  const value = String(id);
+
+  if (!value.trim()) throw new TypeError('[frogbot] A memory `id` must not be empty.');
+
+  return `${path}/${encodeURIComponent(value)}`;
 }
 
 /** `sdk.memory`: the REST counterpart of `frogbot.memory`, run as the signed-in person. */
@@ -101,16 +105,21 @@ export function memoryClient(send: FrogBotSDKSend) {
         method: 'GET',
         path: withQuery(path, { scope, agent, pinned, limit, page }),
       }),
-    get: ({ agent, id, scope }: MemoryScopeOptions & { id: number | string }, init?: RequestInit) =>
-      call<Memory>({ init, method: 'GET', path: withQuery(itemPath(id), { scope, agent }) }),
-    update: ({ agent, id, key, pinned, scope, text }: MemoryUpdateOptions, init?: RequestInit) =>
+    get: async (
+      { agent, id, scope }: MemoryScopeOptions & { id: number | string },
+      init?: RequestInit,
+    ) => call<Memory>({ init, method: 'GET', path: withQuery(itemPath(id), { scope, agent }) }),
+    update: async (
+      { agent, id, key, pinned, scope, text }: MemoryUpdateOptions,
+      init?: RequestInit,
+    ) =>
       call<Memory>({
         init,
         method: 'PATCH',
         path: itemPath(id),
         json: { scope, agent, text, key, pinned },
       }),
-    forget: ({ agent, id, scope }: MemoryForgetOptions, init?: RequestInit) =>
+    forget: async ({ agent, id, scope }: MemoryForgetOptions, init?: RequestInit) =>
       call<{ deleted: number }>({
         init,
         method: 'DELETE',

@@ -18,6 +18,8 @@ const DEFAULT_APPROVAL: Record<MemoryToolSlug, ToolApprovalOption> = {
 
 const SEARCH_LIMIT = 10;
 
+const FORBIDDEN = 'Memory forbidden: the app does not let this person change this scope.';
+
 const scopeInput = z
   .string()
   .optional()
@@ -108,9 +110,13 @@ export const memoryTools: readonly AnyTool[] = [
     approval: approvalFor('memory_save'),
     execute: ({ key, pinned, scope, text }, ctx) =>
       call(ctx, async ({ memory, base }) => {
+        const target = scope ?? memory.defaultScope();
+
+        if (!(await memory.mayWrite(target))) return FORBIDDEN;
+
         const saved = await ctx.frogbot.memory.save({
           ...base,
-          scope: scope ?? memory.defaultScope(),
+          scope: target,
           text,
           ...(key === undefined ? {} : { key }),
           ...(pinned === undefined ? {} : { pinned }),
@@ -130,7 +136,11 @@ export const memoryTools: readonly AnyTool[] = [
     approval: approvalFor('memory_forget'),
     execute: ({ id, scope }, ctx) =>
       call(ctx, async ({ memory, base }) => {
-        await ctx.frogbot.memory.forget({ ...base, scope: scope ?? memory.defaultScope(), id });
+        const target = scope ?? memory.defaultScope();
+
+        if (!(await memory.mayWrite(target))) return FORBIDDEN;
+
+        await ctx.frogbot.memory.forget({ ...base, scope: target, id });
 
         return `Forgot memory ${id}.`;
       }),
