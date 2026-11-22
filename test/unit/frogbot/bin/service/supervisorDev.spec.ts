@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -65,7 +66,9 @@ try {
 fs.mkdirSync('.next/dev', { recursive: true });
 fs.writeFileSync(lock, String(process.pid));
 process.on('SIGTERM', () => { fs.rmSync(lock, { force: true }); process.exit(0); });
-require('http').createServer((q, s) => s.end('dev ' + process.pid)).listen(Number(process.argv[1]), '127.0.0.1');
+require('http').createServer((q, s) => s.end('dev ' + process.pid))
+  .on('upgrade', (q, socket) => socket.write('HTTP/1.1 101 Switching Protocols\\r\\nUpgrade: websocket\\r\\nConnection: Upgrade\\r\\n\\r\\n'))
+  .listen(Number(process.argv[1]), '127.0.0.1');
 `;
 
 const PROD_SERVER = `require('http').createServer((q, s) => s.end('prod ' + process.pid)).listen(Number(process.argv[1]), '127.0.0.1')`;
@@ -86,7 +89,11 @@ async function superviseDev(
     mode = 'dev' as const,
     prepare = () => {},
     build = () => Promise.resolve(),
-  }: { mode?: 'dev' | 'production'; prepare?: () => void; build?: () => Promise<void> } = {},
+  }: {
+    mode?: 'dev' | 'production';
+    prepare?: () => void;
+    build?: (call: number) => Promise<void>;
+  } = {},
 ) {
   const before = new Set(process.listeners('SIGTERM'));
   const port = await freePort();
@@ -105,7 +112,7 @@ async function superviseDev(
         build: () => {
           calls.build += 1;
 
-          return build();
+          return build(calls.build);
         },
         start: (app: App, _slot, serverPort) => server(PROD_SERVER, app.dir, serverPort),
       },
@@ -132,7 +139,12 @@ async function superviseDev(
   const registration = () => readRegistration(registrationFile(serviceId(dir), env))!;
   const get = async () => (await fetch(`http://127.0.0.1:${port}/`)).text();
 
-  return { calls, registration, get };
+  return { calls, registration, get, port };
+}
+
+function requestMode(dir: string, mode: 'dev' | 'production') {
+  writeFileSync(join(dir, '.frogbot', 'mode-request'), `${mode}\n`);
+  process.emit(SETTINGS_SIGNAL, SETTINGS_SIGNAL);
 }
 
 function app(prefix: string): string {
@@ -347,5 +359,85 @@ describe('the supervisor in dev mode', { timeout: 90_000 }, () => {
     expect(registration()).toMatchObject({ mode: 'production', state: 'running' });
     expect(registration().switching).toBeUndefined();
     expect(calls).toEqual({ prepare: 0, build: 1, devStarts: 0 });
+  });
+
+  it('switches dev → production → dev while an open hot reload socket holds the old dev server', async () => {
+    const dir = app('frogbot-dev-redev-');
+    const { registration, port, get } = await superviseDev(dir);
+    const socket = connect({ host: '127.0.0.1', port });
+    let received = '';
+
+    socket.on('data', (chunk: Buffer) => (received += String(chunk)));
+
+    socket.write(
+      'GET /_next/webpack-hmr HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n',
+    );
+
+    await expect.poll(() => received).toContain('101 Switching Protocols');
+
+    requestMode(dir, 'production');
+
+    await vi.waitFor(() => {
+      expect(registration()).toMatchObject({ mode: 'production', state: 'running' });
+      expect(registration().switching).toBeUndefined();
+    }, WAIT);
+
+    requestMode(dir, 'dev');
+
+    await vi.waitFor(() => {
+      expect(registration().mode).toBe('dev');
+      expect(registration().switching).toBeUndefined();
+    }, WAIT);
+
+    socket.destroy();
+
+    expect(registration().state).toBe('running');
+    expect(registration().lastError).toBeUndefined();
+    expect(await get()).toBe(`dev ${registration().serverPid}`);
+  });
+
+  it('still shows `update failed`, not `crashed`, when the next start fails too', async () => {
+    const dir = app('frogbot-dev-failed-twice-');
+    const { registration } = await superviseDev(dir);
+    const failures = () => supervisorLog(dir).filter((line) => line.includes('update failed'));
+
+    writeFileSync(join(dir, 'broken-start'), '');
+    writeFileSync(join(dir, '.env'), 'A=1\n');
+
+    await vi.waitFor(() => expect(failures()).toHaveLength(1), WAIT);
+
+    writeFileSync(join(dir, '.env'), 'A=2\n');
+
+    await vi.waitFor(() => expect(failures()).toHaveLength(2), WAIT);
+
+    expect(registration().state).toBe('update failed');
+  });
+
+  it('runs no extra build when a bare `up` cancels a switch to dev sent during a build', async () => {
+    const dir = app('frogbot-dev-cancel-build-');
+    let release = () => {};
+
+    const { calls, registration } = await superviseDev(dir, {
+      mode: 'production',
+      build: (call) =>
+        call === 2 ? new Promise<void>((resolve) => (release = resolve)) : Promise.resolve(),
+    });
+
+    writeFileSync(join(dir, 'src', 'page.tsx'), 'export default () => null;\n');
+
+    await vi.waitFor(() => expect(calls.build).toBe(2), WAIT);
+
+    const firstBuilt = registration().builtAt;
+
+    requestMode(dir, 'dev');
+    requestMode(dir, 'production');
+    release();
+
+    await vi.waitFor(() => expect(registration().builtAt).not.toBe(firstBuilt), WAIT);
+    // eslint-disable-next-line no-restricted-syntax -- waits past the point a queued update would start its build
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    expect(registration()).toMatchObject({ state: 'running', mode: 'production' });
+    expect(calls).toMatchObject({ build: 2, devStarts: 0 });
   });
 });

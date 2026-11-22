@@ -107,4 +107,25 @@ describe('the proxy', () => {
 
     expect((await get()).status).toBe(200);
   });
+
+  it('answers a websocket upgrade in the restart gap with 503 and retry-after', async () => {
+    const { port, proxy } = await proxyOn();
+
+    proxy.switchTo(await freePort());
+    proxy.release();
+
+    const socket = connect({ host: '127.0.0.1', port });
+    let received = '';
+
+    socket.on('data', (chunk: Buffer) => (received += String(chunk)));
+
+    socket.write(
+      'GET /_next/webpack-hmr HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n',
+    );
+
+    await new Promise((resolve) => socket.once('close', resolve));
+
+    expect(received).toMatch(/^HTTP\/1\.1 503 /);
+    expect(received.toLowerCase()).toContain('retry-after: 1');
+  });
 });
