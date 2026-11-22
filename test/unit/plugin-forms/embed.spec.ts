@@ -47,8 +47,12 @@ describe('forms embed frame-ancestors', () => {
         'http://localhost:3000',
         'https://*.example.org',
         'https://www.example.com',
+        'https://[::1]:8443',
+        'http://127.0.0.1:3000',
       ]),
-    ).toBe('https://www.example.com http://localhost:3000 https://*.example.org');
+    ).toBe(
+      'https://www.example.com http://localhost:3000 https://*.example.org https://[::1]:8443 http://127.0.0.1:3000',
+    );
   });
 
   it.each([
@@ -61,6 +65,12 @@ describe('forms embed frame-ancestors', () => {
     'https://a.example https://b.example',
     'javascript:alert(1)',
     'HTTPS://WWW.EXAMPLE.COM',
+    'https://a.example;sandbox',
+    'https://a,b.example',
+    'https://*',
+    'https://a_b.example',
+    'https://*.*.example.com',
+    'https://[::1;sandbox]',
   ])('refuses %j at boot', (origin) => {
     expect(() =>
       formsPlugin({ collections: ['leads'], frameAncestors: [origin] })(config()),
