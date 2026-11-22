@@ -15,7 +15,13 @@ import type { CollectionAccess } from '../collections/config/types.js';
 import type { FrogBotTypes } from '../types/generated.js';
 import type { PayloadCollectionConfig } from '../types/payload.js';
 import type { FrogBotRequest } from '../types/request.js';
-import type { Foreach, Parallel, WaitFor, WaitpointOptions } from './waitpoints/types.js';
+import type {
+  Foreach,
+  Parallel,
+  RunInlineTaskFunction,
+  WaitFor,
+  WaitpointOptions,
+} from './waitpoints/types.js';
 
 /** The jobs collection in `jobsCollectionOverrides`. Its access functions get `FrogBotRequest`. */
 export type JobsCollectionConfig = Omit<PayloadCollectionConfig, 'access'> & {
@@ -46,9 +52,11 @@ export type TaskConfig<
   onSuccess?: TaskCallback;
 };
 
-type WithFrogBotRequest<A> = A extends { req: PayloadRequest }
-  ? Omit<A, 'req'> & { req: FrogBotRequest }
-  : A;
+type WithFrogBotRequest<A> = A extends { inlineTask: unknown; req: PayloadRequest }
+  ? Omit<A, 'inlineTask' | 'req'> & { inlineTask: RunInlineTaskFunction; req: FrogBotRequest }
+  : A extends { req: PayloadRequest }
+    ? Omit<A, 'req'> & { req: FrogBotRequest }
+    : A;
 
 type PayloadTaskHandler<
   T extends keyof PayloadTypedJobs['tasks'] | { input: object; output: object },

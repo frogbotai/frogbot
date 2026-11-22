@@ -442,6 +442,7 @@ export type {
   WorkflowConfig,
   WorkflowHandler,
 } from './jobs/types.js';
+export type { RunInlineTaskFunction } from './jobs/waitpoints/types.js';
 export type { DatabaseKVAdapterOptions } from './kv/adapters/DatabaseKVAdapter.js';
 export { databaseKVAdapter } from './kv/adapters/DatabaseKVAdapter.js';
 export { KVLeaseLostError, KVLockContentionError, KVUnsupportedError } from './kv/errors.js';
