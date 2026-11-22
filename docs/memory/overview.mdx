@@ -35,13 +35,13 @@ Declare your own words, or replace `team`, with `scopes`. A function gets `{ req
 ```ts
 memory: databaseMemory({
   scopes: {
-    client: ({ chat }) => chat?.client,
-    team: ({ req }) => req.user?.company,
+    client: ({ chat }) => chat?.client?.id ?? chat?.client,
+    team: ({ req }) => req.user?.company?.id ?? req.user?.company,
   },
 }),
 ```
 
-A function that returns `undefined`, `null` or `''` makes the word unavailable for that request, and a call that uses it fails with `invalid`. So does a word you didn't declare. `me` and `agent` can't be replaced.
+Return an ID, a string or a finite number, not a populated relationship. A function that returns `undefined`, `null` or `''` makes the word unavailable for that request, and a call that uses it fails with `invalid`, as does one that returns any other kind of value. So does a word you didn't declare. `me` and `agent` can't be replaced.
 
 Set `namespace` when two apps share a database and use the same agent names, so their memories stay apart.
 
@@ -126,7 +126,7 @@ Adapters and `frogbot.memory` throw `MemoryAdapterError` with one of these codes
 It keeps memories tidy without AI:
 
 - A save with a `key` updates the scope's memory with that key.
-- A save without one updates a near duplicate instead of adding a memory: the same text once lowercased, stripped of punctuation and spaces collapsed, or text sharing at least 90% of its words with it.
+- A save without one updates a near duplicate instead of adding a memory: the same text once lowercased, stripped of punctuation and spaces collapsed, or text whose shared words make up at least 90% of all the distinct words in both texts.
 - Writes to one scope run one at a time in each server process, so the checks above and the cap hold under concurrent saves. Across several processes, a key or the same text still maps to one memory, but the cap can be passed by a few.
 - Pinned memories in one scope may hold about 2,000 tokens, counted as characters divided by 4. A save or update past that fails with `limit`.
 
@@ -155,7 +155,7 @@ A memory adapter is an object with six methods. FrogBot resolves the scope and c
 | `update` | `(args: MemoryUpdateArgs) => Promise<Memory>` | — | Changes one memory, or throws `not-found`. |
 | `forget` | `(args: MemoryForgetArgs) => Promise<{ deleted: number }>` | — | Removes one memory by `id`, or the whole scope without one. |
 | `init` | `(args: { frogbot }) => void \| Promise<void>` | — | Runs once at startup, to open clients. |
-| `afterTurn` | `(args: MemoryAfterTurnArgs) => void \| Promise<void>` | — | Runs after a finished agent turn, to learn from it. The reply never waits for it, and a throw is logged. |
+| `afterTurn` | `(args: MemoryAfterTurnArgs) => void \| Promise<void>` | — | Runs after a finished agent turn, to learn from it, once agent memory ships; nothing calls it yet. The reply never waits for it, and a throw is logged. |
 | `sync` | `MemorySync` | — | A `push(changes)` and `pull(cursor)` pair FrogBot keeps on `frogbot.memory.sync`, with no behavior of its own. |
 | `collection` | `(args: { db }) => CollectionConfig` | — | A collection the adapter stores memories in, added to the app's database. |
 | `namespace` | `string` | `''` | Accept it in your factory options, so apps can set it. |

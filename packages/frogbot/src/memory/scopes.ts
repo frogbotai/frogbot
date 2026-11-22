@@ -55,5 +55,12 @@ export async function resolveMemoryScope({
     );
   }
 
+  if (typeof value !== 'string' && !(typeof value === 'number' && Number.isFinite(value))) {
+    throw new MemoryAdapterError(
+      'invalid',
+      `Memory scope '${scope}' must resolve to a string or a finite number, such as an ID.`,
+    );
+  }
+
   return `${scope}:${String(value)}`;
 }
