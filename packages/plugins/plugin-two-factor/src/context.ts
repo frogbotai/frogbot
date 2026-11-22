@@ -42,14 +42,17 @@ export type TwoFactorPluginOptions = {
   issuer?: string;
   /** Replaces an event's email, or turns it off with `false`. */
   emails?: Partial<Record<TwoFactorEmailEvent, TwoFactorEmail | false>>;
+  /** Where users manage their API keys. The account section's note that API keys aren't affected links to it. */
+  keysURL?: string;
 };
 
 /** `twoFactor` options with defaults filled, read by other plugins through `plugins['plugin-two-factor']`. */
 export type TwoFactorResolvedOptions = Omit<
   Required<TwoFactorPluginOptions>,
-  'collection' | 'emails'
+  'collection' | 'emails' | 'keysURL'
 > & {
   collection?: string;
+  keysURL?: string;
   emails: NonNullable<TwoFactorPluginOptions['emails']>;
 };
 

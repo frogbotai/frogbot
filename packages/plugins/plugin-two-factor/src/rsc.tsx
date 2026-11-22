@@ -83,6 +83,11 @@ export async function TwoFactorFieldServer({ id, data, field, req }: TwoFactorFi
   const enabled = hasTwoFactor(user);
   const args = { req: frogbotReq, user };
   const name = typeof data?.email === 'string' && data.email ? data.email : 'this person';
+  const collection = req.payload.collections[ctx.slug]?.config;
+  const signIn = {
+    password: !collection?.auth?.disableLocalStrategy,
+    provider: Boolean(collection?.custom?.frogbot?.signIn?.length),
+  };
 
   return (
     <TwoFactorField
@@ -90,9 +95,11 @@ export async function TwoFactorFieldServer({ id, data, field, req }: TwoFactorFi
       canReset={self ? false : await ctx.options.canReset(args)}
       collectionSlug={ctx.slug}
       enabled={enabled}
+      keysURL={ctx.options.keysURL}
       name={name}
       required={self ? await ctx.options.require(args) : false}
       self={self}
+      signIn={signIn}
       userId={id}
     />
   );

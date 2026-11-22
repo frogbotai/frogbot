@@ -16,6 +16,7 @@ import {
   hasTwoFactor,
   jsonError,
   passedKey,
+  payloadRequest,
   readBody,
   readUser,
   routes,
@@ -30,6 +31,7 @@ import {
   continueBody,
   expiredPage,
   recoveryCodesBody,
+  recoveryLeftBody,
   renderPage,
   setupPageBody,
 } from './page.js';
@@ -82,11 +84,13 @@ async function finish({
   ctx,
   pending,
   extra,
+  recoveryLeft,
 }: {
   req: FrogBotRequest;
   ctx: TwoFactorContext;
   pending: PendingSignIn;
   extra?: Record<string, unknown>;
+  recoveryLeft?: number;
 }): Promise<Response> {
   const { slug } = ctx;
   const headers = new Headers({ 'set-cookie': clearPendingCookie(req, slug) });
@@ -102,13 +106,16 @@ async function finish({
 
   if (pending.response === 'json') {
     const response = await finishSignIn({ ...base, response: 'json' });
-    if (!extra) return response;
+    const added =
+      recoveryLeft === undefined ? extra : { ...extra, recoveryCodesLeft: recoveryLeft };
+
+    if (!added) return response;
 
     const answer = new Headers(response.headers);
     answer.delete('content-length');
 
     return Response.json(
-      { ...((await response.json()) as Record<string, unknown>), ...extra },
+      { ...((await response.json()) as Record<string, unknown>), ...added },
       { status: response.status, headers: answer },
     );
   }
@@ -116,7 +123,27 @@ async function finish({
   const returnTo = safeReturnTo(pending.returnTo ?? '', routes(req, slug).origin);
   if (!returnTo) return jsonError('returnTo must be a path on this server.', 400);
 
-  return finishSignIn({ ...base, returnTo });
+  const response = await finishSignIn({ ...base, returnTo });
+  if (recoveryLeft === undefined) return response;
+
+  const signedIn = new Headers();
+
+  for (const cookie of response.headers.getSetCookie()) signedIn.append('set-cookie', cookie);
+
+  return renderPage({
+    req,
+    slug,
+    title: 'Signed in',
+    body: recoveryLeftBody({ left: recoveryLeft, next: returnTo, account: accountURL(req, slug) }),
+    headers: signedIn,
+  });
+}
+
+function accountURL(req: FrogBotRequest, slug: string): string | undefined {
+  const { config } = payloadRequest(req).payload;
+  if (slug !== config.admin.user) return undefined;
+
+  return `${config.routes.admin.replace(/\/+$/, '')}${config.admin.routes.account}`;
 }
 
 function fail({
@@ -233,10 +260,16 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           fn: async ({ data }) => {
             await deletePending(req, slug, found.id);
             await writeUser({ req, slug, id: found.pending.userId, data });
+
+            const left = data[FIELDS.recovery];
+
+            return Array.isArray(left) ? left.length : undefined;
           },
         });
 
-        if (outcome.status === 'ok') return finish({ req, ctx, pending: found.pending });
+        if (outcome.status === 'ok') {
+          return finish({ req, ctx, pending: found.pending, recoveryLeft: outcome.value });
+        }
 
         const refusal = codeRefusal(outcome);
 
