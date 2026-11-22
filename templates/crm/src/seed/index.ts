@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { FrogBotInstance, FrogBotRequest, TypedUser } from 'frogbot';
+import type { FrogBotRequest, TypedUser } from 'frogbot';
 
 import { ACTIVITIES } from './activities';
 import { COMPANIES } from './companies';
@@ -40,10 +40,14 @@ const LOGOS_DIR = path.join(
 );
 
 /** Whether any collection the sample fills already has a record. */
-export async function hasRecords(frogbot: FrogBotInstance): Promise<boolean> {
+export async function hasRecords({
+  req,
+}: {
+  req: FrogBotRequest;
+}): Promise<boolean> {
   const counts = await Promise.all(
     SAMPLE_COLLECTIONS.map((collection) =>
-      frogbot.count({ collection, overrideAccess: true }),
+      req.frogbot.count({ collection, overrideAccess: true, req }),
     ),
   );
 

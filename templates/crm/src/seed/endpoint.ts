@@ -29,7 +29,7 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
       seeding = true;
 
       try {
-        if (await hasRecords(req.frogbot)) return refused();
+        if (await hasRecords({ req })) return refused();
 
         await run({ req, today: new Date() });
       } catch (err) {
