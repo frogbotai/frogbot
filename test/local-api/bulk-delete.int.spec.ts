@@ -39,7 +39,7 @@ describe(`bulk delete at scale [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, (
     rows: Record<string, unknown>[],
     write: (page: Record<string, unknown>[]) => Promise<unknown>,
   ) => {
-    const now = new Date();
+    const now = isDrizzle(payload.db) ? new Date().toISOString() : new Date();
 
     for (let start = 0; start < rows.length; start += 500) {
       await write(
