@@ -4,7 +4,9 @@
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The open-source lego bricks for AI to build internal apps, automate workflows, and replace SaaS apps</strong></p>
+<p align="center"><strong>The open-source Lego bricks your coding agent builds client apps with.</strong></p>
+
+<p align="center">Turn vibe-coded slop into apps clients pay for.</p>
 
 <p align="center">
   <a href="https://github.com/frogbotai/frogbot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" /></a>
@@ -33,10 +35,6 @@
 </h4>
 
 <hr/>
-
-**Define agents, tools, integrations, and your entire data layer in one config — FrogBot turns it into a sleek production UI, database, and backend.**
-
-FrogBot is the fastest way to vibe code production-grade applications in the AI era. Prompting an AI from scratch has it rebuild auth, tables, permissions, and background queues every time, in about 15,000 lines of fragile code. FrogBot gives your coding agent established, declarative building blocks in one MIT codebase you own forever.
 
 ## Start with a coding agent
 
