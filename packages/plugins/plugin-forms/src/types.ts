@@ -26,6 +26,13 @@ export type FormsPluginOptions<S extends CollectionSlug = CollectionSlug> = {
   trustProxy?: boolean;
   /** Edit links: how long they last, and who manages them. */
   links?: FormsLinksOptions;
+  /**
+   * Origins allowed to embed forms with `<script src="/api/forms/<slug>/embed.js">`, like
+   * `'https://www.example.com'`. Empty, the embed page is sent with `frame-ancestors 'none'`.
+   *
+   * @default []
+   */
+  frameAncestors?: string[];
 };
 
 /** A length of time: seconds, or a string like `'30m'`, `'12h'`, `'7d'` or `'2w'`. */
