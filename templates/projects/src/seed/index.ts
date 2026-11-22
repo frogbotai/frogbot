@@ -1,4 +1,4 @@
-import type { FrogBotInstance, FrogBotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 type TaskStatus = 'todo' | 'in-progress' | 'in-review' | 'done';
 
@@ -120,13 +120,11 @@ function daysFrom(today: Date, days: number | undefined): string | undefined {
 
 /** Whether the app already has the starter's records; Seed only fills an empty app. */
 export async function hasSampleData({
-  frogbot,
   req,
 }: {
-  frogbot: FrogBotInstance;
-  req?: FrogBotRequest;
+  req: FrogBotRequest;
 }): Promise<boolean> {
-  const { totalDocs } = await frogbot.count({
+  const { totalDocs } = await req.frogbot.count({
     collection: 'projects',
     overrideAccess: true,
     req,
@@ -142,11 +140,9 @@ export async function hasSampleData({
  * can be retried.
  */
 export async function seed({
-  frogbot,
   req,
   today = new Date(),
 }: {
-  frogbot: FrogBotInstance;
   req: FrogBotRequest;
   today?: Date;
 }) {
@@ -155,7 +151,7 @@ export async function seed({
 
   try {
     for (const { tasks, ...data } of PROJECTS) {
-      const project = await frogbot.create({
+      const project = await req.frogbot.create({
         collection: 'projects',
         data,
         overrideAccess: true,
@@ -165,7 +161,7 @@ export async function seed({
       created.push(project.id);
 
       for (const { dueInDays, startInDays, ...task } of tasks) {
-        await frogbot.create({
+        await req.frogbot.create({
           collection: 'tasks',
           data: {
             ...task,
@@ -183,14 +179,14 @@ export async function seed({
     if (created.length > 0) {
       const project = { in: created };
 
-      await frogbot.delete({
+      await req.frogbot.delete({
         collection: 'tasks',
         where: { project },
         overrideAccess: true,
         req,
       });
 
-      await frogbot.delete({
+      await req.frogbot.delete({
         collection: 'projects',
         where: { id: project },
         overrideAccess: true,

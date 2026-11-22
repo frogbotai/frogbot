@@ -705,14 +705,27 @@ async function drawnThumb({ frame, index }: { frame: Locator; index: number }) {
 
       const light = (x: number, y: number) => data[(y * bitmap.width + x) * 4] > 230;
 
-      const run = (length: number, hit: (at: number) => boolean) => {
-        const hits = Array.from({ length }, (_, at) => at).filter(hit);
+      const run = (from: number, length: number, hit: (at: number) => boolean) => {
+        if (!hit(from)) return { middle: Infinity, size: Infinity };
 
-        return { middle: hits[0] + hits.length / 2, size: hits.length };
+        let start = from;
+        let end = from;
+
+        while (start > 0 && hit(start - 1)) start--;
+
+        while (end < length - 1 && hit(end + 1)) end++;
+
+        return { middle: start + (end - start + 1) / 2, size: end - start + 1 };
       };
 
-      const across = run(bitmap.width, (x) => light(x, Math.floor(bitmap.height / 2)));
-      const down = run(bitmap.height, (y) => light(Math.floor(across.middle), y));
+      const across = run(Math.floor(dot.left + dot.width / 2 - control.left), bitmap.width, (x) =>
+        light(x, Math.floor(bitmap.height / 2)),
+      );
+
+      const down = run(Math.floor(bitmap.height / 2), bitmap.height, (y) =>
+        light(Math.floor(across.middle), y),
+      );
+
       const round = (px: number) => Math.round(Math.abs(px) * 10) / 10;
       const inner = control.height - 4;
 

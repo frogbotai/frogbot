@@ -240,6 +240,16 @@ export function SidePanelMenuNote({ children }: { children: ReactNode }) {
   return <div className={`${baseClass}__note`}>{children}</div>;
 }
 
+/** Whether `target` sits in an open menu, listbox or dialog, which owns the keyboard. */
+export function isInOpenMenu(target: EventTarget | null): boolean {
+  return Boolean(
+    target instanceof Element &&
+    target.closest(
+      '[aria-haspopup][aria-expanded="true"], [role="menu"], [role="listbox"], [role="dialog"]',
+    ),
+  );
+}
+
 /**
  * Closes a side panel on Esc, unless another layer already handled the key, focus is in an open
  * menu, listbox or dialog, or `ignore` returns true.
@@ -261,17 +271,7 @@ export function useSidePanelEscape(
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
 
-      const target = event.target instanceof Element ? event.target : null;
-
-      if (
-        target?.closest(
-          '[aria-haspopup][aria-expanded="true"], [role="menu"], [role="listbox"], [role="dialog"]',
-        )
-      ) {
-        return;
-      }
-
-      if (ref.current.ignore?.(event)) return;
+      if (isInOpenMenu(event.target) || ref.current.ignore?.(event)) return;
 
       ref.current.onClose?.();
     };

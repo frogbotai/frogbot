@@ -30,7 +30,7 @@
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
     "json-schema-to-typescript": "^15.0.3",
-    "next": "16.4.2",
+    "next": "~16.4.6",
     "pino": "^9.14.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",

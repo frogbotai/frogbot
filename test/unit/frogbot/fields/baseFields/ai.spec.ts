@@ -617,6 +617,7 @@ describe('aiField queueing', () => {
     expect(queue).toHaveBeenCalledTimes(1);
     expect(queue).toHaveBeenCalledWith({
       task: 'frogbot-run-ai-field',
+      queue: 'frogbot',
       input: {
         collection: 'tasks',
         id: 7,
@@ -637,6 +638,7 @@ describe('aiField queueing', () => {
 
     expect(queue).toHaveBeenCalledWith({
       task: 'frogbot-run-ai-field',
+      queue: 'frogbot',
       input: { collection: 'tasks', id: 7, field: 'summary' },
       overrideAccess: true,
       req,

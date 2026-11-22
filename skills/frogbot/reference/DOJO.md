@@ -15,16 +15,19 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists
 - **Key values.** Never repeat a key's value in a reply, even one the user just gave you. `env list` shows keys masked; keep it that way.
 - **Refusals.** When a command stops because the user lacks access (`It needs owner access to the app.`), or because a step needs a person (terms, payment, a plan upgrade), pass on the reason and any link it prints, and don't retry. Never open a link yourself: links are for the user.
 
-| Command                    | Ask first                                                                    |
-| -------------------------- | ---------------------------------------------------------------------------- |
-| `apps delete <app>`        | Move `<app>` to Trash? It stops now and is deleted for good in 30 days.      |
-| `apps stop <app>`          | Stop `<app>`? Visitors see a paused page until you start it again.           |
-| `env unset <app> <KEY>...` | Remove `<KEY>` from `<app>`? It restarts once.                               |
-| `domains set <app> <host>` | Only when `domains get` shows another domain: Replace `<old>` with `<host>`? |
-| `domains clear <app>`      | Remove the custom domain of `<app>`? It stops reaching the app.              |
-| `sharing leave <app>`      | Leave `<app>`? You'll need a new invite to get back.                         |
-| `members remove <email>`   | Remove `<email>` from the workspace?                                         |
-| `keys revoke <id>`         | Revoke key `<id>` and the keys it made? (with `--no-cascade`: only that key) |
+| Command                           | Ask first                                                                           |
+| --------------------------------- | ----------------------------------------------------------------------------------- |
+| `apps delete <app>`               | Move `<app>` to Trash? It stops now and is deleted for good in 30 days.             |
+| `apps stop <app>`                 | Stop `<app>`? Visitors see a paused page until you start it again.                  |
+| `env unset <app> <KEY>...`        | Remove `<KEY>` from `<app>`? It restarts once.                                      |
+| `domains set <app> <host>`        | Only when `domains get` shows another domain: Replace `<old>` with `<host>`?        |
+| `domains clear <app>`             | Remove the custom domain of `<app>`? It stops reaching the app.                     |
+| `sharing leave <app>`             | Leave `<app>`? You'll need a new invite to get back.                                |
+| `members remove <email>`          | Remove `<email>` from the workspace?                                                |
+| `projects delete <project>`       | Delete the project `<project>` for good?                                            |
+| `workspaces delete <slug>`        | Delete `<workspace>` for good? Its projects, members, API keys and plan go with it. |
+| `workspaces owner <slug> <email>` | Make `<email>` the Owner of `<slug>`? You become an Admin.                          |
+| `keys revoke <id>`                | Revoke key `<id>` and the keys it made? (with `--no-cascade`: only that key)        |
 
 ## Output And Exit Codes
 
@@ -108,7 +111,14 @@ A workspace holds apps and a plan. Its members are an `owner` or a `member`. Whe
 
 - `npx frogbot dojo workspaces list` prints `<slug>  <name>` per workspace.
 - `npx frogbot dojo workspaces create <name>` creates a workspace the user owns. Dojo picks the slug.
-- `npx frogbot dojo workspaces rename <slug> <name>` renames one the user owns; the slug stays. Dojo has no workspace delete.
+- `npx frogbot dojo workspaces rename <slug> <name>` renames one the user owns; the slug stays.
+- `npx frogbot dojo workspaces delete <slug> --yes` deletes an empty workspace for good, with its projects, members, API keys and plan, after the question above. Dojo refuses while it holds apps, Trash included, and lets only the Owner do it. The CLI sends the workspace's name as the typed confirmation.
+- `npx frogbot dojo workspaces owner <slug> <email> --yes` makes a member who has signed in the Owner at once, after the question above; the user becomes an Admin. Only the Owner pays, changes the plan and deletes the workspace.
+- `npx frogbot dojo projects list [--workspace <slug>]` prints `<id>  <name>` per project, `(default)` after the workspace's default one. Projects are folders of apps inside a workspace.
+- `npx frogbot dojo projects create <name> [--workspace <slug>]` adds a project. Dojo allows it only on workspaces with Business features, for their Admins.
+- `npx frogbot dojo projects rename <project> <name>` renames a project. `<project>` is its id or name in every `projects` verb, and `--workspace <slug>` narrows the name lookup; a name two projects share fails and lists their ids.
+- `npx frogbot dojo projects delete <project> --yes` deletes an empty project for good, after the question above. Dojo refuses while it holds apps, Trash included, and never deletes the default project.
+- `npx frogbot dojo projects danger <project>` shows whether the user may move, hand over, leave or delete it, the workspaces it can move to, and a pending handover.
 - `npx frogbot dojo members list [--workspace <slug>]` prints `<email>  <role>` per member.
 - `npx frogbot dojo members add <email> [--role owner|member] [--workspace <slug>]` adds someone, who joins when they sign in with that email. The role defaults to `member`. Workspace owners only, and only after you read back the address and role and the user says yes.
 - `npx frogbot dojo members role <email> <owner|member> [--workspace <slug>]` changes a role. Workspace owners only.

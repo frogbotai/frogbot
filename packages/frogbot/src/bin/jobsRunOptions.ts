@@ -9,7 +9,7 @@ export type JobsRunOptions = {
   help: boolean;
 };
 
-export const jobsRunUsage = `FrogBot usage: frogbot jobs:run [options]
+export const jobsRunUsage = `[frogbot] usage: frogbot jobs:run [options]
 
 options:
   --cron <expression>   tick schedule (default: "* * * * *", every minute)

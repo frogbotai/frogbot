@@ -44,11 +44,16 @@
     color: var(--color-text-secondary);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
-    text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
     border-radius: var(--fb-radius-sm);
+  }
+
+  .fb-command-menu__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .fb-command-menu__item--active {

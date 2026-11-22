@@ -168,44 +168,61 @@ export function findBlock(lists: BlockList[], blockId: number | string): BlockSp
   return spot;
 }
 
+/** A field found in a block, and whether the caller can see its path's indexes. */
+export type BoundField = { path: string; readable: boolean };
+
 /**
  * The fields in a block, nested ones included, whose values Payload keeps only while the block
- * stays in the same blocks field: those with their own update access, and localized ones.
+ * stays in the same blocks field: those with their own update access, and localized ones. A field
+ * inside a `hidden` field or one with its own read access isn't `readable`.
  */
 export function rowBoundFields(
   row: BlockData,
   block: FlattenedBlock,
   config: SanitizedConfig,
-): { guarded: string[]; localized: string[] } {
-  const found = { guarded: [] as string[], localized: [] as string[] };
+): { guarded: BoundField[]; localized: BoundField[] } {
+  const found = { guarded: [] as BoundField[], localized: [] as BoundField[] };
 
-  scan(row, block.flattenedFields, '', config, found);
+  scan({ value: row, fields: block.flattenedFields, prefix: '', readable: true, config, found });
 
   return found;
 }
 
-function scan(
-  value: unknown,
-  fields: FlattenedField[],
-  prefix: string,
-  config: SanitizedConfig,
-  found: { guarded: string[]; localized: string[] },
-): void {
+function scan({
+  value,
+  fields,
+  prefix,
+  readable,
+  config,
+  found,
+}: {
+  value: unknown;
+  fields: FlattenedField[];
+  prefix: string;
+  readable: boolean;
+  config: SanitizedConfig;
+  found: { guarded: BoundField[]; localized: BoundField[] };
+}): void {
   if (!isRecord(value)) return;
 
   for (const field of fields) {
     const path = `${prefix}${field.name}`;
     const child = value[field.name];
+    const next = {
+      readable: readable && !('hidden' in field && field.hidden) && !field.access?.read,
+      config,
+      found,
+    };
 
-    if (field.access?.update) found.guarded.push(path);
+    if (field.access?.update) found.guarded.push({ path, readable });
 
-    if (field.localized && config.localization) found.localized.push(path);
+    if (field.localized && config.localization) found.localized.push({ path, readable });
 
     if (field.type === 'group' || field.type === 'tab') {
-      scan(child, field.flattenedFields, `${path}.`, config, found);
+      scan({ ...next, value: child, fields: field.flattenedFields, prefix: `${path}.` });
     } else if (field.type === 'array' && Array.isArray(child)) {
       child.forEach((row: unknown, index) =>
-        scan(row, field.flattenedFields, `${path}.${index}.`, config, found),
+        scan({ ...next, value: row, fields: field.flattenedFields, prefix: `${path}.${index}.` }),
       );
     } else if (field.type === 'blocks' && Array.isArray(child)) {
       const blocks = fieldBlocks(field, config);
@@ -213,7 +230,14 @@ function scan(
       child.forEach((row: unknown, index) => {
         const nested = isBlock(row) && blocks.find(({ slug }) => slug === row.blockType);
 
-        if (nested) scan(row, nested.flattenedFields, `${path}.${index}.`, config, found);
+        if (nested) {
+          scan({
+            ...next,
+            value: row,
+            fields: nested.flattenedFields,
+            prefix: `${path}.${index}.`,
+          });
+        }
       });
     }
   }

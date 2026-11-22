@@ -6,6 +6,7 @@ import { type RefObject, useCallback, useEffect, useRef, useState, useTransition
 import { createPortal } from 'react-dom';
 
 import { useRecordPanel } from '../../panel/RecordPanelProvider.client.js';
+import { rowRecordId } from '../../panel/recordSteps.js';
 import { CellEditor, type CellEditorDone, type CellEditorHandle } from './CellEditor.client.js';
 import { resolveFieldAtPath } from './fieldPath.js';
 
@@ -23,10 +24,6 @@ const ROWS = '.table:not(.table--drag-preview) tbody > tr';
 const EDITOR_LAYERS =
   '.fb-cell-editor, .rs__menu, .rs__menu-portal, .react-datepicker, .react-datepicker-popper, #date-time-picker-portal, .popup__content, [role="dialog"], [data-sonner-toaster], .payload__modal-item';
 
-function rowId(row: HTMLElement): string | undefined {
-  return row.dataset.id ?? row.querySelector<HTMLElement>('[data-row-id]')?.dataset.rowId;
-}
-
 function editableCells(container: HTMLElement): HTMLTableCellElement[] {
   return Array.from(
     container.querySelectorAll<HTMLTableCellElement>(`${ROWS} > td[data-cell-edit]`),
@@ -34,7 +31,7 @@ function editableCells(container: HTMLElement): HTMLTableCellElement[] {
 }
 
 function toActive(td: HTMLTableCellElement, initialText?: string): ActiveCell | undefined {
-  const id = td.parentElement ? rowId(td.parentElement) : undefined;
+  const id = td.parentElement ? rowRecordId(td.parentElement) : undefined;
   const column = td.dataset.cellEdit;
 
   return id && column ? { cell: td, column, initialText, rowId: id } : undefined;
@@ -124,7 +121,7 @@ export function CellEditing({
     const mark = () => {
       container.querySelectorAll<HTMLTableCellElement>(`${ROWS} > td`).forEach((td) => {
         const className = [...td.classList].find((name) => byClass.has(name));
-        const id = td.parentElement ? rowId(td.parentElement) : undefined;
+        const id = td.parentElement ? rowRecordId(td.parentElement) : undefined;
         const column = className && byClass.get(className);
         const allowed =
           id &&

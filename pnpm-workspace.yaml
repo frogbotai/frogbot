@@ -15,7 +15,7 @@ packages:
   - 'examples/tailwind'
 
 catalog:
-  '@next/env': '16.4.2'
+  '@next/env': '16.4.6'
   # Payload: bump this one line, then run `pnpm vendored`.
   payload: &payload '4.0.0-beta.9'
   '@payloadcms/db-d1-sqlite': *payload
@@ -48,7 +48,7 @@ catalog:
   '@payloadcms/translations': *payload
   '@payloadcms/ui': *payload
   '@types/node': '24.12.3'
-  next: '16.4.2'
+  next: '16.4.6'
   react: '19.3.1'
   react-dom: '19.3.1'
   typescript: '6.0.3'

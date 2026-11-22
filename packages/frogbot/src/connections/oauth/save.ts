@@ -63,8 +63,11 @@ export async function saveOAuthConnection({
   if (account) {
     try {
       linked = parseOAuthAccount(account);
-    } catch {
-      throw new OAuthError('account');
+    } catch (cause) {
+      throw new OAuthError('account', {
+        cause,
+        message: 'The sign-in returned an account with no id or label.',
+      });
     }
   } else {
     linked = await lookupOAuthAccount({ piece, tokens: credential, req, signal: req.signal });

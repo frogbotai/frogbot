@@ -180,6 +180,22 @@ const destructive: { args: string[]; asked: string; replies?: Record<string, unk
   },
   { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4 and the keys it made?' },
   {
+    args: ['projects', 'delete', 'Deals'],
+    asked: 'Delete the project Deals (p1) for good?',
+    replies: { 'GET /api/projects': { docs: [{ id: 'p1', name: 'Deals', workspace: 1 }] } },
+  },
+  {
+    args: ['workspaces', 'delete', 'trend-capital'],
+    asked:
+      'Delete Trend Capital (trend-capital) for good? Its projects, members, API keys and plan go with it.',
+  },
+  {
+    args: ['workspaces', 'owner', 'trend-capital', 'ada@example.com'],
+    asked:
+      'Make ada@example.com the Owner of trend-capital? You become an Admin, and only they can pay for, change the plan of or delete it.',
+    replies: { 'GET /api/members': { docs: [member] } },
+  },
+  {
     args: ['sharing', 'leave', 'deals'],
     asked: "Leave deals? You'll need a new invite to get back.",
   },
