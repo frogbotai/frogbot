@@ -144,6 +144,31 @@ describe('MemoryViewClient', () => {
     expect(screen.queryByText('Load more')).toBeNull();
   });
 
+  it('skips no memory when loading more after a forget', async () => {
+    const third: MemoryItem = { ...trains, id: 'm3', text: 'Lives in Lisbon' };
+    const fourth: MemoryItem = { ...trains, id: 'm4', text: 'Has a cat' };
+    const pages: Record<string, MemoryItem[]> = { '1': [trains, third], '2': [fourth] };
+
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method === 'DELETE') return Promise.resolve(Response.json({ deleted: 1 }));
+
+      const page = new URL(url, 'http://x').searchParams.get('page') ?? '1';
+
+      return Promise.resolve(Response.json({ docs: pages[page] ?? [], hasNextPage: page === '1' }));
+    });
+
+    render(<MemoryViewClient {...props} initialHasNextPage />);
+
+    fireEvent.click(screen.getByLabelText('Forget "Drinks green tea"'));
+
+    await waitFor(() => expect(screen.queryByText('Drinks green tea')).toBeNull());
+
+    fireEvent.click(screen.getByText('Load more'));
+
+    expect(await screen.findByText('Lives in Lisbon')).toBeTruthy();
+    expect(screen.getAllByText('Likes trains')).toHaveLength(1);
+  });
+
   it('says when there are no memories yet', () => {
     render(<MemoryViewClient {...props} initialMemories={[]} />);
 
