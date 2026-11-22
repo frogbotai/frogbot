@@ -248,6 +248,19 @@ describe('withFrogBot', () => {
     expect(withFrogBot().typescript).toBeUndefined();
   });
 
+  it("turns off Next's agent upgrade stop for a server `frogbot up` runs in the background", () => {
+    expect(withFrogBot({ experimental: { agentUpgrade: 'security' } }).experimental).toEqual({
+      agentUpgrade: 'security',
+    });
+
+    vi.stubEnv('FROGBOT_SUPERVISED', '1');
+
+    expect(
+      withFrogBot({ experimental: { agentUpgrade: 'latest', sri: { algorithm: 'sha256' } } })
+        .experimental,
+    ).toEqual({ agentUpgrade: false, sri: { algorithm: 'sha256' } });
+  });
+
   it("turns Next's AGENTS.md rules off unless the app sets agentRules", () => {
     expect(withFrogBot().agentRules).toBe(false);
     expect(withFrogBot({ agentRules: true }).agentRules).toBe(true);

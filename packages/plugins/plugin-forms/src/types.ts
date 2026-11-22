@@ -26,7 +26,25 @@ export type FormsPluginOptions<S extends CollectionSlug = CollectionSlug> = {
   trustProxy?: boolean;
   /** Edit links: how long they last, and who manages them. */
   links?: FormsLinksOptions;
+  /**
+   * Count views, starts and completions per form per day in a `form-stats` collection that
+   * signed-in users read. Completions are counted on the server from each new response; the
+   * page pings `POST /api/forms/<slug>/events` for views and starts, so those are estimates.
+   *
+   * @default false
+   */
+  analytics?: boolean;
+  /**
+   * Origins allowed to embed forms with `<script src="/api/forms/<slug>/embed.js">`, like
+   * `'https://www.example.com'`. Empty, the embed page is sent with `frame-ancestors 'none'`.
+   *
+   * @default []
+   */
+  frameAncestors?: string[];
 };
+
+/** What a `form-stats` row counts. The page sends `view` and `start`; the server counts `completion`. */
+export type FormEvent = 'completion' | 'start' | 'view';
 
 /** A length of time: seconds, or a string like `'30m'`, `'12h'`, `'7d'` or `'2w'`. */
 export type FormLinkDuration = number | `${number}${'s' | 'm' | 'h' | 'd' | 'w'}`;
@@ -183,6 +201,8 @@ export type FormDefinition = {
   turnstile?: { siteKey: string };
   /** Through an edit link: the record's current answers, by question key. */
   values?: Record<string, unknown>;
+  /** Set when the app counts views and starts: send `{ type: 'view' }` and `{ type: 'start' }` to `POST /api/forms/<slug>/events`. */
+  analytics?: true;
 };
 
 /**
@@ -197,10 +217,20 @@ export type FormSubmitBody = {
   turnstile?: string;
 };
 
-export type FormFieldError = { field?: string; message: string };
+export type FormFieldError = {
+  field?: string;
+  message: string;
+  /** `invalid_answer` when the answer has the wrong type for its question. */
+  code?: 'invalid_answer';
+};
+
+/** An answer a confirmed submission didn't use. `reason` is for reading and may be reworded. */
+export type FormIgnoredAnswer = { field: string; reason: string };
 
 export type FormSubmitResponse =
-  { confirmation: FormConfirmation } | { errors: FormFieldError[] } | { error: string };
+  | { confirmation: FormConfirmation; ignored?: FormIgnoredAnswer[] }
+  | { errors: FormFieldError[] }
+  | { error: string };
 
 /** `req.context.form` while a submission creates its record. */
 export type FormSubmission = {

@@ -50,7 +50,7 @@ The admin login page automatically renders methods from the collection selected 
 
 ### The first user
 
-While the admin user collection has no users, the admin sends everyone to `/admin/create-first-user`.
+While the admin user collection has no users, the admin sends everyone to `/admin/create-first-user`. The page asks for email, password and the fields the collection marks `required`; the rest are filled in later on the account page.
 
 - **With sign-in methods configured,** that page shows the sign-in buttons below the password form, so the first person can also continue with Google. The first person to finish either one becomes the first user.
 - **With the [OAuth-only setup](#collection-requirements),** the admin shows the login page instead, and the first person to sign in becomes the first user.
@@ -136,6 +136,8 @@ access: {}
 The rule also governs `POST /api/users`, so an open rule lets anyone create an account there too. An [`allow()`](/plugins/roles) rule needs a signed-in user, so it refuses every new person; open sign-up with a plain function. Refused people get a `403` with "This app doesn't let new people sign up. Ask an admin to add you." and nothing is created.
 
 The first user is the exception, as with the create-first-user screen: while the collection has no users at all, counting trashed ones, the first person to sign in gets an account whatever `access.create` says. Sign-ins to a collection run one at a time, so two people signing in at once can't both become the first user.
+
+From a terminal, [`frogbot users create <email>`](/getting-started/cli#create-the-first-user) makes that first user with a random password, under the same rule: it refuses once the collection has any user.
 
 On Dojo, the [Dojo plugin](/plugins/dojo#sign-in-with-dojo) adds "Continue with Dojo" to the user collection, and it follows these same rules.
 

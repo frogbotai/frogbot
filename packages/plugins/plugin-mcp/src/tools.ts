@@ -127,7 +127,6 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
 
           const result: unknown = await execute(input, {
             req: frogbotReq,
-            frogbot: frogbotReq.frogbot,
             agent,
             overrideAccess: false,
           });

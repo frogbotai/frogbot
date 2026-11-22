@@ -28,14 +28,13 @@ function shownFlag(name: string, option: (typeof shareOptions)[keyof typeof shar
   return text ? `[${text}]${'multiple' in option ? '...' : ''}` : '';
 }
 
-/** `frogbot deploy dojo`'s usage line, listing every flag `parseShareArgs` accepts. */
-export const shareUsage = (program: string) =>
-  [
-    `Usage: ${program} deploy [dojo]`,
-    ...Object.entries(shareOptions).map(([name, option]) => shownFlag(name, option)),
-  ]
-    .filter(Boolean)
-    .join(' ');
+/** The `dojo` target's own flags, for `frogbot deploy --help`: every flag `parseShareArgs` accepts. */
+export const shareUsage = Object.entries(shareOptions)
+  .map(([name, option]) => shownFlag(name, option))
+  .filter(Boolean)
+  .join(' ');
+
+const usage = (program: string) => `Usage: ${program} deploy [dojo] ${shareUsage}`;
 
 /** The `dojo` deploy target's own flags. */
 export type ShareFlags = {
@@ -67,7 +66,7 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
       tokens: true,
     });
   } catch (error) {
-    throw new ShareError(`${(error as Error).message} ${shareUsage(program)}`, 2);
+    throw new ShareError(`${(error as Error).message} ${usage(program)}`, 2);
   }
 
   const dataFlags = new Set(
@@ -77,29 +76,29 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
   );
 
   if (dataFlags.size > 1) {
-    throw new ShareError(`Use --data or --no-data, not both. ${shareUsage(program)}`, 2);
+    throw new ShareError(`Use --data or --no-data, not both. ${usage(program)}`, 2);
   }
 
   const { values } = parsed;
 
   if (values['replace-data'] && values.data === false) {
-    throw new ShareError(`Use --replace-data or --no-data, not both. ${shareUsage(program)}`, 2);
+    throw new ShareError(`Use --replace-data or --no-data, not both. ${usage(program)}`, 2);
   }
 
   if (values.confirm !== undefined && !values['replace-data']) {
     throw new ShareError(
-      `--confirm answers --replace-data; use them together. ${shareUsage(program)}`,
+      `--confirm answers --replace-data; use them together. ${usage(program)}`,
       2,
     );
   }
 
   if (values.app !== undefined && !values.app.trim()) {
-    throw new ShareError(`--app needs an app's slug or id. ${shareUsage(program)}`, 2);
+    throw new ShareError(`--app needs an app's slug or id. ${usage(program)}`, 2);
   }
 
   if (values.app !== undefined && (values.workspace !== undefined || values.name !== undefined)) {
     throw new ShareError(
-      `--app shares to an app that already exists; --workspace and --name are for a new one. ${shareUsage(program)}`,
+      `--app shares to an app that already exists; --workspace and --name are for a new one. ${usage(program)}`,
       2,
     );
   }

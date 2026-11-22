@@ -40,6 +40,7 @@ jobs:
               --project rich-text --project live-preview --project plugin-seo
               --project plugin-import-export --project sign-in-two-factor --project linked-accounts
               --project sign-in-passwords --project sign-in-only --project first-user-blank
+              --project first-user-fields
             browsers: chromium
           # Sign-in setup projects run in Chromium. chat-assets-webkit runs after chat-assets and
           # chat-assets-firefox on the same server, so its group needs all three browsers.

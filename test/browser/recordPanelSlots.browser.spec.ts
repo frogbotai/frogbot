@@ -228,9 +228,11 @@ test('pill tabs switch, show activity, and count errors after Save', async ({ pa
 
   await tabs.getByRole('tab', { name: 'Activity' }).click();
   const activity = page.locator('.fb-record-panel .fb-activity');
-  await expect(activity.locator('.fb-activity__entry')).toHaveCount(2);
-  await expect(activity.locator('.fb-activity__entry').first()).toContainText('changed');
-  await expect(activity.locator('.fb-activity__entry').last()).toContainText('created this');
+
+  await expect(activity.locator('.fb-activity__line')).toHaveText([
+    /created this/,
+    /changed Status to open/,
+  ]);
 
   await tabs.getByRole('tab', { name: 'Details' }).click();
   await summary.fill('');
@@ -242,7 +244,7 @@ test('pill tabs switch, show activity, and count errors after Save', async ({ pa
 
   await page.goto(`/collections/tickets/${id}`);
   await page.locator('.fb-pill-tabs').getByRole('tab', { name: 'Activity' }).click();
-  await expect(page.locator('.fb-activity .fb-activity__entry')).toHaveCount(2);
+  await expect(page.locator('.fb-activity .fb-activity__line')).toHaveCount(2);
 });
 
 test('at 375 px the bar stays one row and the title truncates in it', async ({ page }) => {

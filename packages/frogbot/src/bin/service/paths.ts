@@ -43,5 +43,6 @@ export function appPaths(dir: string) {
     log: join(root, 'service.log'),
     launchdLog: join(root, 'launchd.log'),
     port: join(root, 'port'),
+    modeRequest: join(root, 'mode-request'),
   };
 }

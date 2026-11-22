@@ -1,4 +1,3 @@
-import { visibleQuestions } from '@frogbotai/ui/forms/rules';
 import {
   addDataAndFileToRequest,
   APIError,
@@ -7,6 +6,7 @@ import {
   KVLockContentionError,
 } from 'frogbot';
 
+import { bodyAnswers, pickSubmission, shownQuestions } from './answers.js';
 import { countResponse, formIsClosed, isClosed } from './closing.js';
 import { buildConfirmation } from './definition.js';
 import {
@@ -18,9 +18,15 @@ import {
   spendUse,
 } from './links/resolve.js';
 import { definitionFor, findForm, type FormsRuntime } from './lookup.js';
-import type { FormTarget, QuestionField } from './questions.js';
+import type { FormTarget } from './questions.js';
 import { clientIp, takeRateLimit, verifyTurnstile } from './spam.js';
-import type { FormDocument, FormFieldError, FormSubmitResponse } from './types.js';
+import { countEvent } from './stats.js';
+import type {
+  FormDocument,
+  FormFieldError,
+  FormIgnoredAnswer,
+  FormSubmitResponse,
+} from './types.js';
 import {
   asSubmission,
   checkFiles,
@@ -30,8 +36,6 @@ import {
   FileRejected,
   uploadQuestions,
 } from './uploads.js';
-
-export const PARAM_MAX_LENGTH = 500;
 
 const notFound = () =>
   Response.json({ error: 'Not found' } satisfies FormSubmitResponse, { status: 404 });
@@ -55,152 +59,14 @@ const tooMany = (retryAfter: number) =>
 const invalid = (errors: FormFieldError[]) =>
   Response.json({ errors } satisfies FormSubmitResponse, { status: 400 });
 
-const confirmed = (form: FormDocument) =>
-  Response.json({ confirmation: buildConfirmation(form) } satisfies FormSubmitResponse);
+const confirmed = (form: FormDocument, ignored: FormIgnoredAnswer[] = []) =>
+  Response.json({
+    confirmation: buildConfirmation(form),
+    ...(ignored.length ? { ignored } : {}),
+  } satisfies FormSubmitResponse);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function cleanAnswer(field: QuestionField, value: unknown): unknown {
-  if (value === null || value === undefined || value === '') return;
-
-  if (field.type === 'checkbox') return typeof value === 'boolean' ? value : undefined;
-
-  if (field.type === 'number') {
-    const number = typeof value === 'string' && value.trim() ? Number(value) : value;
-
-    return typeof number === 'number' && Number.isFinite(number) ? number : undefined;
-  }
-
-  if (field.type === 'select' && field.hasMany) {
-    return Array.isArray(value) && value.every((item) => typeof item === 'string')
-      ? value
-      : undefined;
-  }
-
-  return typeof value === 'string' ? value : undefined;
-}
-
-function bodyAnswers(body: unknown): Record<string, unknown> {
-  return isRecord(body) && isRecord(body.data) ? body.data : {};
-}
-
-function cleanAnswers(
-  form: FormDocument,
-  target: FormTarget,
-  answers: Record<string, unknown>,
-): Record<string, unknown> {
-  const cleaned: Record<string, unknown> = {};
-
-  for (const step of form.steps ?? []) {
-    for (const { field: name } of step.questions ?? []) {
-      const entry = target.fields.get(name);
-      if (!entry || !('field' in entry) || !Object.hasOwn(answers, name)) continue;
-      if (entry.field.type === 'upload') continue;
-
-      const value = cleanAnswer(entry.field, answers[name]);
-
-      if (value !== undefined) cleaned[name] = value;
-    }
-  }
-
-  return cleaned;
-}
-
-function isRequiredField(target: FormTarget, name: string): boolean {
-  const entry = target.fields.get(name);
-
-  return entry !== undefined && 'field' in entry && entry.field.required === true;
-}
-
-function ruleAnswers(
-  form: FormDocument,
-  target: FormTarget,
-  body: unknown,
-  stored: Record<string, unknown>,
-): Record<string, unknown> {
-  const answers = bodyAnswers(body);
-  const merged = cleanAnswers(form, target, stored);
-
-  for (const name of Object.keys(answers)) delete merged[name];
-
-  return { ...merged, ...cleanAnswers(form, target, answers) };
-}
-
-/**
- * The questions the visitor saw, by the same rules the page runs, from their cleaned answers over
- * `stored`. A question whose field is required is always shown, even if a saved rule says
- * otherwise. Answers and files for the others are dropped, whatever the client sent.
- */
-export function shownQuestions(
-  form: FormDocument,
-  target: FormTarget,
-  body: unknown,
-  stored: Record<string, unknown> = {},
-): Set<string> {
-  const steps = (form.steps ?? []).map((step) => ({
-    questions: (step.questions ?? []).map(({ field, rules, match }) => {
-      const entry = target.fields.get(field);
-
-      return {
-        key: field,
-        type: entry && 'field' in entry ? entry.field.type : undefined,
-        rules: isRequiredField(target, field)
-          ? []
-          : (rules ?? []).map(({ question, operator, value }) => ({
-              question,
-              operator,
-              value: value ?? '',
-            })),
-        match: match ?? undefined,
-      };
-    }),
-  }));
-
-  return visibleQuestions(steps, ruleAnswers(form, target, body, stored));
-}
-
-/**
- * Keeps the answers to the form's shown questions and its declared parameters; drops everything
- * else. For an edit (`edit`), there are no parameters, an emptied answer clears its field, a
- * hidden question's field keeps its stored value, and rules also read the record's `stored`
- * answers that the body leaves out.
- */
-export function pickSubmission(
-  form: FormDocument,
-  target: FormTarget,
-  body: unknown,
-  { edit = false, stored = {} }: { edit?: boolean; stored?: Record<string, unknown> } = {},
-): Record<string, unknown> {
-  const answers = bodyAnswers(body);
-  const params = isRecord(body) && isRecord(body.params) ? body.params : {};
-  const cleaned = cleanAnswers(form, target, answers);
-  const shown = shownQuestions(form, target, body, stored);
-  const data: Record<string, unknown> = {};
-
-  for (const step of form.steps ?? []) {
-    for (const { field: name } of step.questions ?? []) {
-      if (!shown.has(name)) continue;
-
-      if (Object.hasOwn(cleaned, name)) data[name] = cleaned[name];
-      else if (edit && (answers[name] === null || answers[name] === '')) {
-        const entry = target.fields.get(name);
-
-        if (entry && 'field' in entry && entry.field.type !== 'upload') data[name] = null;
-      }
-    }
-  }
-
-  if (edit) return data;
-
-  for (const { name, field } of form.hiddenParams ?? []) {
-    const value = Object.hasOwn(params, name) ? params[name] : undefined;
-
-    if (typeof value === 'string' && value) data[field] = value.slice(0, PARAM_MAX_LENGTH);
-  }
-
-  return data;
 }
 
 function fieldErrors(error: unknown): FormFieldError[] | undefined {
@@ -280,14 +146,15 @@ async function saveEdit(
 
   try {
     const stored = ruled.length ? await prefill(req, form, link, [...new Set(ruled)]) : {};
-    const data = pickSubmission(form, target, body, { edit: true, stored });
+    const picked = pickSubmission(form, target, body, { edit: true, stored });
+    if ('errors' in picked) return invalid(picked.errors);
 
     const outcome = await spendUse(req, form, link, () =>
       asFormLink(req, form, link, () =>
         req.frogbot.update({
           collection: target.slug,
           id: link.context.record,
-          data,
+          data: picked.data,
           depth: 0,
           overrideAccess: false,
           req,
@@ -295,7 +162,7 @@ async function saveEdit(
       ),
     );
 
-    return outcome ? confirmed(form) : linkGone();
+    return outcome ? confirmed(form, picked.ignored) : linkGone();
   } catch (error) {
     if (error instanceof APIError && (error.status === 403 || error.status === 404)) {
       return linkGone();
@@ -372,11 +239,12 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
         shown.has(key),
       );
 
+      const picked = pickSubmission(form, target, body);
       const refused = checkFiles(files, bodyAnswers(body), req.files);
 
-      if (refused.length) return invalid(refused);
-
-      const data = pickSubmission(form, target, body);
+      if ('errors' in picked || refused.length) {
+        return invalid([...('errors' in picked ? picked.errors : []), ...refused]);
+      }
 
       try {
         const outcome = await countResponse(req.frogbot, form, async () => {
@@ -388,7 +256,7 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
             await asSubmission(req, form, target.slug, () =>
               req.frogbot.create({
                 collection: target.slug,
-                data: { ...data, ...uploaded },
+                data: { ...picked.data, ...uploaded },
                 depth: 0,
                 overrideAccess: false,
                 req,
@@ -403,7 +271,16 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
 
         if (outcome.closed) return closed();
 
-        return confirmed(form);
+        if (runtime.analytics) {
+          await countEvent(req.frogbot, form, 'completion').catch((error: unknown) => {
+            req.frogbot.logger.error(
+              { err: error, form: form.slug },
+              '[plugin-forms] Counting a completion failed',
+            );
+          });
+        }
+
+        return confirmed(form, picked.ignored);
       } catch (error) {
         if (error instanceof FileRejected) {
           const errors = fileErrors(error);

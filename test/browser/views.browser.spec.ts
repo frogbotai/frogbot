@@ -105,11 +105,11 @@ test('links each tab to its route without a view param, and remembers the last t
   );
 
   await tabs(page).getByRole('link', { name: 'Board' }).click();
-  await page.waitForURL(/\/collections\/tasks\/board$/);
+  await page.waitForURL(/\/collections\/tasks\/board(\?|$)/);
   await page.locator('.collection-board').waitFor();
 
   await page.goto('/collections/tasks');
-  await page.waitForURL(/\/collections\/tasks\/board$/);
+  await page.waitForURL(/\/collections\/tasks\/board(\?|$)/);
 
   await tabs(page).getByRole('link', { name: 'List' }).click();
   await page.waitForURL(/\/collections\/tasks(\?|$)/);

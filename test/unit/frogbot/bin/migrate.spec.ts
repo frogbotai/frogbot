@@ -18,7 +18,7 @@ const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 const mocks = vi.hoisted(() => ({
   adapter: {
     createMigration: vi.fn(async () => {}),
-    migrate: vi.fn(async () => {}),
+    migrate: vi.fn(async (_args?: { forceAcceptWarning?: boolean }) => {}),
     migrateDown: vi.fn(async () => {}),
     migrateFresh: vi.fn(async () => {}),
     migrateRefresh: vi.fn(async () => {}),
@@ -134,8 +134,33 @@ describe('migrate', () => {
       });
       expect(mocks.adapter.migrate).not.toHaveBeenCalled();
       expect(error).toHaveBeenCalledWith(
-        expect.stringContaining('[frogbot] migrate failed: dev-mode schema changes detected'),
+        '[frogbot] migrate failed: payload_migrations has a dev-mode row (batch -1): this database was changed by schema push in dev mode.\n' +
+          'Run `frogbot migrate --force-accept-warning` to apply migrations anyway, or delete that row if the database already matches your migrations.',
       );
+    });
+
+    it('migrates without the pre-check when --force-accept-warning is set and stdin is not a TTY', async () => {
+      mocks.find.mockResolvedValue({ docs: [{ batch: -1 }] });
+      setTTY(undefined);
+
+      await expect(migrate(['migrate', '--force-accept-warning'])).rejects.toThrow('exit:0');
+      expect(mocks.find).not.toHaveBeenCalled();
+      expect(mocks.adapter.migrate).toHaveBeenCalledWith({ forceAcceptWarning: true });
+    });
+
+    it('passes --force-accept-warning to the adapter in a TTY so Payload does not prompt', async () => {
+      mocks.find.mockResolvedValue({ docs: [{ batch: -1 }] });
+      setTTY(true);
+
+      await expect(migrate(['migrate', '--force-accept-warning'])).rejects.toThrow('exit:0');
+      expect(mocks.adapter.migrate).toHaveBeenCalledWith({ forceAcceptWarning: true });
+    });
+
+    it('migrates normally with --force-accept-warning and no marker row', async () => {
+      setTTY(undefined);
+
+      await expect(migrate(['migrate', '--force-accept-warning'])).rejects.toThrow('exit:0');
+      expect(mocks.adapter.migrate).toHaveBeenCalledWith({ forceAcceptWarning: true });
     });
 
     it('still delegates to the adapter when a marker row exists in a TTY', async () => {
@@ -143,7 +168,7 @@ describe('migrate', () => {
       setTTY(true);
 
       await expect(migrate(['migrate'])).rejects.toThrow('exit:0');
-      expect(mocks.adapter.migrate).toHaveBeenCalledTimes(1);
+      expect(mocks.adapter.migrate).toHaveBeenCalledWith({});
     });
 
     it('proceeds when the marker query itself fails', async () => {

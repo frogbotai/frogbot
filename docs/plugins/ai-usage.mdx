@@ -89,7 +89,7 @@ aiUsagePlugin({
 
 The task is `frogbot-prune-<usage collection slug>`.
 
-- **Schedule.** It runs at midnight daily unless you set `cron`. It is scheduled on the `default` queue, so a jobs runner that covers `default` prunes without extra setup.
+- **Schedule.** It runs at midnight daily unless you set `cron`. It is scheduled on the `frogbot` queue, so FrogBot's runner prunes without extra setup.
 - **Each run** deletes rows whose `requestedAt` is older than `days`, 100 at a time, and fails the job if any row can't be deleted.
 
 Nothing is rolled up before rows are deleted. Reports for ranges older than the window return fewer rows or none, and an API key's **Total Cost (USD)** covers only the kept rows. Leave `retention` off, or set a long window, if you need longer history.
@@ -99,4 +99,4 @@ Nothing is rolled up before rows are deleted. Reports for ranges older than the 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `access` | `Access` | Authenticated users | Access function gating the report endpoint. Return `false` to forbid the request or a `Where` to restrict the rows it reads. |
-| `retention` | `false \| { days: number; cron?: string }` | `false` | Schedules deletion of usage rows older than `days` on the `default` queue. `days` must be a positive integer. |
+| `retention` | `false \| { days: number; cron?: string }` | `false` | Schedules deletion of usage rows older than `days` on the `frogbot` queue. `days` must be a positive integer. |

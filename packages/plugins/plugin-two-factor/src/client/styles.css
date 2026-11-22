@@ -36,6 +36,11 @@
     border-top: 1px solid var(--color-border);
   }
 
+  .two-factor__note a {
+    color: var(--color-text);
+    text-underline-offset: 2px;
+  }
+
   .two-factor__row {
     display: flex;
     flex-wrap: wrap;

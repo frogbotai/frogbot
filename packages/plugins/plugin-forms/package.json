@@ -37,7 +37,7 @@
     "*.css"
   ],
   "scripts": {
-    "build": "node ../../../scripts/build-package.mjs --assets css",
+    "build": "node ../../../scripts/build-package.mjs --assets css && node scripts/build-embed.mjs",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
@@ -57,6 +57,8 @@
   "devDependencies": {
     "@frogbotai/ui": "workspace:*",
     "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.28.1",
     "frogbot": "workspace:*",
     "payload": "catalog:",
     "react": "catalog:",

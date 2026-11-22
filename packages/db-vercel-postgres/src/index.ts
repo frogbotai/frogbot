@@ -30,5 +30,6 @@ export function vercelPostgresAdapter(args: VercelPostgresAdapterArgs) {
     },
     aggregate: postgresAggregateAdapter,
     search: postgresSearchAdapter,
+    url: args.pool?.connectionString ?? process.env.POSTGRES_URL,
   };
 }

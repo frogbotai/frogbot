@@ -380,7 +380,7 @@ describe('--help lists every flag a verb accepts', () => {
   });
 
   it("deploy's usage names every flag parseShareArgs accepts", () => {
-    const usage = shareUsage('frogbot');
+    const usage = shareUsage;
 
     for (const [name, option] of Object.entries(shareOptions)) {
       const negated = 'default' in option && option.default === true;

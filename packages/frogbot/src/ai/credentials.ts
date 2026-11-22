@@ -73,7 +73,11 @@ export function linkedCredential({
         );
       }
 
-      throw new CallCredentialError(`Reconnect ${label} in Settings → Linked accounts.`);
+      if (error.code === 'scopes') {
+        throw new CallCredentialError(`Reconnect ${label} in Settings → Linked accounts.`);
+      }
+
+      throw new CallCredentialError(error.message);
     }
 
     const settings = link.credential({ auth, via });

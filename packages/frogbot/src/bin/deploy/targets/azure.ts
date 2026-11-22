@@ -1,9 +1,11 @@
 import { splitVariables } from '../app.js';
-import { cloudIssues, readCloudFlags, stringFlag, warnIdleJobs } from '../cloud.js';
+import { cloudIssues, cloudUsage, readCloudFlags, stringFlag, warnIdleJobs } from '../cloud.js';
 import { checkLogin, findTool } from '../preflight.js';
 import type { DeployContext, DeployTarget, PreflightIssue } from '../types.js';
 
 const options = { 'resource-group': { type: 'string' } } as const;
+
+const usage = '[--resource-group <name>]';
 
 const probes = JSON.stringify([
   {
@@ -15,11 +17,7 @@ const probes = JSON.stringify([
 ]);
 
 function flagsOf(context: DeployContext) {
-  const flags = readCloudFlags(context, {
-    target: 'azure',
-    usage: '[--resource-group <name>]',
-    options,
-  });
+  const flags = readCloudFlags(context, { target: 'azure', usage, options });
 
   return {
     ...flags,
@@ -63,6 +61,7 @@ function checkSecretNames(context: DeployContext): PreflightIssue[] {
 /** `frogbot deploy azure`: built in Azure by `az containerapp up --source .`, keys as Container Apps secrets, one replica. */
 export const azureTarget: DeployTarget = {
   describe: 'Deploy to your Azure Container Apps with your az login (built in Azure)',
+  usage: cloudUsage(usage),
   preflight: async (context) => {
     flagsOf(context);
 

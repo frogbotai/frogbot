@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 
 import nextEnvImport from '@next/env';
 
+import { upUsage } from './help.js';
 import { findNextConfig } from './runNext.js';
 import {
   installLaunchAgent,
@@ -24,15 +25,17 @@ import {
   listRegistrations,
   readRegistration,
   type Registration,
+  type ServiceMode,
 } from './service/registration.js';
 import { frogbotBin } from './service/runtime.js';
 import { stopLeftServer } from './service/stop.js';
-import { BOOT_FAILED, MOVE_SIGNAL, supervise } from './service/supervisor.js';
+import { BOOT_FAILED, SETTINGS_SIGNAL, supervise } from './service/supervisor.js';
 
 const STDERR_LIMIT = 8 * 1024;
 const POLL_MS = 200;
 const LAUNCHD_REGISTER_MS = 30_000;
 const MOVE_MS = 10_000;
+const SWITCH_MS = 5 * 60_000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -60,30 +63,38 @@ export function age(since: number, now = Date.now()): string {
 /** What `up` prints for an app already up: that it is watching, its last build, and its last error. */
 export function alreadyUp(found: Registration, now = Date.now()): string[] {
   const built = Date.parse(found.builtAt ?? '');
-  const last = Number.isNaN(built) ? '' : ` (last build ${age(built, now)} ago)`;
+  const last =
+    Number.isNaN(built) || found.mode === 'dev' ? '' : ` (last build ${age(built, now)} ago)`;
+
+  const watching = found.mode === 'dev' ? 'in dev mode, hot reloading' : 'watching for changes';
 
   return [
-    `[frogbot] ${found.dir} is already up at ${found.url}, watching for changes${last}`,
+    `[frogbot] ${found.dir} is already up at ${found.url}, ${watching}${last}`,
     ...(found.lastError ? [`[frogbot] last error: ${found.lastError}`] : []),
   ];
 }
 
-export type UpOptions = { port?: number | 'auto'; autostart: boolean };
+export type UpOptions = { port?: number | 'auto'; autostart: boolean; dev: boolean };
 
 export function parseUpArgs(args: string[]): UpOptions {
-  const options: UpOptions = { autostart: false };
+  const options: UpOptions = { autostart: false, dev: false };
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
     if (arg === '--autostart') options.autostart = true;
+    else if (arg === '--dev') options.dev = true;
     else if (arg === '--port' || arg === '-p') options.port = parsePort(args[++i]);
     else if (arg.startsWith('--port=')) options.port = parsePort(arg.slice('--port='.length));
     else {
-      throw new Error(
-        `[frogbot] usage: frogbot up [--port <n|auto>] [--autostart]; "${arg}" isn't one of them`,
-      );
+      throw new Error(`${upUsage}; "${arg}" isn't one of them`);
     }
+  }
+
+  if (options.dev && options.autostart) {
+    throw new Error(
+      "[frogbot] --dev can't start at login; --autostart is for hosting. Run `frogbot up --dev` after each login",
+    );
   }
 
   return options;
@@ -159,6 +170,7 @@ async function superviseHere(): Promise<void> {
     dir,
     port,
     autostart: process.env.FROGBOT_SERVICE_AUTOSTART === '1',
+    mode: process.env.FROGBOT_SERVICE_MODE === 'dev' ? 'dev' : 'production',
     env: shellEnv(),
     onBoot: (error) => {
       if (error) process.stderr.write(`${BOOT_FAILED} ${error.message}\n`);
@@ -211,7 +223,7 @@ const defaultSpawn = (dir: string, env: NodeJS.ProcessEnv) =>
   });
 
 /**
- * `frogbot up [--port <n>] [--autostart]`: starts the app's supervisor in the background, waits until
+ * `frogbot up [--port <n>] [--dev] [--autostart]`: starts the app's supervisor in the background, waits until
  * the app answers, and prints its URL and log. A first build or start that fails prints the error's
  * tail and exits 1, leaving nothing behind.
  */
@@ -255,7 +267,7 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
       );
     }
 
-    await keepRunning(found, options.port, log);
+    await keepRunning(found, options, log);
 
     return;
   }
@@ -269,6 +281,7 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
     FROGBOT_SERVICE: 'supervise',
     FROGBOT_SERVICE_PORT: String(port),
     ...(options.autostart && { FROGBOT_SERVICE_AUTOSTART: '1' }),
+    ...(options.dev && { FROGBOT_SERVICE_MODE: 'dev' }),
   };
 
   let failed: () => string | undefined;
@@ -352,50 +365,99 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
 
   const registration = readRegistration(file)!;
 
-  log(`[frogbot] ${registration.dir} is up at ${registration.url}`);
+  log(
+    `[frogbot] ${registration.dir} is up at ${registration.url}${options.dev ? ' in dev mode, hot reloading' : ''}`,
+  );
+
   log(`[frogbot] log: ${registration.log}`);
   if (options.autostart) log(`[frogbot] starts at login: ${launchAgentFile(id)}`);
 }
 
 async function keepRunning(
   found: Registration,
-  requested: number | 'auto' | undefined,
+  { port: requested, dev }: UpOptions,
   log: (line: string) => void,
 ): Promise<void> {
-  const file = appPaths(found.dir).port;
+  const paths = appPaths(found.dir);
+  const mode: ServiceMode = dev ? 'dev' : 'production';
+  const switching = mode !== (found.switching ?? found.mode ?? 'production');
 
   if (requested === 'auto' || requested === found.port) {
-    writeSavedPort(file, { port: found.port, chosen: requested !== 'auto' });
+    writeSavedPort(paths.port, { port: found.port, chosen: requested !== 'auto' });
   }
 
-  if (requested === undefined || requested === 'auto' || requested === found.port) {
+  const moving = typeof requested === 'number' && requested !== found.port;
+
+  if (!switching && !moving) {
     for (const line of alreadyUp(found)) log(line);
 
     return;
   }
 
-  await choosePort({ requested, taken: otherPorts(found.id) });
-  writeSavedPort(file, { port: requested, chosen: true });
-  process.kill(found.pid, MOVE_SIGNAL);
+  if (moving) {
+    await choosePort({ requested, taken: otherPorts(found.id) });
+    writeSavedPort(paths.port, { port: requested, chosen: true });
+  }
 
-  const registration = registrationFile(found.id);
-  const deadline = Date.now() + MOVE_MS;
+  if (switching) writeFileSync(paths.modeRequest, `${mode}\n`);
+
+  process.kill(found.pid, SETTINGS_SIGNAL);
+
+  if (switching) {
+    log(`[frogbot] switching ${found.dir} to ${mode} mode`);
+
+    await waitFor(found, () => !existsSync(paths.modeRequest), MOVE_MS).catch(() => {
+      rmSync(paths.modeRequest, { force: true });
+      throw new Error(
+        `[frogbot] ${found.dir}'s supervisor didn't take the switch; one from an older FrogBot can't switch modes. Run \`frogbot down\`, then \`frogbot up${dev ? ' --dev' : ''}\``,
+      );
+    });
+
+    const done = await waitFor(found, (now) => !now.switching, SWITCH_MS);
+
+    if (done.mode !== mode) {
+      throw new Error(
+        `[frogbot] couldn't switch ${found.dir} to ${mode} mode${done.lastError ? `: ${done.lastError}` : ''}; see ${found.log}`,
+      );
+    }
+
+    log(`[frogbot] ${found.dir} is up at ${done.url} in ${mode} mode`);
+  }
+
+  if (moving) {
+    await waitFor(
+      found,
+      (now) => now.port === requested,
+      MOVE_MS,
+      `move ${found.dir} to port ${requested}`,
+    );
+
+    log(`[frogbot] moved ${found.dir} to http://${HOST}:${requested}`);
+  }
+}
+
+async function waitFor(
+  found: Registration,
+  ready: (now: Registration) => boolean,
+  ms: number,
+  what = `switch ${found.dir}`,
+): Promise<Registration> {
+  const file = registrationFile(found.id);
+  const deadline = Date.now() + ms;
 
   for (;;) {
-    const moved = readRegistration(registration);
+    const now = readRegistration(file);
 
-    if (moved?.port === requested) break;
+    if (now && ready(now)) return now;
 
-    if (Date.now() > deadline || !moved || !isAlive(moved.pid)) {
+    if (Date.now() > deadline || !now || !isAlive(now.pid)) {
       throw new Error(
-        `[frogbot] couldn't move ${found.dir} to port ${requested}${moved?.lastError ? `: ${moved.lastError}` : ''}; see ${found.log}`,
+        `[frogbot] couldn't ${what}${now?.lastError ? `: ${now.lastError}` : ''}; see ${found.log}`,
       );
     }
 
     await sleep(POLL_MS);
   }
-
-  log(`[frogbot] moved ${found.dir} to http://${HOST}:${requested}`);
 }
 
 async function waitUntilUp(file: string, failed: () => string | undefined): Promise<void> {

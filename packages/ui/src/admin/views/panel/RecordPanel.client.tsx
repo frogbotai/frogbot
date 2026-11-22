@@ -21,11 +21,12 @@ import {
   useState,
 } from 'react';
 
-import { useSidePanelEscape } from '../../../components/side-panel-bar.js';
+import { isInOpenMenu, useSidePanelEscape } from '../../../components/side-panel-bar.js';
 import { clampPanelWidth, getPanelPreferenceKey, PANEL_WIDTH } from './config.js';
 import { PanelConfig } from './PanelConfig.client.js';
 import { PanelFooterTarget } from './PanelSlots.client.js';
 import { useRecordPanel } from './RecordPanelProvider.client.js';
+import { adjacentRecord, viewRecordIds } from './recordSteps.js';
 import type { RenderRecordPanelArgs, RenderRecordPanelResult } from './renderRecordPanel.js';
 
 const RENDER_RECORD_PANEL = 'frogbot-render-record-panel';
@@ -60,6 +61,13 @@ function usePanelWidth(collectionSlug: string, initial: number) {
 
 function isInsideOpenModal(target: Element | null): boolean {
   return Boolean(target?.closest('.payload__modal-item, [role="dialog"], .popup__content'));
+}
+
+function isTyping(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || Boolean(target.closest('input, textarea, select')))
+  );
 }
 
 /**
@@ -182,15 +190,47 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     modalStateRef.current = modalState;
   }, [modalState]);
 
+  const isLayerOpen = (event: KeyboardEvent) => {
+    if (Object.values(modalStateRef.current).some((modal) => modal?.isOpen)) return true;
+    const target = event.target as Element | null;
+
+    return Boolean(target?.closest('.rs__menu, .react-datepicker')) || isInsideOpenModal(target);
+  };
+
   useSidePanelEscape(
     open ? () => window.setTimeout(() => panelRef.current.close(), 0) : undefined,
-    (event) => {
-      if (Object.values(modalStateRef.current).some((modal) => modal?.isOpen)) return true;
-      const target = event.target as Element | null;
-
-      return Boolean(target?.closest('.rs__menu, .react-datepicker')) || isInsideOpenModal(target);
-    },
+    isLayerOpen,
   );
+
+  const isLayerOpenRef = useRef(isLayerOpen);
+
+  useEffect(() => {
+    isLayerOpenRef.current = isLayerOpen;
+  });
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const step = event.key === 'j' ? 1 : event.key === 'k' ? -1 : 0;
+      if (!step || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTyping(event.target) || isInOpenMenu(event.target) || isLayerOpenRef.current(event)) {
+        return;
+      }
+
+      const { openId } = panelRef.current;
+      const view = viewRef.current;
+      if (!openId || !view) return;
+      const next = adjacentRecord(viewRecordIds(view, asideRef.current), openId, step);
+      if (!next) return;
+      event.preventDefault();
+      panelRef.current.open(next);
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, viewRef]);
 
   useEffect(() => {
     if (!open) return;

@@ -1,4 +1,4 @@
-import { definePlugin, type FrogBotConfig, type Plugin } from 'frogbot';
+import { definePlugin, FROGBOT_QUEUE, type FrogBotConfig, type Plugin } from 'frogbot';
 
 import { createAuditLogCollection, defaultAuditSlug } from './collection.js';
 import { activityField, auditLogCustomKey } from './fields/activity.js';
@@ -111,7 +111,7 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
       schedule: [
         {
           cron: retention.cron ?? '0 0 * * *',
-          queue: 'default',
+          queue: FROGBOT_QUEUE,
         },
       ],
       handler: async ({ req }) => {

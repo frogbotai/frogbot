@@ -421,7 +421,9 @@ export class ConnectionStore {
                   : current[0];
 
             if (reconnect !== undefined && (!row || accountKey(row) !== accountId)) {
-              throw new OAuthError('account');
+              throw new OAuthError('account', {
+                message: "Sign in with the same account you're renewing.",
+              });
             }
 
             const isDefault = row
