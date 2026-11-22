@@ -97,9 +97,6 @@ export function createMemoryHarness({
     } finally {
       if (drop === undefined) delete process.env.PAYLOAD_DROP_DATABASE;
       else process.env.PAYLOAD_DROP_DATABASE = drop;
-
-      cache?.delete('default');
-      resetFrogBotCache();
     }
 
     return frogbot;
@@ -116,6 +113,9 @@ export function createMemoryHarness({
       }
     } finally {
       await frogbot?.destroy();
+
+      (globalThis as { _payload?: Map<string, unknown> })._payload?.delete('default');
+      resetFrogBotCache();
 
       if (database === 'sqlite') {
         await Promise.all(
