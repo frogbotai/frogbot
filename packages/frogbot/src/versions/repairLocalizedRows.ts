@@ -86,9 +86,9 @@ type RepairArgs = {
 };
 
 function repairValue(value: unknown, before: unknown, locales: readonly string[]): unknown {
-  if (!isRecord(value)) return value;
+  if (value !== undefined && !isRecord(value)) return value;
 
-  const out: Data = { ...value };
+  const out: Data = { ...(isRecord(value) ? value : {}) };
 
   for (const locale of locales) {
     const restored = isRecord(before) ? before[locale] : undefined;
@@ -97,7 +97,7 @@ function repairValue(value: unknown, before: unknown, locales: readonly string[]
     else out[locale] = restored;
   }
 
-  return out;
+  return value === undefined && !Object.keys(out).length ? undefined : out;
 }
 
 function repairRows(rows: unknown, beforeRows: unknown, field: Field, args: RepairArgs): unknown {
@@ -172,12 +172,12 @@ function repairLevel(
 
     const { name } = field;
 
-    if (!(name in out)) continue;
-
     if ('localized' in field && field.localized) {
       if (inRow) set(name, repairValue(out[name], before?.[name], args.locales));
       continue;
     }
+
+    if (!(name in out)) continue;
 
     if (field.type === 'array' || field.type === 'blocks') {
       set(name, repairRows(out[name], before?.[name], field, args));
