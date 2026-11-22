@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { deploy } from '../../../../../packages/frogbot/src/bin/deploy/command.js';
+import {
+  coreDeployTargets,
+  deploy,
+  deployHelp,
+} from '../../../../../packages/frogbot/src/bin/deploy/command.js';
 import type { DeployTarget } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
 import type { FrogBotSanitizedConfig } from '../../../../../packages/frogbot/src/config/sanitized.js';
 import { deployConfig, recordingTarget, tempDir, testIO, writeApp } from './helpers.js';
@@ -118,5 +122,38 @@ describe('frogbot deploy', () => {
     expect(io.stderr()[1]).toBe(
       '[frogbot] Add `dojo()` from `@frogbotai/plugin-dojo` to `plugins` in frogbot.config.ts.',
     );
+  });
+
+  describe('--help', () => {
+    const dojo = { ...recordingTarget().target, usage: '[--app <slug or id>] [--no-keys]' };
+
+    it('lists every target with its own flags, plugin targets first', () => {
+      const help = deployHelp(['--help'], { config: appConfig({ dojo }) }).split('\n');
+
+      expect(help[0]).toBe(
+        '[frogbot] usage: frogbot deploy [target] [--dry-run] [--json] [--no-interactive] [--env-file <path>] [target flags]',
+      );
+      expect(help).toContain('          [--app <slug or id>] [--no-keys]');
+      expect(help).toContain('          [--tag <tag>]');
+      expect(
+        help.filter((line) => /^ {2}\S/.test(line)).map((line) => line.trim().split(' ')[0]),
+      ).toEqual(['dojo', 'docker', 'fly', 'gcp', 'aws', 'azure']);
+    });
+
+    it('prints one target with the shared and cloud flags', () => {
+      expect(deployHelp(['gcp', '--help']).split('\n')[0]).toBe(
+        '[frogbot] usage: frogbot deploy gcp [--dry-run] [--json] [--no-interactive] [--env-file <path>] [--region <region>] [--service <name>] [--min-instances 0|1] [--project <id>]',
+      );
+    });
+
+    it('says plugin targets are missing when the config failed to load', () => {
+      expect(deployHelp(['--help'], { loadError: new Error('broken') })).toContain(
+        'Targets that plugins add, such as dojo, load only with a working config.',
+      );
+    });
+
+    it.each(Object.entries(coreDeployTargets))("documents the %s target's flags", (_, target) => {
+      expect(target.usage).toMatch(/^\[--/);
+    });
   });
 });
