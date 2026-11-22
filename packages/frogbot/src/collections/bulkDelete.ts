@@ -12,7 +12,7 @@ type Delete = FrogBotLocalAPI['delete'];
 /** Payload's `delete`, with a where-keyed delete split into pages of matched ids so one call works for any number of matches. */
 export function pagedDelete(payload: Payload): Delete {
   const local = toFrogBotLocalAPI(payload);
-  const remove: Delete = local.delete.bind(local);
+  const remove = ((args: Parameters<Delete>[0]) => local.delete(args)) as Delete;
   const removePage = remove as (args: DeleteManyArgs<string>) => Promise<BulkResult<unknown>>;
 
   return (async (args: Parameters<Delete>[0]) => {
