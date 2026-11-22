@@ -115,6 +115,14 @@ describe('findNextFix', () => {
         vulnerableRanges: ['>=16.5.0-canary.0 <16.5.0'],
       }),
     ).toBe('16.5.0');
+
+    expect(
+      findNextFix({
+        peerRange: '>=16.4.0-0 <17.0.0',
+        version: '16.5.0-canary.3',
+        vulnerableRanges: ['<16.4.8'],
+      }),
+    ).toBe('16.5.0-canary.3');
   });
 
   it('throws on a range it cannot read', () => {

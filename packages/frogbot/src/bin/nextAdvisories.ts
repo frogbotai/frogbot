@@ -146,7 +146,7 @@ function boundaries(sets: Comparator[][]): Version[] {
 /**
  * Finds the lowest version at or above `version`, inside `peerRange`, that no vulnerable range covers.
  * Candidates are the range edges, so the answer is a version an advisory names as its fix.
- * Throws when a version or range isn't plain `1.2.3` comparators joined by spaces and `||`.
+ * Reads `<`, `<=`, `>`, `>=` and `=` comparators on full, partial (`16.4`, `16.4.x`) and prerelease versions, joined by spaces and `||`; throws on anything else.
  */
 export function findNextFix({
   peerRange,
@@ -173,7 +173,9 @@ export function findNextFix({
 
   const fix = candidates.find((candidate) => !ranges.some((sets) => satisfies(candidate, sets)));
 
-  return fix && formatVersion(fix);
+  if (!fix) return undefined;
+
+  return compare(fix, current) === 0 ? version : formatVersion(fix);
 }
 
 type BulkAdvisory = {
