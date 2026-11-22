@@ -27,6 +27,7 @@ import { pieceEmailAdapter } from '../pieces/email.js';
 import { toPayloadConfig, toPayloadFields, toPayloadJobs } from '../seams/config.js';
 import { buildSearchQueries } from '../search/graphQL.js';
 import type { SearchCollection } from '../search/types.js';
+import { withLocalizedRowRepair } from '../versions/repairLocalizedRows.js';
 import type { AutonumberEntry, AutonumberKeyDeclaration } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
 import type { FrogBotConfig } from './types.js';
@@ -186,6 +187,11 @@ export function buildPayloadConfig({
     },
     telemetry: false,
   };
+
+  if (out.localization) {
+    const blocks = out.blocks ?? [];
+    out.collections = collections.map((collection) => withLocalizedRowRepair(collection, blocks));
+  }
 
   if (collections.some((collection) => collection.custom?.frogbot?.signIn?.length)) {
     const adapter = config.db as PayloadConfig['db'];
