@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { nextAdvisories } from '../../../scripts/next-advisories.mjs';
 
+const packument = (versions: string[]) =>
+  Response.json({ versions: Object.fromEntries(versions.map((version) => [version, {}])) });
+
 function bulk(advisories: { severity: string; title: string; vulnerable_versions: string }[]) {
   return vi.fn<typeof fetch>((input) =>
     Promise.resolve(
@@ -9,7 +12,7 @@ function bulk(advisories: { severity: string; title: string; vulnerable_versions
         ? Response.json({
             next: advisories.map((advisory, id) => ({ id, url: `https://x/${id}`, ...advisory })),
           })
-        : Response.json({}),
+        : packument(['16.4.6', '16.5.0']),
     ),
   );
 }
@@ -40,7 +43,9 @@ describe('next-advisories', () => {
                 },
               ],
             })
-          : Response.json(String(input).endsWith('/advisories/bulk') ? { next: [] } : {}),
+          : String(input).endsWith('/advisories/bulk')
+            ? Response.json({ next: [] })
+            : packument(['16.4.2', '16.4.5']),
       );
     });
 
@@ -60,6 +65,37 @@ describe('next-advisories', () => {
 
     expect(result.code).toBe(1);
     expect(result.lines.at(-1)).toContain('peer range has to move');
+  });
+
+  it('names the next minor instead of blaming the registry when no later patch is published', async () => {
+    const fetch = vi.fn<typeof fetch>((input, init) => {
+      if (!String(input).endsWith('/advisories/bulk')) {
+        return Promise.resolve(packument(['16.4.5', '16.4.6', '16.5.0']));
+      }
+
+      const version = (JSON.parse(String(init?.body)) as { next: string[] }).next[0];
+
+      return Promise.resolve(
+        Response.json({
+          next: version.startsWith('16.4.')
+            ? [
+                {
+                  id: 1,
+                  severity: 'high',
+                  title: 'x',
+                  url: 'https://x/1',
+                  vulnerable_versions: '>=16.0.0 <=16.4.6',
+                },
+              ]
+            : [],
+        }),
+      );
+    });
+
+    const result = await nextAdvisories({ fetch, version: '16.4.6' });
+
+    expect(result.code).toBe(1);
+    expect(result.lines.at(-1)).toContain('next 16.5.0');
   });
 
   it('names a range it cannot read instead of blaming the registry', async () => {
