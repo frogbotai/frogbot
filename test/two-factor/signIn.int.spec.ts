@@ -365,17 +365,87 @@ describe('two-factor sign-in', () => {
 
     it('continues to the posted returnTo from the code page', async () => {
       await t.createUser('page@example.com');
-      const { recoveryCodes } = await t.enable('page@example.com');
+      const { secret } = await t.enable('page@example.com');
 
       const paused = await t.login('page@example.com', { returnTo: '/admin/collections' });
       const cookie = t.cookie(paused, pendingCookieName)!;
-      const finished = await t.form(`${twoFactorURL}/verify`, { code: recoveryCodes[0] }, cookie);
+      const finished = await t.form(
+        `${twoFactorURL}/verify`,
+        { code: await t.nextCode('page@example.com', secret) },
+        cookie,
+      );
 
       expect(finished.status).toBe(200);
       expect(await finished.text()).toContain('content="0;url=/admin/collections"');
-      expect(t.emails().map(({ subject }) => subject)).toContain('A recovery code was used');
       expect((await t.login('page@example.com', { returnTo: 'https://evil.test/' })).status).toBe(
         400,
+      );
+    });
+
+    it('says how many recovery codes are left after a recovery-code sign-in', async () => {
+      await t.createUser('left@example.com');
+      const { recoveryCodes } = await t.enable('left@example.com');
+
+      const paused = await t.login('left@example.com', { returnTo: '/admin/collections' });
+      const finished = await t.form(
+        `${twoFactorURL}/verify`,
+        { code: recoveryCodes[0] },
+        t.cookie(paused, pendingCookieName)!,
+      );
+
+      const page = await finished.text();
+
+      expect(finished.status).toBe(200);
+      expect(t.cookie(finished, tokenCookieName)).toBeDefined();
+      expect(t.cookie(finished, pendingCookieName)).toBeUndefined();
+      expect(page).toContain('9 recovery codes left.');
+      expect(page).toContain('<a class="button" href="/admin/collections">Continue</a>');
+      expect(page).not.toContain('Make new recovery codes');
+      expect(page).not.toContain('http-equiv="refresh"');
+      expect(t.emails().map(({ subject }) => subject)).toContain('A recovery code was used');
+    });
+
+    it('links to new recovery codes when 3 or fewer are left, and tells JSON clients the count', async () => {
+      await t.createUser('few@example.com');
+      const { recoveryCodes } = await t.enable('few@example.com');
+
+      await booted.payload.db.updateOne({
+        collection: usersSlug,
+        id: (await t.user('few@example.com')).id,
+        data: {
+          twoFactorRecovery: (await t.user('few@example.com')).twoFactorRecovery!.slice(0, 5),
+        },
+        returning: false,
+      });
+
+      const viaJSON = await t.login('few@example.com');
+      const finished = await t.json(
+        `${twoFactorURL}/verify`,
+        { code: recoveryCodes[0] },
+        { cookie: t.cookie(viaJSON, pendingCookieName)! },
+      );
+
+      const body = (await finished.json()) as { token?: string; recoveryCodesLeft?: number };
+
+      expect(finished.status).toBe(200);
+      expect(body.token).toEqual(expect.any(String));
+      expect(body.recoveryCodesLeft).toBe(4);
+
+      const paused = await t.login('few@example.com', { returnTo: '/admin' });
+      const page = await (
+        await t.form(
+          `${twoFactorURL}/verify`,
+          { code: recoveryCodes[1] },
+          t.cookie(paused, pendingCookieName)!,
+        )
+      ).text();
+
+      expect(page).toContain('3 recovery codes left.');
+
+      const { routes, admin } = booted.payload.config;
+
+      expect(page).toContain(
+        `<a href="${routes.admin.replace(/\/+$/, '')}${admin.routes.account}">Make new recovery codes</a>`,
       );
     });
 

@@ -41,9 +41,11 @@ Each user turns two-factor sign-in on from the **Two-factor sign-in** section of
 2. FrogBot shows 10 recovery codes once, with **Copy** and **Download**. Each one signs in once when the authenticator is lost.
 3. Every other session of that user ends; the current one stays. With [`auth.useSessions: false`](/authentication/overview) there are no sessions to end, and tokens already issued stay valid until they expire.
 
-**New recovery codes** needs a current code and voids the old set. **Turn off** needs a code or a recovery code and keeps the user's sessions. API keys aren't affected by two-factor sign-in: they keep working without a code.
+**New recovery codes** needs a current code and voids the old set. **Turn off** needs a code or a recovery code and keeps the user's sessions. API keys aren't affected by two-factor sign-in: they keep working without a code. Set `keysURL` to where users manage their keys, and the account section links that note to it.
 
-Codes follow RFC 6238: SHA-1, 30-second steps, one step of drift either way. A code works once, and so does each recovery code. Five wrong codes in 10 minutes lock code entry for that user for 10 minutes, however they signed in; a right code clears the count. The code page never says which part was wrong.
+The section names only the sign-in methods the collection has: "after your password" when password login is on, "after your sign-in provider" when `auth.signIn` has a method, or both.
+
+Codes follow RFC 6238: SHA-1, 30-second steps, one step of drift either way. A code works once, and so does each recovery code. After a recovery-code sign-in the code page says how many codes are left (for example "9 recovery codes left.") before it continues, and links to the account page to make new ones when 3 or fewer remain. JSON clients get the count as `recoveryCodesLeft` in the login response. Five wrong codes in 10 minutes lock code entry for that user for 10 minutes, however they signed in; a right code clears the count. The code page never says which part was wrong.
 
 ## Require it
 
@@ -67,6 +69,8 @@ When `require` covers the first user, `POST /api/<collection>/first-register` cr
 
   `twoFactor` is `'setup'` for a required user without it. Send the code to `POST <url>/verify` with that cookie as `{ "code": "123456" }` to get the normal login response, token included. Add `returnTo` (a path on your server) to the login body and the code page continues there instead.
 - **Reset password.** For a user with two-factor sign-in on or required, the new password is saved and every session ends, but nobody is signed in: REST answers `{ message, twoFactor: 'signIn' }`, GraphQL and the Local API return no token, and the person signs in with the new password and a code.
+
+The code, setup and recovery-code pages use the admin's theme: the `@frogbotai/ui` colors, type and controls, in light or dark as the admin opens (the config's `admin.theme`, then the theme cookie, then the system setting). Pages for other auth collections follow the system setting. They are standalone HTML with no script and no stylesheet requests, under a strict Content Security Policy.
 
 The pending sign-in lives in FrogBot's KV store for 10 minutes, is bound to its cookie and works once. On its own it grants nothing: the API, the admin and `refresh-token` refuse it.
 
@@ -124,6 +128,7 @@ twoFactor({
   canEnable: ({ user }) => user.role !== 'guest',
   canReset: ({ req, user }) => req.user?.role === 'admin' && user.role !== 'owner',
   emails: { recoveryCodeUsed: false },
+  keysURL: '/admin/collections/api-keys',
 })
 ```
 
@@ -135,3 +140,4 @@ twoFactor({
 | `canReset` | `(args: { req, user }) => boolean \| Promise<boolean>` | nobody | Whether the signed-in user may reset `user`'s two-factor sign-in. Asked only for a user they can read and update. |
 | `issuer` | `string` | `'FrogBot'` | Name authenticator apps show beside the account. |
 | `emails` | `Partial<Record<'enabled' \| 'disabled' \| 'recoveryCodeUsed' \| 'recoveryCodesCreated' \| 'reset', ((args: { req, user }) => { subject, text, html? }) \| false>>` | built-in emails | Replaces an event's email, or turns it off with `false`. |
+| `keysURL` | `string` | none | Where users manage their API keys. The account section's note that API keys aren't affected links to it; without it the note has no link. |

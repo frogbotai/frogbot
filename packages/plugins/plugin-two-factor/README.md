@@ -42,6 +42,7 @@ The plugin adds `twoFactorEnabled` (read-only, with the account section) and thr
 | `canReset({ req, user })`  | nobody       | Whether the signed-in user may reset `user`'s. Asked only for a user they can read and update.                                     |
 | `issuer`                   | `'FrogBot'`  | Name authenticator apps show.                                                                                                      |
 | `emails`                   | built-in     | Replace an event's email (`enabled`, `disabled`, `recoveryCodeUsed`, `recoveryCodesCreated`, `reset`) or turn it off with `false`. |
+| `keysURL`                  | none         | Where users manage API keys; the account section's "API keys aren't affected" note links to it.                                    |
 
 ## Turning it on
 
@@ -55,7 +56,7 @@ A required user without two-factor sign-in goes to setup at their next sign-in, 
 
 ## Recovery and reset
 
-A recovery code signs in once. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**: it removes their secret and codes, ends every session (with `auth.useSessions: false`, issued tokens stay valid until they expire) and clears the lock. `canReset` is asked only for a user the admin can read and update. Nobody can reset their own.
+A recovery code signs in once. After using one, the code page says how many are left and, at 3 or fewer, links to the account page to make new ones; JSON clients get `recoveryCodesLeft`. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**: it removes their secret and codes, ends every session (with `auth.useSessions: false`, issued tokens stay valid until they expire) and clears the lock. `canReset` is asked only for a user the admin can read and update. Nobody can reset their own.
 
 ## Sessions and password login
 
