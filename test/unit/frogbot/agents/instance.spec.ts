@@ -1904,7 +1904,6 @@ describe('agent setup', () => {
     const { runId } = prepared.runtimeContext.agent;
     const ctx = {
       req,
-      frogbot: req.frogbot,
       agent: { slug: 'support', runId, chatId },
       overrideAccess: false,
     };

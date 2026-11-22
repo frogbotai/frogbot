@@ -155,7 +155,6 @@ export async function streamTurn({
         tools: agent.config.tools ?? [],
         ctx: {
           req,
-          frogbot: req.frogbot,
           agent: { slug: agent.slug, runId, chatId },
           overrideAccess,
         },

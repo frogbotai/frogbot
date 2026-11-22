@@ -137,7 +137,6 @@ export function resolveScheduleTasks({
         await agent.generate({ prompt: trigger.prompt, req: scheduleReq, overrideAccess: true });
       } else if (trigger.handler) {
         await trigger.handler({
-          frogbot,
           agent,
           req: scheduleReq,
           job: {

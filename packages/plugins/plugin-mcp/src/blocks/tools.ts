@@ -303,9 +303,9 @@ async function load({
   writes: boolean;
   allowed?: readonly string[];
 }): Promise<Loaded> {
-  const config = await getPayloadConfig(ctx.frogbot.config);
+  const config = await getPayloadConfig(ctx.req.frogbot.config);
   const collection = config.collections.find(({ slug }) => slug === input.collection);
-  const { frogbot } = ctx;
+  const { frogbot } = ctx.req;
 
   const editable =
     collection &&
