@@ -183,6 +183,8 @@ export type DatabaseAdapter = {
   snapshot?: SnapshotDatabase;
   /** The connection URL, credentials included; `frogbot users create` names the database from it without them. */
   url?: string;
+  /** An embedded replica's remote, which its writes reach; `frogbot users create` treats it as not local. */
+  syncUrl?: string;
   /** Set when the adapter syncs its own schema; `frogbot up` runs it before each new server. */
   syncSchema?: SyncSchema;
   /** The adapter's `prodMigrations`, or `null` without them; `frogbot deploy` checks they're wired. */

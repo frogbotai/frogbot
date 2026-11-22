@@ -68,21 +68,46 @@ function parse(args: string[]) {
   });
 }
 
+const unreadable = { local: false, label: 'a database URL that could not be read' };
+
 /**
  * Names a database URL without its credentials: a `file:` path as written, or `host/name` for a server.
- * Only a `file:` or `:memory:` SQLite URL counts as local.
+ * Only a `file:` or `:memory:` SQLite URL with no `syncUrl` counts as local: an embedded replica writes
+ * through to its remote.
  */
-export function describeDatabase(url: string | undefined): DatabaseLocation {
+export function describeDatabase(url: string | undefined, syncUrl?: string): DatabaseLocation {
   if (!url) return { local: false, label: "the adapter's database (it doesn't say where)" };
-  if (url.startsWith('file:') || url === ':memory:') return { local: true, label: url };
+
+  if (url.startsWith('file:') || url === ':memory:') {
+    if (!syncUrl) return { local: true, label: url };
+
+    return { local: false, label: `${url}, a replica of ${describeDatabase(syncUrl).label}` };
+  }
+
+  const scheme = /^[a-z][a-z\d+.-]*:\/\//i.exec(url)?.[0];
+
+  if (!scheme) return unreadable;
 
   try {
-    const { host, pathname, protocol } = new URL(url);
+    const { host, pathname, protocol, username } = new URL(url);
+
+    if (!username && url.split('?')[0]?.includes('@')) return unreadable;
 
     return { local: false, label: `${protocol}//${host}${pathname === '/' ? '' : pathname}` };
   } catch {
-    return { local: false, label: 'a database URL that could not be read' };
+    return describeMultiHost(scheme, url.slice(scheme.length));
   }
+}
+
+function describeMultiHost(scheme: string, rest: string): DatabaseLocation {
+  const address = rest.slice(rest.lastIndexOf('@') + 1).split(/[?#]/)[0] ?? '';
+  const slash = address.indexOf('/');
+  const host = (slash < 0 ? address : address.slice(0, slash)).split(',')[0];
+  const path = slash < 0 ? '' : address.slice(slash);
+
+  if (!host) return unreadable;
+
+  return { local: false, label: `${scheme}${host}${path === '/' ? '' : path}` };
 }
 
 function fieldErrors(error: unknown): string | undefined {
@@ -144,7 +169,14 @@ export async function users(
 
   if (!collection?.auth) return fail(`"${slug}" isn't an auth collection in this app.`);
 
-  const database = describeDatabase((payloadConfig.db as Pick<DatabaseAdapter, 'url'>).url);
+  if (collection.auth.disableLocalStrategy) {
+    return fail(
+      `"${slug}" signs in without a password (disableLocalStrategy), so there is no login to create. Sign in with its provider instead.`,
+    );
+  }
+
+  const { url, syncUrl } = payloadConfig.db as Pick<DatabaseAdapter, 'url' | 'syncUrl'>;
+  const database = describeDatabase(url, syncUrl);
 
   console.log(`[frogbot] users create: database ${database.label}`);
 

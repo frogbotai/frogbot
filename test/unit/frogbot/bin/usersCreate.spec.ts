@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
 import {
@@ -85,6 +85,10 @@ describe('describeDatabase', () => {
 });
 
 describe('users', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   function app(db: string | object | undefined): FrogBotSanitizedConfig {
     const payloadConfig = {
       admin: { user: 'users' },
