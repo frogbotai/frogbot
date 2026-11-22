@@ -39,8 +39,6 @@ export const importColumnsEndpoint: Endpoint = {
   handler: async (req) => {
     const request = await readColumnsRequest(req);
 
-    if ('response' in request) return request.response;
-
     const { headers, samples, targets, fields } = request;
 
     const previous = await findPreviousColumns(req, request);

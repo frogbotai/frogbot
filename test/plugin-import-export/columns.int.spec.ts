@@ -210,7 +210,7 @@ describe('import columns endpoint', () => {
     const response = await post<ErrorBody>('import-columns', [['Name']]);
 
     expect(response.status).toBe(403);
-    expect(response.body.errors).toEqual([
+    expect(response.body.errors).toMatchObject([
       { message: 'You are not allowed to import.', data: { code: 'import_not_allowed' } },
     ]);
   });
@@ -223,7 +223,7 @@ describe('import columns endpoint', () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
+    expect(response.body.errors).toMatchObject([
       {
         message: `Collection "users" can't be imported here. Importable: companies, tags, contacts, notes.`,
         data: {
@@ -238,7 +238,7 @@ describe('import columns endpoint', () => {
     const response = await postBody({ format: 'csv' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
+    expect(response.body.errors).toMatchObject([
       {
         message: 'No file data provided: send the file base64-encoded as `fileData`.',
         data: { code: 'file_data_missing' },
@@ -252,7 +252,7 @@ describe('import columns endpoint', () => {
       const response = await postBody({ fileData: csv([['Name']]).toString('base64'), format });
 
       expect(response.status).toBe(400);
-      expect(response.body.errors).toEqual([
+      expect(response.body.errors).toMatchObject([
         {
           message: `Unsupported format ${JSON.stringify(format)}: use "csv" or "json".`,
           data: { code: 'unsupported_format', allowed: ['csv', 'json'] },
@@ -272,7 +272,7 @@ describe('import columns endpoint', () => {
     const response = await postBody({ fileData: json([{ a: 1 }, 5, 'x']), format: 'json' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
+    expect(response.body.errors).toMatchObject([
       {
         message: 'Could not read the file: Item 2 is not an object (got number).',
         data: { code: 'file_unreadable' },
@@ -284,7 +284,7 @@ describe('import columns endpoint', () => {
     const response = await postBody({ fileData: json({ a: 1 }), format: 'json' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
+    expect(response.body.errors).toMatchObject([
       {
         message: 'Could not read the file: A JSON import must be an array of objects.',
         data: { code: 'file_unreadable' },

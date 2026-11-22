@@ -61,10 +61,11 @@ Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, follow
 | `CONFIG_INVALID` | The config failed to load or sanitize, for example an agent model no provider serves or a duplicate collection slug. The message is the error the running app would throw. The checks below need a loaded config, so they're skipped. | Fix the error, then run `check` again. Config errors show one at a time. |
 | `INVALID_CRON` | A task or workflow `schedule[].cron` isn't a valid cron expression. The path names it, for example `jobs.tasks.sendDigest.schedule.0.cron`. | Fix the expression. |
 | `UNKNOWN_TASK` | A workflow whose `handler` is an array of steps has a step whose `task` isn't in `jobs.tasks`. | Add the task, or fix the slug. |
+| `IMPORT_EXPORT_HOOKS` | `@frogbotai/plugin-import-export` found a different number of `afterChange` hooks on the import or export collection than it supports, so the import-export package it builds on isn't the version it was built for. The path names the override option, for example `plugins.importExport.overrideImportCollection`. | Install the version the message names. Your override isn't the cause: it runs after the check. |
 | `TYPES_STALE` | `frogbot-types.ts` is missing or doesn't match your config. | Run `frogbot generate:types`. |
 | `IMPORT_MAP_STALE` | The admin import map doesn't match the components your config references. Skipped when `admin.importMap.autoGenerate` is `false` or the app has no admin folder. | Run `frogbot generate:importmap`. |
 
-`INVALID_CRON` and `UNKNOWN_TASK` are config errors, so `dev` and `start` fail on them too.
+`INVALID_CRON`, `UNKNOWN_TASK` and `IMPORT_EXPORT_HOOKS` are config errors, so `dev` and `start` fail on them too.
 
 `check` also warns about things that don't stop your app. A warning is one line on stderr, `[frogbot] warning <code> <path>: <message>`. A warning doesn't change the exit code, and a passing run says `check passed with N warnings`:
 

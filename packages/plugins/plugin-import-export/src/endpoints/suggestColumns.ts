@@ -6,15 +6,13 @@ import type { ImportColumn } from '../columns/columnMap.js';
 import { readColumnMap } from '../columns/columnMap.js';
 import type { ImportTarget } from '../columns/suggest.js';
 import { sanitizeColumns, suggestColumns, toColumn } from '../columns/suggest.js';
-import { fail, readColumnsRequest } from './request.js';
+import { importError, readColumnsRequest } from './request.js';
 
 /** What `suggest-columns` returns: the mapping with AI picks in its "Skip" columns. */
 export type SuggestColumnsResponse = {
   columns: ImportColumn[];
   /** How many "Skip" columns the model filled. */
   suggested: number;
-  /** Set when the model call failed; `columns` is then the mapping as sent. */
-  error?: string;
 };
 
 export const suggestColumnsPath = '/suggest-columns';
@@ -30,7 +28,7 @@ const instructions = [
 /**
  * `POST /api/<imports>/suggest-columns` with `{ collectionSlug, fileData, format, columns }`. Asks
  * the small model, as the user, to fill the mapping's "Skip" columns. Only valid, unused fields
- * are kept; a model error returns the mapping unchanged with a message. Registered only when
+ * are kept; a model error fails with `ai_suggestion_failed`. Registered only when
  * `ai.smallModel` or `ai.defaultModel` is set.
  */
 export const suggestColumnsEndpoint: Endpoint = {
@@ -38,8 +36,6 @@ export const suggestColumnsEndpoint: Endpoint = {
   path: suggestColumnsPath,
   handler: async (req) => {
     const request = await readColumnsRequest(req);
-
-    if ('response' in request) return request.response;
 
     const { headers, samples, targets, fields, body } = request;
 
@@ -63,7 +59,13 @@ export const suggestColumnsEndpoint: Endpoint = {
     const { frogbot } = frogbotReq;
     const model = frogbot.config.ai?.smallModel ?? frogbot.config.ai?.defaultModel;
 
-    if (!model) return fail('No AI model is configured.', 404);
+    if (!model) {
+      throw importError(
+        'ai_model_missing',
+        'No AI model is configured: set `ai.smallModel` or `ai.defaultModel`.',
+        404,
+      );
+    }
 
     let picks: Record<string, unknown>;
 
@@ -83,14 +85,7 @@ export const suggestColumnsEndpoint: Endpoint = {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      return Response.json(
-        {
-          columns,
-          suggested: 0,
-          error: `AI suggestion failed: ${message}`,
-        } satisfies SuggestColumnsResponse,
-        { status: 502 },
-      );
+      throw importError('ai_suggestion_failed', `AI suggestion failed: ${message}`, 502);
     }
 
     let suggested = 0;

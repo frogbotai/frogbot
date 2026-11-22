@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { importExportPlugin as payloadImportExportPlugin } from '@payloadcms/plugin-import-export';
 import type {
   ImportBeforeHook,
@@ -5,7 +7,7 @@ import type {
 } from '@payloadcms/plugin-import-export/types';
 import type { FrogBotConfig } from 'frogbot';
 import { definePlugin } from 'frogbot';
-import { mapComponentPaths, wrapPayloadPlugin } from 'frogbot/internal';
+import { ConfigIssueError, mapComponentPaths, wrapPayloadPlugin } from 'frogbot/internal';
 import type {
   CollectionAfterChangeHook,
   CollectionBeforeOperationHook,
@@ -57,12 +59,17 @@ export const importExportPlugin = definePlugin<ImportExportPluginOptions>({
 
     const pluginOptions: ImportExportPluginConfig = {
       ...options,
-      overrideExportCollection: queueWithRequest('export', options.overrideExportCollection),
-      overrideImportCollection: queueWithRequest(
-        'import',
-        options.overrideImportCollection,
+      overrideExportCollection: queueWithRequest({
+        kind: 'export',
+        path: 'overrideExportCollection',
+        override: options.overrideExportCollection,
+      }),
+      overrideImportCollection: queueWithRequest({
+        kind: 'import',
+        path: 'overrideImportCollection',
+        override: options.overrideImportCollection,
         imports,
-      ),
+      }),
       ...(options.collections && {
         collections: options.collections.map((collection) =>
           withCollectionQueues(collection, imports),
@@ -193,14 +200,23 @@ function withCollectionQueues(
       exportConfig.overrideCollection && {
         export: {
           ...exportConfig,
-          overrideCollection: queueWithRequest('export', exportConfig.overrideCollection),
+          overrideCollection: queueWithRequest({
+            kind: 'export',
+            path: `collections.${collection.slug}.export.overrideCollection`,
+            override: exportConfig.overrideCollection,
+          }),
         },
       }),
     ...(typeof importConfig === 'object' &&
       importConfig.overrideCollection && {
         import: {
           ...importConfig,
-          overrideCollection: queueWithRequest('import', importConfig.overrideCollection, imports),
+          overrideCollection: queueWithRequest({
+            kind: 'import',
+            path: `collections.${collection.slug}.import.overrideCollection`,
+            override: importConfig.overrideCollection,
+            imports,
+          }),
         },
       }),
   };
@@ -217,19 +233,35 @@ function importExtras(config: FrogBotConfig): ImportExtras {
   };
 }
 
-function queueWithRequest(
-  kind: QueueHookKind,
-  override?: CollectionOverride,
-  imports?: ImportExtras,
-): CollectionOverride {
+type QueueWithRequestProps = {
+  kind: QueueHookKind;
+  path: string;
+  override?: CollectionOverride;
+  imports?: ImportExtras;
+};
+
+function queueWithRequest({
+  kind,
+  path,
+  override,
+  imports,
+}: QueueWithRequestProps): CollectionOverride {
   return ({ collection }) => {
     const afterChange = collection.hooks?.afterChange ?? [];
     const { count, index } = queueHooks[kind];
 
     if (afterChange.length !== count) {
-      throw new Error(
-        `[plugin-import-export] Expected ${count} afterChange hooks on Payload's ${kind} collection '${collection.slug}', found ${afterChange.length}.`,
-      );
+      const option = path.split('.').at(-1);
+
+      throw new ConfigIssueError({
+        code: 'IMPORT_EXPORT_HOOKS',
+        path: `plugins.importExport.${path}`,
+        message: [
+          `[plugin-import-export] Expected ${count} afterChange hooks on Payload's ${kind} collection '${collection.slug}', found ${afterChange.length}.`,
+          `Your ${option} runs after this check, so it isn't the cause: add your own hooks to the collection it returns.`,
+          `The installed @payloadcms/plugin-import-export is a different version than this plugin supports (${supportedPayloadVersion()}): install that version.`,
+        ].join(' '),
+      });
     }
 
     const queueHook = afterChange[index];
@@ -299,4 +331,25 @@ function replace<T extends object, K extends keyof T>(target: T, key: K, value: 
       return typeof found === 'function' ? found.bind(object) : found;
     },
   });
+}
+
+function supportedPayloadVersion(): string {
+  const payloadPlugin = '@payloadcms/plugin-import-export';
+
+  try {
+    const own = readPackage(new URL('../package.json', import.meta.url));
+    const pinned = own.dependencies?.[payloadPlugin];
+
+    if (pinned && /^\d/.test(pinned)) return pinned;
+
+    return (
+      readPackage(new URL('../package.json', import.meta.resolve(payloadPlugin))).version ?? ''
+    );
+  } catch {
+    return 'see its package.json';
+  }
+}
+
+function readPackage(url: URL): { version?: string; dependencies?: Record<string, string> } {
+  return JSON.parse(readFileSync(url, 'utf8')) as ReturnType<typeof readPackage>;
 }

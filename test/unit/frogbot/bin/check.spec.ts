@@ -140,7 +140,7 @@ describe('frogbot check', () => {
 
   it("reports a plugin's config issue by the plugin's code and path", async () => {
     const internalURL = new URL(
-      '../../../../packages/frogbot/dist/exports/internal.js',
+      '../../../../packages/frogbot/src/exports/internal.ts',
       import.meta.url,
     ).href;
 
