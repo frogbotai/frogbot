@@ -6,11 +6,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { draftySlug, plainSlug, strictSlug } from './config.js';
+import { draftySlug, plainSlug, strictSlug, usersSlug, wideSlug } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-type Slug = typeof draftySlug | typeof plainSlug | typeof strictSlug;
+type Slug = typeof draftySlug | typeof plainSlug | typeof strictSlug | typeof wideSlug;
+
+type Data = Record<string, unknown>;
 
 type Row = { id: string; blockType?: string; [key: string]: unknown };
 
@@ -388,6 +390,63 @@ describe('localized values inside reordered rows', () => {
     });
     expect(pick(es.hero?.ctas, 'label')).toEqual(['h2 Parar', 'h1 Ir']);
     expect(pick(es.meta?.links, 'text')).toEqual(['k2 Be', 'k1 Ae']);
+  });
+
+  it('keeps every other field in both locales when a one-locale publish reorders only one blocks field', async () => {
+    const users = await Promise.all(
+      ['a', 'b'].map(
+        async (name) =>
+          (
+            await booted.frogbot.create({
+              collection: usersSlug,
+              data: { email: `${name}@example.com`, password: 'password' },
+            })
+          ).id,
+      ),
+    );
+
+    const extra = (locale: number) => ({
+      count: locale + 1,
+      tags: locale ? ['b', 'c'] : ['a'],
+      nums: locale ? [7] : [1, 2],
+      owner: users[locale],
+      blob: { k: locale },
+      note: { body: locale ? 'Nota' : 'Note' },
+      hero: { heading: locale ? 'Titular' : 'Head', ctas: [item('h1', locale ? 'Ir' : 'Go', 's')] },
+      meta: {
+        summary: locale ? 'Resumen' : 'Sum',
+        links: [{ id: 'k1', text: locale ? 'Ae' : 'A' }],
+      },
+    });
+
+    const doc = (await booted.frogbot.create({
+      collection: wideSlug,
+      locale: 'en',
+      data: { ...enDoc, ...extra(0), _status: 'published' },
+    })) as Doc;
+
+    await booted.frogbot.update({
+      collection: wideSlug,
+      id: doc.id,
+      locale: 'es',
+      data: { ...esDoc, ...extra(1), _status: 'published' },
+    });
+
+    const before = await Promise.all(['en', 'es'].map((locale) => read(wideSlug, doc.id, locale)));
+
+    await booted.frogbot.update({
+      collection: wideSlug,
+      id: doc.id,
+      locale: 'en',
+      data: { layout: reordered.layout },
+    });
+
+    const after = await Promise.all(['en', 'es'].map((locale) => read(wideSlug, doc.id, locale)));
+    const rest = ({ layout: _layout, updatedAt: _updatedAt, ...other }: Doc & Data) => other;
+
+    expect(pick(after[1]?.layout, 'text')).toEqual(['m2 Adios', 'm1 Hola']);
+    expect(pick(after[0]?.layout, 'text')).toEqual(['m2 Bye', 'm1 Hello']);
+    expect(after.map((locale) => rest(locale))).toEqual(before.map((locale) => rest(locale)));
   });
 
   it('leaves no snapshot from a failed publish to revert a later publish of all locales on the same request', async () => {
