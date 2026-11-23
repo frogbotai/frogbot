@@ -15,7 +15,11 @@ vi.mock('@payloadcms/ui/views/Document/handleServerFunction', async () => {
 
       return Promise.resolve({
         data: { id: 1 },
-        Document: <DocumentInfoProvider initialState={mocks.initialState as never} />,
+        Document: (
+          <DocumentInfoProvider initialState={mocks.initialState as never}>
+            {null}
+          </DocumentInfoProvider>
+        ),
       });
     },
   };
