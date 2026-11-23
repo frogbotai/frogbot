@@ -6,14 +6,14 @@ Read this before you choose a collection's fields, columns and views, or build a
 
 ## Start from the person
 
-Before you pick a field type or a component, decide for each screen, without asking the person:
+Before you pick a field type or a component, decide for each screen:
 
 1. **Who opens it, and what for.** One sentence: "The owner checks which invoices wait for approval and approves them."
 2. **What they look at first.** That goes at the top: a headline number, the waiting items, or the newest videos.
 3. **The one action.** One primary button per screen. Everything else is secondary or in a menu.
 4. **What they read but don't edit.** Saved stats, AI results and system facts are shown as text, never as inputs.
 
-Work these out from the request, the data and the collection names. Don't ask the person to answer them; pick the sensible default and build it.
+Work these out from the request, the data, the collection names and the optional follow-up answer from [FIRST-APP.md](FIRST-APP.md#1-ask-one-question). Don't ask design questions on top of that; pick the sensible default and build it.
 
 ## Choose fields by what the text is
 

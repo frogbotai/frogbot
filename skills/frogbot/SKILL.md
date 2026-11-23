@@ -19,7 +19,7 @@ Use FrogBot names, imports, generated types, and request APIs. Check the install
 
 ## Starting From Zero
 
-When the folder has no `frogbot.config.ts` and the person wants to set up FrogBot or build their first app, follow [FIRST-APP.md](reference/FIRST-APP.md): one question, then a running app with their data, a login and sample records.
+When the folder has no `frogbot.config.ts` and the person wants to set up FrogBot or build their first app, follow [FIRST-APP.md](reference/FIRST-APP.md): one question and an optional follow-up on how people will use it, then a running app with their data, a login and sample records.
 
 ## Task Routing
 
@@ -282,7 +282,7 @@ src/
 └── frogbot.config.ts
 ```
 
-Before you choose a collection's fields, columns and views, or build a dashboard widget, custom view or field, read [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md). Decide who uses each screen and what for without asking, show read-only data as text rather than grey inputs, open on the view that fits the job (a gallery for videos), and build from the `@frogbotai/ui` components it lists, such as `Stat`, `Value`, `StatusBadge`, `FactList` and `ReportView`, on the theme tokens.
+Before you choose a collection's fields, columns and views, or build a dashboard widget, custom view or field, read [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md). Decide who uses each screen and what for (from the optional follow-up answer, or your own judgement), show read-only data as text rather than grey inputs, open on the view that fits the job (a gallery for videos), and build from the `@frogbotai/ui` components it lists, such as `Stat`, `Value`, `StatusBadge`, `FactList` and `ReportView`, on the theme tokens.
 
 Give every collection that shows in the sidebar an `admin.icon` that says what it holds, Users included; without one the sidebar shows a folder. Pick from the names in [COLLECTIONS.md](reference/COLLECTIONS.md#icons).
 
