@@ -86,6 +86,62 @@ describe('asana template roles', () => {
     expect(member.roles).toEqual(['member']);
   });
 
+  it('names a user with no name after their email, until a name is set', async () => {
+    const { admin, member } = await team();
+
+    expect(admin.name).toBe('admin@example.com');
+    expect(member.name).toBe('member@example.com');
+
+    const named = await as(admin).update('users', member.id, { name: 'Mia Park' });
+
+    expect(named.name).toBe('Mia Park');
+
+    const cleared = await as(admin).update('users', member.id, { name: '' });
+
+    expect(cleared.name).toBe('member@example.com');
+
+    const moved = await as(admin).update('users', member.id, { email: 'mia@example.com' });
+
+    expect(moved).toMatchObject({ email: 'mia@example.com', name: 'mia@example.com' });
+
+    await as(admin).update('users', member.id, { name: 'Mia Park' });
+
+    const kept = await as(admin).update('users', member.id, { email: 'park@example.com' });
+
+    expect(kept.name).toBe('Mia Park');
+  });
+
+  it('names a user after their email as stored, trimmed and lowercased', async () => {
+    const { admin } = await team();
+    const mia = await as(admin).create('users', {
+      email: ' Mia.Park@Example.com ',
+      password: 'frogbot-test',
+      roles: ['member'],
+    });
+
+    expect(mia).toMatchObject({ email: 'mia.park@example.com', name: 'mia.park@example.com' });
+
+    const moved = await as(admin).update('users', mia.id, { email: 'Mia@Example.com' });
+
+    expect(moved).toMatchObject({ email: 'mia@example.com', name: 'mia@example.com' });
+  });
+
+  it('shows a user saved before names were filled in by their email', async () => {
+    const { admin, member } = await team();
+
+    await frogbot.db.updateOne({ collection: 'users', data: { name: null }, id: member.id });
+
+    const found = await frogbot.findByID({
+      collection: 'users',
+      id: member.id,
+      overrideAccess: false,
+      select: { name: true },
+      user: admin,
+    });
+
+    expect(found.name).toBe('member@example.com');
+  });
+
   it('lets managers run projects and members only read them', async () => {
     const { manager, member } = await team();
     const project = await as(manager).create('projects', { name: 'Website', key: 'WEB' });

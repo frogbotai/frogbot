@@ -26,6 +26,7 @@ export { MoneyCell, MoneyField } from '../fields/Money/index.client.js';
 export { PercentCell, PercentField } from '../fields/Percent/index.client.js';
 export { PhoneCell, PhoneField } from '../fields/Phone/index.client.js';
 export { RatingCell, RatingField } from '../fields/Rating/index.client.js';
+export { ShortDateCell } from '../fields/ShortDateCell/index.client.js';
 export { UrlCell } from '../fields/Url/index.client.js';
 export { shallowRouteState } from '../utilities/shallowRoute.js';
 export {

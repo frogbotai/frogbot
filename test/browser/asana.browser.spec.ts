@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { prepareView, shootView } from './__helpers/viewShots';
+import { setAdminTheme } from './__helpers/adminTheme';
+import { prepareView, shootView, themes } from './__helpers/viewShots';
 import { timezoneId, todayDate } from './fixtures/crm/shared';
 
 const shots = path.join(
@@ -155,6 +156,7 @@ const panelShots = path.join(
 );
 
 const created: number[] = [];
+const createdUsers: number[] = [];
 
 const panel = (page: Page) => page.locator('.fb-record-panel');
 const bar = (page: Page) => page.locator('.fb-record-panel-header');
@@ -209,6 +211,8 @@ test.describe('the task panel', () => {
 
   test.afterEach(async ({ page }) => {
     for (const id of created.splice(0).reverse()) await page.request.delete(`/api/tasks/${id}`);
+
+    for (const id of createdUsers.splice(0)) await page.request.delete(`/api/users/${id}`);
   });
 
   test('a seeded task opens like Asana’s, and a subtask opens in place with a way back', async ({
@@ -224,16 +228,34 @@ test.describe('the task panel', () => {
     await expect(panel(page).locator('#field-completed')).toHaveCount(0);
     await expect(panel(page).locator('.fb-record-panel-properties__row label')).toHaveText([
       'Assignee',
+      'Start Date',
       'Due Date',
       /^Project/,
       'Status',
     ]);
+    await expect(row(page, 'startDate').locator('input')).toHaveValue('Jun 11');
+    await expect(row(page, 'dueDate').locator('input')).toHaveValue('Jun 17');
+    await expect(panel(page).locator('.relationship--single-value__drawer-toggler')).toHaveCount(0);
+    await expect(
+      panel(page).locator(
+        ':is(#field-parent, #field-number, #field-key, #field-startDate, .file-field__upload):visible',
+      ),
+    ).toHaveCount(1);
+    await expect(
+      panel(page).locator('label:visible', { hasText: /^(Parent|Number|Key)$/ }),
+    ).toHaveCount(0);
+    await expect(panel(page).locator('#field-description')).toHaveAttribute(
+      'placeholder',
+      'What is this task about?',
+    );
     await expect(subtasks(page).locator('.fb-panel-join__title')).toHaveText([
       'Sketch the plan comparison table',
       'Write the pricing FAQ',
     ]);
     await expect(subtasks(page).getByRole('button', { name: 'Completed' })).toHaveCount(1);
-    await expect(panel(page)).toContainText(/pricing-notes(-\d+)?\.txt/);
+    await expect(panel(page).locator('.fb-panel-upload__file')).toHaveText([
+      /pricing-notes(-\d+)?\.txt/,
+    ]);
     await expect(panel(page).locator('.fb-pill-tabs')).toBeVisible();
     await expect(panel(page).locator('.fb-comments__item')).toHaveCount(2);
     await expect(
@@ -260,29 +282,142 @@ test.describe('the task panel', () => {
     expect(errors).toEqual([]);
   });
 
-  test('+ adds a subtask in the parent’s project, and its check saves completed', async ({
+  test('a subtask opened from the list links back to its parent, with no Project row', async ({
+    page,
+  }) => {
+    const subtask = await findTask(page, 'Write the pricing FAQ');
+
+    await openTask(page, subtask.id, 'Write the pricing FAQ');
+    await expect(row(page, 'project')).toHaveCount(0);
+    await expect(panel(page).locator('.fb-record-panel-properties__row:visible')).toHaveCount(4);
+    await expect(panel(page).locator('.field-label .required:visible')).toHaveCount(0);
+
+    await bar(page).getByRole('button', { name: 'Back to Design the pricing page' }).click();
+    await expect(title(page)).toHaveValue('Design the pricing page');
+    await expect(bar(page).getByRole('button', { name: /^Back to/ })).toHaveCount(0);
+  });
+
+  test('+ adds a subtask inline in the parent’s project, and its check saves completed', async ({
     page,
   }) => {
     const parent = await findTask(page, 'Design the pricing page');
 
     await openTask(page, parent.id, 'Design the pricing page');
     await subtasks(page).getByRole('button', { name: 'Add task' }).click();
-    await expect(title(page)).toHaveValue('');
-    await title(page).fill('Price the add-ons');
-    await bar(page).getByRole('button', { name: 'Save' }).click();
-    await expect(bar(page).locator('.fb-record-panel-header__save')).toHaveCount(0);
 
-    const id = Number(new URL(page.url()).searchParams.get('record'));
-    created.push(id);
-    expect(await readTask(page, id)).toMatchObject({ parent: parent.id, project: parent.project });
+    const draft = subtasks(page).getByRole('textbox', { name: 'New task name' });
+    await expect(draft).toBeFocused();
+    const { totalDocs } = (await (await page.request.get('/api/tasks?limit=1')).json()) as {
+      totalDocs: number;
+    };
 
-    await bar(page).getByRole('button', { name: 'Back to Design the pricing page' }).click();
+    await draft.fill('Price the add-ons');
+    await draft.press('Enter');
+
     const added = subtasks(page).locator('.fb-panel-join__row', { hasText: 'Price the add-ons' });
+    await expect(added).toBeVisible();
+    await expect(draft).toHaveValue('');
+    await expect(draft).toBeFocused();
+    await expect(title(page)).toHaveValue('Design the pricing page');
+    expect(Number(new URL(page.url()).searchParams.get('record'))).toBe(parent.id);
+    await expect(page.locator('.collection-list')).toContainText(`of ${totalDocs + 1} items`);
+    await expect(page.locator('.app-header__step-nav')).toContainText('Design the pricing page');
+
+    await draft.press('Escape');
+    await expect(draft).toHaveCount(0);
+    await expect(panel(page)).toBeVisible();
+
+    const subtask = await findTask(page, 'Price the add-ons');
+    created.push(subtask.id);
+    expect(subtask).toMatchObject({ parent: parent.id, project: parent.project });
+
     await added.getByRole('button', { name: 'Mark complete' }).click();
     await expect(added.getByRole('button', { name: 'Completed' })).toBeVisible();
     await expect
-      .poll(async () => readTask(page, id))
+      .poll(async () => readTask(page, subtask.id))
       .toMatchObject({ completed: true, status: 'done' });
+  });
+
+  test('Attachments + uploads a file to the task, and × removes it', async ({ page }) => {
+    const parent = await findTask(page, 'Design the pricing page');
+    const task = await createTask(page, { title: 'Collect the logos', project: parent.project });
+    const section = panel(page).locator('.fb-panel-upload');
+
+    await openTask(page, task.id, 'Collect the logos');
+
+    for (const [name, placeholder] of [
+      ['startDate', 'No start date'],
+      ['dueDate', 'No due date'],
+    ]) {
+      await expect(row(page, name).locator('input')).toHaveValue('');
+      await expect(row(page, name).locator('input')).toHaveAttribute('placeholder', placeholder);
+    }
+
+    await expect(section.locator('.fb-panel-section__heading')).toHaveText('Attachments');
+    await expect(section.locator('.fb-panel-upload__file')).toHaveCount(0);
+
+    const chooser = page.waitForEvent('filechooser');
+    await section.getByRole('button', { name: 'Add file' }).click();
+
+    await (
+      await chooser
+    ).setFiles({ name: 'logo-sheet.txt', mimeType: 'text/plain', buffer: Buffer.from('logos') });
+
+    const file = section.locator('.fb-panel-upload__file', { hasText: /logo-sheet(-\d+)?\.txt/ });
+    await expect(file).toBeVisible();
+    await expect
+      .poll(
+        async () => ((await readTask(page, task.id)) as { attachments?: unknown[] }).attachments,
+      )
+      .toHaveLength(1);
+
+    await file.hover();
+    await file.getByRole('button', { name: /^Remove logo-sheet/ }).click();
+    await expect(section.locator('.fb-panel-upload__file')).toHaveCount(0);
+    await expect
+      .poll(
+        async () => ((await readTask(page, task.id)) as { attachments?: unknown[] }).attachments,
+      )
+      .toEqual([]);
+  });
+
+  test('a member who can’t edit the task gets no attachment + or remove', async ({
+    browser,
+    page,
+  }) => {
+    const email = `member-${Date.now()}@example.com`;
+    const made = await page.request.post('/api/users', {
+      data: { email, password: 'frogbot-test', roles: ['member'] },
+    });
+
+    expect(made.ok()).toBe(true);
+
+    const { doc: user } = (await made.json()) as { doc: { id: number } };
+
+    createdUsers.push(user.id);
+
+    const task = await findTask(page, 'Design the pricing page');
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+      timezoneId,
+    });
+
+    const member = await context.newPage();
+    const login = await member.request.post('/api/users/login', {
+      data: { email, password: 'frogbot-test' },
+    });
+
+    expect(login.ok()).toBe(true);
+    expect((await member.request.patch(`/api/tasks/${task.id}`, { data: {} })).status()).toBe(403);
+
+    await openTask(member, task.id, 'Design the pricing page');
+
+    const section = panel(member).locator('.fb-panel-upload');
+
+    await expect(section.locator('.fb-panel-upload__file')).toHaveCount(1);
+    await expect(section.getByRole('button', { name: 'Add file' })).toHaveCount(0);
+    await expect(section.getByRole('button', { name: /^Remove/ })).toHaveCount(0);
+    await context.close();
   });
 
   test('the pinned box stays put while the task scrolls, and a post shows in the tab', async ({
@@ -351,5 +486,28 @@ test.describe('the task panel', () => {
     ).toBeVisible();
     await expect(row(page, 'status').locator('.rs__single-value')).toHaveText('Done');
     await shootPanel(page, '06-completed-task-full');
+  });
+
+  test('shoots the open task in light and dark, wide and narrow', async ({ page }) => {
+    test.setTimeout(60_000);
+
+    const task = await findTask(page, 'Design the pricing page');
+
+    for (const theme of themes) {
+      await setAdminTheme(page, theme);
+
+      for (const viewport of [
+        { width: 1280, height: 1400 },
+        { width: 375, height: 1400 },
+      ]) {
+        await page.setViewportSize(viewport);
+        await openTask(page, task.id, 'Design the pricing page');
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect(panel(page).locator('.fb-comments__item')).toHaveCount(2);
+        await expect(row(page, 'dueDate').locator('input')).toHaveValue('Jun 17');
+        await expect(panel(page).locator('.fb-panel-upload__file')).toHaveCount(1);
+        await shootPanel(page, `panel-${theme}-${viewport.width}`);
+      }
+    }
   });
 });

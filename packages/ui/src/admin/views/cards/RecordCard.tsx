@@ -8,6 +8,8 @@ import { formatDocTitle } from '@payloadcms/ui/shared';
 import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
+import { isShortDate } from '../../fields/shortDate.js';
+import { ShortDateCell } from '../../fields/ShortDateCell/index.client.js';
 import { getPath } from '../cells.js';
 import { DoneCheck } from '../records/DoneCheck.client.js';
 import { getUseAsDone, isRecordDone } from '../records/state.js';
@@ -90,23 +92,27 @@ export function RecordCard<TRow extends CardRow>({
         ) : null}
         <div className="fb-card__title">{title}</div>
       </div>
-      {cardColumns.map(({ accessor, field }) => (
-        <div className="fb-card__field" key={accessor}>
-          <span className="fb-card__field-label">
-            {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
-          </span>
-          <div className="fb-card__field-value">
-            <FieldCell
-              cellData={getPath(row, accessor)}
-              collectionSlug={collectionSlug}
-              field={field}
-              link={false}
-              rowData={row}
-              viewType={viewType}
-            />
+      {cardColumns.map(({ accessor, field }) => {
+        const Cell = viewType === 'board' && isShortDate(field) ? ShortDateCell : FieldCell;
+
+        return (
+          <div className="fb-card__field" key={accessor}>
+            <span className="fb-card__field-label">
+              {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
+            </span>
+            <div className="fb-card__field-value">
+              <Cell
+                cellData={getPath(row, accessor)}
+                collectionSlug={collectionSlug}
+                field={field}
+                link={false}
+                rowData={row}
+                viewType={viewType}
+              />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }
