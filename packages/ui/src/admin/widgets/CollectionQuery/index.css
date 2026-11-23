@@ -46,18 +46,13 @@
 
   .fb-query-widget .fb-list__item:has(.fb-done-check--done) .fb-list__title {
     color: var(--color-text-secondary);
-    text-decoration: line-through;
   }
 
   .fb-query-widget .fb-list__item:has(.fb-done-check--done) .fb-list__meta {
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   .fb-query-widget .fb-list__item:has(.fb-done-check--done) .fb-query-widget__date--overdue {
     color: inherit;
-  }
-
-  .fb-query-widget .fb-list__item:has(.fb-done-check--done) .fb-option-pill {
-    display: none;
   }
 }
