@@ -16,11 +16,12 @@ export const ALLOWLIST = [
 
 const SCAFFOLD_ROOTS = ['templates', 'packages/create-frogbot-app/dist/templates', 'examples'];
 
-const MIGRATION_ARGS = /\{[^}]*\bpayload\b[^}]*\}\s*:\s*Migrate(?:Up|Down)Args/;
+const MIGRATION_ARGS =
+  /\{((?:[^{}]|\{[^{}]*\})*)\}\s*:\s*(?:[\w$]+\.|import\([^)]*\)\.)?Migrate(?:Up|Down)Args\b/g;
 
-const SCAFFOLD_PATTERN = new RegExp(`Payload|@payloadcms\\/|${MIGRATION_ARGS.source}`);
+const SCAFFOLD_PATTERN = /Payload|@payloadcms\//;
 
-const DOCS_PATTERN = new RegExp(`\\bPayload\\b|@payloadcms\\/|${MIGRATION_ARGS.source}`);
+const DOCS_PATTERN = /\bPayload\b|@payloadcms\//;
 
 const SKIPPED_DIRS = new Set(['node_modules', '.next', '.git', 'dist']);
 
@@ -108,16 +109,18 @@ export function checkBranding({ files, allowlist = ALLOWLIST }) {
       .map((entry) => ({ entry, range: allowedLines(lines, entry.heading) }))
       .filter(({ range }) => range);
 
-    for (const match of content.matchAll(new RegExp(MIGRATION_ARGS.source, 'g'))) {
-      const index = content.slice(0, match.index).split('\n').length - 1;
+    const signatureLines = new Set(
+      [...content.matchAll(MIGRATION_ARGS)]
+        .filter(([, args]) => /\bpayload\b/.test(args))
+        .map(({ index }) => content.slice(0, index).split('\n').length - 1),
+    );
 
-      if (!MIGRATION_ARGS.test(lines[index])) {
-        problems.push({ file, line: index + 1, text: lines[index].trim() });
-      }
+    for (const index of signatureLines) {
+      problems.push({ file, line: index + 1, text: lines[index].trim() });
     }
 
     lines.forEach((line, index) => {
-      if (!pattern.test(line)) return;
+      if (signatureLines.has(index) || !pattern.test(line)) return;
 
       const section = sections.find(({ range }) => index >= range.start && index < range.end);
 
