@@ -3,8 +3,8 @@ import { commentsField } from '@frogbotai/plugin-comments';
 import type { CollectionConfig, Where } from 'frogbot';
 import { autonumberField, autonumberKeyField } from 'frogbot';
 
+import { followParent, relationId, syncDoneHook } from '../hooks/tasks';
 import { reassignAccess, recordAccess } from '../roles';
-import { followParent, relationId, syncDoneHook } from './hooks/syncDone';
 
 export const Tasks: CollectionConfig = {
   slug: 'tasks',

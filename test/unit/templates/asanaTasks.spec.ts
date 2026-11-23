@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { syncDone } from '../../../templates/asana/src/collections/hooks/syncDone';
+import { syncDone } from '../../../templates/asana/src/hooks/tasks';
 
 describe('asana template: completed and the Done status', () => {
   it.each([

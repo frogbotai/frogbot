@@ -10,7 +10,7 @@ PostgreSQL or MongoDB. No Docker is required.
 Click a task to open it in the side panel, laid out like Asana's:
 
 - **Mark complete** at the top. Completing a task moves it to Done, and moving it to Done completes
-  it. The rule is a hook in `src/collections/hooks/syncDone.ts`.
+  it. The rule is a hook in `src/hooks/tasks.ts`.
 - The assignee, due date, project and status as label and value rows, set by
   `admin.panel.properties`.
 - **Subtasks**, a join on each task's `parent`. Click one to open it in the same panel, with a back
@@ -89,7 +89,7 @@ which fields changed. Admins and managers can read it; nobody can edit it.
 | `src/frogbot.config.ts`         | Your FrogBot config — agents, collections, providers             |
 | `src/collections/Projects.ts`   | Projects, each with a key such as `WEB`                          |
 | `src/collections/Tasks.ts`      | Tasks with numbered keys, a list, a board and a timeline         |
-| `src/collections/hooks/`        | Keeps Done and Mark complete in step; gives subtasks a project   |
+| `src/hooks/tasks.ts`            | Keeps Done and Mark complete in step; gives subtasks a project   |
 | `src/roles.ts`                  | The roles and who can do what                                    |
 | `src/importExport.ts`           | Which collections import and export, and who deletes a run       |
 | `src/seed/`                     | The sample data and the `POST /api/seed` endpoint                |
