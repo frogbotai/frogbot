@@ -61,5 +61,5 @@ export const collisions = names(
 
 export const adminOverrides = {
   client: names('DefaultListView'),
-  rsc: names('DefaultTemplate DefaultTemplateProps'),
+  rsc: names('CollectionQueryWidget DefaultTemplate DefaultTemplateProps'),
 };
