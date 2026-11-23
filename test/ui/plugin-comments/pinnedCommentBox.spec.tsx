@@ -86,8 +86,9 @@ describe('pinned comment box', () => {
   });
 
   it('reloads a list that mounts after the pinned box posted, as when its tab opens again', async () => {
-    const list = <Comments initial={[]} schemaPath="collection.comments.body" target={target} />;
-    const pinned = <PinnedCommentBox schemaPath="collection.comments.body" target={target} />;
+    const other = { ...target, documentId: 5 };
+    const list = <Comments initial={[]} schemaPath="collection.comments.body" target={other} />;
+    const pinned = <PinnedCommentBox schemaPath="collection.comments.body" target={other} />;
     const view = render(
       <>
         <div>{list}</div>
@@ -102,7 +103,7 @@ describe('pinned comment box', () => {
       </>,
     );
 
-    act(() => posts.get('4')?.());
+    act(() => posts.get('5')?.());
 
     expect(fetchMock).not.toHaveBeenCalled();
 
