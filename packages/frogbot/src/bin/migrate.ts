@@ -142,9 +142,19 @@ export async function migrate(args: string[]): Promise<void> {
       case 'migrate:fresh':
         await adapter.migrateFresh({ forceAcceptWarning: flags.forceAcceptWarning });
         break;
-      case 'migrate:refresh':
-        await adapter.migrateRefresh();
+      case 'migrate:refresh': {
+        const refreshed = await adapter.migrateRefresh();
+
+        if (refreshed?.cancelled) {
+          throw new Error(
+            'payload_migrations has a dev-mode row (batch -1), so migrate:refresh stopped before applying migrations.\n' +
+              'Run `frogbot migrate --force-accept-warning` to apply them anyway, or delete that row if the database already matches your migrations.',
+          );
+        }
+
         break;
+      }
+
       case 'migrate:reset':
         await adapter.migrateReset();
         break;
