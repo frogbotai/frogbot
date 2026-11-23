@@ -4,7 +4,11 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { pnpmMajor, writeOverrides } from '../../../scripts/lib/overrides.mjs';
+import {
+  pnpmMajor,
+  workspaceWithOverrides,
+  writeOverrides,
+} from '../../../scripts/lib/overrides.mjs';
 
 const overrides = { '@frogbotai/ui': 'file:/packs/ui.tgz', frogbot: 'file:/packs/frogbot.tgz' };
 let dir: string;
@@ -67,6 +71,16 @@ describe.skipIf(process.platform === 'win32')('writeOverrides', () => {
 
     expect(read('pnpm-workspace.yaml')).toBe(
       'packages:\n  - \'.\'\nallowBuilds:\n  sharp: true\noverrides:\n  "frogbot": "file:/packs/frogbot.tgz"\n',
+    );
+  });
+
+  it.each([
+    ['an inline map', 'packages:\n  - .\noverrides: {}\n', 'packages:\n  - .\n'],
+    ['a trailing comment', 'overrides: # pinned\n  old: 1.0.0\n', ''],
+    ['a quoted key', '"overrides":\n  old: 1.0.0\nallowBuilds: {}\n', 'allowBuilds: {}\n'],
+  ])('replaces an overrides key written as %s', (_, yaml, kept) => {
+    expect(workspaceWithOverrides(yaml, { frogbot: 'file:/f.tgz' })).toBe(
+      `${kept}overrides:\n  "frogbot": "file:/f.tgz"\n`,
     );
   });
 });

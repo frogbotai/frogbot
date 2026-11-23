@@ -13,13 +13,13 @@ export function pnpmMajor(dir, env = process.env) {
 
 export function workspaceWithOverrides(yaml, overrides) {
   const lines = yaml.split('\n');
-  const start = lines.findIndex((line) => /^overrides:\s*$/.test(line));
+  const start = lines.findIndex((line) => /^(["']?)overrides\1\s*:/.test(line));
   let kept = lines;
 
   if (start !== -1) {
     let end = start + 1;
 
-    while (end < lines.length && (lines[end] === '' || /^\s/.test(lines[end]))) end++;
+    while (end < lines.length && /^(\s|$)/.test(lines[end])) end++;
 
     kept = [...lines.slice(0, start), ...lines.slice(end)];
   }
