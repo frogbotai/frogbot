@@ -27,13 +27,13 @@ Ask: "What should the app keep track of, and who uses it?" If your client has a 
 
 When the prompt already names the app ("rebuild our HubSpot", "import my Airtable CSVs"), skip the question. Ask for the CSV files when it mentions them.
 
-Then offer one optional follow-up, because knowing how people use the screens is what makes the first version feel built for them: "How will people use it day to day? Pick one, describe it in your own words, or skip and I'll decide." With a multiple-choice tool, give three one-click answers fitted to their app, plus **Skip, you decide**. For a lawn business, for example:
+Then offer one optional follow-up, because knowing how people use the screens is what makes the first version feel built for them: "How do you picture people using it day to day? Feel free to brain dump: type or talk it through, messy is fine, the more I know the better I can shape it. Or pick one below, or skip and I'll decide." With a multiple-choice tool, give three one-click answers fitted to their app, plus **Skip, you decide**. For a lawn business, for example:
 
 - I check today's jobs on my phone and mark them done
 - My office manager chases unpaid invoices each week
 - Customers book and I approve
 
-Never ask more than this. Use the answer to pick the first screen, the default view and the one main action (see [ADMIN-DESIGN.md](ADMIN-DESIGN.md#start-from-the-person)). On skip, decide yourself and say what you assumed in one line.
+Never ask more than this. Ask it in your own warm words, not as a form. Use the answer to pick the first screen, the default view and the one main action (see [ADMIN-DESIGN.md](ADMIN-DESIGN.md#start-from-the-person)). On skip, decide yourself and say what you assumed in one line.
 
 ## 2. Create the app
 
