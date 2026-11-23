@@ -104,13 +104,22 @@ const MIN_INSIDE_LABEL = 48;
 
 type LabelPlacement = { room: number; side: 'end' | 'start' };
 
+function naturalWidth(content: HTMLElement): number {
+  const hidden = Array.from(content.querySelectorAll('*')).reduce(
+    (most, element) => Math.max(most, element.scrollWidth - element.clientWidth),
+    0,
+  );
+
+  return content.scrollWidth + hidden;
+}
+
 function placeLabel(bar: HTMLElement, padding: number): LabelPlacement | undefined {
   const content = bar.querySelector<HTMLElement>(':scope > .frog-timeline__bar-content');
   const track = bar.parentElement;
 
   if (!content || !track) return undefined;
 
-  const width = content.scrollWidth;
+  const width = naturalWidth(content);
   const inside = bar.clientWidth - padding;
 
   if (width <= Math.ceil(inside) || inside >= MIN_INSIDE_LABEL) return undefined;
