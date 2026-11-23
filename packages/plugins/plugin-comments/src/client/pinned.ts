@@ -8,7 +8,6 @@ const pinned = new Map<string, number>();
 const listeners = new Set<() => void>();
 const posted = new Map<string, Set<() => void>>();
 const postCounts = new Map<string, number>();
-const seenCounts = new Map<string, number>();
 
 /** The key the pinned box and the list of one record share. */
 export function pinnedKey(target: Pick<CommentsTarget, 'collection' | 'documentId'>): string {
@@ -71,14 +70,9 @@ export function onPosted(key: string, listener: () => void): () => void {
 }
 
 /**
- * Whether the record's pinned box posted a comment that no list has loaded yet, as when the
- * list's tab was closed at the time. Marks it seen, so the caller reloads once.
+ * Whether the record's pinned box has posted since the page loaded, so a list mounting with the
+ * server-rendered comments may be missing them and should reload, as when its tab opens again.
  */
-export function takeUnseenPost(key: string): boolean {
-  const count = postCounts.get(key) ?? 0;
-  const unseen = count > (seenCounts.get(key) ?? 0);
-
-  seenCounts.set(key, count);
-
-  return unseen;
+export function hasPinnedPosts(key: string): boolean {
+  return (postCounts.get(key) ?? 0) > 0;
 }
