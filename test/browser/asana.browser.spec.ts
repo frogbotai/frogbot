@@ -524,6 +524,45 @@ test.describe('the task panel', () => {
     expect(await readTask(page, task.id)).toMatchObject({ completed: false });
   });
 
+  test('Mark complete shows its whole focus ring in the lead slot', async ({ page }) => {
+    const task = await findTask(page, 'Design the pricing page');
+    await openTask(page, task.id, 'Design the pricing page');
+    const complete = bar(page).locator('.fb-side-panel-bar__lead button');
+    await expect(complete).toBeVisible();
+    await complete.focus();
+
+    const geometry = await complete.evaluate((button) => {
+      const style = getComputedStyle(button);
+      const ring =
+        style.outlineStyle === 'none'
+          ? 0
+          : parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+
+      const box = button.getBoundingClientRect();
+      const start = button.closest('.fb-side-panel-bar__start')!;
+      const clip = start.getBoundingClientRect();
+
+      return {
+        clipBottom: clip.bottom,
+        clipLeft: clip.left,
+        clipTop: clip.top,
+        focusVisible: button.matches(':focus-visible'),
+        overflow: getComputedStyle(start).overflow,
+        ring,
+        ringBottom: box.bottom + ring,
+        ringLeft: box.left - ring,
+        ringTop: box.top - ring,
+      };
+    });
+
+    expect(geometry.focusVisible).toBe(true);
+    expect(geometry.ring).toBeGreaterThan(0);
+    expect(geometry.overflow).toBe('hidden');
+    expect(geometry.ringLeft).toBeGreaterThanOrEqual(geometry.clipLeft);
+    expect(geometry.ringTop).toBeGreaterThanOrEqual(geometry.clipTop);
+    expect(geometry.ringBottom).toBeLessThanOrEqual(geometry.clipBottom);
+  });
+
   test('shoots the open task in light and dark, wide and narrow', async ({ page }) => {
     test.setTimeout(60_000);
 

@@ -1,9 +1,10 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   docInfo: {} as Record<string, unknown>,
+  done: false,
   modified: false,
   permissions: {} as Record<string, unknown>,
   submit: vi.fn(() => Promise.resolve()),
@@ -28,7 +29,13 @@ vi.mock('@payloadcms/ui', () => ({
   }),
   useDocumentInfo: () => mocks.docInfo,
   useDocumentTitle: () => ({ title: 'Budget feature' }),
-  useField: () => ({ setValue: vi.fn(), value: false }),
+  useField: () => ({
+    setValue: (value: boolean) => {
+      mocks.done = value;
+      mocks.modified = true;
+    },
+    value: mocks.done,
+  }),
   useForm: () => ({ submit: mocks.submit }),
   useFormModified: () => mocks.modified,
   useModal: () => ({ closeModal: vi.fn(), openModal: vi.fn() }),
@@ -65,7 +72,15 @@ function OnlyWhenSaved() {
 beforeEach(() => {
   mocks.permissions = { collections: { tasks: { create: false } } };
   mocks.docInfo = { collectionSlug: 'tasks', hasSavePermission: true };
-  mocks.submit.mockClear();
+  mocks.done = false;
+  mocks.submit.mockReset();
+
+  mocks.submit.mockImplementation(() => {
+    mocks.modified = false;
+
+    return Promise.resolve();
+  });
+
   mocks.modified = false;
   mocks.useAsDone = undefined;
 });
@@ -130,5 +145,48 @@ describe('record panel header', () => {
 
     expect(screen.queryByRole('button', { name: 'Mark complete' })).toBeNull();
     expect(screen.getByRole('button', { name: 'general:save' })).toBeTruthy();
+  });
+
+  it('never leaves a second quick click unsaved behind Unsaved/Save', async () => {
+    const user = userEvent.setup();
+    mocks.useAsDone = 'completed';
+    mocks.docInfo = { collectionSlug: 'tasks', hasSavePermission: true, id: '1' };
+    let busy = false;
+    let saved = false;
+    let finish = () => {};
+
+    mocks.submit.mockImplementation(() => {
+      if (busy) return Promise.resolve();
+      busy = true;
+      const value = mocks.done;
+
+      return new Promise<void>((resolve) => {
+        finish = () => {
+          saved = value;
+          mocks.modified = false;
+          busy = false;
+          resolve();
+        };
+      });
+    });
+
+    const { container, rerender } = render(<RecordPanelHeader />);
+    const lead = () => container.querySelector<HTMLElement>('.fb-side-panel-bar__lead');
+
+    await user.click(within(lead()!).getByRole('button', { name: 'Mark complete' }));
+    rerender(<RecordPanelHeader />);
+    await user.click(lead()!.querySelector('button')!);
+    rerender(<RecordPanelHeader />);
+
+    await act(async () => {
+      finish();
+      await Promise.resolve();
+    });
+
+    rerender(<RecordPanelHeader />);
+
+    expect({ field: mocks.done, server: saved }).toEqual({ field: true, server: true });
+    expect(screen.queryByRole('button', { name: 'general:save' })).toBeNull();
+    expect(lead()).not.toBeNull();
   });
 });
