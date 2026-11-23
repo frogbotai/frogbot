@@ -17,6 +17,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -84,9 +85,10 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
   const { modalState } = useModal();
   const { serverFunction } = useServerFunctions();
   const { mostRecentUpdate } = useDocumentEvents();
-  const [content, setContent] = useState<{ key: string; Panel: ReactNode }>();
+  const [content, setContent] = useState<{ key: string; Panel: ReactNode; record: string }>();
   const [loading, setLoading] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const [footer, setFooter] = useState<HTMLDivElement | null>(null);
   const panelRef = useRef(panel);
   const { save, setWidth, width } = usePanelWidth(
@@ -98,12 +100,19 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     panelRef.current = panel;
   });
 
-  const requestKey =
+  const recordKey =
     state.mode === 'edit'
-      ? `edit:${state.id}:${state.version ?? 0}`
+      ? `edit:${state.id}`
       : state.mode === 'create'
         ? `create:${state.key}`
         : '';
+
+  const requestKey = state.mode === 'edit' ? `${recordKey}:${state.version ?? 0}` : recordKey;
+  const shownRecord = content?.record;
+
+  useLayoutEffect(() => {
+    if (shownRecord && bodyRef.current) bodyRef.current.scrollTop = 0;
+  }, [shownRecord]);
 
   useEffect(() => {
     const current = panelRef.current.state;
@@ -133,7 +142,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
           return;
         }
 
-        setContent({ key: requestKey, Panel: result.Panel });
+        setContent({ key: requestKey, Panel: result.Panel, record: recordKey });
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -145,7 +154,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
       });
 
     return () => controller.abort();
-  }, [collectionSlug, requestKey, serverFunction, t]);
+  }, [collectionSlug, recordKey, requestKey, serverFunction, t]);
 
   useEffect(() => {
     if (!mostRecentUpdate || mostRecentUpdate.entitySlug !== collectionSlug) return;
@@ -309,7 +318,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
         onPointerDown={startResize}
         type="button"
       />
-      <div className={`${baseClass}__body`}>
+      <div className={`${baseClass}__body`} ref={bodyRef}>
         {content ? (
           <PanelFooterTarget value={footer}>
             <PanelConfig collectionSlug={collectionSlug} key={content.key}>
