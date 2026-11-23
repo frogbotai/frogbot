@@ -3,7 +3,12 @@ import { commentsField } from '@frogbotai/plugin-comments';
 import type { CollectionConfig, Where } from 'frogbot';
 import { autonumberField, autonumberKeyField } from 'frogbot';
 
-import { followParent, relationId, syncDoneHook } from '../hooks/tasks';
+import {
+  followParent,
+  moveSubtasks,
+  relationId,
+  syncDoneHook,
+} from '../hooks/tasks';
 import { reassignAccess, recordAccess } from '../roles';
 
 export const Tasks: CollectionConfig = {
@@ -46,6 +51,7 @@ export const Tasks: CollectionConfig = {
   hooks: {
     beforeValidate: [followParent],
     beforeChange: [syncDoneHook],
+    afterChange: [moveSubtasks],
   },
   fields: [
     { name: 'title', type: 'text', required: true },

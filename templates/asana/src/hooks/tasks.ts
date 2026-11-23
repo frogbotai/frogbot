@@ -1,4 +1,5 @@
 import type {
+  CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
   CollectionBeforeValidateHook,
 } from 'frogbot';
@@ -43,7 +44,8 @@ export const relationId = (value: unknown): number | string | undefined =>
 
 /**
  * A subtask takes its parent's project, so `+` on a task needs no project pick, and a task can't
- * sit under one of its own subtasks.
+ * sit under one of its own subtasks. A saved parent that was deleted is cleared, so the subtask
+ * becomes a top-level task in its project instead of failing validation.
  */
 export const followParent: CollectionBeforeValidateHook = async ({
   data,
@@ -68,7 +70,13 @@ export const followParent: CollectionBeforeValidateHook = async ({
 
   const parent = await find(id);
 
-  if (!parent) return data;
+  if (!parent) {
+    const stale =
+      data.parent === undefined ||
+      relationId(data.parent) === relationId(originalDoc?.parent);
+
+    return stale ? { ...data, parent: null } : data;
+  }
 
   const self = relationId(originalDoc?.id);
   const seen = new Set<number | string>();
@@ -93,4 +101,33 @@ export const followParent: CollectionBeforeValidateHook = async ({
   }
 
   return { ...data, project: parent.project };
+};
+
+/**
+ * When a task changes project, its subtasks move with it. Each subtask's save takes the id from
+ * its parent in `followParent` and runs this hook again, so deeper levels follow.
+ */
+export const moveSubtasks: CollectionAfterChangeHook = async ({
+  doc,
+  operation,
+  previousDoc,
+  req,
+}) => {
+  if (
+    operation !== 'update' ||
+    relationId(doc.project) === relationId(previousDoc?.project)
+  ) {
+    return doc;
+  }
+
+  await req.frogbot.update({
+    collection: 'tasks',
+    where: { parent: { equals: doc.id } },
+    data: { project: doc.project },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  });
+
+  return doc;
 };
