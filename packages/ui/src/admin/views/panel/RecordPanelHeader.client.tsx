@@ -61,10 +61,12 @@ function useTitleScrolledOut(ref: React.RefObject<HTMLElement | null>): boolean 
 }
 
 function MarkComplete({
+  busy,
   compact,
   onToggle,
   path,
 }: {
+  busy: boolean;
   compact: boolean;
   onToggle: () => void;
   path: string;
@@ -84,7 +86,7 @@ function MarkComplete({
       ]
         .filter(Boolean)
         .join(' ')}
-      disabled={!hasSavePermission}
+      disabled={busy || !hasSavePermission}
       onClick={() => {
         setValue(!done);
         onToggle();
@@ -351,6 +353,7 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
         lead={
           useAsDone && isEditing && (completing !== 'idle' || status !== 'save') ? (
             <MarkComplete
+              busy={completing !== 'idle'}
               compact={titleScrolledOut}
               onToggle={() => setCompleting('pending')}
               path={useAsDone}
