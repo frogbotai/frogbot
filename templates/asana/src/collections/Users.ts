@@ -5,7 +5,7 @@ import { aiLimitAccess, firstUserIsAdmin, userAccess } from '../roles';
 export const Users: CollectionConfig = {
   slug: 'users',
   access: userAccess,
-  admin: { icon: 'people', settings: true },
+  admin: { icon: 'people', settings: true, useAsTitle: 'name' },
   auth: true,
   hooks: { beforeChange: [firstUserIsAdmin] },
   fields: [

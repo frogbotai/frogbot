@@ -1,6 +1,6 @@
 import { activityField } from '@frogbotai/plugin-audit-log';
 import { commentsField } from '@frogbotai/plugin-comments';
-import type { CollectionConfig } from 'frogbot';
+import type { CollectionConfig, Where } from 'frogbot';
 import { autonumberField, autonumberKeyField } from 'frogbot';
 
 import { reassignAccess, recordAccess } from '../roles';
@@ -62,8 +62,6 @@ export const Tasks: CollectionConfig = {
       required: true,
       admin: { condition: (data) => !data?.parent },
     },
-    autonumberField({ name: 'number', scope: 'project' }),
-    autonumberKeyField({ name: 'key', number: 'number', prefix: 'key' }),
     {
       name: 'status',
       type: 'select',
@@ -81,22 +79,7 @@ export const Tasks: CollectionConfig = {
       relationTo: 'users',
       access: reassignAccess,
     },
-    { name: 'startDate', type: 'date' },
     { name: 'dueDate', type: 'date' },
-    {
-      name: 'parent',
-      type: 'relationship',
-      relationTo: 'tasks',
-      filterOptions: ({ data, id }) => {
-        const project = relationId(data?.project);
-        const and = [
-          ...(id === undefined ? [] : [{ id: { not_equals: id } }]),
-          ...(project ? [{ project: { equals: project } }] : []),
-        ];
-
-        return and.length > 0 ? { and } : true;
-      },
-    },
     { name: 'description', type: 'textarea' },
     {
       name: 'subtasks',
@@ -111,6 +94,23 @@ export const Tasks: CollectionConfig = {
       relationTo: 'files',
       hasMany: true,
     },
+    { name: 'startDate', type: 'date' },
+    {
+      name: 'parent',
+      type: 'relationship',
+      relationTo: 'tasks',
+      filterOptions: ({ data, id }) => {
+        const project = relationId(data?.project);
+        const and: Where[] = [];
+
+        if (id !== undefined) and.push({ id: { not_equals: id } });
+        if (project) and.push({ project: { equals: project } });
+
+        return and.length > 0 ? { and } : true;
+      },
+    },
+    autonumberField({ name: 'number', scope: 'project' }),
+    autonumberKeyField({ name: 'key', number: 'number', prefix: 'key' }),
     {
       type: 'tabs',
       admin: { className: 'fb-pill-tabs' },

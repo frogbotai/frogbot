@@ -17,7 +17,7 @@ beforeEach(() => {
   count.mockReset();
 });
 
-describe("the projects template's Seed panel", () => {
+describe("the asana template's Seed panel", () => {
   it('shows the button while the app has no projects', async () => {
     count.mockResolvedValue({ totalDocs: 0 });
 

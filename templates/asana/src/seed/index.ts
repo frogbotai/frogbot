@@ -9,6 +9,7 @@ type SampleProject = {
   status: 'planned' | 'active' | 'done';
   tasks: Array<{
     title: string;
+    description?: string;
     status: TaskStatus;
     startInDays?: number;
     dueInDays?: number;
@@ -34,6 +35,8 @@ const PROJECTS: SampleProject[] = [
       },
       {
         title: 'Design the pricing page',
+        description:
+          'Lay out the three plans side by side, with a short FAQ under them.',
         status: 'in-review',
         startInDays: -4,
         dueInDays: 2,

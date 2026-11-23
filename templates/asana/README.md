@@ -1,8 +1,25 @@
-# FrogBot Projects Template
+# FrogBot Asana Template
 
-A small project tracker: projects, tasks with keys such as `WEB-12` on a board grouped by status
-and on a timeline from start to due date, an `assistant` agent that knows the layout, and a **Seed your database** button that loads sample
-data. It runs on SQLite, PostgreSQL or MongoDB. No Docker is required.
+A task tracker that works like Asana: projects, tasks with keys such as `WEB-12` on a list, on a
+board grouped by status and on a timeline from start to due date, an `assistant` agent that knows
+the layout, and a **Seed your database** button that loads sample data. It runs on SQLite,
+PostgreSQL or MongoDB. No Docker is required.
+
+## The task panel
+
+Click a task to open it in the side panel, laid out like Asana's:
+
+- **Mark complete** at the top. Completing a task moves it to Done, and moving it to Done completes
+  it. The rule is a hook in `src/collections/hooks/syncDone.ts`.
+- The assignee, due date, project and status as label and value rows, set by
+  `admin.panel.properties`.
+- **Subtasks**, a join on each task's `parent`. Click one to open it in the same panel, with a back
+  link to its parent, or press **+** to add one. A subtask takes its parent's project.
+- **Attachments**, files uploaded to the task.
+- **Comments** and **Activity** tabs, with the comment box pinned to the bottom of the panel by
+  `CommentBoxFooter` from `@frogbotai/plugin-comments`.
+
+All of it is collection config in `src/collections/Tasks.ts`; the template adds no panel code.
 
 ## Quick Start
 
@@ -27,7 +44,8 @@ Then open [http://localhost:3000](http://localhost:3000) and create your admin a
 ## Sample data
 
 While the app has no projects, the dashboard shows a **Seed your database** panel. Its button
-calls `POST /api/seed`, which adds three projects with tasks, every task assigned to you. It
+calls `POST /api/seed`, which adds three projects with tasks, every task assigned to you, and
+subtasks, an attachment and two comments on "Design the pricing page". It
 creates no user and deletes nothing: once a project exists, the panel hides and the endpoint
 answers `409`. To start over locally, delete the database.
 
@@ -71,6 +89,7 @@ which fields changed. Admins and managers can read it; nobody can edit it.
 | `src/frogbot.config.ts`         | Your FrogBot config — agents, collections, providers             |
 | `src/collections/Projects.ts`   | Projects, each with a key such as `WEB`                          |
 | `src/collections/Tasks.ts`      | Tasks with numbered keys, a list, a board and a timeline         |
+| `src/collections/hooks/`        | Keeps Done and Mark complete in step; gives subtasks a project   |
 | `src/roles.ts`                  | The roles and who can do what                                    |
 | `src/importExport.ts`           | Which collections import and export, and who deletes a run       |
 | `src/seed/`                     | The sample data and the `POST /api/seed` endpoint                |

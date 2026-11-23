@@ -439,6 +439,18 @@ export interface Task {
   title: string;
   completed?: boolean | null;
   project?: (number | null) | Project;
+  status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
+  assignee?: (number | null) | User;
+  dueDate?: string | null;
+  description?: string | null;
+  subtasks?: {
+    docs?: (number | Task)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  attachments?: (number | File)[] | null;
+  startDate?: string | null;
+  parent?: (number | null) | Task;
   /**
    * Number set by FrogBot when the record is created, unique within each project; read-only
    */
@@ -447,18 +459,6 @@ export interface Task {
    * Unique key set by FrogBot as <key>-<number>, like APP-123; read-only
    */
   key?: string | null;
-  status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
-  assignee?: (number | null) | User;
-  startDate?: string | null;
-  dueDate?: string | null;
-  parent?: (number | null) | Task;
-  description?: string | null;
-  subtasks?: {
-    docs?: (number | Task)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  attachments?: (number | File)[] | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -945,16 +945,16 @@ export interface TasksSelect {
   title?: boolean;
   completed?: boolean;
   project?: boolean;
-  number?: boolean;
-  key?: boolean;
   status?: boolean;
   assignee?: boolean;
-  startDate?: boolean;
   dueDate?: boolean;
-  parent?: boolean;
   description?: boolean;
   subtasks?: boolean;
   attachments?: boolean;
+  startDate?: boolean;
+  parent?: boolean;
+  number?: boolean;
+  key?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;

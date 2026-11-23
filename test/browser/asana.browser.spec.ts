@@ -147,3 +147,204 @@ test('a bar too short for its title shows the title beside it, clear of other ba
     );
   }
 });
+
+const panelShots = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'test-results',
+  'asana-panel',
+);
+
+const created: number[] = [];
+
+const panel = (page: Page) => page.locator('.fb-record-panel');
+const bar = (page: Page) => page.locator('.fb-record-panel-header');
+const title = (page: Page) => page.locator('.fb-record-panel-title__input');
+const subtasks = (page: Page) => panel(page).locator('.fb-panel-join');
+const footer = (page: Page) => panel(page).locator('.fb-record-panel__footer');
+const row = (page: Page, name: string) =>
+  panel(page).locator('.fb-record-panel-properties__row', {
+    has: page.locator(`#field-${name}, [id^="field-${name}"]`),
+  });
+
+type Task = { completed?: boolean; id: number; parent?: number; project?: number; status?: string };
+
+async function findTask(page: Page, name: string) {
+  const response = await page.request.get(
+    `/api/tasks?where[title][equals]=${encodeURIComponent(name)}&depth=0`,
+  );
+
+  const { docs } = (await response.json()) as { docs: Task[] };
+
+  return docs[0];
+}
+
+async function readTask(page: Page, id: number) {
+  return (await (await page.request.get(`/api/tasks/${id}?depth=0`)).json()) as Task;
+}
+
+async function createTask(page: Page, data: Record<string, unknown>) {
+  const response = await page.request.post('/api/tasks', { data });
+  expect(response.ok()).toBe(true);
+  const { doc } = (await response.json()) as { doc: Task };
+  created.push(doc.id);
+
+  return doc;
+}
+
+async function openTask(page: Page, id: number, name: string, view = '') {
+  await page.goto(`/collections/tasks${view}?record=${id}`);
+  await expect(title(page)).toHaveValue(name);
+}
+
+async function shootPanel(page: Page, caption: string) {
+  const clip = (await panel(page).boundingBox())!;
+  await page.screenshot({ clip, path: path.join(panelShots, `${caption}.png`) });
+}
+
+test.describe('the task panel', () => {
+  test.beforeEach(async ({ page }) => {
+    await prepareView(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  test.afterEach(async ({ page }) => {
+    for (const id of created.splice(0).reverse()) await page.request.delete(`/api/tasks/${id}`);
+  });
+
+  test('a seeded task opens like Asana’s, and a subtask opens in place with a way back', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    const task = await findTask(page, 'Design the pricing page');
+
+    await openTask(page, task.id, 'Design the pricing page', '/board');
+    await expect(bar(page).getByRole('button', { name: 'Mark complete' })).toBeVisible();
+    await expect(panel(page).locator('#field-completed')).toHaveCount(0);
+    await expect(panel(page).locator('.fb-record-panel-properties__row label')).toHaveText([
+      'Assignee',
+      'Due Date',
+      /^Project/,
+      'Status',
+    ]);
+    await expect(subtasks(page).locator('.fb-panel-join__title')).toHaveText([
+      'Sketch the plan comparison table',
+      'Write the pricing FAQ',
+    ]);
+    await expect(subtasks(page).getByRole('button', { name: 'Completed' })).toHaveCount(1);
+    await expect(panel(page)).toContainText(/pricing-notes(-\d+)?\.txt/);
+    await expect(panel(page).locator('.fb-pill-tabs')).toBeVisible();
+    await expect(panel(page).locator('.fb-comments__item')).toHaveCount(2);
+    await expect(footer(page).locator('.fb-comments--pinned')).toBeVisible();
+    await shootPanel(page, '00-baseline-open-task');
+
+    await row(page, 'dueDate').locator('input').hover();
+    await shootPanel(page, '03-hover-due-date');
+
+    await row(page, 'status').locator('.rs__control').click();
+    await expect(page.locator('.rs__menu')).toBeVisible();
+    await shootPanel(page, '04-edit-priority-dropdown');
+    await page.keyboard.press('Escape');
+
+    await subtasks(page).getByRole('button', { name: 'Write the pricing FAQ' }).click();
+    await expect(title(page)).toHaveValue('Write the pricing FAQ');
+    await expect(row(page, 'project')).toHaveCount(0);
+
+    const back = bar(page).getByRole('button', { name: 'Back to Design the pricing page' });
+    await back.click();
+    await expect(title(page)).toHaveValue('Design the pricing page');
+    expect(errors).toEqual([]);
+  });
+
+  test('+ adds a subtask in the parent’s project, and its check saves completed', async ({
+    page,
+  }) => {
+    const parent = await findTask(page, 'Design the pricing page');
+
+    await openTask(page, parent.id, 'Design the pricing page');
+    await subtasks(page).getByRole('button', { name: 'Add task' }).click();
+    await expect(title(page)).toHaveValue('');
+    await title(page).fill('Price the add-ons');
+    await bar(page).getByRole('button', { name: 'Save' }).click();
+    await expect(bar(page).locator('.fb-record-panel-header__save')).toHaveCount(0);
+
+    const id = Number(new URL(page.url()).searchParams.get('record'));
+    created.push(id);
+    expect(await readTask(page, id)).toMatchObject({ parent: parent.id, project: parent.project });
+
+    await bar(page).getByRole('button', { name: 'Back to Design the pricing page' }).click();
+    const added = subtasks(page).locator('.fb-panel-join__row', { hasText: 'Price the add-ons' });
+    await added.getByRole('button', { name: 'Mark complete' }).click();
+    await expect(added.getByRole('button', { name: 'Completed' })).toBeVisible();
+    await expect
+      .poll(async () => readTask(page, id))
+      .toMatchObject({ completed: true, status: 'done' });
+  });
+
+  test('the pinned box stays put while the task scrolls, and a post shows in the tab', async ({
+    page,
+  }) => {
+    const parent = await findTask(page, 'Design the pricing page');
+    const task = await createTask(page, {
+      title: 'Plan the launch email',
+      project: parent.project,
+      description: 'Line\n'.repeat(80),
+    });
+
+    await page.setViewportSize({ width: 1280, height: 600 });
+    await openTask(page, task.id, 'Plan the launch email');
+
+    const pinned = footer(page).locator('.fb-comments--pinned');
+    await expect(pinned).toBeVisible();
+    await expect(panel(page).locator('.fb-record-panel__body .fb-comments__box')).toHaveCount(0);
+
+    const before = (await pinned.boundingBox())!;
+
+    await panel(page)
+      .locator('.fb-record-panel__body')
+      .evaluate((body) => body.scrollTo({ top: body.scrollHeight }));
+
+    await expect(title(page)).not.toBeInViewport();
+    expect((await pinned.boundingBox())!.y).toBe(before.y);
+
+    await pinned.locator('[contenteditable="true"]').fill('Draft is in the doc.');
+    await pinned.getByRole('button', { name: 'Comment' }).click();
+
+    await expect(
+      panel(page).locator('.fb-record-panel__body .fb-comments__item', {
+        hasText: 'Draft is in the doc.',
+      }),
+    ).toBeVisible();
+    await expect(panel(page).locator('.fb-comments__box')).toHaveCount(1);
+  });
+
+  test('Mark complete shows Completed, sets Done and moves the card to Done', async ({ page }) => {
+    const parent = await findTask(page, 'Design the pricing page');
+    const task = await createTask(page, {
+      title: 'Book the launch review',
+      project: parent.project,
+      status: 'in-progress',
+    });
+
+    const column = (label: string) =>
+      page.locator('.frog-board__column', {
+        has: page.locator('.frog-board__column-header', { hasText: label }),
+      });
+
+    await openTask(page, task.id, 'Book the launch review', '/board');
+
+    await expect(
+      column('In progress').locator('.frog-board__card', { hasText: 'Book the launch review' }),
+    ).toBeVisible();
+
+    await bar(page).getByRole('button', { name: 'Mark complete' }).click();
+    await expect(bar(page).getByRole('button', { name: 'Completed' })).toBeVisible();
+    await expect
+      .poll(async () => readTask(page, task.id))
+      .toMatchObject({ completed: true, status: 'done' });
+    await expect(
+      column('Done').locator('.frog-board__card', { hasText: 'Book the launch review' }),
+    ).toBeVisible();
+    await expect(row(page, 'status').locator('.rs__single-value')).toHaveText('Done');
+    await shootPanel(page, '06-completed-task-full');
+  });
+});
