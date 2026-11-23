@@ -42,7 +42,12 @@ export function ReadMore({ children, className, lines = 2, style, ...props }: Re
         {children}
       </div>
       {(cut || open) && (
-        <button className="fb-read-more__toggle" onClick={() => setOpen(!open)} type="button">
+        <button
+          aria-expanded={open}
+          className="fb-read-more__toggle"
+          onClick={() => setOpen(!open)}
+          type="button"
+        >
           {open ? 'Show less' : 'Show more'}
         </button>
       )}

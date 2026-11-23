@@ -44,7 +44,7 @@ export const SubscribersField = ({ field, path }: NumberFieldClientProps) => {
 
   return (
     <FactList layout="stacked">
-      <Fact label={String(field.label ?? 'Subscribers')}>
+      <Fact label={typeof field.label === 'string' ? field.label : 'Subscribers'}>
         <Value format="compact" value={value} />
       </Fact>
     </FactList>
