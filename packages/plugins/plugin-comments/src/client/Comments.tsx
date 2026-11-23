@@ -3,11 +3,12 @@
 import './Comments.css';
 
 import { PanelSection, toast, useConfig } from '@frogbotai/ui/admin';
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { type CommentItem, commentsQuery, type CommentsTarget, toCommentItem } from '../shared.js';
 import { CommentBox, errorOf } from './CommentBox.js';
 import { CommentList } from './CommentList.js';
+import { onPosted, pinnedKey, usePinnedBox } from './pinned.js';
 
 /** Props for `Comments`. */
 export type CommentsProps = {
@@ -22,7 +23,11 @@ export type CommentsProps = {
   userId?: number | string;
 };
 
-/** A record's comment list and box. Reloads the list after a comment is added, edited or deleted. */
+/**
+ * A record's comment list and box. Reloads the list after a comment is added, edited or deleted.
+ * While a `PinnedCommentBox` for the record shows in the panel footer, it leaves out its own box
+ * and reloads when the pinned box posts.
+ */
 export function Comments({
   avatars,
   gravatar,
@@ -45,6 +50,11 @@ export function Comments({
 
     setComments(docs.map((doc) => toCommentItem(doc, target.titleField)).reverse());
   }, [api, target]);
+
+  const key = pinnedKey(target);
+  const pinned = usePinnedBox(key);
+
+  useEffect(() => onPosted(key, () => void reload()), [key, reload]);
 
   const remove = async (id: CommentItem['id']) => {
     const response = await fetch(`${api}/${id}`, { credentials: 'include', method: 'DELETE' });
@@ -88,7 +98,9 @@ export function Comments({
         schemaPath={schemaPath}
         userId={userId}
       />
-      <CommentBox onPosted={() => void reload()} schemaPath={schemaPath} target={target} />
+      {pinned ? null : (
+        <CommentBox onPosted={() => void reload()} schemaPath={schemaPath} target={target} />
+      )}
     </>
   );
 

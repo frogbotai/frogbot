@@ -385,6 +385,7 @@ const testProjects = [
       'adminTheme.browser.spec.ts',
       'themeOverrides.browser.spec.ts',
       'cssLayers.browser.spec.ts',
+      'recordPanelBody.browser.spec.ts',
       'recordPanelSlots.browser.spec.ts',
       'sidePanelMatrix.browser.spec.ts',
     ],

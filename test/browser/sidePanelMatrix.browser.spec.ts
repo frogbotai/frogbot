@@ -37,7 +37,7 @@ async function openFromList(page: Page, name: string) {
 }
 
 async function drillIn(page: Page) {
-  await page.getByTestId('subtasks').getByRole('button', { name: 'Spec the cap rules' }).click();
+  await page.locator('.fb-panel-join').getByRole('button', { name: 'Spec the cap rules' }).click();
   await expect(title(page)).toHaveValue('Spec the cap rules');
 }
 

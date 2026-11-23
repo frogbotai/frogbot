@@ -278,6 +278,25 @@ describe('record panel drill-in', () => {
     expect(window.location.search).not.toContain('1');
   });
 
+  it('keeps the parent of a record created from inside the panel, through its first save', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+
+    act(() => panel.create({ parent: 1 }, { from: 'panel' }));
+
+    expect(panel.state).toMatchObject({ initialData: { parent: 1 }, mode: 'create' });
+    expect(panel.parent).toEqual({ collection: 'tasks', id: '1', title: 'Budget feature' });
+
+    act(() => panel.switchTo(9));
+
+    expect(panel.openId).toBe('9');
+    expect(panel.parent?.id).toBe('1');
+
+    act(() => panel.create());
+
+    expect(panel.parent).toBeUndefined();
+  });
+
   it('starts fresh when a record opens from the view, or the panel closes or expands', async () => {
     render(<Tree />);
     await openFromView('1', 'Budget feature');

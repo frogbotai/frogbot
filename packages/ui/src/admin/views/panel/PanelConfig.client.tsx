@@ -4,6 +4,7 @@ import { ConfigProvider, useConfig } from '@payloadcms/ui';
 import type { ClientCollectionConfig, ClientConfig, ClientField } from 'payload';
 import { createContext, type ReactNode, use, useMemo } from 'react';
 
+import { getUseAsDone } from '../records/state.js';
 import {
   findPanelField,
   getPanelSettings,
@@ -26,9 +27,10 @@ export function usePanelLayout(): PanelLayout | undefined {
 }
 
 /**
- * Gives the panel's edit form a client config without the title and property fields, so
- * Payload's form renders every other field in config order and none twice. The title and the
- * property list render them from the original configs.
+ * Gives the panel's edit form a client config without the title, property and `useAsDone`
+ * fields, so Payload's form renders every other field in config order and none twice. The title
+ * and the property list render them from the original configs, and the header's Mark complete
+ * edits the done field.
  */
 export function PanelConfig({
   children,
@@ -50,9 +52,11 @@ export function PanelConfig({
       return found && path !== titlePath ? [{ ...found, path }] : [];
     });
 
+    const useAsDone = getUseAsDone(collectionConfig);
     const omitted = new Set([
       ...properties.map(({ path }) => path),
       ...(titlePath ? [titlePath] : []),
+      ...(useAsDone ? [useAsDone] : []),
     ]);
 
     const next: ClientConfig = {

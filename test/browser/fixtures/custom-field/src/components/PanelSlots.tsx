@@ -3,7 +3,6 @@
 import { SidePanelMenuItem } from '@frogbotai/ui';
 import { useRecordPanel } from '@frogbotai/ui/admin';
 import type { PanelComponentProps } from 'frogbot';
-import { useEffect, useState } from 'react';
 
 export function PanelAction({ close, expand, id }: PanelComponentProps) {
   return (
@@ -66,32 +65,5 @@ export function PanelCloseButton() {
         Whole expand
       </button>
     </>
-  );
-}
-
-export function Subtasks({ id }: PanelComponentProps) {
-  const { open } = useRecordPanel();
-  const [children, setChildren] = useState<Array<{ id: number; title: string }>>([]);
-
-  useEffect(() => {
-    if (!id) return;
-
-    void fetch(`/api/todos?where[parent][equals]=${id}&depth=0`, { credentials: 'include' })
-      .then((response) => response.json())
-      .then((result: { docs: Array<{ id: number; title: string }> }) => setChildren(result.docs));
-  }, [id]);
-
-  if (!children.length) return null;
-
-  return (
-    <ul data-testid="subtasks" style={{ listStyle: 'none', margin: '0 0 24px', padding: 0 }}>
-      {children.map((child) => (
-        <li key={child.id}>
-          <button onClick={() => open(child.id, { from: 'panel' })} type="button">
-            {child.title}
-          </button>
-        </li>
-      ))}
-    </ul>
   );
 }
