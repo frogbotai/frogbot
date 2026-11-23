@@ -23,6 +23,15 @@ beforeEach(() => {
     AWS_PROFILE: 'caller-profile',
     GIT_DIR: '/outside-fixture/.git',
     npm_config_prefix: '/outside-fixture/prefix',
+    HTTPS_PROXY: 'http://proxy.test:3128',
+    no_proxy: 'localhost',
+    NODE_EXTRA_CA_CERTS: '/certs/proxy.pem',
+    SSL_CERT_FILE: '/certs/bundle.pem',
+    npm_config_https_proxy: 'http://proxy.test:3128',
+    COREPACK_HOME: '/corepack',
+    GH_TOKEN: 'caller-token',
+    COREPACK_NPM_TOKEN: 'caller-token',
+    NPM_CONFIG__AUTHTOKEN: 'caller-token',
   })) {
     vi.stubEnv(key, value);
   }
@@ -80,6 +89,23 @@ describe('generated app subprocess environment', () => {
     expect(subprocessEnvironment(root, { DATABASE_URL: databaseUrl }).DATABASE_URL).toBe(
       databaseUrl,
     );
+  });
+
+  it('keeps the proxy, CA and corepack variables without tokens', () => {
+    const env = subprocessEnvironment(root);
+
+    expect(env).toMatchObject({
+      HTTPS_PROXY: 'http://proxy.test:3128',
+      no_proxy: 'localhost',
+      NODE_EXTRA_CA_CERTS: '/certs/proxy.pem',
+      SSL_CERT_FILE: '/certs/bundle.pem',
+      npm_config_https_proxy: 'http://proxy.test:3128',
+      COREPACK_HOME: '/corepack',
+    });
+
+    for (const key of ['GH_TOKEN', 'COREPACK_NPM_TOKEN', 'NPM_CONFIG__AUTHTOKEN']) {
+      expect(env).not.toHaveProperty(key);
+    }
   });
 
   it('uses different database files for different generated apps', () => {

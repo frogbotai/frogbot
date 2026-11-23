@@ -463,6 +463,21 @@ export async function renderProviders(providers) {
   return format(source, { ...options, filepath: providersPath, parser: 'typescript' });
 }
 
+export function unreachable(error) {
+  const code = error?.cause?.code;
+
+  if (typeof code !== 'string') return undefined;
+
+  const unreachableError = new Error(
+    `models.dev is unreachable (${code}): allow models.dev on this network, then rerun \`pnpm bump <bump> --from sync-catalog\`.`,
+    { cause: error },
+  );
+
+  unreachableError.name = 'ModelsDevUnreachable';
+
+  return unreachableError;
+}
+
 async function fetchLogo({ fetchImpl, provider }) {
   try {
     const response = await fetchImpl(`https://models.dev/logos/${provider}.svg`, {
@@ -475,9 +490,12 @@ async function fetchLogo({ fetchImpl, provider }) {
 
     return await response.text();
   } catch (error) {
-    throw new Error(`models.dev logo request for '${provider}' failed: ${error.message}`, {
-      cause: error,
-    });
+    throw (
+      unreachable(error) ??
+      new Error(`models.dev logo request for '${provider}' failed: ${error.message}`, {
+        cause: error,
+      })
+    );
   }
 }
 
@@ -489,7 +507,10 @@ export async function syncCatalog({ fetchImpl = fetch } = {}) {
       signal: AbortSignal.timeout(30_000),
     });
   } catch (error) {
-    throw new Error(`models.dev catalog request failed: ${error.message}`, { cause: error });
+    throw (
+      unreachable(error) ??
+      new Error(`models.dev catalog request failed: ${error.message}`, { cause: error })
+    );
   }
 
   if (!response.ok) {
@@ -546,5 +567,12 @@ export async function syncCatalog({ fetchImpl = fetch } = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  await syncCatalog();
+  try {
+    await syncCatalog();
+  } catch (error) {
+    if (error.name !== 'ModelsDevUnreachable') throw error;
+
+    console.error(error.message);
+    process.exitCode = 1;
+  }
 }
