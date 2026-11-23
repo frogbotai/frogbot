@@ -31,6 +31,8 @@ const deals = {
       admin: { custom: { frogbot: { kind: { type: 'money', currency: 'USD' } } } },
     },
     { name: 'closeDate', type: 'date' },
+    { name: 'lineItems', type: 'array' },
+    { name: 'notes', type: 'richText' },
   ],
   labels: { plural: 'Deals', singular: 'Deal' },
 };
@@ -124,6 +126,44 @@ describe('CollectionQueryWidget', () => {
 
     expect(screen.getAllByText('Payload widget')).toHaveLength(2);
   });
+
+  it('shows the value a list is sorted by, and no made-up date for a text sort', async () => {
+    const doc = {
+      id: 7,
+      name: 'Acme 2',
+      stage: 'proposal',
+      amount: 48000,
+      closeDate: '2020-01-02',
+    };
+
+    const find = () => vi.fn().mockResolvedValue({ docs: [doc] });
+
+    const { unmount } = render(
+      await CollectionQueryWidget(
+        props({ relatedCollection: 'deals', sortField: 'amount' }, find()),
+      ),
+    );
+
+    expect(within(screen.getByRole('listitem')).getByText('$48,000')).toBeTruthy();
+    expect(screen.getByRole('listitem').querySelector('time')).toBeNull();
+
+    unmount();
+
+    render(
+      await CollectionQueryWidget(props({ relatedCollection: 'deals', sortField: 'name' }, find())),
+    );
+
+    expect(screen.getByRole('listitem').querySelector('time')).toBeNull();
+  });
+
+  it.each(['lineItems', 'notes'])(
+    'falls back to Payload’s widget for the non-sortable sort field %s',
+    async (sortField) => {
+      render(await CollectionQueryWidget(props({ relatedCollection: 'deals', sortField })));
+
+      expect(screen.getByText('Payload widget')).toBeTruthy();
+    },
+  );
 
   it('says so when nothing matches', async () => {
     render(

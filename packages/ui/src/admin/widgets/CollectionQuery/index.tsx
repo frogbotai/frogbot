@@ -1,7 +1,7 @@
 import { getTranslation } from '@payloadcms/translations';
 import { CollectionQueryWidget as PayloadCollectionQueryWidget } from '@payloadcms/ui/rsc';
 import type { CollectionSlug, Option, Where, WidgetServerProps } from 'payload';
-import { formatAdminURL } from 'payload/shared';
+import { formatAdminURL, sortableFieldTypes } from 'payload/shared';
 import * as qs from 'qs-esm';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/card.js';
@@ -12,7 +12,8 @@ import { Value } from '../../../components/value.js';
 import { getFieldKind } from '../../fields/kind.js';
 import { getOptionColors, pickOptionColor } from '../../fields/optionColor.js';
 import { getRuntimeViews } from '../../views/collectionViews.js';
-import { formatRowDate, pickRowFacts, type RowFact } from './rows.js';
+import { RowDate } from './RowDate.client.js';
+import { isDateSort, pickRowFacts, type RowFact } from './rows.js';
 
 type WidgetData = {
   limit?: number;
@@ -43,8 +44,11 @@ export async function CollectionQueryWidget(props: Props) {
   const { relatedCollection, sortDirection = 'desc', sortField, title, where } = widgetData ?? {};
   const collection = relatedCollection ? payload.collections[relatedCollection]?.config : undefined;
   const fields = collection?.flattenedFields ?? [];
+  const sortFieldConfig = fields.find(({ name }) => name === sortField);
   const sortable =
-    !sortField || STAMP_FIELDS.has(sortField) || fields.some(({ name }) => name === sortField);
+    !sortField ||
+    STAMP_FIELDS.has(sortField) ||
+    (sortFieldConfig !== undefined && SORTABLE.has(sortFieldConfig.type));
 
   if (!relatedCollection || !collection || !sortable) {
     return <PayloadCollectionQueryWidget {...props} />;
@@ -68,6 +72,7 @@ export async function CollectionQueryWidget(props: Props) {
   }
 
   const titleField = collection.admin.useAsTitle || 'id';
+  const dateSort = isDateSort({ fields, sortField });
   const plural = getTranslation(collection.labels.plural, i18n);
   const facts = pickRowFacts({
     fields,
@@ -94,12 +99,6 @@ export async function CollectionQueryWidget(props: Props) {
         {docs.length ? (
           <List>
             {docs.map((doc) => {
-              const date = formatRowDate({
-                field: sortField ?? 'updatedAt',
-                locale: i18n.language,
-                value: sortField ? doc[sortField] : (doc.updatedAt ?? doc.createdAt),
-              });
-
               return (
                 <ListItem
                   href={formatAdminURL({
@@ -117,13 +116,12 @@ export async function CollectionQueryWidget(props: Props) {
                           value={doc[fact.field.name]}
                         />
                       ))}
-                      {date ? (
-                        <time
-                          className={`fb-query-widget__date${date.overdue ? ' fb-query-widget__date--overdue' : ''}`}
-                          dateTime={date.dateTime}
-                        >
-                          {date.label}
-                        </time>
+                      {dateSort ? (
+                        <RowDate
+                          field={sortField ?? 'updatedAt'}
+                          locale={i18n.language}
+                          value={sortField ? doc[sortField] : (doc.updatedAt ?? doc.createdAt)}
+                        />
                       ) : null}
                     </>
                   }
@@ -145,6 +143,8 @@ export async function CollectionQueryWidget(props: Props) {
 }
 
 const STAMP_FIELDS = new Set(['createdAt', 'updatedAt']);
+
+const SORTABLE = new Set<string>(sortableFieldTypes);
 
 function RowFactValue({
   fact,
