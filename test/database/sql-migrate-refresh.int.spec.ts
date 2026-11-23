@@ -63,5 +63,18 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
 
       expect(await migrationNames()).toEqual(['20260101_000000_refresh']);
     });
+
+    it('stops without a prompt when only a dev-mode row is left', async () => {
+      await payload.db.migrateReset();
+
+      await payload.create({
+        collection: 'payload-migrations',
+        data: { name: 'dev', batch: -1 },
+        overrideAccess: true,
+      });
+
+      expect(await payload.db.migrateRefresh()).toMatchObject({ cancelled: true });
+      expect(await migrationNames()).toEqual(['dev']);
+    }, 10_000);
   },
 );

@@ -23,7 +23,13 @@ const mocks = vi.hoisted(() => ({
     migrate: vi.fn(async (_args?: { forceAcceptWarning?: boolean }) => {}),
     migrateDown: vi.fn(async () => {}),
     migrateFresh: vi.fn(async () => {}),
-    migrateRefresh: vi.fn(async () => {}),
+    migrateRefresh: vi.fn(
+      async (): Promise<{
+        cancelled?: true;
+        migrated: string[];
+        rolledBack: string[];
+      } | void> => {},
+    ),
     migrateReset: vi.fn(async () => {}),
     migrateStatus: vi.fn(async () => {}),
   },
@@ -180,6 +186,17 @@ describe('migrate', () => {
       await expect(migrate(['migrate'])).rejects.toThrow('exit:0');
       expect(mocks.adapter.migrate).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('fails migrate:refresh when it stopped at a dev-mode row', async () => {
+    mocks.adapter.migrateRefresh.mockResolvedValueOnce({
+      cancelled: true,
+      migrated: [],
+      rolledBack: [],
+    });
+
+    await expect(migrate(['migrate:refresh'])).rejects.toThrow('exit:1');
+    expect(String(error.mock.calls[0]?.[0])).toContain('dev-mode row');
   });
 
   describe('migrate:create', () => {
