@@ -78,10 +78,7 @@ try {
   assert.match(css, /html:not\(\[data-fb-ui-page\]\)\)?\s*\{[^}]*--color-bg:/);
   assert.doesNotMatch(css, /--fb-(?:base|theme)-|light-dark\(|data-fb-theme/);
 
-  assert.doesNotMatch(
-    css,
-    /--(radius-(sm|md|lg|xl)|color-red-(500|600|700))(?![\w-])/,
-  );
+  assert.doesNotMatch(css, /--(radius-(sm|md|lg|xl)|color-red-(500|600|700))(?![\w-])/);
 
   assert.match(css, /\.template-default:has\(\.fb-nav-shell\)/);
   assert.match(css, /\.fb-mobile-nav-toggle/);
