@@ -31,14 +31,14 @@ async function storedNumber(page: Page, id: ID): Promise<number> {
   return (await response.json()).number;
 }
 
-function fieldValue(scope: Locator, kind: 'board' | 'calendar', label: string) {
-  const prefix = kind === 'board' ? 'fb-card' : 'collection-calendar';
-
+function fieldValue(scope: Locator, label: string) {
   return scope
-    .locator(`.${prefix}__field`, {
-      has: scope.page().locator(`.${prefix}__field-label`, { hasText: new RegExp(`^${label}$`) }),
+    .locator('.collection-calendar__field', {
+      has: scope
+        .page()
+        .locator('.collection-calendar__field-label', { hasText: new RegExp(`^${label}$`) }),
     })
-    .locator(`.${prefix}__field-value`);
+    .locator('.collection-calendar__field-value');
 }
 
 test.beforeEach(async ({ page }) => {
@@ -85,14 +85,14 @@ test('a Board card and a Calendar event show the creator', async ({ page }) => {
 
   const card = page.locator('.frog-board__card', { hasText: task.title });
 
-  await expect(fieldValue(card, 'board', 'Created By')).toHaveText(user.email);
+  await expect(card.locator('.fb-card__meta')).toContainText(user.email);
 
   await page.goto(calendarPath);
 
   const event = page.locator('.frog-calendar__event', { hasText: task.title });
 
   await event.scrollIntoViewIfNeeded();
-  await expect(fieldValue(event, 'calendar', 'Created By')).toHaveText(user.email);
+  await expect(fieldValue(event, 'Created By')).toHaveText(user.email);
 });
 
 test('the edit form shows the three fields read-only', async ({ page }) => {

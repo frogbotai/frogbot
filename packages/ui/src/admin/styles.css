@@ -10,6 +10,7 @@
 @import "./views/Memory/index.css";
 @import "./views/List/ListView.css";
 @import "./widgets/CollectionQuery/index.css";
+@import "./widgets/Welcome/index.css";
 
 @layer frogbot {
   /* Payload hovers this row on a plain fill but colors it for a brand fill; FrogBot's brand ink is dark. */

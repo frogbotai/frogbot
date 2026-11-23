@@ -33,6 +33,26 @@ export function splitNavGroups({ entities, i18n, permissions }: SplitNavGroupsPr
   };
 }
 
+/** The sidebar group for FrogBot's and plugins' own collections that name no group of their own. */
+export const SYSTEM_GROUP = 'System';
+
+function isInternal(entity: EntityToGroup['entity']): boolean {
+  const custom = (entity as { custom?: { frogbot?: { internal?: unknown } } }).custom;
+
+  return custom?.frogbot?.internal === true;
+}
+
+function withSystemGroup(entities: EntityToGroup[]): EntityToGroup[] {
+  return entities.map((item) =>
+    item.entity.admin.group === undefined && isInternal(item.entity)
+      ? ({
+          ...item,
+          entity: { ...item.entity, admin: { ...item.entity.admin, group: SYSTEM_GROUP } },
+        } as EntityToGroup)
+      : item,
+  );
+}
+
 export function buildCollectionGroups({
   config,
   i18n,
@@ -71,17 +91,19 @@ export function buildCollectionGroups({
   };
 
   const { groups, ungrouped } = splitNavGroups({
-    entities: entities.filter(({ entity }) => entity.admin.group !== null),
+    entities: withSystemGroup(entities.filter(({ entity }) => entity.admin.group !== null)),
     i18n,
     permissions,
   });
 
   return {
     entities,
-    groups: groups.map(({ entities: groupedEntities, label }) => ({
-      label,
-      items: groupedEntities.map(mapEntity),
-    })),
+    groups: groups
+      .map(({ entities: groupedEntities, label }) => ({
+        label,
+        items: groupedEntities.map(mapEntity),
+      }))
+      .sort((a, b) => Number(a.label === SYSTEM_GROUP) - Number(b.label === SYSTEM_GROUP)),
     items: ungrouped.map(mapEntity),
     mapEntity,
   };

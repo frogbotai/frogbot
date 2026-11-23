@@ -6,10 +6,12 @@ import { formatAdminURL } from 'payload/shared';
 import { useState } from 'react';
 
 import { appendQuery, setPath } from '../cells.js';
+import { isRecordDone } from './state.js';
 
 /**
  * Toggles a record's done checkbox with an ordinary update, so field access applies, and hands
- * the saved document back, loaded with `populate` so a card keeps its image.
+ * the saved document back, loaded with `populate` so a card keeps its image. Resolves `false` when
+ * the save failed or the saved document doesn't hold the new value.
  */
 export function useToggleDone<T extends Record<string, unknown> & { id: number | string }>({
   collectionSlug,
@@ -25,8 +27,8 @@ export function useToggleDone<T extends Record<string, unknown> & { id: number |
   const { config } = useConfig();
   const [saving, setSaving] = useState(false);
 
-  const toggle = async (row: T, done: boolean) => {
-    if (!useAsDone || saving) return;
+  const toggle = async (row: T, done: boolean): Promise<boolean> => {
+    if (!useAsDone || saving) return false;
     setSaving(true);
     const params = new URLSearchParams({ depth: '1' });
 
@@ -56,8 +58,12 @@ export function useToggleDone<T extends Record<string, unknown> & { id: number |
       }
 
       onSaved(result.doc);
+
+      return isRecordDone(result.doc, useAsDone) === done;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not update the record');
+
+      return false;
     } finally {
       setSaving(false);
     }

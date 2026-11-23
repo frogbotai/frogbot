@@ -3,10 +3,15 @@ import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+let usersTitle = 'name';
+
 vi.mock('@payloadcms/ui', () => ({
   DocumentIcon: () => <svg data-testid="document-icon" />,
   toast: { error: vi.fn() },
-  useConfig: () => ({ config: { admin: { dateFormat: 'PP' }, routes: { api: '/api' } } }),
+  useConfig: () => ({
+    config: { admin: { dateFormat: 'PP', user: 'users' }, routes: { api: '/api' } },
+    getEntityConfig: () => ({ admin: { useAsTitle: usersTitle } }),
+  }),
   useTranslation: () => ({ i18n: { language: 'en', t: (key: string) => key } }),
 }));
 
@@ -51,7 +56,10 @@ function renderCard(props: Partial<Parameters<typeof RecordCard>[0]> = {}) {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  usersTitle = 'name';
+});
 
 describe('RecordCard', () => {
   it('renders the image, done check, title and fields', () => {
@@ -85,7 +93,7 @@ describe('RecordCard', () => {
   it('leaves out the image area when a board card has no image', () => {
     const { container } = renderCard({
       imageArea: 'when-set',
-      row: { id: 'a', logo: null, name: 'No logo company' },
+      row: { id: 'a', industry: 'software', logo: null, name: 'No logo company' },
       viewType: 'board',
     });
 
@@ -150,5 +158,71 @@ describe('RecordCard', () => {
       'populate[media][url]=true',
     );
     expect(container.querySelector('.fb-card__image img')?.getAttribute('src')).toBe(logo.url);
+  });
+
+  it('draws a board card’s facts on one row with no captions, the assignee as an avatar', () => {
+    const { container } = renderCard({
+      cardColumns: [
+        ...cardColumns,
+        {
+          accessor: 'owner',
+          field: { label: 'Owner', name: 'owner', relationTo: 'users', type: 'relationship' },
+        },
+        { accessor: 'stage', field: { label: 'Stage', name: 'stage', type: 'text' } },
+      ] as unknown as Column[],
+      imageArea: 'when-set',
+      row: {
+        id: 'a',
+        industry: 'software',
+        name: 'Lumen Labs',
+        owner: { email: 'ada@example.com', id: 7, name: 'Ada Lovelace' },
+        stage: '',
+      },
+      viewType: 'board',
+    });
+
+    const meta = container.querySelector('.fb-card__meta');
+
+    expect(container.querySelector('.fb-card__field-label')).toBeNull();
+    expect(meta?.querySelectorAll(':scope > *')).toHaveLength(2);
+    expect(meta?.querySelector('.fb-card__avatar')?.getAttribute('title')).toBe('Ada Lovelace');
+    expect(meta?.querySelector('.fb-card__avatar')?.textContent).toBe('AL');
+    expect(meta?.querySelector('[data-view-type="board"]')?.textContent).toBe('software');
+  });
+
+  it('draws no fact row on a board card whose fields are all empty', () => {
+    const { container } = renderCard({
+      imageArea: 'when-set',
+      row: { id: 'a', industry: null, name: 'Lumen Labs' },
+      viewType: 'board',
+    });
+
+    expect(container.querySelector('.fb-card__meta')).toBeNull();
+  });
+
+  it('labels a board avatar with the users collection title, or the email when it is blank', () => {
+    const owner = (user: Record<string, unknown>) =>
+      renderCard({
+        cardColumns: [
+          {
+            accessor: 'owner',
+            field: { label: 'Owner', name: 'owner', relationTo: 'users', type: 'relationship' },
+          },
+        ] as unknown as Column[],
+        imageArea: 'when-set',
+        row: { id: 'a', name: 'Lumen Labs', owner: { email: 'ada@example.com', id: 7, ...user } },
+        viewType: 'board',
+      }).container.querySelector('.fb-card__avatar');
+
+    const blank = owner({ name: '   ' });
+
+    expect(blank?.getAttribute('title')).toBe('ada@example.com');
+    expect(blank?.getAttribute('aria-label')).toBe('ada@example.com');
+
+    usersTitle = 'fullName';
+
+    expect(owner({ fullName: 'Grace Hopper', name: 'Ada' })?.getAttribute('title')).toBe(
+      'Grace Hopper',
+    );
   });
 });

@@ -41,7 +41,7 @@ export const Tasks: CollectionConfig = {
       {
         type: 'board',
         groupBy: 'status',
-        defaultFields: ['key', 'title', 'assignee', 'dueDate'],
+        defaultFields: ['title', 'assignee', 'dueDate'],
       },
       {
         type: 'timeline',

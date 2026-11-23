@@ -244,6 +244,7 @@ export interface Config {
   globalsSelect: {};
   locale: null;
   widgets: {
+    projects: ProjectsWidget;
     welcome: WelcomeWidget;
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
@@ -1352,6 +1353,16 @@ export interface FrogBotAutonumberKeysSelect {
   record?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects_widget".
+ */
+export interface ProjectsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
