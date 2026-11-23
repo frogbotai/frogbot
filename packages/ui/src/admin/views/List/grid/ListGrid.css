@@ -95,6 +95,25 @@
     text-overflow: ellipsis;
   }
 
+  .fb-list-grid:not([data-row-height="tall"])
+    .table
+    td:not(.cell-_select, .cell-_dragHandle, [data-cell-editing])
+    > span:not(.fb-list-done) {
+    display: inline-block;
+    max-width: min(32rem, 100%);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table td.cell--linked > :is(a, button) {
+    display: block;
+    align-content: center;
+    max-width: 32rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   :where(.fb-list-grid:not([data-row-height="tall"]) .table td:has(> .fb-list-done)) {
     min-width: 240px;
   }
