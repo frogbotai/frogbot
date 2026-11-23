@@ -537,13 +537,13 @@ export default buildConfig({
   });
 });
 
-describe('projects scaffold output', () => {
-  const projects = { ...templateOptions, template: getTemplate('projects') };
+describe('asana scaffold output', () => {
+  const asana = { ...templateOptions, template: getTemplate('asana') };
 
   it('keeps the agent, the AI policy plugin and the seed with a provider', () => {
-    const dest = copyTemplate(templatePath('projects'));
+    const dest = copyTemplate(templatePath('asana'));
 
-    applyTemplate(dest, { ...projects, ai: 'openai' });
+    applyTemplate(dest, { ...asana, ai: 'openai' });
 
     const config = readConfig(dest);
 
@@ -555,9 +555,9 @@ describe('projects scaffold output', () => {
   });
 
   it('drops the AI parts and keeps the seed, its endpoint and the panel for none', () => {
-    const dest = copyTemplate(templatePath('projects'));
+    const dest = copyTemplate(templatePath('asana'));
 
-    applyTemplate(dest, projects);
+    applyTemplate(dest, asana);
 
     const config = readConfig(dest);
 
@@ -575,7 +575,7 @@ describe('projects scaffold output', () => {
   });
 
   it('seeds without importing anything that --ai none deletes', () => {
-    const seedDir = path.join(templatePath('projects'), 'src', 'seed');
+    const seedDir = path.join(templatePath('asana'), 'src', 'seed');
 
     for (const file of fs.readdirSync(seedDir)) {
       expect(fs.readFileSync(path.join(seedDir, file), 'utf8')).not.toMatch(/agents/);

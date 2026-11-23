@@ -1,8 +1,8 @@
 {
-  "name": "projects",
+  "name": "asana",
   "version": "0.42.0",
   "private": true,
-  "description": "A FrogBot project tracker with tasks on a board and sample data.",
+  "description": "The FrogBot Asana template: projects and tasks with subtasks, comments and activity, and sample data.",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -23,6 +23,7 @@
     "@frogbotai/next": "workspace:*",
     "@frogbotai/plugin-ai-policy": "workspace:*",
     "@frogbotai/plugin-audit-log": "workspace:*",
+    "@frogbotai/plugin-comments": "workspace:*",
     "@frogbotai/plugin-dojo": "workspace:*",
     "@frogbotai/plugin-import-export": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",

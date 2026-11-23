@@ -115,8 +115,8 @@ const fixtures = {
     cli: 'frogbot',
     env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
   },
-  projects: {
-    dir: path.join(repoRoot, 'templates', 'projects'),
+  asana: {
+    dir: path.join(repoRoot, 'templates', 'asana'),
     cli: 'frogbot',
     env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
   },
@@ -245,11 +245,11 @@ const servers: Record<string, Server> = {
     database: 'frogbot.crm.browser.db',
     seed: path.join(dirname, 'fixtures', 'crm', 'seed.ts'),
   },
-  projects: {
-    fixture: 'projects',
+  asana: {
+    fixture: 'asana',
     port: testPort(3145),
-    database: 'frogbot.projects.browser.db',
-    seed: path.join(dirname, 'fixtures', 'projects', 'seed.ts'),
+    database: 'frogbot.asana.browser.db',
+    seed: path.join(dirname, 'fixtures', 'asana', 'seed.ts'),
   },
 };
 
@@ -462,7 +462,7 @@ const testProjects = [
       'views.browser.spec.ts',
     ],
   }),
-  project({ name: 'projects', testMatch: 'projects.browser.spec.ts' }),
+  project({ name: 'asana', testMatch: 'asana.browser.spec.ts' }),
   project({
     name: 'dojo',
     testMatch: [

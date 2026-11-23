@@ -23,9 +23,10 @@ export const TEMPLATES: TemplateRegistryEntry[] = [
   {
     aiPaths: ['src/agents'],
     defaultDatabase: 'sqlite',
-    description: 'Projects and tasks on a board, with sample data to seed from the dashboard.',
-    dir: 'projects',
-    name: 'projects',
+    description:
+      'The Asana template: projects and tasks with subtasks, comments and activity, on a list, board and timeline, with sample data.',
+    dir: 'asana',
+    name: 'asana',
     supportedDatabases: ['sqlite', 'postgres', 'mongodb'],
   },
   {

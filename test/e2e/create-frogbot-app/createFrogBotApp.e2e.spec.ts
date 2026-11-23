@@ -84,7 +84,7 @@ async function expectAppBoots(
 }
 
 interface AppCase {
-  template: 'blank' | 'projects';
+  template: 'blank' | 'asana';
   ai: 'none' | 'zen';
   database: 'mongodb' | 'postgres' | 'sqlite';
   name: string;
@@ -144,10 +144,10 @@ const cases: AppCase[] = [
     absentPaths: ['src/agents'],
   },
   {
-    template: 'projects',
+    template: 'asana',
     ai: 'none',
     database: 'sqlite',
-    name: 'projects-sqlite-none',
+    name: 'asana-sqlite-none',
     configIncludes: [
       'sqliteAdapter',
       'endpoints: [seedEndpoint()]',
@@ -317,7 +317,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
   it.each([
     { name: 'sqlite-zen', generated: ["models: 'zen/deepseek-v4.1-flash'"] },
     { name: 'sqlite-none', generated: [] },
-    { name: 'projects-sqlite-none', generated: ['projects: Project;', 'tasks: Task;'] },
+    { name: 'asana-sqlite-none', generated: ['projects: Project;', 'tasks: Task;'] },
   ])(
     'loads config and generates types for $name',
     ({ name, generated }) => {
@@ -741,16 +741,16 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     120000,
   );
 
-  it('boots the generated projects application and seeds it from POST /api/seed', async () => {
+  it('boots the generated asana application and seeds it from POST /api/seed', async () => {
     await expectAppBoots(
-      appDirectories.get('projects-sqlite-none')!,
+      appDirectories.get('asana-sqlite-none')!,
       undefined,
       async (base, output) => {
         const json = { 'content-type': 'application/json' };
         const registration = await fetch(`${base}/api/users/first-register`, {
           method: 'POST',
           headers: json,
-          body: JSON.stringify({ email: 'owner@projects.test', password: 'projects-e2e' }),
+          body: JSON.stringify({ email: 'owner@asana.test', password: 'asana-e2e' }),
         });
 
         expect(registration.status, output()).toBe(200);
@@ -776,7 +776,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
 
         const { docs: tasks } = await find('tasks');
 
-        expect(tasks).toHaveLength(12);
+        expect(tasks).toHaveLength(14);
         expect(tasks.map(({ key }) => key)).toEqual(
           expect.arrayContaining(['WEB-1', 'WEB-5', 'MOB-4', 'OPS-3']),
         );
@@ -792,7 +792,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
             ({ email }) => email,
           ),
           output(),
-        ).toEqual(['owner@projects.test']);
+        ).toEqual(['owner@asana.test']);
       },
     );
   }, 120000);
@@ -914,7 +914,11 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app CLI', () => {
   it.each([
     [
       ['invalid-template', '--yes', '--no-git', '--no-install', '--template', 'missing'],
-      'Valid templates: blank, projects',
+      'Valid templates: blank, asana, crm',
+    ],
+    [
+      ['renamed-template', '--yes', '--no-git', '--no-install', '--template', 'projects'],
+      'Unknown template "projects"',
     ],
     [
       ['invalid-database', '--yes', '--no-git', '--no-install', '--db', 'oracle'],

@@ -11,7 +11,10 @@ import { brokenSeedError, brokenSeedPath, ownerCredentials } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-describe('projects template seed', () => {
+const empty = { projects: 0, tasks: 0, files: 0, comments: 0 };
+const full = { projects: 3, tasks: 14, files: 1, comments: 2 };
+
+describe('asana template seed', () => {
   let booted: BootedFrogBot;
 
   beforeAll(async () => {
@@ -58,26 +61,32 @@ describe('projects template seed', () => {
   }
 
   async function counts() {
-    const [projects, tasks] = await Promise.all([
-      booted.frogbot.count({ collection: 'projects', overrideAccess: true }),
-      booted.frogbot.count({ collection: 'tasks', overrideAccess: true }),
-    ]);
+    const [projects, tasks, files, comments] = await Promise.all(
+      (['projects', 'tasks', 'files', 'comments'] as const).map((collection) =>
+        booted.frogbot.count({ collection, overrideAccess: true }),
+      ),
+    );
 
-    return { projects: projects.totalDocs, tasks: tasks.totalDocs };
+    return {
+      projects: projects.totalDocs,
+      tasks: tasks.totalDocs,
+      files: files.totalDocs,
+      comments: comments.totalDocs,
+    };
   }
 
   it('refuses a signed-out request and changes nothing', async () => {
     const response = await seed();
 
     expect(response.status).toBe(403);
-    expect(await counts()).toEqual({ projects: 0, tasks: 0 });
+    expect(await counts()).toEqual(empty);
   });
 
   it('adds the sample data once, every task assigned to the caller and keyed', async () => {
     const { headers, id } = await signUp(ownerCredentials);
 
     expect((await seed(headers)).body).toEqual({ success: true });
-    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
+    expect(await counts()).toEqual(full);
 
     const { docs } = await booted.frogbot.find({
       collection: 'tasks',
@@ -94,10 +103,67 @@ describe('projects template seed', () => {
     const spans = docs.filter((task) => task.startDate && task.dueDate);
 
     expect(spans).toHaveLength(10);
+    expect(docs.filter((task) => task.status === 'done').every((task) => task.completed)).toBe(
+      true,
+    );
 
     for (const task of spans) {
       expect(Date.parse(task.startDate!)).toBeLessThan(Date.parse(task.dueDate!));
     }
+  });
+
+  it('gives one task subtasks in its project, an attachment and two comments', async () => {
+    const { headers, id } = await signUp(ownerCredentials);
+
+    await seed(headers);
+
+    const { docs } = await booted.frogbot.find({
+      collection: 'tasks',
+      where: { title: { equals: 'Design the pricing page' } },
+      depth: 1,
+      overrideAccess: true,
+    });
+
+    const [task] = docs;
+    const subtasks = await booted.frogbot.find({
+      collection: 'tasks',
+      where: { parent: { equals: task.id } },
+      sort: 'createdAt',
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    const comments = await booted.frogbot.find({
+      collection: 'comments',
+      where: { documentId: { equals: String(task.id) } },
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(
+      subtasks.docs.map(({ completed, project, status, title }) => ({
+        completed,
+        project,
+        status,
+        title,
+      })),
+    ).toEqual([
+      {
+        completed: true,
+        project: (task.project as { id: number | string }).id,
+        status: 'done',
+        title: 'Sketch the plan comparison table',
+      },
+      {
+        completed: false,
+        project: (task.project as { id: number | string }).id,
+        status: 'todo',
+        title: 'Write the pricing FAQ',
+      },
+    ]);
+    expect(task.attachments).toEqual([expect.objectContaining({ filename: 'pricing-notes.txt' })]);
+    expect(comments.docs).toHaveLength(2);
+    expect(comments.docs.every((comment) => comment.author === id)).toBe(true);
   });
 
   it('refuses a second seed with 409 and changes nothing', async () => {
@@ -156,12 +222,29 @@ describe('projects template seed', () => {
     });
 
     expect((await seed(headers)).status).toBe(500);
-    expect(await counts()).toEqual({ projects: 0, tasks: 0 });
+    expect(await counts()).toEqual(empty);
 
     vi.restoreAllMocks();
 
     expect((await seed(headers)).status).toBe(200);
-    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
+    expect(await counts()).toEqual(full);
+  });
+
+  it('undoes a seed that fails after the comments are added', async () => {
+    const { headers } = await signUp(ownerCredentials);
+    const create = booted.frogbot.create.bind(booted.frogbot);
+    let taskCreates = 0;
+
+    vi.spyOn(booted.frogbot, 'create').mockImplementation((args) => {
+      if (args.collection === 'tasks' && ++taskCreates === 6) {
+        return Promise.reject(new Error('connection lost after comments'));
+      }
+
+      return create(args);
+    });
+
+    expect((await seed(headers)).status).toBe(500);
+    expect(await counts()).toEqual(empty);
   });
 
   it('seeds in production too, and refuses a second seed there', async () => {
@@ -170,7 +253,7 @@ describe('projects template seed', () => {
     vi.stubEnv('NODE_ENV', 'production');
 
     expect((await seed(headers)).body).toEqual({ success: true });
-    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
+    expect(await counts()).toEqual(full);
     expect((await seed(headers)).status).toBe(409);
   });
 });

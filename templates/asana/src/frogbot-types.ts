@@ -137,6 +137,54 @@ export type SupportedTimezones =
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
   | 'Pacific/Fiji';
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_158A5976".
+ */
+export type LexicalNodes_158A5976 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_158A5976>
+  | SerializedHorizontalRuleNode
+  | SerializedUploadNode<'files'>
+  | SerializedUploadNode<'exports'>
+  | SerializedUploadNode<'imports'>
+  | SerializedUploadNode<'frogbot-chat-assets'>
+  | SerializedQuoteNode<LexicalNodes_158A5976>
+  | SerializedRelationshipNode<
+      | 'projects'
+      | 'tasks'
+      | 'users'
+      | 'plugin-ai-policy-spend'
+      | 'audit-logs'
+      | 'comments'
+      | 'chats'
+      | 'messages'
+      | 'frogbot-chat-turns'
+      | 'usage-logs'
+      | 'frogbot-waitpoints'
+      | 'folders'
+      | 'frogbot-autonumbers'
+      | 'frogbot-autonumber-keys'
+    >
+  | SerializedAutoLinkNode<LexicalNodes_158A5976, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_158A5976, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_158A5976>
+  | SerializedListItemNode<LexicalNodes_158A5976>
+  | SerializedHeadingNode<LexicalNodes_158A5976>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_3DE324E4".
+ */
+export type LexicalNodes_3DE324E4 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_3DE324E4>
+  | SerializedListNode<LexicalNodes_3DE324E4>
+  | SerializedListItemNode<LexicalNodes_3DE324E4>
+  | SerializedHeadingNode<LexicalNodes_3DE324E4, 'h2' | 'h3' | 'h4'>;
 
 export interface Config {
   auth: {
@@ -152,13 +200,22 @@ export interface Config {
     imports: Import;
     'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
+    comments: Comment;
+    chats: Chat;
+    messages: Message;
+    'frogbot-chat-assets': FrogBotChatAsset;
+    'frogbot-chat-turns': FrogBotChatTurn;
     'usage-logs': UsageLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
     folders: Folder;
     'frogbot-autonumbers': FrogBotAutonumber;
     'frogbot-autonumber-keys': FrogBotAutonumberKey;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    tasks: {
+      subtasks: 'tasks';
+    };
+  };
   collectionsSelect: {
     projects: ProjectsSelect;
     tasks: TasksSelect;
@@ -168,6 +225,11 @@ export interface Config {
     imports: ImportsSelect;
     'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
+    comments: CommentsSelect;
+    chats: ChatsSelect;
+    messages: MessagesSelect;
+    'frogbot-chat-assets': FrogBotChatAssetsSelect;
+    'frogbot-chat-turns': FrogBotChatTurnsSelect;
     'usage-logs': UsageLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
     folders: FoldersSelect;
@@ -375,7 +437,20 @@ export interface Task {
   id: number;
   _order?: string | null;
   title: string;
-  project: number | Project;
+  completed?: boolean | null;
+  project?: (number | null) | Project;
+  status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
+  assignee?: (number | null) | User;
+  dueDate?: string | null;
+  description?: string | null;
+  subtasks?: {
+    docs?: (number | Task)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  attachments?: (number | File)[] | null;
+  startDate?: string | null;
+  parent?: (number | null) | Task;
   /**
    * Number set by FrogBot when the record is created, unique within each project; read-only
    */
@@ -384,11 +459,6 @@ export interface Task {
    * Unique key set by FrogBot as <key>-<number>, like APP-123; read-only
    */
   key?: string | null;
-  status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
-  assignee?: (number | null) | User;
-  startDate?: string | null;
-  dueDate?: string | null;
-  description?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -623,11 +693,152 @@ export interface AuditLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: number;
+  collection: string;
+  documentId: string;
+  author?: (number | null) | User;
+  mentions?: (number | User)[] | null;
+  bodyField?: string | null;
+  notified?: (number | User)[] | null;
+  body_0?: LexicalRichText<LexicalNodes_158A5976> | null;
+  body?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats".
+ */
+export interface Chat {
+  id: number;
+  title?: string | null;
+  user?: (number | null) | User;
+  agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
+  channelThread?: import('frogbot').ChannelThreadReference;
+  channelLabel?: string | null;
+  lastMessageAt?: string | null;
+  autoApprove?: boolean | null;
+  todos?: import('frogbot/tools').TodoItem[];
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: string;
+  chat: number | Chat;
+  role: 'user' | 'assistant' | 'system';
+  parts: import('frogbot').UIMessage['parts'];
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('active' | 'queued') | null;
+  delivery?: ('queue' | 'steer') | null;
+  model?: string | null;
+  reasoning?: string | null;
+  author?: import('frogbot').TurnActor;
+  settlements?: Record<string, import('frogbot').ClientToolSettlement>;
+  version?: number | null;
+  usage?: {
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    cachedInputTokens?: number | null;
+    lastStepInputTokens?: number | null;
+    model?: string | null;
+    provider?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets".
+ */
+export interface FrogBotChatAsset {
+  id: number;
+  owner?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  sha256?: string | null;
+  text?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+    _stored?: boolean | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns".
+ */
+export interface FrogBotChatTurn {
+  id: string;
+  state: 'idle' | 'running' | 'awaiting';
+  attempt?: string | null;
+  leaseUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "usage-logs".
  */
 export interface UsageLog {
   id: number;
   user?: (number | null) | User;
+  chat?: (number | null) | Chat;
   requestId: string;
   runId?: string | null;
   model: string;
@@ -732,14 +943,18 @@ export interface ProjectsSelect {
 export interface TasksSelect {
   _order?: boolean;
   title?: boolean;
+  completed?: boolean;
   project?: boolean;
-  number?: boolean;
-  key?: boolean;
   status?: boolean;
   assignee?: boolean;
-  startDate?: boolean;
   dueDate?: boolean;
   description?: boolean;
+  subtasks?: boolean;
+  attachments?: boolean;
+  startDate?: boolean;
+  parent?: boolean;
+  number?: boolean;
+  key?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -941,10 +1156,130 @@ export interface AuditLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect {
+  collection?: boolean;
+  documentId?: boolean;
+  author?: boolean;
+  mentions?: boolean;
+  bodyField?: boolean;
+  notified?: boolean;
+  body_0?: boolean;
+  body?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats_select".
+ */
+export interface ChatsSelect {
+  title?: boolean;
+  user?: boolean;
+  agent?: boolean;
+  channel?: boolean;
+  externalId?: boolean;
+  channelKey?: boolean;
+  channelThread?: boolean;
+  channelLabel?: boolean;
+  lastMessageAt?: boolean;
+  autoApprove?: boolean;
+  todos?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect {
+  id?: boolean;
+  chat?: boolean;
+  role?: boolean;
+  parts?: boolean;
+  metadata?: boolean;
+  status?: boolean;
+  delivery?: boolean;
+  model?: boolean;
+  reasoning?: boolean;
+  author?: boolean;
+  settlements?: boolean;
+  version?: boolean;
+  usage?:
+    | boolean
+    | {
+        inputTokens?: boolean;
+        outputTokens?: boolean;
+        totalTokens?: boolean;
+        reasoningTokens?: boolean;
+        cachedInputTokens?: boolean;
+        lastStepInputTokens?: boolean;
+        model?: boolean;
+        provider?: boolean;
+      };
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets_select".
+ */
+export interface FrogBotChatAssetsSelect {
+  owner?: boolean;
+  chat?: boolean;
+  sha256?: boolean;
+  text?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  _stored?: boolean;
+  _transforms?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+        _stored?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns_select".
+ */
+export interface FrogBotChatTurnsSelect {
+  id?: boolean;
+  state?: boolean;
+  attempt?: boolean;
+  leaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "usage-logs_select".
  */
 export interface UsageLogsSelect {
   user?: boolean;
+  chat?: boolean;
   requestId?: boolean;
   runId?: boolean;
   model?: boolean;
@@ -1053,6 +1388,8 @@ export interface CollectionQueryWidget {
       | 'exports'
       | 'imports'
       | 'audit-logs'
+      | 'comments'
+      | 'chats'
       | 'usage-logs'
       | 'folders';
     where?:
@@ -1085,6 +1422,8 @@ export interface ActivityWidget {
           | 'exports'
           | 'imports'
           | 'audit-logs'
+          | 'comments'
+          | 'chats'
           | 'usage-logs'
           | 'folders'
         )[]
@@ -1185,9 +1524,177 @@ export interface Auth {
   [k: string]: unknown;
 }
 
+/** @internal Core Lexical types — see @frogbotai/richtext-lexical. */
+export type LexicalElementFormat =
+  'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+export type LexicalElementDirection = ('ltr' | 'rtl') | null;
+
+export interface SerializedLexicalElementBase<TChildren> {
+  children: TChildren[];
+  direction: LexicalElementDirection;
+  format: LexicalElementFormat;
+  indent: number;
+  textFormat?: number;
+  textStyle?: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type LexicalTextMode = 'normal' | 'token' | 'segmented';
+
+export interface SerializedTextNode {
+  type: 'text';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedTabNode {
+  type: 'tab';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedLineBreakNode {
+  type: 'linebreak';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedParagraphNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'paragraph';
+  textFormat: number;
+  textStyle: string;
+}
+
+export interface SerializedHorizontalRuleNode {
+  type: 'horizontalrule';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type SerializedUploadNode<
+  TSlugs extends keyof Config['collections'],
+  TFields = { [k: string]: unknown },
+> = {
+  type: 'upload';
+  format: LexicalElementFormat;
+  id: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+  fields: TFields;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface SerializedQuoteNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'quote';
+}
+
+export type SerializedRelationshipNode<
+  TSlugs extends keyof Config['collections'],
+> = {
+  type: 'relationship';
+  format: LexicalElementFormat;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface LexicalLinkFields {
+  [k: string]: unknown;
+  doc?: {
+    relationTo: string;
+    value:
+      | Config['db']['defaultIDType']
+      | { [k: string]: unknown; id: Config['db']['defaultIDType'] };
+  } | null;
+  linkType: 'custom' | 'internal';
+  newTab: boolean;
+  url?: string;
+}
+export interface SerializedLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'link';
+  fields: TFields;
+  id?: string;
+}
+export interface SerializedAutoLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'autolink';
+  fields: TFields;
+}
+
+export interface SerializedListNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'list';
+  checked?: boolean;
+  listType: 'number' | 'bullet' | 'check';
+  start: number;
+  tag: 'ul' | 'ol';
+}
+
+export interface SerializedListItemNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'listitem';
+  checked?: boolean;
+  value: number;
+}
+
+export interface SerializedHeadingNode<
+  TChildren,
+  TTag extends 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' =
+    'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'heading';
+  tag: TTag;
+}
+
+/** Shape of a Lexical `richText` field. */
+export interface LexicalRichText<TNode> {
+  root: {
+    children: TNode[];
+    direction: LexicalElementDirection;
+    format: LexicalElementFormat;
+    indent: number;
+    type: 'root';
+    /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+    version: number;
+  };
+}
+
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
-    agents: {};
+    agents: {
+      general: unknown;
+      assistant: unknown;
+    };
     models:
       | 'openai/gpt-4.1'
       | 'openai/gpt-4.1-mini'

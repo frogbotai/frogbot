@@ -2,7 +2,10 @@ import { ExportListMenuItem as ExportListMenuItem_4174734ae0c0aa7fd57002a8329793
 import { ImportListMenuItem as ImportListMenuItem_4174734ae0c0aa7fd57002a832979351 } from '@frogbotai/plugin-import-export/rsc';
 import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { ListView as ListView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { CommentBoxFooter as CommentBoxFooter_e8c8dd609de0901c90af99cf939acdd7 } from '@frogbotai/plugin-comments/rsc';
 import { FieldCell as FieldCell_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { CommentsField as CommentsField_e8c8dd609de0901c90af99cf939acdd7 } from '@frogbotai/plugin-comments/rsc';
+import { ActivityField as ActivityField_43354f5f91541cf6def56094146bbf90 } from '@frogbotai/plugin-audit-log/rsc';
 import { BoardView as BoardView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { TimelineView as TimelineView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { MoneyField as MoneyField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
@@ -21,20 +24,33 @@ import { ExportSaveButton as ExportSaveButton_4174734ae0c0aa7fd57002a832979351 }
 import { ImportColumnsField as ImportColumnsField_6771adfffbedc23be239d1e57fc08159 } from '@frogbotai/plugin-import-export/client';
 import { ImportPreview as ImportPreview_4174734ae0c0aa7fd57002a832979351 } from '@frogbotai/plugin-import-export/rsc';
 import { ImportSaveButton as ImportSaveButton_4174734ae0c0aa7fd57002a832979351 } from '@frogbotai/plugin-import-export/rsc';
-import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
-import { LLMInstructionsDescription as LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { RscEntryLexicalCell as RscEntryLexicalCell_df584c9e88c59c17b34d89d97a69ba99 } from '@frogbotai/richtext-lexical/rsc';
 import { RscEntryLexicalField as RscEntryLexicalField_df584c9e88c59c17b34d89d97a69ba99 } from '@frogbotai/richtext-lexical/rsc';
 import { LexicalDiffComponent as LexicalDiffComponent_df584c9e88c59c17b34d89d97a69ba99 } from '@frogbotai/richtext-lexical/rsc';
+import { MentionFeatureClient as MentionFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { InlineToolbarFeatureClient as InlineToolbarFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
-import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { UploadFeatureClient as UploadFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { BlockquoteFeatureClient as BlockquoteFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { RelationshipFeatureClient as RelationshipFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { LinkFeatureClient as LinkFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { ChecklistFeatureClient as ChecklistFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { OrderedListFeatureClient as OrderedListFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { UnorderedListFeatureClient as UnorderedListFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
-import { StrikethroughFeatureClient as StrikethroughFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
-import { BoldFeatureClient as BoldFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
-import { ItalicFeatureClient as ItalicFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { IndentFeatureClient as IndentFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { AlignFeatureClient as AlignFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { HeadingFeatureClient as HeadingFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { ParagraphFeatureClient as ParagraphFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { InlineCodeFeatureClient as InlineCodeFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { SuperscriptFeatureClient as SuperscriptFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { SubscriptFeatureClient as SubscriptFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { StrikethroughFeatureClient as StrikethroughFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { UnderlineFeatureClient as UnderlineFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { BoldFeatureClient as BoldFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { ItalicFeatureClient as ItalicFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
+import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { LLMInstructionsDescription as LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { LLMInstructionsCell as LLMInstructionsCell_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { FrogBotNav as FrogBotNav_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { FrogBotIcon as FrogBotIcon_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -68,7 +84,13 @@ export const importMap = {
   '@frogbotai/ui/admin#LLMInstructionsMenuItem':
     LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#ListView': ListView_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/plugin-comments/rsc#CommentBoxFooter':
+    CommentBoxFooter_e8c8dd609de0901c90af99cf939acdd7,
   '@frogbotai/ui/admin#FieldCell': FieldCell_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/plugin-comments/rsc#CommentsField':
+    CommentsField_e8c8dd609de0901c90af99cf939acdd7,
+  '@frogbotai/plugin-audit-log/rsc#ActivityField':
+    ActivityField_43354f5f91541cf6def56094146bbf90,
   '@frogbotai/ui/admin/rsc#BoardView':
     BoardView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#TimelineView':
@@ -103,33 +125,59 @@ export const importMap = {
     ImportPreview_4174734ae0c0aa7fd57002a832979351,
   '@frogbotai/plugin-import-export/rsc#ImportSaveButton':
     ImportSaveButton_4174734ae0c0aa7fd57002a832979351,
-  '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
-  '@frogbotai/ui/admin#LLMInstructionsDescription':
-    LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/richtext-lexical/rsc#RscEntryLexicalCell':
     RscEntryLexicalCell_df584c9e88c59c17b34d89d97a69ba99,
   '@frogbotai/richtext-lexical/rsc#RscEntryLexicalField':
     RscEntryLexicalField_df584c9e88c59c17b34d89d97a69ba99,
   '@frogbotai/richtext-lexical/rsc#LexicalDiffComponent':
     LexicalDiffComponent_df584c9e88c59c17b34d89d97a69ba99,
+  '@frogbotai/richtext-lexical/client#MentionFeatureClient':
+    MentionFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#InlineToolbarFeatureClient':
     InlineToolbarFeatureClient_54ba8335448b80c9678012348095a8b7,
-  '@frogbotai/richtext-lexical/client#FixedToolbarFeatureClient':
-    FixedToolbarFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#HorizontalRuleFeatureClient':
+    HorizontalRuleFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#UploadFeatureClient':
+    UploadFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#BlockquoteFeatureClient':
+    BlockquoteFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#RelationshipFeatureClient':
+    RelationshipFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#LinkFeatureClient':
+    LinkFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#ChecklistFeatureClient':
+    ChecklistFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#OrderedListFeatureClient':
     OrderedListFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#UnorderedListFeatureClient':
     UnorderedListFeatureClient_54ba8335448b80c9678012348095a8b7,
-  '@frogbotai/richtext-lexical/client#StrikethroughFeatureClient':
-    StrikethroughFeatureClient_54ba8335448b80c9678012348095a8b7,
-  '@frogbotai/richtext-lexical/client#BoldFeatureClient':
-    BoldFeatureClient_54ba8335448b80c9678012348095a8b7,
-  '@frogbotai/richtext-lexical/client#ItalicFeatureClient':
-    ItalicFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#IndentFeatureClient':
+    IndentFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#AlignFeatureClient':
+    AlignFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#HeadingFeatureClient':
     HeadingFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#ParagraphFeatureClient':
     ParagraphFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#InlineCodeFeatureClient':
+    InlineCodeFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#SuperscriptFeatureClient':
+    SuperscriptFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#SubscriptFeatureClient':
+    SubscriptFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#StrikethroughFeatureClient':
+    StrikethroughFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#UnderlineFeatureClient':
+    UnderlineFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#BoldFeatureClient':
+    BoldFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/richtext-lexical/client#ItalicFeatureClient':
+    ItalicFeatureClient_54ba8335448b80c9678012348095a8b7,
+  '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/ui/admin#LLMInstructionsDescription':
+    LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/richtext-lexical/client#FixedToolbarFeatureClient':
+    FixedToolbarFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/ui/admin/rsc#LLMInstructionsCell':
     LLMInstructionsCell_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#FrogBotNav':

@@ -17,12 +17,12 @@ type Doc = { id: number | string; [key: string]: unknown };
 
 type User = Doc & { collection: 'users'; roles: string[] };
 
-describe('projects template roles', () => {
+describe('asana template roles', () => {
   let booted: BootedFrogBot;
   let frogbot: FrogBotInstance;
 
   beforeAll(async () => {
-    booted = await bootFrogBot(dirname, 'template-projects-roles');
+    booted = await bootFrogBot(dirname, 'template-asana-roles');
     frogbot = booted.frogbot;
   });
 
@@ -42,7 +42,7 @@ describe('projects template roles', () => {
 
     return {
       create: (collection: CollectionSlug, data: Record<string, unknown>) =>
-        frogbot.create({ collection, data, ...options }) as Promise<Doc>,
+        (frogbot.create as (args: object) => Promise<Doc>)({ collection, data, ...options }),
       update: (collection: CollectionSlug, id: Doc['id'], data: Record<string, unknown>) =>
         frogbot.update({ collection, id, data, ...options } as never) as Promise<Doc>,
       delete: (collection: CollectionSlug, id: Doc['id']) =>
@@ -118,6 +118,61 @@ describe('projects template roles', () => {
     await expect(as(manager).update('tasks', theirs.id, { status: 'done' })).resolves.toMatchObject(
       { status: 'done' },
     );
+  });
+
+  it('gives a member’s subtask its parent’s project and refuses a parent in another project', async () => {
+    const { manager, member } = await team();
+    const web = await as(manager).create('projects', { name: 'Website', key: 'WEB' });
+    const app = await as(manager).create('projects', { name: 'App', key: 'APP' });
+    const parent = await as(member).create('tasks', { title: 'Pricing page', project: web.id });
+    const subtask = await as(member).create('tasks', { title: 'FAQ', parent: parent.id });
+
+    expect(subtask.project).toMatchObject({ id: web.id });
+    expect(subtask.key).toMatch(/^WEB-\d+$/);
+    await expect(
+      as(member).update('tasks', subtask.id, { completed: true }),
+    ).resolves.toMatchObject({ completed: true, status: 'done' });
+
+    const elsewhere = await as(member).create('tasks', { title: 'Store listing', project: app.id });
+
+    await expect(
+      as(member).update('tasks', elsewhere.id, { parent: elsewhere.id }),
+    ).rejects.toThrow();
+    await expect(as(member).update('tasks', parent.id, { parent: subtask.id })).rejects.toThrow(
+      "A task can't be a subtask of itself or of its own subtask.",
+    );
+  });
+
+  it('gives a subtask its parent’s project and refuses a cycle with no user too', async () => {
+    const system = { overrideAccess: true } as const;
+    const project = await frogbot.create({
+      collection: 'projects',
+      data: { name: 'Website', key: 'WEB' },
+      ...system,
+    });
+
+    const parent = await frogbot.create({
+      collection: 'tasks',
+      data: { title: 'Pricing page', project: project.id },
+      ...system,
+    });
+
+    const subtask = await frogbot.create({
+      collection: 'tasks',
+      data: { title: 'FAQ', parent: parent.id },
+      depth: 0,
+      ...system,
+    });
+
+    expect(subtask.project).toBe(project.id);
+    await expect(
+      frogbot.update({
+        collection: 'tasks',
+        id: parent.id,
+        data: { parent: subtask.id },
+        ...system,
+      }),
+    ).rejects.toThrow("A task can't be a subtask of itself or of its own subtask.");
   });
 
   it('keeps a member from reassigning their task, and lets a manager do it', async () => {
