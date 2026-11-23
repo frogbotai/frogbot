@@ -174,7 +174,7 @@ Every run that pushes to a PR (build, just-do-it, a fix round) ends with green C
 
 The cloud container has Docker, but `dockerd` isn't running at the start. `CLAUDE_CODE_REMOTE=true bash scripts/cloud-services.sh mongodb postgres` starts it and the `test/docker-compose.yml` profiles you name, then waits until they are healthy. Then run the matching suite, for example `pnpm test:int:mongo <file>` or `pnpm test:int:pg <file>`, and `pnpm test:browser --project <p>`; browser tests need nothing extra (Chromium is preinstalled).
 
-- Every profile but `mongodb-search` starts in the cloud: `mongodb`, `postgres` (with pgvector), `redis` and `storage`.
+- Every profile starts in the cloud: `mongodb`, `mongodb-search`, `postgres` (with pgvector), `redis` and `storage`. The release gate (`pnpm bump`) needs all five; start them first and its `services` step finds them running.
 - Start only what the diff needs, and run only the files and projects it touches.
 
 ## Screenshots
