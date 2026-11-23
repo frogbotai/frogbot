@@ -3,11 +3,14 @@ import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+let usersTitle = 'name';
+
 vi.mock('@payloadcms/ui', () => ({
   DocumentIcon: () => <svg data-testid="document-icon" />,
   toast: { error: vi.fn() },
   useConfig: () => ({
     config: { admin: { dateFormat: 'PP', user: 'users' }, routes: { api: '/api' } },
+    getEntityConfig: () => ({ admin: { useAsTitle: usersTitle } }),
   }),
   useTranslation: () => ({ i18n: { language: 'en', t: (key: string) => key } }),
 }));
@@ -53,7 +56,10 @@ function renderCard(props: Partial<Parameters<typeof RecordCard>[0]> = {}) {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  usersTitle = 'name';
+});
 
 describe('RecordCard', () => {
   it('renders the image, done check, title and fields', () => {
@@ -192,5 +198,31 @@ describe('RecordCard', () => {
     });
 
     expect(container.querySelector('.fb-card__meta')).toBeNull();
+  });
+
+  it('labels a board avatar with the users collection title, or the email when it is blank', () => {
+    const owner = (user: Record<string, unknown>) =>
+      renderCard({
+        cardColumns: [
+          {
+            accessor: 'owner',
+            field: { label: 'Owner', name: 'owner', relationTo: 'users', type: 'relationship' },
+          },
+        ] as unknown as Column[],
+        imageArea: 'when-set',
+        row: { id: 'a', name: 'Lumen Labs', owner: { email: 'ada@example.com', id: 7, ...user } },
+        viewType: 'board',
+      }).container.querySelector('.fb-card__avatar');
+
+    const blank = owner({ name: '   ' });
+
+    expect(blank?.getAttribute('title')).toBe('ada@example.com');
+    expect(blank?.getAttribute('aria-label')).toBe('ada@example.com');
+
+    usersTitle = 'fullName';
+
+    expect(owner({ fullName: 'Grace Hopper', name: 'Ada' })?.getAttribute('title')).toBe(
+      'Grace Hopper',
+    );
   });
 });

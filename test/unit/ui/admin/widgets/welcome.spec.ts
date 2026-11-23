@@ -14,6 +14,11 @@ describe('firstName', () => {
     expect(firstName({ email: 'ada@example.com' })).toBe('ada');
   });
 
+  it('cuts at the @ only when the whole name is an email', () => {
+    expect(firstName({ email: 'ada@example.com', title: 'Ada Lovelace @ Acme' })).toBe('Ada');
+    expect(firstName({ email: 'ada@example.com', title: '@' })).toBe('ada');
+  });
+
   it('falls back to the username, and to nothing', () => {
     expect(firstName({ username: 'grace' })).toBe('grace');
     expect(firstName({})).toBeUndefined();
