@@ -8,7 +8,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type CommentItem, commentsQuery, type CommentsTarget, toCommentItem } from '../shared.js';
 import { CommentBox, errorOf } from './CommentBox.js';
 import { CommentList } from './CommentList.js';
-import { onPosted, pinnedKey, usePinnedBox } from './pinned.js';
+import { onPosted, pinnedKey, takeUnseenPost, usePinnedBox } from './pinned.js';
 
 /** Props for `Comments`. */
 export type CommentsProps = {
@@ -54,7 +54,14 @@ export function Comments({
   const key = pinnedKey(target);
   const pinned = usePinnedBox(key);
 
-  useEffect(() => onPosted(key, () => void reload()), [key, reload]);
+  useEffect(() => {
+    if (takeUnseenPost(key)) void reload();
+
+    return onPosted(key, () => {
+      takeUnseenPost(key);
+      void reload();
+    });
+  }, [key, reload]);
 
   const remove = async (id: CommentItem['id']) => {
     const response = await fetch(`${api}/${id}`, { credentials: 'include', method: 'DELETE' });

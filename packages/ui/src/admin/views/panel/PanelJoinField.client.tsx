@@ -14,10 +14,10 @@ import {
 import type { JoinFieldClient, Where } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { PanelSection } from '../../elements/PanelSection/index.client.js';
-import { getPath } from '../cells.js';
+import { getPath, setPath } from '../cells.js';
 import { DoneCheck } from '../records/DoneCheck.client.js';
 import { getUseAsDone, isRecordDone } from '../records/state.js';
 import { useToggleDone } from '../records/useRecordState.js';
@@ -34,6 +34,12 @@ function rowTitle(row: Row, titleField: string | undefined): string {
   return typeof value === 'string' && value ? value : `#${row.id}`;
 }
 
+function onValue(field: JoinFieldClient, collectionSlug: string, id: number | string) {
+  return Array.isArray(field.targetField?.relationTo)
+    ? { relationTo: collectionSlug, value: id }
+    : id;
+}
+
 function PanelJoinFieldComponent({ path }: { path: string }) {
   const { collectionSlug, create, notify, open } = useRecordPanel();
   const { id } = useDocumentInfo();
@@ -47,6 +53,7 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
+  const loadingRef = useRef(false);
 
   const on = field?.on;
   const where = field?.where;
@@ -55,9 +62,10 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
 
   const load = useCallback(
     async (pageToLoad: number) => {
-      if (id === undefined || id === null || !on) return;
+      if (id === undefined || id === null || !on || !field || loadingRef.current) return;
 
-      const filter: Where = { [on]: { equals: id } };
+      loadingRef.current = true;
+      const filter: Where = { [on]: { equals: onValue(field, collectionSlug, id) } };
       const query = qs.stringify(
         {
           depth: 0,
@@ -72,7 +80,11 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
       const response = await fetch(
         formatAdminURL({ apiRoute: config.routes.api, path: `/${collectionSlug}${query}` }),
         { credentials: 'include' },
-      ).catch(() => undefined);
+      )
+        .catch(() => undefined)
+        .finally(() => {
+          loadingRef.current = false;
+        });
 
       if (!response?.ok) return;
 
@@ -82,7 +94,7 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
       setHasMore(result.hasNextPage);
       setPage(pageToLoad);
     },
-    [collectionSlug, config.routes.api, id, limit, on, sort, where],
+    [collectionSlug, config.routes.api, field, id, limit, on, sort, where],
   );
 
   useEffect(() => {
@@ -103,6 +115,13 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   const collectionPermissions = permissions?.collections?.[collectionSlug];
   const canCreate = field.admin?.allowCreate !== false && Boolean(collectionPermissions?.create);
   const canUpdate = Boolean(collectionPermissions?.update);
+  const onField = findPanelField(collectionConfig.fields, on)?.field;
+  const value = onValue(field, collectionSlug, id);
+  const createData = setPath(
+    on,
+    onField && 'hasMany' in onField && onField.hasMany ? [value] : value,
+  );
+
   const heading = field.label ? getTranslation(field.label, i18n) : field.name;
   const singular = collectionConfig.labels?.singular
     ? getTranslation(collectionConfig.labels.singular, i18n)
@@ -113,7 +132,7 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
       addLabel={`Add ${singular.toLowerCase()}`}
       className="fb-panel-join"
       heading={heading}
-      onAdd={canCreate ? () => create({ [on]: id }, { from: 'panel' }) : undefined}
+      onAdd={canCreate ? () => create(createData, { from: 'panel' }) : undefined}
     >
       {rows.length ? (
         <ul className="fb-panel-join__rows">

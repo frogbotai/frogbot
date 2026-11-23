@@ -85,6 +85,37 @@ describe('pinned comment box', () => {
     expect(screen.getAllByTestId('box')).toHaveLength(1);
   });
 
+  it('reloads a list that mounts after the pinned box posted, as when its tab opens again', async () => {
+    const list = <Comments initial={[]} schemaPath="collection.comments.body" target={target} />;
+    const pinned = <PinnedCommentBox schemaPath="collection.comments.body" target={target} />;
+    const view = render(
+      <>
+        <div>{list}</div>
+        {pinned}
+      </>,
+    );
+
+    view.rerender(
+      <>
+        <div />
+        {pinned}
+      </>,
+    );
+
+    act(() => posts.get('4')?.());
+
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    view.rerender(
+      <>
+        <div>{list}</div>
+        {pinned}
+      </>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId('list').textContent).toBe('1'));
+  });
+
   it("leaves another record's list alone", () => {
     render(
       <>

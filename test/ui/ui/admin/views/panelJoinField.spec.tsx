@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   docId: 1 as number | undefined,
+  paged: false,
   notify: vi.fn(),
   open: vi.fn(),
   permissions: { create: true, update: true } as Record<string, boolean>,
@@ -27,7 +28,17 @@ vi.mock('@payloadcms/ui', () => ({
     getEntityConfig: () => ({
       admin: { custom: { frogbot: { useAsDone: 'done' } }, useAsTitle: 'title' },
       labels: { singular: 'Todo' },
-      fields: [{ name: 'title', type: 'text' }, { name: 'done', type: 'checkbox' }, mocks.subtasks],
+      fields: [
+        { name: 'title', type: 'text' },
+        { name: 'done', type: 'checkbox' },
+        mocks.subtasks,
+        { name: 'parents', type: 'relationship', hasMany: true, relationTo: 'todos' },
+        {
+          name: 'meta',
+          type: 'group',
+          fields: [{ name: 'parent', type: 'relationship', relationTo: 'todos' }],
+        },
+      ],
       slug: 'todos',
     }),
   }),
@@ -61,8 +72,11 @@ const fetchMock = vi.fn((url: string, init?: RequestInit) => {
     });
   }
 
+  const page = new URL(url, 'http://localhost').searchParams.get('page');
+  const docs = mocks.paged ? [page === '2' ? rows[1] : rows[0]] : rows;
+
   return Promise.resolve({
-    json: () => Promise.resolve({ docs: rows, hasNextPage: false, url }),
+    json: () => Promise.resolve({ docs, hasNextPage: mocks.paged && page !== '2' }),
     ok: true,
   });
 });
@@ -70,6 +84,7 @@ const fetchMock = vi.fn((url: string, init?: RequestInit) => {
 beforeEach(() => {
   mocks.create.mockReset();
   mocks.docId = 1;
+  mocks.paged = false;
   mocks.notify.mockReset();
   mocks.open.mockReset();
   mocks.permissions = { create: true, update: true };
@@ -148,6 +163,40 @@ describe('PanelJoinField', () => {
     expect(screen.queryByRole('button', { name: 'Add todo' })).toBeNull();
 
     mocks.subtasks = { ...mocks.subtasks, admin: undefined };
+  });
+
+  it('fills a hasMany on field as a list, and a nested one as a nested object, as the join does', () => {
+    mocks.subtasks = { ...mocks.subtasks, on: 'parents' };
+    const view = render(<PanelJoinField path="subtasks" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+
+    expect(mocks.create).toHaveBeenLastCalledWith({ parents: [1] }, { from: 'panel' });
+
+    view.unmount();
+    mocks.subtasks = { ...mocks.subtasks, on: 'meta.parent' };
+    render(<PanelJoinField path="subtasks" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+
+    expect(mocks.create).toHaveBeenLastCalledWith({ meta: { parent: 1 } }, { from: 'panel' });
+
+    mocks.subtasks = { ...mocks.subtasks, on: 'parent' };
+  });
+
+  it('loads the next page once when Show more is clicked twice quickly', async () => {
+    mocks.paged = true;
+    render(<PanelJoinField path="subtasks" />);
+
+    const more = await screen.findByRole('button', { name: 'Show more' });
+    fireEvent.click(more);
+    fireEvent.click(more);
+
+    await screen.findByRole('button', { name: 'Price the tiers' });
+
+    expect(screen.getAllByRole('button', { name: 'Spec the cap rules' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Price the tiers' })).toHaveLength(1);
+    expect(fetchMock.mock.calls.filter(([url]) => url.includes('page=2'))).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
   it('renders nothing on a create form', () => {

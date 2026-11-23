@@ -7,6 +7,8 @@ import type { CommentsTarget } from '../shared.js';
 const pinned = new Map<string, number>();
 const listeners = new Set<() => void>();
 const posted = new Map<string, Set<() => void>>();
+const postCounts = new Map<string, number>();
+const seenCounts = new Map<string, number>();
 
 /** The key the pinned box and the list of one record share. */
 export function pinnedKey(target: Pick<CommentsTarget, 'collection' | 'documentId'>): string {
@@ -50,6 +52,8 @@ export function usePinnedBox(key: string): boolean {
 
 /** Tells the record's list that the pinned box posted a comment. */
 export function announcePosted(key: string): void {
+  postCounts.set(key, (postCounts.get(key) ?? 0) + 1);
+
   for (const listener of posted.get(key) ?? []) listener();
 }
 
@@ -64,4 +68,17 @@ export function onPosted(key: string, listener: () => void): () => void {
     set.delete(listener);
     if (!set.size) posted.delete(key);
   };
+}
+
+/**
+ * Whether the record's pinned box posted a comment that no list has loaded yet, as when the
+ * list's tab was closed at the time. Marks it seen, so the caller reloads once.
+ */
+export function takeUnseenPost(key: string): boolean {
+  const count = postCounts.get(key) ?? 0;
+  const unseen = count > (seenCounts.get(key) ?? 0);
+
+  seenCounts.set(key, count);
+
+  return unseen;
 }
