@@ -54,6 +54,15 @@
     color: var(--color-icon-success);
   }
 
+  .fb-done-check--done svg path:first-child {
+    fill: var(--color-bg-success);
+    stroke: var(--color-bg-success);
+  }
+
+  .fb-done-check--done svg path:last-child {
+    stroke: var(--color-text-onsuccess);
+  }
+
   .fb-done-check:disabled {
     cursor: default;
   }
