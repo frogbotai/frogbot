@@ -11,8 +11,8 @@ import {
   useTranslation,
   withCondition,
 } from '@payloadcms/ui';
-import type { JoinFieldClient, Where } from 'payload';
-import { formatAdminURL } from 'payload/shared';
+import type { ClientField, JoinFieldClient, Where } from 'payload';
+import { flattenTopLevelFields, formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -22,6 +22,7 @@ import { DoneCheck } from '../records/DoneCheck.client.js';
 import { getUseAsDone, isRecordDone } from '../records/state.js';
 import { useToggleDone } from '../records/useRecordState.js';
 import { findPanelField } from './config.js';
+import { usePanelLayout } from './PanelConfig.client.js';
 import { useRecordPanel } from './RecordPanelProvider.client.js';
 
 type Row = Record<string, unknown> & { id: number | string };
@@ -40,13 +41,39 @@ function onValue(field: JoinFieldClient, collectionSlug: string, id: number | st
     : id;
 }
 
+function initialData(
+  fields: ClientField[],
+  [name, ...rest]: string[],
+  value: unknown,
+): Record<string, unknown> | undefined {
+  const field = flattenTopLevelFields(fields, { keepPresentationalFields: true }).find(
+    (candidate) => 'name' in candidate && candidate.name === name,
+  );
+
+  if (!field || !('name' in field) || typeof field.name !== 'string') return undefined;
+
+  if (field.type === 'relationship' || field.type === 'upload') {
+    return { [field.name]: field.hasMany ? [value] : value };
+  }
+
+  if (!('fields' in field)) return undefined;
+
+  const nested = initialData(field.fields, rest, value);
+
+  if (!nested) return undefined;
+
+  return { [field.name]: field.type === 'array' ? [nested] : nested };
+}
+
 function PanelJoinFieldComponent({ path }: { path: string }) {
   const { collectionSlug, create, notify, open } = useRecordPanel();
   const { id } = useDocumentInfo();
   const { config, getEntityConfig } = useConfig();
   const { permissions } = useAuth();
   const { i18n } = useTranslation();
-  const collectionConfig = getEntityConfig({ collectionSlug });
+  const collectionConfig =
+    usePanelLayout()?.collectionConfig ?? getEntityConfig({ collectionSlug });
+
   const field = findPanelField(collectionConfig.fields, path)?.field as JoinFieldClient | undefined;
   const useAsDone = getUseAsDone(collectionConfig);
   const titleField = collectionConfig.admin?.useAsTitle;
@@ -115,12 +142,9 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   const collectionPermissions = permissions?.collections?.[collectionSlug];
   const canCreate = field.admin?.allowCreate !== false && Boolean(collectionPermissions?.create);
   const canUpdate = Boolean(collectionPermissions?.update);
-  const onField = findPanelField(collectionConfig.fields, on)?.field;
   const value = onValue(field, collectionSlug, id);
-  const createData = setPath(
-    on,
-    onField && 'hasMany' in onField && onField.hasMany ? [value] : value,
-  );
+  const createData =
+    initialData(collectionConfig.fields, on.split('.'), value) ?? setPath(on, value);
 
   const heading = field.label ? getTranslation(field.label, i18n) : field.name;
   const singular = collectionConfig.labels?.singular

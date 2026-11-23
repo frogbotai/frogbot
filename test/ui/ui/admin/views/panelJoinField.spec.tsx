@@ -38,6 +38,11 @@ vi.mock('@payloadcms/ui', () => ({
           type: 'group',
           fields: [{ name: 'parent', type: 'relationship', relationTo: 'todos' }],
         },
+        {
+          name: 'items',
+          type: 'array',
+          fields: [{ name: 'parent', type: 'relationship', relationTo: 'todos' }],
+        },
       ],
       slug: 'todos',
     }),
@@ -182,6 +187,16 @@ describe('PanelJoinField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
 
     expect(mocks.create).toHaveBeenLastCalledWith({ meta: { parent: 1 } }, { from: 'panel' });
+
+    mocks.subtasks = { ...mocks.subtasks, on: 'parent' };
+  });
+
+  it('prefills an on field inside an array as an array row, as Payload does', () => {
+    mocks.subtasks = { ...mocks.subtasks, on: 'items.parent' };
+    render(<PanelJoinField path="subtasks" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+
+    expect(mocks.create).toHaveBeenLastCalledWith({ items: [{ parent: 1 }] }, { from: 'panel' });
 
     mocks.subtasks = { ...mocks.subtasks, on: 'parent' };
   });
