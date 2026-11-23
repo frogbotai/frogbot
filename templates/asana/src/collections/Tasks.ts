@@ -11,6 +11,8 @@ import {
 } from '../hooks/tasks';
 import { reassignAccess, recordAccess } from '../roles';
 
+const SHORT_DATE = '@frogbotai/ui/admin#ShortDateCell';
+
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
   access: recordAccess('assignee'),
@@ -18,7 +20,9 @@ export const Tasks: CollectionConfig = {
     icon: 'check-list',
     useAsTitle: 'title',
     useAsDone: 'completed',
-    panel: { properties: ['assignee', 'dueDate', 'project', 'status'] },
+    panel: {
+      properties: ['assignee', 'startDate', 'dueDate', 'project', 'status'],
+    },
     components: {
       panel: { footer: ['@frogbotai/plugin-comments/rsc#CommentBoxFooter'] },
     },
@@ -61,7 +65,11 @@ export const Tasks: CollectionConfig = {
       type: 'relationship',
       relationTo: 'projects',
       required: true,
-      admin: { condition: (data) => !data?.parent },
+      admin: {
+        allowEdit: false,
+        condition: (data) => !data?.parent,
+        placeholder: 'No project',
+      },
     },
     {
       name: 'status',
@@ -79,9 +87,18 @@ export const Tasks: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       access: reassignAccess,
+      admin: { allowEdit: false, placeholder: 'No assignee' },
     },
-    { name: 'dueDate', type: 'date' },
-    { name: 'description', type: 'textarea' },
+    {
+      name: 'dueDate',
+      type: 'date',
+      admin: { components: { Cell: SHORT_DATE }, placeholder: 'No due date' },
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      admin: { placeholder: 'What is this task about?' },
+    },
     {
       name: 'subtasks',
       type: 'join',
@@ -95,11 +112,16 @@ export const Tasks: CollectionConfig = {
       relationTo: 'files',
       hasMany: true,
     },
-    { name: 'startDate', type: 'date' },
+    {
+      name: 'startDate',
+      type: 'date',
+      admin: { components: { Cell: SHORT_DATE }, placeholder: 'No start date' },
+    },
     {
       name: 'parent',
       type: 'relationship',
       relationTo: 'tasks',
+      admin: { hidden: true },
       filterOptions: ({ data, id }) => {
         const project = relationId(data?.project);
         const and: Where[] = [];
@@ -110,8 +132,17 @@ export const Tasks: CollectionConfig = {
         return and.length > 0 ? { and } : true;
       },
     },
-    autonumberField({ name: 'number', scope: 'project' }),
-    autonumberKeyField({ name: 'key', number: 'number', prefix: 'key' }),
+    autonumberField({
+      name: 'number',
+      scope: 'project',
+      admin: { hidden: true },
+    }),
+    autonumberKeyField({
+      name: 'key',
+      number: 'number',
+      prefix: 'key',
+      admin: { condition: () => false },
+    }),
     {
       type: 'tabs',
       admin: { className: 'fb-pill-tabs' },

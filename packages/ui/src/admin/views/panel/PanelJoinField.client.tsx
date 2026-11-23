@@ -14,7 +14,7 @@ import {
 import type { ClientField, JoinFieldClient, Where } from 'payload';
 import { flattenTopLevelFields, formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { PanelSection } from '../../elements/PanelSection/index.client.js';
 import { getPath, setPath } from '../cells.js';
@@ -80,7 +80,11 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
+  const [draft, setDraft] = useState<string | undefined>();
+  const [adding, setAdding] = useState(false);
   const loadingRef = useRef(false);
+  const draftRef = useRef<HTMLInputElement>(null);
+  const drafting = draft !== undefined;
 
   const on = field?.on;
   const where = field?.where;
@@ -125,6 +129,10 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   );
 
   useEffect(() => {
+    if (drafting) draftRef.current?.focus();
+  }, [drafting]);
+
+  useEffect(() => {
     void load(1).catch(() => toast.error('Could not load the related records'));
   }, [load]);
 
@@ -146,6 +154,58 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   const createData =
     initialData(collectionConfig.fields, on.split('.'), value) ?? setPath(on, value);
 
+  const add = async (title: string, next: boolean) => {
+    const data = { ...createData, ...setPath(titleField!, title) };
+
+    setAdding(true);
+
+    try {
+      const response = await fetch(
+        formatAdminURL({ apiRoute: config.routes.api, path: `/${collectionSlug}?depth=0` }),
+        {
+          body: JSON.stringify(data),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        },
+      ).catch(() => undefined);
+
+      const result = (await response?.json().catch(() => undefined)) as
+        { doc?: Row; errors?: { message?: string }[] } | undefined;
+
+      if (!response?.ok || !result?.doc) {
+        setDraft(undefined);
+        toast.error(result?.errors?.[0]?.message ?? `Could not add the ${singular.toLowerCase()}`);
+        create(data, { from: 'panel' });
+
+        return;
+      }
+
+      const doc = result.doc;
+
+      setRows((current) => [...current, doc]);
+      notify({ doc, operation: 'create', type: 'saved' });
+      setDraft(next ? '' : undefined);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const onDraftKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.nativeEvent.isComposing) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setDraft(undefined);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+
+      if (draft?.trim()) void add(draft.trim(), true);
+      else setDraft(undefined);
+    }
+  };
+
   const heading = field.label ? getTranslation(field.label, i18n) : field.name;
   const singular = collectionConfig.labels?.singular
     ? getTranslation(collectionConfig.labels.singular, i18n)
@@ -156,9 +216,13 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
       addLabel={`Add ${singular.toLowerCase()}`}
       className="fb-panel-join"
       heading={heading}
-      onAdd={canCreate ? () => create(createData, { from: 'panel' }) : undefined}
+      onAdd={
+        canCreate
+          ? () => (titleField ? setDraft('') : create(createData, { from: 'panel' }))
+          : undefined
+      }
     >
-      {rows.length ? (
+      {rows.length || draft !== undefined ? (
         <ul className="fb-panel-join__rows">
           {rows.map((row) => {
             const done = isRecordDone(row, useAsDone);
@@ -187,6 +251,26 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
               </li>
             );
           })}
+          {draft !== undefined ? (
+            <li className="fb-panel-join__row fb-panel-join__row--draft">
+              {useAsDone ? <DoneCheck disabled done={false} onToggle={() => undefined} /> : null}
+              <input
+                aria-label={`New ${singular.toLowerCase()} name`}
+                className="fb-panel-join__input"
+                onBlur={() => {
+                  if (adding) return;
+                  if (draft.trim()) void add(draft.trim(), false);
+                  else setDraft(undefined);
+                }}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={onDraftKey}
+                placeholder={`Write a ${singular.toLowerCase()} name`}
+                readOnly={adding}
+                ref={draftRef}
+                value={draft}
+              />
+            </li>
+          ) : null}
           {hasMore ? (
             <li className="fb-panel-join__row">
               <button
@@ -207,7 +291,10 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
 /**
  * A join to the panel's own collection, such as subtasks, as a section: the field's label, a
  * row per related record that opens it in the panel with a back link, a done check when the
- * collection has `useAsDone`, and `+` to create one with the join's `on` field set to the open
- * record. Renders nothing on a create form, like Payload's join before the first save.
+ * collection has `useAsDone`, and `+` to add one with the join's `on` field set to the open
+ * record. With a `useAsTitle`, `+` adds an inline row: type the title, Enter saves it and starts
+ * the next, Escape discards, and the panel stays on the open record. A save the server refuses
+ * opens the create form with the title filled. Renders nothing on a create form, like Payload's
+ * join before the first save.
  */
 export const PanelJoinField = withCondition(PanelJoinFieldComponent);

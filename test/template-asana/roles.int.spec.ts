@@ -86,6 +86,21 @@ describe('asana template roles', () => {
     expect(member.roles).toEqual(['member']);
   });
 
+  it('names a user with no name after their email, until a name is set', async () => {
+    const { admin, member } = await team();
+
+    expect(admin.name).toBe('admin@example.com');
+    expect(member.name).toBe('member@example.com');
+
+    const named = await as(admin).update('users', member.id, { name: 'Mia Park' });
+
+    expect(named.name).toBe('Mia Park');
+
+    const cleared = await as(admin).update('users', member.id, { name: '' });
+
+    expect(cleared.name).toBe('member@example.com');
+  });
+
   it('lets managers run projects and members only read them', async () => {
     const { manager, member } = await team();
     const project = await as(manager).create('projects', { name: 'Website', key: 'WEB' });

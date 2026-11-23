@@ -1,8 +1,14 @@
 'use client';
 
-import { RenderFields, useDocumentInfo } from '@payloadcms/ui';
-import type { SanitizedFieldPermissions, SanitizedFieldsPermissions } from 'payload';
+import { RenderFields, useDocumentInfo, useFormFields } from '@payloadcms/ui';
+import type {
+  ClientField,
+  DateFieldClient,
+  SanitizedFieldPermissions,
+  SanitizedFieldsPermissions,
+} from 'payload';
 
+import { shortDateDisplayFormat } from '../../fields/shortDate.js';
 import { usePanelLayout } from './PanelConfig.client.js';
 
 function permissionsAt(
@@ -19,6 +25,53 @@ function permissionsAt(
   }, fields);
 }
 
+function useShortDate(field: ClientField, path: string): ClientField {
+  const value = useFormFields(([fields]) => (field.type === 'date' ? fields[path]?.value : null));
+
+  if (field.type !== 'date') return field;
+
+  const date = (field.admin?.date ?? {}) as { displayFormat?: string; pickerAppearance?: string };
+  const dayOnly = [undefined, 'default', 'dayOnly'].includes(date.pickerAppearance);
+
+  if (date.displayFormat || !dayOnly) return field;
+
+  return {
+    ...field,
+    admin: { ...field.admin, date: { ...date, displayFormat: shortDateDisplayFormat(value) } },
+  } as DateFieldClient;
+}
+
+function PanelProperty({
+  field,
+  parentPath,
+  path,
+  permissions,
+  readOnly,
+  slug,
+}: {
+  field: ClientField;
+  parentPath: string;
+  path: string;
+  permissions: SanitizedFieldsPermissions;
+  readOnly: boolean;
+  slug: string;
+}) {
+  const shown = useShortDate(field, path);
+
+  return (
+    <RenderFields
+      className="fb-record-panel-properties__row"
+      fields={[shown]}
+      forceRender
+      parentIndexPath=""
+      parentPath={parentPath}
+      parentSchemaPath={[slug, parentPath].filter(Boolean).join('.')}
+      permissions={permissions}
+      readOnly={readOnly}
+    />
+  );
+}
+
 /** The panel's property list: the `properties` fields as label and value rows, in order. */
 export function RecordPanelProperties() {
   const layout = usePanelLayout();
@@ -30,16 +83,14 @@ export function RecordPanelProperties() {
   return (
     <div className="fb-record-panel-properties">
       {layout.properties.map(({ field, parentPath, path }) => (
-        <RenderFields
-          className="fb-record-panel-properties__row"
-          fields={[field]}
-          forceRender
+        <PanelProperty
+          field={field}
           key={path}
-          parentIndexPath=""
           parentPath={parentPath}
-          parentSchemaPath={[slug, parentPath].filter(Boolean).join('.')}
+          path={path}
           permissions={permissionsAt(docPermissions?.fields, parentPath) ?? {}}
-          readOnly={!hasSavePermission || isTrashed}
+          readOnly={!hasSavePermission || Boolean(isTrashed)}
+          slug={slug}
         />
       ))}
     </div>
