@@ -284,7 +284,7 @@ describe('polling triggers', () => {
 
     expect(await row('locked')).toMatchObject({ state: null, status: 'error' });
     expect(warn).toHaveBeenCalledExactlyOnceWith(
-      "[frogbot] Poll of trigger 'locked-poll/polled' for agent 'locked' failed: Connection for 'locked-poll' is not linked.",
+      "[frogbot] Poll of trigger 'locked-poll/polled' for agent 'locked' failed: No `connections` entry declares 'locked-poll': add it to the root `connections` config (`secret: true` or `oauth`).",
     );
     expect(await jobs({ queue: { equals: pollQueue('locked', 'locked-poll') } })).toEqual([
       expect.objectContaining({ completedAt: expect.any(String), hasError: false }),
