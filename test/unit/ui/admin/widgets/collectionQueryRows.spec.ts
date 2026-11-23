@@ -36,13 +36,28 @@ describe('pickRowFacts', () => {
     ]);
   });
 
-  it('skips the title and sort fields and shows nothing without columns', () => {
+  it('puts a select or number sort field first, so the row shows what it is sorted by', () => {
+    const views = [{ type: 'list' as const, defaultFields: ['name', 'company', 'stage'] }];
+
+    expect(
+      pickRowFacts({ fields, sortField: 'amount', titleField: 'name', views }).map(
+        ({ field }) => field.name,
+      ),
+    ).toEqual(['stage', 'amount']);
+    expect(
+      pickRowFacts({ fields, sortField: 'stage', titleField: 'name', views }).map(
+        ({ field }) => field.name,
+      ),
+    ).toEqual(['stage']);
+  });
+
+  it('skips the title and a date sort field and shows nothing without columns', () => {
     expect(
       pickRowFacts({
         fields,
-        sortField: 'amount',
+        sortField: 'closeDate',
         titleField: 'name',
-        views: [{ type: 'list', defaultFields: ['name', 'amount'] }],
+        views: [{ type: 'list', defaultFields: ['name', 'closeDate'] }],
       }),
     ).toEqual([]);
     expect(pickRowFacts({ fields, titleField: 'name', views: [] })).toEqual([]);
@@ -88,5 +103,7 @@ describe('formatRowDate', () => {
   it('shows nothing for empty or invalid values', () => {
     expect(formatRowDate({ field: 'dueDate', now, value: null })).toBeNull();
     expect(formatRowDate({ field: 'dueDate', now, value: 'soon' })).toBeNull();
+    expect(formatRowDate({ field: 'name', now, value: 'Acme 2' })).toBeNull();
+    expect(formatRowDate({ field: 'name', now, value: 'Project 12' })).toBeNull();
   });
 });

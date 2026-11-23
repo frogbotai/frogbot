@@ -230,4 +230,4 @@ widgets: [{ slug: 'invoices-this-week', Component: '/components/InvoicesThisWeek
 defaultLayout: [{ widgetSlug: 'invoices-this-week', width: 'medium' }, { widgetSlug: 'activity', width: 'full' }],
 ```
 
-For a plain short list, use the built-in `collection-query` widget before writing your own. Its rows show the title, the first select and first number from the list view's `defaultFields`, and the sort field's date, red once a due date passes. Sort by the date people plan around, such as `dueDate` or `closeDate`.
+For a plain short list, use the built-in `collection-query` widget before writing your own. Its rows show the title, the first select and first number from the list view's `defaultFields`, and the sort field's date when it is one, red once a due date passes. Sort by the date people plan around, such as `dueDate` or `closeDate`.

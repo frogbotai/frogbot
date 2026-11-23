@@ -9,7 +9,7 @@ export type ReportViewProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> &
 
 const remarkPlugins = [remarkGfm];
 
-const EXTERNAL = /^(https?:)?\/\//i;
+const APP_PATH = /^\/(?![/\\])/;
 
 /** Markdown the app generated (a report, digest or AI summary), rendered as a readable document. */
 export function ReportView({ children, className, ...props }: ReportViewProps) {
@@ -23,7 +23,7 @@ export function ReportView({ children, className, ...props }: ReportViewProps) {
             </a>
           ),
           img: ({ alt, node: _, src }) =>
-            typeof src === 'string' && EXTERNAL.test(src) ? (
+            typeof src === 'string' && !APP_PATH.test(src) ? (
               <a className="fb-report__link" href={src} rel="noreferrer" target="_blank">
                 {alt || 'Image'}
               </a>

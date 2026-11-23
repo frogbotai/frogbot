@@ -10,10 +10,26 @@ const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 /** A field a row shows beside its title: a select as a pill, or a number. */
 export type RowFact = { field: FlattenedField; kind: 'number' | 'select' };
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
+
+/** Whether the widget's sort field is a date, which the row shows on the right. No sort field means `updatedAt`. */
+export function isDateSort({
+  fields,
+  sortField,
+}: {
+  fields: FlattenedField[];
+  sortField?: string;
+}): boolean {
+  if (!sortField || STAMPS.has(sortField)) return true;
+
+  return fields.find(({ name }) => name === sortField)?.type === 'date';
+}
+
 /**
  * The facts a dashboard row shows beside its title, the way Linear and Asana rows show status and
- * one number: the first select and the first number from the collection's list view (else its first view with columns), skipping
- * the title and the sort field, which the row already shows.
+ * one number: the first select and the first number from the collection's list view (else its
+ * first view with columns). A select or number sort field comes first, so a list sorted by amount
+ * shows the amount. The title and a date sort field are skipped: the row already shows them.
  */
 export function pickRowFacts({
   fields,
@@ -27,14 +43,18 @@ export function pickRowFacts({
   views: Pick<CollectionView, 'defaultFields' | 'type'>[];
 }): RowFact[] {
   const withFields = views.filter((view) => view.defaultFields?.length);
-  const names =
+  const columns =
     (withFields.find((view) => view.type === 'list') ?? withFields[0])?.defaultFields ?? [];
+
+  const dateSort = isDateSort({ fields, sortField });
+  const names = [...(sortField && !dateSort ? [sortField] : []), ...columns].filter(
+    (name) => name !== titleField && !(dateSort && name === sortField),
+  );
 
   const facts: RowFact[] = [];
 
   for (const kind of ['select', 'number'] as const) {
     const field = names
-      .filter((name) => name !== titleField && name !== sortField)
       .map((name) => fields.find((candidate) => candidate.name === name))
       .find(
         (candidate) => candidate?.type === kind && !('hasMany' in candidate && candidate.hasMany),
@@ -72,9 +92,11 @@ export function formatRowDate({
   now?: Date;
   value: unknown;
 }): { dateTime: string; label: string; overdue: boolean } | null {
-  if (typeof value !== 'string' && !(value instanceof Date)) return null;
+  let date: Date;
 
-  const date = value instanceof Date ? value : toDate(value);
+  if (value instanceof Date) date = value;
+  else if (typeof value === 'string' && ISO_DATE.test(value)) date = toDate(value);
+  else return null;
 
   if (Number.isNaN(date.getTime())) return null;
 

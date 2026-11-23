@@ -257,7 +257,7 @@ Every dashboard can use these widgets alongside the ones in `widgets`:
 | `welcome` | A greeting for the signed-in user. Full width only. | None |
 | `activity` | Recents and Pinned: the documents the user opened last and the ones they pinned. | `excludedCollections` |
 | `collections` | A card for each collection the sidebar lists. | None |
-| `collection-query` | A short list of one collection's documents: each row shows the title, the first select and first number from the collection's list view columns, and the sort field's date. A due date reads Today, Tomorrow or `Dec 4`, and turns red once it passes. | `title`, `relatedCollection`, `where`, `sortField`, `sortDirection`, `limit` |
+| `collection-query` | A short list of one collection's documents: each row shows the title, the first select and first number from the collection's list view columns (the sort field first, when it is one), and, when sorted by a date, that date in the viewer's timezone. A due date reads Today, Tomorrow or `Dec 4`, and turns red once it passes. | `title`, `relatedCollection`, `where`, `sortField`, `sortDirection`, `limit` |
 | `upload-dropzone` | A drop target for files. Offered only when an upload collection exists. | `excludedCollections` |
 
 When you do not provide `defaultLayout`, the dashboard shows `welcome`, `activity` and `collections`, each full width. To put the app's main work first, repeat that layout with your own widgets inserted. This layout adds open tasks below the greeting:
