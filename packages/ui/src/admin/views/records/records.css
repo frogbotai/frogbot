@@ -82,8 +82,8 @@
   }
 
   @media (pointer: fine) {
-    .fb-list-grid
-      .table:has(.fb-list-done:not(:empty)):not(:has(tbody .select-row input:checked))
+    .fb-list-grid:has(.fb-list-done:not(:empty)):not(:has(tbody .select-row input:checked))
+      .table
       tbody
       tr:not(:hover, :focus-within)
       .cell-_select

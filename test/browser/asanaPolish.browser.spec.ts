@@ -257,20 +257,22 @@ test('a long title in a grouped list ends in an ellipsis, not a lone “…”',
     .locator('.collection-view--list tbody > tr', { hasText: name })
     .locator('td.cell-title > :not(.fb-list-done)');
 
-  const shown = await link.evaluate((element) => {
-    const cell = element.parentElement!.getBoundingClientRect();
-    const box = element.getBoundingClientRect();
+  const shown = () =>
+    link.evaluate((element) => {
+      const cell = element.parentElement!.getBoundingClientRect();
+      const box = element.getBoundingClientRect();
 
-    return {
-      ellipsis: getComputedStyle(element).textOverflow,
-      inside: box.right <= cell.right + 1,
-      truncated: element.scrollWidth > element.clientWidth,
-      width: box.width,
-    };
-  });
+      return {
+        ellipsis: getComputedStyle(element).textOverflow,
+        inside: box.right <= cell.right + 1,
+        truncated: element.scrollWidth > element.clientWidth,
+        wide: box.width > 100,
+      };
+    });
 
-  expect(shown).toMatchObject({ ellipsis: 'ellipsis', inside: true, truncated: true });
-  expect(shown.width).toBeGreaterThan(100);
+  await expect
+    .poll(shown)
+    .toEqual({ ellipsis: 'ellipsis', inside: true, truncated: true, wide: true });
 });
 
 test('a column resized narrower than its text clips it instead of running over the next one', async ({
