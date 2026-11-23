@@ -137,6 +137,38 @@ export type SupportedTimezones =
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
   | 'Pacific/Fiji';
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_4B28655F".
+ */
+export type LexicalNodes_4B28655F =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_4B28655F>
+  | SerializedHorizontalRuleNode
+  | SerializedUploadNode<'files'>
+  | SerializedUploadNode<'exports'>
+  | SerializedUploadNode<'imports'>
+  | SerializedQuoteNode<LexicalNodes_4B28655F>
+  | SerializedRelationshipNode<
+      | 'projects'
+      | 'tasks'
+      | 'users'
+      | 'plugin-ai-policy-spend'
+      | 'audit-logs'
+      | 'comments'
+      | 'usage-logs'
+      | 'frogbot-waitpoints'
+      | 'folders'
+      | 'frogbot-autonumbers'
+      | 'frogbot-autonumber-keys'
+    >
+  | SerializedAutoLinkNode<LexicalNodes_4B28655F, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_4B28655F, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_4B28655F>
+  | SerializedListItemNode<LexicalNodes_4B28655F>
+  | SerializedHeadingNode<LexicalNodes_4B28655F>;
 
 export interface Config {
   auth: {
@@ -152,13 +184,18 @@ export interface Config {
     imports: Import;
     'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
+    comments: Comment;
     'usage-logs': UsageLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
     folders: Folder;
     'frogbot-autonumbers': FrogBotAutonumber;
     'frogbot-autonumber-keys': FrogBotAutonumberKey;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    tasks: {
+      subtasks: 'tasks';
+    };
+  };
   collectionsSelect: {
     projects: ProjectsSelect;
     tasks: TasksSelect;
@@ -168,6 +205,7 @@ export interface Config {
     imports: ImportsSelect;
     'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
+    comments: CommentsSelect;
     'usage-logs': UsageLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
     folders: FoldersSelect;
@@ -375,7 +413,20 @@ export interface Task {
   id: number;
   _order?: string | null;
   title: string;
-  project: number | Project;
+  completed?: boolean | null;
+  project?: (number | null) | Project;
+  status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
+  assignee?: (number | null) | User;
+  dueDate?: string | null;
+  description?: string | null;
+  subtasks?: {
+    docs?: (number | Task)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  attachments?: (number | File)[] | null;
+  startDate?: string | null;
+  parent?: (number | null) | Task;
   /**
    * Number set by FrogBot when the record is created, unique within each project; read-only
    */
@@ -384,11 +435,6 @@ export interface Task {
    * Unique key set by FrogBot as <key>-<number>, like APP-123; read-only
    */
   key?: string | null;
-  status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
-  assignee?: (number | null) | User;
-  startDate?: string | null;
-  dueDate?: string | null;
-  description?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -623,6 +669,39 @@ export interface AuditLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: number;
+  collection: string;
+  documentId: string;
+  author?: (number | null) | User;
+  mentions?: (number | User)[] | null;
+  bodyField?: string | null;
+  notified?: (number | User)[] | null;
+  body_0?: LexicalRichText<LexicalNodes_4B28655F> | null;
+  body?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "usage-logs".
  */
 export interface UsageLog {
@@ -732,14 +811,18 @@ export interface ProjectsSelect {
 export interface TasksSelect {
   _order?: boolean;
   title?: boolean;
+  completed?: boolean;
   project?: boolean;
-  number?: boolean;
-  key?: boolean;
   status?: boolean;
   assignee?: boolean;
-  startDate?: boolean;
   dueDate?: boolean;
   description?: boolean;
+  subtasks?: boolean;
+  attachments?: boolean;
+  startDate?: boolean;
+  parent?: boolean;
+  number?: boolean;
+  key?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -941,6 +1024,24 @@ export interface AuditLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect {
+  collection?: boolean;
+  documentId?: boolean;
+  author?: boolean;
+  mentions?: boolean;
+  bodyField?: boolean;
+  notified?: boolean;
+  body_0?: boolean;
+  body?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "usage-logs_select".
  */
 export interface UsageLogsSelect {
@@ -1053,6 +1154,7 @@ export interface CollectionQueryWidget {
       | 'exports'
       | 'imports'
       | 'audit-logs'
+      | 'comments'
       | 'usage-logs'
       | 'folders';
     where?:
@@ -1085,6 +1187,7 @@ export interface ActivityWidget {
           | 'exports'
           | 'imports'
           | 'audit-logs'
+          | 'comments'
           | 'usage-logs'
           | 'folders'
         )[]
@@ -1183,6 +1286,171 @@ export interface TaskFrogBotCleanupKv {
  */
 export interface Auth {
   [k: string]: unknown;
+}
+
+/** @internal Core Lexical types — see @frogbotai/richtext-lexical. */
+export type LexicalElementFormat =
+  'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+export type LexicalElementDirection = ('ltr' | 'rtl') | null;
+
+export interface SerializedLexicalElementBase<TChildren> {
+  children: TChildren[];
+  direction: LexicalElementDirection;
+  format: LexicalElementFormat;
+  indent: number;
+  textFormat?: number;
+  textStyle?: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type LexicalTextMode = 'normal' | 'token' | 'segmented';
+
+export interface SerializedTextNode {
+  type: 'text';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedTabNode {
+  type: 'tab';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedLineBreakNode {
+  type: 'linebreak';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedParagraphNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'paragraph';
+  textFormat: number;
+  textStyle: string;
+}
+
+export interface SerializedHorizontalRuleNode {
+  type: 'horizontalrule';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type SerializedUploadNode<
+  TSlugs extends keyof Config['collections'],
+  TFields = { [k: string]: unknown },
+> = {
+  type: 'upload';
+  format: LexicalElementFormat;
+  id: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+  fields: TFields;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface SerializedQuoteNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'quote';
+}
+
+export type SerializedRelationshipNode<
+  TSlugs extends keyof Config['collections'],
+> = {
+  type: 'relationship';
+  format: LexicalElementFormat;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface LexicalLinkFields {
+  [k: string]: unknown;
+  doc?: {
+    relationTo: string;
+    value:
+      | Config['db']['defaultIDType']
+      | { [k: string]: unknown; id: Config['db']['defaultIDType'] };
+  } | null;
+  linkType: 'custom' | 'internal';
+  newTab: boolean;
+  url?: string;
+}
+export interface SerializedLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'link';
+  fields: TFields;
+  id?: string;
+}
+export interface SerializedAutoLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'autolink';
+  fields: TFields;
+}
+
+export interface SerializedListNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'list';
+  checked?: boolean;
+  listType: 'number' | 'bullet' | 'check';
+  start: number;
+  tag: 'ul' | 'ol';
+}
+
+export interface SerializedListItemNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'listitem';
+  checked?: boolean;
+  value: number;
+}
+
+export interface SerializedHeadingNode<
+  TChildren,
+  TTag extends 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' =
+    'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'heading';
+  tag: TTag;
+}
+
+/** Shape of a Lexical `richText` field. */
+export interface LexicalRichText<TNode> {
+  root: {
+    children: TNode[];
+    direction: LexicalElementDirection;
+    format: LexicalElementFormat;
+    indent: number;
+    type: 'root';
+    /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+    version: number;
+  };
 }
 
 declare module 'frogbot' {
