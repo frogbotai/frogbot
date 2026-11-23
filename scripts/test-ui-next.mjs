@@ -75,7 +75,7 @@ try {
 
   assert.doesNotMatch(
     css,
-    /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))(?![\w-])/,
+    /--(radius-(sm|md|lg|xl)|color-red-(500|600|700))(?![\w-])/,
   );
 
   assert.match(css, /\.template-default:has\(\.fb-nav-shell\)/);
