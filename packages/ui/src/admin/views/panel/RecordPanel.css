@@ -162,6 +162,40 @@
     display: none;
   }
 
+  .fb-record-panel-header__complete--compact {
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: none;
+    color: var(--color-icon-tertiary);
+    justify-content: center;
+    padding: 0;
+    width: 32px;
+  }
+
+  .fb-record-panel-header__complete--compact:hover:not(:disabled) {
+    background: var(--color-bg-transparent-hover);
+    border: 0;
+    color: var(--color-icon-success);
+  }
+
+  .fb-record-panel-header__complete--compact.fb-record-panel-header__complete--done,
+  .fb-record-panel-header__complete--compact.fb-record-panel-header__complete--done:hover:not(
+      :disabled
+    ) {
+    background: none;
+    color: var(--color-icon-success);
+  }
+
+  .fb-record-panel-header__complete--compact .fb-record-panel-header__complete-check,
+  .fb-record-panel-header__complete--compact .fb-record-panel-header__complete-label {
+    display: none;
+  }
+
+  .fb-record-panel-header__complete--compact .fb-record-panel-header__complete-icon {
+    display: block;
+  }
+
   @container (width < 480px) {
     .fb-record-panel-header__complete {
       background: none;

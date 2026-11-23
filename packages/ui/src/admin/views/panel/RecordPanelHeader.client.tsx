@@ -61,7 +61,17 @@ function useTitleScrolledOut(ref: React.RefObject<HTMLElement | null>): boolean 
   return scrolledOut;
 }
 
-function MarkComplete({ onToggle, path }: { onToggle: () => void; path: string }) {
+function MarkComplete({
+  busy,
+  compact,
+  onToggle,
+  path,
+}: {
+  busy: boolean;
+  compact: boolean;
+  onToggle: () => void;
+  path: string;
+}) {
   const { hasSavePermission } = useDocumentInfo();
   const { setValue, value } = useField<boolean>({ path });
   const done = value === true;
@@ -70,10 +80,14 @@ function MarkComplete({ onToggle, path }: { onToggle: () => void; path: string }
     <button
       aria-label={done ? 'Completed' : 'Mark complete'}
       aria-pressed={done}
-      className={[`${baseClass}__complete`, done && `${baseClass}__complete--done`]
+      className={[
+        `${baseClass}__complete`,
+        done && `${baseClass}__complete--done`,
+        compact && `${baseClass}__complete--compact`,
+      ]
         .filter(Boolean)
         .join(' ')}
-      disabled={!hasSavePermission}
+      disabled={busy || !hasSavePermission}
       onClick={() => {
         setValue(!done);
         onToggle();
@@ -165,9 +179,11 @@ function DeleteRecord({ onDeleted }: { onDeleted: () => void }) {
 }
 
 /**
- * The panel's default header: the shared side panel bar, pinned to the top. The status slot
- * shows Unsaved and Save while a form without autosave has edits, else Mark complete for
- * `useAsDone` collections, else Saved for autosave. The ••• menu holds copy link, duplicate,
+ * The panel's default header: the shared side panel bar, pinned to the top. A saved record of a
+ * `useAsDone` collection leads with Mark complete, hidden while unsaved edits wait for Save
+ * so it never saves them silently. It shrinks to a check circle once the
+ * body's title scrolls under the bar and saves without a toast. The status slot shows Unsaved
+ * and Save while a form without autosave has edits, else Saved for autosave. The ••• menu holds copy link, duplicate,
  * create new, the plugin `actions`, the saved time and delete. On the left, a back link when the
  * record was opened from inside the panel or sits under another through the collection's join to
  * itself, and the title once the body's title scrolls under the
@@ -213,7 +229,10 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   useEffect(() => {
     if (completing !== 'pending') return;
     setCompleting('saving');
-    void Promise.resolve(submit()).finally(() => setCompleting('idle'));
+
+    void Promise.resolve(submit({ disableSuccessStatus: true })).finally(() =>
+      setCompleting('idle'),
+    );
   }, [completing, submit]);
 
   const status =
@@ -223,9 +242,8 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
           canSave: Boolean(hasSavePermission),
           editing: isEditing,
           modified,
-          useAsDone: Boolean(useAsDone),
         })
-      : 'complete';
+      : undefined;
 
   const save = () => {
     ref.current
@@ -338,6 +356,16 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
               ? { label: joinParent.title, onBack: () => panel.open(joinParent.id) }
               : undefined
         }
+        lead={
+          useAsDone && isEditing && (completing !== 'idle' || status !== 'save') ? (
+            <MarkComplete
+              busy={completing !== 'idle'}
+              compact={titleScrolledOut}
+              onToggle={() => setCompleting('pending')}
+              path={useAsDone}
+            />
+          ) : undefined
+        }
         labels={{
           close: t('general:close'),
           expand: 'Open full page',
@@ -363,8 +391,6 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
                 {t('general:save')}
               </Button>
             </>
-          ) : status === 'complete' && useAsDone ? (
-            <MarkComplete onToggle={() => setCompleting('pending')} path={useAsDone} />
           ) : status === 'saved' ? (
             <span className={`${baseClass}__saved`}>Saved</span>
           ) : undefined

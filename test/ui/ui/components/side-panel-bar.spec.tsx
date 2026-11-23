@@ -140,6 +140,44 @@ describe('SidePanelBar', () => {
     expect(screen.getByText('Tasks')).toBeTruthy();
     expect(screen.queryByText('Budget feature')).toBeNull();
   });
+
+  it('puts the lead action first on the left, before the back link and the title', () => {
+    const { container } = render(
+      <SidePanelBar
+        back={{ label: 'Budget feature', onBack: vi.fn() }}
+        lead={<button type="button">Mark complete</button>}
+        status={<span>Saved</span>}
+        title="Spec the cap rules"
+        titleInBody
+        titleScrolledOut
+      />,
+    );
+
+    const start = container.querySelector('.fb-side-panel-bar__start')!;
+
+    expect([...start.children].map((node) => node.className)).toEqual([
+      'fb-side-panel-bar__lead',
+      'fb-side-panel-bar__back fb-side-panel-bar__back--capped',
+      'fb-side-panel-bar__separator',
+      'fb-side-panel-bar__title',
+    ]);
+    expect(
+      within(start as HTMLElement).getByRole('button', { name: 'Mark complete' }),
+    ).toBeTruthy();
+    expect(container.querySelector('.fb-side-panel-bar__end')!.textContent).toBe('Saved');
+  });
+
+  it('caps the back link only when the title follows it', () => {
+    const back = { label: 'Design the pricing page', onBack: vi.fn() };
+    const { rerender } = render(<SidePanelBar back={back} title="Write the FAQ" titleInBody />);
+    const link = () => screen.getByRole('button', { name: 'Back to Design the pricing page' });
+
+    expect(link().classList.contains('fb-side-panel-bar__back--capped')).toBe(false);
+
+    rerender(<SidePanelBar back={back} title="Write the FAQ" titleInBody titleScrolledOut />);
+
+    expect(link().classList.contains('fb-side-panel-bar__back--capped')).toBe(true);
+  });
 });
 
 describe('useSidePanelEscape', () => {

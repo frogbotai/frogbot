@@ -136,23 +136,15 @@ describe('redirectRecordParam', () => {
 });
 
 describe('recordPanelStatus', () => {
-  const base = { autosave: false, canSave: true, editing: true, modified: false, useAsDone: false };
+  const base = { autosave: false, canSave: true, editing: true, modified: false };
 
   it('shows Save while a form without autosave has edits or is new', () => {
     expect(recordPanelStatus({ ...base, modified: true })).toBe('save');
     expect(recordPanelStatus({ ...base, editing: false })).toBe('save');
-    expect(recordPanelStatus({ ...base, modified: true, useAsDone: true })).toBe('save');
   });
 
-  it('shows nothing for a clean record without autosave or useAsDone', () => {
+  it('shows nothing for a clean record without autosave', () => {
     expect(recordPanelStatus(base)).toBeUndefined();
-  });
-
-  it('shows Mark complete for a clean useAsDone record, even with autosave', () => {
-    expect(recordPanelStatus({ ...base, useAsDone: true })).toBe('complete');
-    expect(recordPanelStatus({ ...base, autosave: true, modified: true, useAsDone: true })).toBe(
-      'complete',
-    );
   });
 
   it('shows Saved for an autosaved record', () => {
