@@ -77,22 +77,22 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
         { addQueryPrefix: true },
       );
 
-      const response = await fetch(
-        formatAdminURL({ apiRoute: config.routes.api, path: `/${collectionSlug}${query}` }),
-        { credentials: 'include' },
-      )
-        .catch(() => undefined)
-        .finally(() => {
-          loadingRef.current = false;
-        });
+      try {
+        const response = await fetch(
+          formatAdminURL({ apiRoute: config.routes.api, path: `/${collectionSlug}${query}` }),
+          { credentials: 'include' },
+        ).catch(() => undefined);
 
-      if (!response?.ok) return;
+        if (!response?.ok) return;
 
-      const result = (await response.json()) as { docs: Row[]; hasNextPage: boolean };
+        const result = (await response.json()) as { docs: Row[]; hasNextPage: boolean };
 
-      setRows((current) => (pageToLoad === 1 ? result.docs : [...current, ...result.docs]));
-      setHasMore(result.hasNextPage);
-      setPage(pageToLoad);
+        setRows((current) => (pageToLoad === 1 ? result.docs : [...current, ...result.docs]));
+        setHasMore(result.hasNextPage);
+        setPage(pageToLoad);
+      } finally {
+        loadingRef.current = false;
+      }
     },
     [collectionSlug, config.routes.api, field, id, limit, on, sort, where],
   );

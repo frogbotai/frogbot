@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -64,7 +64,7 @@ const rows = [
   { id: 3, done: true, title: 'Price the tiers' },
 ];
 
-const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+function respond(url: string, init?: RequestInit) {
   if (init?.method === 'PATCH') {
     return Promise.resolve({
       json: () => Promise.resolve({ doc: { ...rows[0], done: true } }),
@@ -79,7 +79,9 @@ const fetchMock = vi.fn((url: string, init?: RequestInit) => {
     json: () => Promise.resolve({ docs, hasNextPage: mocks.paged && page !== '2' }),
     ok: true,
   });
-});
+}
+
+const fetchMock = vi.fn(respond);
 
 beforeEach(() => {
   mocks.create.mockReset();
@@ -88,7 +90,8 @@ beforeEach(() => {
   mocks.notify.mockReset();
   mocks.open.mockReset();
   mocks.permissions = { create: true, update: true };
-  fetchMock.mockClear();
+  fetchMock.mockReset();
+  fetchMock.mockImplementation(respond);
   vi.stubGlobal('fetch', fetchMock);
 });
 
@@ -197,6 +200,45 @@ describe('PanelJoinField', () => {
     expect(screen.getAllByRole('button', { name: 'Price the tiers' })).toHaveLength(1);
     expect(fetchMock.mock.calls.filter(([url]) => url.includes('page=2'))).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('loads the next page once when the second click lands while the first body is still parsing', async () => {
+    let finish: (value: unknown) => void = () => undefined;
+    const body = new Promise((resolve) => {
+      finish = resolve;
+    });
+
+    mocks.paged = true;
+
+    fetchMock.mockImplementation(
+      (url: string) =>
+        Promise.resolve(
+          url.includes('page=2')
+            ? { json: () => body, ok: true }
+            : { json: () => Promise.resolve({ docs: [rows[0]], hasNextPage: true }), ok: true },
+        ) as never,
+    );
+
+    render(<PanelJoinField path="subtasks" />);
+
+    const more = await screen.findByRole('button', { name: 'Show more' });
+    fireEvent.click(more);
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.filter(([url]) => url.includes('page=2'))).toHaveLength(1),
+    );
+
+    await act(async () => {
+      for (let tick = 0; tick < 5; tick += 1) await Promise.resolve();
+    });
+
+    fireEvent.click(more);
+    finish({ docs: [rows[1]], hasNextPage: false });
+
+    await screen.findByRole('button', { name: 'Price the tiers' });
+
+    expect(fetchMock.mock.calls.filter(([url]) => url.includes('page=2'))).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Price the tiers' })).toHaveLength(1);
   });
 
   it('renders nothing on a create form', () => {
