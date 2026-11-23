@@ -52,7 +52,7 @@ export function CommentBox({ onPosted, schemaPath, target }: CommentBoxProps) {
 
   return (
     <div className="fb-comments__box">
-      <CommentEditor onSubmit={post} schemaPath={schemaPath} submitLabel="Comment" />
+      <CommentEditor compact onSubmit={post} schemaPath={schemaPath} submitLabel="Comment" />
     </div>
   );
 }

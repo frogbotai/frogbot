@@ -60,7 +60,15 @@ function useTitleScrolledOut(ref: React.RefObject<HTMLElement | null>): boolean 
   return scrolledOut;
 }
 
-function MarkComplete({ onToggle, path }: { onToggle: () => void; path: string }) {
+function MarkComplete({
+  compact,
+  onToggle,
+  path,
+}: {
+  compact: boolean;
+  onToggle: () => void;
+  path: string;
+}) {
   const { hasSavePermission } = useDocumentInfo();
   const { setValue, value } = useField<boolean>({ path });
   const done = value === true;
@@ -69,7 +77,11 @@ function MarkComplete({ onToggle, path }: { onToggle: () => void; path: string }
     <button
       aria-label={done ? 'Completed' : 'Mark complete'}
       aria-pressed={done}
-      className={[`${baseClass}__complete`, done && `${baseClass}__complete--done`]
+      className={[
+        `${baseClass}__complete`,
+        done && `${baseClass}__complete--done`,
+        compact && `${baseClass}__complete--compact`,
+      ]
         .filter(Boolean)
         .join(' ')}
       disabled={!hasSavePermission}
@@ -164,9 +176,10 @@ function DeleteRecord({ onDeleted }: { onDeleted: () => void }) {
 }
 
 /**
- * The panel's default header: the shared side panel bar, pinned to the top. The status slot
- * shows Unsaved and Save while a form without autosave has edits, else Mark complete for
- * `useAsDone` collections, else Saved for autosave. The ••• menu holds copy link, duplicate,
+ * The panel's default header: the shared side panel bar, pinned to the top. A saved record of a
+ * `useAsDone` collection leads with Mark complete, which shrinks to a check circle once the
+ * body's title scrolls under the bar and saves without a toast. The status slot shows Unsaved
+ * and Save while a form without autosave has edits, else Saved for autosave. The ••• menu holds copy link, duplicate,
  * create new, the plugin `actions`, the saved time and delete. On the left, a back link when the
  * record was opened from inside the panel, and the title once the body's title scrolls under the
  * bar. The view behind the panel already names the collection, so the bar never does.
@@ -209,7 +222,10 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   useEffect(() => {
     if (completing !== 'pending') return;
     setCompleting('saving');
-    void Promise.resolve(submit()).finally(() => setCompleting('idle'));
+
+    void Promise.resolve(submit({ disableSuccessStatus: true })).finally(() =>
+      setCompleting('idle'),
+    );
   }, [completing, submit]);
 
   const status =
@@ -219,9 +235,8 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
           canSave: Boolean(hasSavePermission),
           editing: isEditing,
           modified,
-          useAsDone: Boolean(useAsDone),
         })
-      : 'complete';
+      : undefined;
 
   const save = () => {
     ref.current
@@ -332,6 +347,15 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
             ? { label: panel.parent.title || `#${panel.parent.id}`, onBack: panel.back }
             : undefined
         }
+        lead={
+          useAsDone && isEditing ? (
+            <MarkComplete
+              compact={titleScrolledOut}
+              onToggle={() => setCompleting('pending')}
+              path={useAsDone}
+            />
+          ) : undefined
+        }
         labels={{
           close: t('general:close'),
           expand: 'Open full page',
@@ -357,8 +381,6 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
                 {t('general:save')}
               </Button>
             </>
-          ) : status === 'complete' && useAsDone ? (
-            <MarkComplete onToggle={() => setCompleting('pending')} path={useAsDone} />
           ) : status === 'saved' ? (
             <span className={`${baseClass}__saved`}>Saved</span>
           ) : undefined

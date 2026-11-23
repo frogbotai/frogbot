@@ -277,6 +277,14 @@ test.describe('the task panel', () => {
     await expect(row(page, 'project')).toHaveCount(0);
 
     const back = bar(page).getByRole('button', { name: 'Back to Design the pricing page' });
+    await expect(back).toHaveText('Design the pricing page');
+    expect(
+      await back
+        .locator('.fb-side-panel-bar__back-label')
+        .evaluate((label) => label.scrollWidth <= label.clientWidth),
+    ).toBe(true);
+
+    await shootPanel(page, '05-subtask-back-link');
     await back.click();
     await expect(title(page)).toHaveValue('Design the pricing page');
     expect(errors).toEqual([]);
@@ -414,6 +422,7 @@ test.describe('the task panel', () => {
 
     const pinned = footer(page).locator('.fb-comments--pinned');
     await expect(pinned).toBeVisible();
+    expect((await pinned.boundingBox())!.height).toBeLessThan(60);
     await expect(panel(page).locator('.fb-record-panel__body .fb-comments__box')).toHaveCount(0);
 
     const before = (await pinned.boundingBox())!;
@@ -425,8 +434,31 @@ test.describe('the task panel', () => {
     await expect(title(page)).not.toBeInViewport();
     expect((await pinned.boundingBox())!.y).toBe(before.y);
 
-    await pinned.locator('[contenteditable="true"]').fill('Draft is in the doc.');
-    await pinned.getByRole('button', { name: 'Comment' }).click();
+    const complete = bar(page).getByRole('button', { name: 'Mark complete' });
+    await expect(complete).toHaveClass(/__complete--compact/);
+    await expect(complete.locator('.fb-record-panel-header__complete-label')).toBeHidden();
+    await expect(bar(page).locator('.fb-side-panel-bar__title')).toHaveText(
+      'Plan the launch email',
+    );
+
+    const editor = pinned.locator('[contenteditable="true"]');
+    const send = pinned.getByRole('button', { name: 'Comment' });
+
+    expect((await pinned.boundingBox())!.height).toBeLessThan(60);
+    await expect(send).toBeDisabled();
+    await expect(editor).toBeVisible();
+    await shootPanel(page, '07-scrolled-compact-complete');
+    await editor.click();
+    await page.keyboard.type('Draft is in the doc.');
+    await expect(pinned.locator('.ContentEditable__keyboard-hint')).toBeHidden();
+    await expect(pinned.locator('.add-block-menu, .insert-paragraph-at-end')).toHaveCount(0);
+
+    const box = (await pinned.locator('.fb-comments__editor--compact').boundingBox())!;
+    const button = (await send.boundingBox())!;
+    expect(button.x + button.width).toBeLessThanOrEqual(box.x + box.width);
+    expect(button.y + button.height).toBeLessThanOrEqual(box.y + box.height);
+
+    await send.click();
 
     await expect(
       panel(page).locator('.fb-record-panel__body .fb-comments__item', {
@@ -455,7 +487,14 @@ test.describe('the task panel', () => {
       column('In progress').locator('.frog-board__card', { hasText: 'Book the launch review' }),
     ).toBeVisible();
 
-    await bar(page).getByRole('button', { name: 'Mark complete' }).click();
+    const complete = bar(page).locator('.fb-side-panel-bar__lead').getByRole('button', {
+      name: 'Mark complete',
+    });
+
+    const close = bar(page).getByRole('button', { name: 'Close' });
+    expect((await complete.boundingBox())!.x).toBeLessThan((await close.boundingBox())!.x);
+
+    await complete.click();
     await expect(bar(page).getByRole('button', { name: 'Completed' })).toBeVisible();
     await expect
       .poll(async () => readTask(page, task.id))
@@ -464,6 +503,7 @@ test.describe('the task panel', () => {
       column('Done').locator('.frog-board__card', { hasText: 'Book the launch review' }),
     ).toBeVisible();
     await expect(row(page, 'status').locator('.rs__single-value')).toHaveText('Done');
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0);
     await shootPanel(page, '06-completed-task-full');
   });
 

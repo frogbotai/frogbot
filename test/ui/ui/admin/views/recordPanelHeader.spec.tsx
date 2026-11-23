@@ -1,10 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   docInfo: {} as Record<string, unknown>,
   permissions: {} as Record<string, unknown>,
+  submit: vi.fn(() => Promise.resolve()),
+  useAsDone: undefined as string | undefined,
 }));
 
 vi.mock('@payloadcms/ui', () => ({
@@ -17,7 +19,7 @@ vi.mock('@payloadcms/ui', () => ({
   useConfig: () => ({
     config: { routes: { admin: '/admin', api: '/api' } },
     getEntityConfig: () => ({
-      admin: { useAsTitle: 'title' },
+      admin: { custom: { frogbot: { useAsDone: mocks.useAsDone } }, useAsTitle: 'title' },
       fields: [{ name: 'title', type: 'text' }],
       labels: { plural: 'Tasks', singular: 'Task' },
       slug: 'tasks',
@@ -26,7 +28,7 @@ vi.mock('@payloadcms/ui', () => ({
   useDocumentInfo: () => mocks.docInfo,
   useDocumentTitle: () => ({ title: 'Budget feature' }),
   useField: () => ({ setValue: vi.fn(), value: false }),
-  useForm: () => ({ submit: vi.fn() }),
+  useForm: () => ({ submit: mocks.submit }),
   useFormModified: () => false,
   useModal: () => ({ closeModal: vi.fn(), openModal: vi.fn() }),
   useTranslation: () => ({ i18n: { language: 'en' }, t: (key: string) => key }),
@@ -62,6 +64,8 @@ function OnlyWhenSaved() {
 beforeEach(() => {
   mocks.permissions = { collections: { tasks: { create: false } } };
   mocks.docInfo = { collectionSlug: 'tasks', hasSavePermission: true };
+  mocks.submit.mockClear();
+  mocks.useAsDone = undefined;
 });
 
 describe('record panel header', () => {
@@ -92,5 +96,27 @@ describe('record panel header', () => {
     const menu = await screen.findByRole('menu');
 
     expect(menu.querySelector('[role="separator"]')).toBeNull();
+  });
+
+  it('leads a saved useAsDone record with Mark complete, which saves without a toast', async () => {
+    const user = userEvent.setup();
+    mocks.useAsDone = 'completed';
+    mocks.docInfo = { collectionSlug: 'tasks', hasSavePermission: true, id: '1' };
+    const { container } = render(<RecordPanelHeader />);
+
+    const lead = container.querySelector('.fb-side-panel-bar__lead')!;
+
+    await user.click(within(lead as HTMLElement).getByRole('button', { name: 'Mark complete' }));
+
+    expect(mocks.submit).toHaveBeenCalledWith({ disableSuccessStatus: true });
+    expect(container.querySelector('.fb-side-panel-bar__status')).toBeNull();
+  });
+
+  it('leaves Mark complete out of a new record', () => {
+    mocks.useAsDone = 'completed';
+    const { container } = render(<RecordPanelHeader />);
+
+    expect(container.querySelector('.fb-side-panel-bar__lead')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).toBeNull();
   });
 });
