@@ -31,6 +31,7 @@ export { PATCH_PREFERENCE, type PatchPreferenceArgs } from '../views/preferences
 export { SettingsView } from '../views/Settings/index.js';
 export { resolveSettingsTitle, type SettingsEntry } from '../views/Settings/resolveSection.js';
 export { TimelineView } from '../views/Timeline/index.js';
+export { CollectionQueryWidget } from '../widgets/CollectionQuery/index.js';
 export { FieldDiffContainer } from '@payloadcms/ui/rsc';
 export { FieldDiffLabel } from '@payloadcms/ui/rsc';
 export { escapeDiffHTML } from '@payloadcms/ui/rsc';
@@ -45,7 +46,6 @@ export { handlePreview } from '@payloadcms/ui/rsc';
 export { handleLivePreview } from '@payloadcms/ui/rsc';
 export { copyDataFromLocaleHandler } from '@payloadcms/ui/rsc';
 export { CollectionCards } from '@payloadcms/ui/rsc';
-export { CollectionQueryWidget } from '@payloadcms/ui/rsc';
 export { HierarchyButton } from '@payloadcms/ui/rsc';
 export { HierarchyField } from '@payloadcms/ui/rsc';
 export { HierarchySidebarTabServer } from '@payloadcms/ui/rsc';

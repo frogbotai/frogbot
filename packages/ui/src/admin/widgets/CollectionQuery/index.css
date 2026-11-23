@@ -1,0 +1,46 @@
+@layer frogbot {
+  .fb-query-widget {
+    height: 100%;
+  }
+
+  .fb-query-widget__header {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .fb-query-widget__all {
+    flex: none;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-xs);
+    text-decoration: none;
+  }
+
+  .fb-query-widget__all:hover,
+  .fb-query-widget__all:focus-visible {
+    color: var(--color-text);
+  }
+
+  .fb-query-widget__content .fb-list__item {
+    padding-inline: 0;
+  }
+
+  .fb-query-widget__number {
+    min-width: 4.5rem;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  .fb-query-widget__date {
+    min-width: 3.5rem;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fb-query-widget__date--overdue {
+    color: var(--color-text-danger);
+  }
+}

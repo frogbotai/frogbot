@@ -3,6 +3,7 @@
 import { usePathname, useStepNav } from '@payloadcms/ui';
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 
+import { ImageViewer } from '../ImageViewer/index.client.js';
 import { TabTitleSync } from './TabTitleSync.js';
 
 export type StepNavResetProps = {
@@ -24,6 +25,7 @@ export function StepNavReset({ children }: StepNavResetProps) {
   return (
     <>
       <TabTitleSync />
+      <ImageViewer />
       {children}
     </>
   );

@@ -359,3 +359,21 @@ describe('edge cases', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('ReportView images', () => {
+  it('shows images the app serves inline and images from other sites as links', () => {
+    const { container } = render(
+      <ReportView>
+        {
+          '![Weekly chart](/api/media/file/chart.png)\n\n![Tracker](https://tracker.example.com/p.gif)'
+        }
+      </ReportView>,
+    );
+
+    expect(container.querySelectorAll('img')).toHaveLength(1);
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('/api/media/file/chart.png');
+    expect(screen.getByRole('link', { name: 'Tracker' }).getAttribute('href')).toBe(
+      'https://tracker.example.com/p.gif',
+    );
+  });
+});
