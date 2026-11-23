@@ -9,7 +9,8 @@ import { appendQuery, setPath } from '../cells.js';
 
 /**
  * Toggles a record's done checkbox with an ordinary update, so field access applies, and hands
- * the saved document back, loaded with `populate` so a card keeps its image.
+ * the saved document back, loaded with `populate` so a card keeps its image. Resolves `false` when
+ * nothing was saved.
  */
 export function useToggleDone<T extends Record<string, unknown> & { id: number | string }>({
   collectionSlug,
@@ -25,8 +26,8 @@ export function useToggleDone<T extends Record<string, unknown> & { id: number |
   const { config } = useConfig();
   const [saving, setSaving] = useState(false);
 
-  const toggle = async (row: T, done: boolean) => {
-    if (!useAsDone || saving) return;
+  const toggle = async (row: T, done: boolean): Promise<boolean> => {
+    if (!useAsDone || saving) return false;
     setSaving(true);
     const params = new URLSearchParams({ depth: '1' });
 
@@ -56,8 +57,12 @@ export function useToggleDone<T extends Record<string, unknown> & { id: number |
       }
 
       onSaved(result.doc);
+
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not update the record');
+
+      return false;
     } finally {
       setSaving(false);
     }

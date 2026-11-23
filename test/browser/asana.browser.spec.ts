@@ -646,3 +646,105 @@ test.describe('views and shell', () => {
     expect(labels.at(-1)).toBe('System');
   });
 });
+
+test.describe('a member', () => {
+  const users: number[] = [];
+  const restore: Task[] = [];
+
+  test.afterEach(async ({ page }) => {
+    for (const id of users.splice(0)) await page.request.delete(`/api/users/${id}`);
+
+    for (const task of restore.splice(0)) {
+      await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: task.completed } });
+    }
+  });
+
+  test('a member’s failed list check on someone else’s task does not stay checked', async ({
+    browser,
+    page,
+  }) => {
+    const email = `member-${Date.now()}@example.com`;
+    const made = await page.request.post('/api/users', {
+      data: { email, password: 'frogbot-test', roles: ['member'] },
+    });
+
+    const { doc: user } = (await made.json()) as { doc: { id: number } };
+
+    users.push(user.id);
+
+    const task = await findTask(page, 'Write the homepage copy');
+
+    restore.push(task);
+    await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: false } });
+
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+      timezoneId,
+    });
+
+    const member = await context.newPage();
+
+    await member.request.post('/api/users/login', { data: { email, password: 'frogbot-test' } });
+    await member.setViewportSize({ width: 1440, height: 900 });
+    await member.goto('/collections/tasks');
+
+    const row = member.locator('tbody > tr', { hasText: 'Write the homepage copy' });
+    const check = row.locator('td.cell-title .fb-done-check');
+
+    await check.click();
+    await expect(member.locator('.payload-toast-container')).toContainText(/./);
+    await expect(check).toHaveAttribute('aria-pressed', 'false');
+    expect((await readTask(page, task.id)).completed).toBe(false);
+    await context.close();
+  });
+
+  test('a member’s Home has no Create project, and a project tile opens only its tasks', async ({
+    browser,
+    page,
+  }) => {
+    const email = `member-${Date.now()}@example.com`;
+    const made = await page.request.post('/api/users', {
+      data: { email, password: 'frogbot-test', roles: ['member'] },
+    });
+
+    const { doc: user } = (await made.json()) as { doc: { id: number } };
+
+    users.push(user.id);
+
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+      timezoneId,
+    });
+
+    const member = await context.newPage();
+
+    await member.request.post('/api/users/login', { data: { email, password: 'frogbot-test' } });
+    await member.setViewportSize({ width: 1440, height: 900 });
+    await member.goto('/');
+
+    await expect(
+      member.locator('.asana-projects__tile', { hasText: 'Website relaunch' }),
+    ).toBeVisible();
+    await expect(
+      member.locator('.asana-projects__tile', { hasText: 'Create project' }),
+    ).toHaveCount(0);
+    await expect(member.locator('.fb-query-widget .fb-list > li')).toHaveCount(0);
+    await context.close();
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.locator('.asana-projects__tile', { hasText: 'Website relaunch' }).click();
+    await expect(page).toHaveURL(/where/);
+    await expect(page.locator('tbody > tr').first()).toBeVisible();
+    await expect
+      .poll(
+        async () => [
+          ...new Set(
+            (await page.locator('tbody td.cell-project').allTextContents()).map((p) => p.trim()),
+          ),
+        ],
+        { timeout: 15000 },
+      )
+      .toEqual(['Website relaunch']);
+  });
+});

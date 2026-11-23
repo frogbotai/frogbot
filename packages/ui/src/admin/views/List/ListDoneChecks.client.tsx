@@ -4,6 +4,7 @@ import { useAuth, useConfig, useRouter } from '@payloadcms/ui';
 import { type RefObject, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { canUpdateField } from '../fieldPermissions.js';
 import { rowRecordId } from '../panel/recordSteps.js';
 import { DoneCheck } from '../records/DoneCheck.client.js';
 import { getUseAsDone } from '../records/state.js';
@@ -44,7 +45,8 @@ function sameHosts(a: Host[], b: Host[]): boolean {
 /**
  * The check circle at the start of each row's title cell in a list whose collection sets
  * `admin.useAsDone`, as Asana's task list has. A click saves the done checkbox and reloads the
- * rows; without update access the circle is read-only.
+ * rows, or shows the saved state again when the save fails. Without update access to the
+ * collection and its done field, the circle is read-only.
  */
 export function ListDoneChecks({
   collectionSlug,
@@ -61,7 +63,11 @@ export function ListDoneChecks({
   const collectionConfig = getEntityConfig({ collectionSlug });
   const useAsDone = getUseAsDone(collectionConfig);
   const titleCell = `cell-${(collectionConfig.admin.useAsTitle || 'id').replace(/\./g, '__')}`;
-  const canUpdate = Boolean(permissions?.collections?.[collectionSlug]?.update);
+  const access = permissions?.collections?.[collectionSlug];
+  const canUpdate = Boolean(
+    access?.update && useAsDone && canUpdateField(access.fields, useAsDone),
+  );
+
   const [hosts, setHosts] = useState<Host[]>([]);
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const { saving, toggle } = useToggleDone({
@@ -103,7 +109,11 @@ export function ListDoneChecks({
         done={pending[id] ?? done.has(id)}
         onToggle={(next) => {
           setPending((current) => ({ ...current, [id]: next }));
-          void toggle({ id }, next);
+
+          void toggle({ id }, next).then((saved) => {
+            if (saved) return;
+            setPending(({ [id]: _failed, ...rest }) => rest);
+          });
         }}
       />,
       element,
