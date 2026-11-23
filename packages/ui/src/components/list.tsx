@@ -10,7 +10,7 @@ export function List({ className, ...props }: ListProps) {
   return <ul className={`fb-list${className ? ` ${className}` : ''}`} {...props} />;
 }
 
-/** Props for {@link ListItem}. With `href`, the whole row opens the link; links, buttons and form controls in `subtitle` or `meta` stay clickable on their own. */
+/** Props for {@link ListItem}. With `href`, the whole row opens the link; links, buttons and form controls in `leading`, `subtitle` or `meta` stay clickable on their own. */
 export type ListItemProps = Omit<ComponentProps<'li'>, 'title'> & {
   /** Shown before the title, such as an icon or avatar. */
   leading?: ReactNode;

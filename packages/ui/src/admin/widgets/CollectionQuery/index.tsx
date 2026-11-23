@@ -11,8 +11,10 @@ import { OptionPill } from '../../../components/option-pill.js';
 import { Value } from '../../../components/value.js';
 import { getFieldKind } from '../../fields/kind.js';
 import { getOptionColors, pickOptionColor } from '../../fields/optionColor.js';
+import { getPath } from '../../views/cells.js';
 import { getRuntimeViews } from '../../views/collectionViews.js';
 import { RowDate } from './RowDate.client.js';
+import { RowDoneCheck } from './RowDoneCheck.client.js';
 import { isDateSort, pickRowFacts, type RowFact } from './rows.js';
 
 type WidgetData = {
@@ -73,6 +75,11 @@ export async function CollectionQueryWidget(props: Props) {
 
   const titleField = collection.admin.useAsTitle || 'id';
   const dateSort = isDateSort({ fields, sortField });
+  const useAsDone = readUseAsDone(collection.admin.custom);
+  const canToggleDone = useAsDone
+    ? Boolean(await collection.access.update({ req, slug: relatedCollection }))
+    : false;
+
   const plural = getTranslation(collection.labels.plural, i18n);
   const facts = pickRowFacts({
     fields,
@@ -101,6 +108,17 @@ export async function CollectionQueryWidget(props: Props) {
             {docs.map((doc) => {
               return (
                 <ListItem
+                  leading={
+                    useAsDone ? (
+                      <RowDoneCheck
+                        collectionSlug={relatedCollection}
+                        disabled={!canToggleDone}
+                        done={getPath(doc, useAsDone) === true}
+                        id={doc.id as number | string}
+                        useAsDone={useAsDone}
+                      />
+                    ) : null
+                  }
                   href={formatAdminURL({
                     adminRoute,
                     path: `/collections/${relatedCollection}/${String(doc.id)}`,
@@ -143,6 +161,12 @@ export async function CollectionQueryWidget(props: Props) {
 }
 
 const STAMP_FIELDS = new Set(['createdAt', 'updatedAt']);
+
+function readUseAsDone(custom: unknown): string | undefined {
+  const frogbot = (custom as { frogbot?: { useAsDone?: unknown } } | undefined)?.frogbot;
+
+  return typeof frogbot?.useAsDone === 'string' ? frogbot.useAsDone : undefined;
+}
 
 const SORTABLE = new Set<string>(sortableFieldTypes);
 
