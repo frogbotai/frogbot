@@ -217,6 +217,8 @@ test.describe('the task panel', () => {
     const errors = watchErrors(page);
     const task = await findTask(page, 'Design the pricing page');
 
+    await page.setViewportSize({ width: 1440, height: 1500 });
+
     await openTask(page, task.id, 'Design the pricing page', '/board');
     await expect(bar(page).getByRole('button', { name: 'Mark complete' })).toBeVisible();
     await expect(panel(page).locator('#field-completed')).toHaveCount(0);
@@ -234,7 +236,10 @@ test.describe('the task panel', () => {
     await expect(panel(page)).toContainText(/pricing-notes(-\d+)?\.txt/);
     await expect(panel(page).locator('.fb-pill-tabs')).toBeVisible();
     await expect(panel(page).locator('.fb-comments__item')).toHaveCount(2);
-    await expect(footer(page).locator('.fb-comments--pinned')).toBeVisible();
+    await expect(
+      footer(page).locator('.fb-comments--pinned [contenteditable="true"]'),
+    ).toBeVisible();
+    await expect(panel(page).locator('.fb-pill-tabs')).toBeInViewport();
     await shootPanel(page, '00-baseline-open-task');
 
     await row(page, 'dueDate').locator('input').hover();

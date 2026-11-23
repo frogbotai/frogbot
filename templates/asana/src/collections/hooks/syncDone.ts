@@ -2,6 +2,7 @@ import type {
   CollectionBeforeChangeHook,
   CollectionBeforeValidateHook,
 } from 'frogbot';
+import { APIError } from 'frogbot';
 
 type TaskData = { completed?: boolean | null; status?: string | null };
 
@@ -34,24 +35,61 @@ export const syncDoneHook: CollectionBeforeChangeHook = ({
   originalDoc,
 }) => syncDone(data, originalDoc);
 
-/** A subtask belongs to its parent's project, so `+` on a task needs no project pick. */
-export const inheritProject: CollectionBeforeValidateHook = async ({
+/** The id of a relationship value, populated or not. */
+export const relationId = (value: unknown): number | string | undefined =>
+  typeof value === 'object' && value !== null && 'id' in value
+    ? (value.id as number | string)
+    : ((value as number | string | null | undefined) ?? undefined);
+
+/**
+ * A subtask takes its parent's project, so `+` on a task needs no project pick, and a task can't
+ * sit under one of its own subtasks.
+ */
+export const followParent: CollectionBeforeValidateHook = async ({
   data,
   originalDoc,
   req,
 }) => {
-  const parent = data?.parent === undefined ? originalDoc?.parent : data.parent;
-  const id = typeof parent === 'object' && parent !== null ? parent.id : parent;
+  const id = relationId(
+    data?.parent === undefined ? originalDoc?.parent : data.parent,
+  );
 
-  if (!data || id === null || id === undefined) return data;
+  if (!data || id === undefined) return data;
 
-  const doc = await req.frogbot.findByID({
-    collection: 'tasks',
-    id,
-    depth: 0,
-    disableErrors: true,
-    req,
-  });
+  const find = (task: number | string) =>
+    req.frogbot.findByID({
+      collection: 'tasks',
+      id: task,
+      depth: 0,
+      disableErrors: true,
+      req,
+    });
 
-  return doc ? { ...data, project: doc.project } : data;
+  const parent = await find(id);
+
+  if (!parent) return data;
+
+  const self = relationId(originalDoc?.id);
+  const seen = new Set<number | string>();
+
+  let ancestor: typeof parent | null = parent;
+
+  while (self !== undefined && ancestor && !seen.has(ancestor.id)) {
+    if (ancestor.id === self) {
+      throw new APIError(
+        "A task can't be a subtask of itself or of its own subtask.",
+        400,
+        undefined,
+        true,
+      );
+    }
+
+    seen.add(ancestor.id);
+
+    const next = relationId(ancestor.parent);
+
+    ancestor = next === undefined ? null : await find(next);
+  }
+
+  return { ...data, project: parent.project };
 };

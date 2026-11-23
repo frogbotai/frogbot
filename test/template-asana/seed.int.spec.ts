@@ -230,6 +230,23 @@ describe('asana template seed', () => {
     expect(await counts()).toEqual(full);
   });
 
+  it('undoes a seed that fails after the comments are added', async () => {
+    const { headers } = await signUp(ownerCredentials);
+    const create = booted.frogbot.create.bind(booted.frogbot);
+    let taskCreates = 0;
+
+    vi.spyOn(booted.frogbot, 'create').mockImplementation((args) => {
+      if (args.collection === 'tasks' && ++taskCreates === 6) {
+        return Promise.reject(new Error('connection lost after comments'));
+      }
+
+      return create(args);
+    });
+
+    expect((await seed(headers)).status).toBe(500);
+    expect(await counts()).toEqual(empty);
+  });
+
   it('seeds in production too, and refuses a second seed there', async () => {
     const { headers } = await signUp(ownerCredentials);
 

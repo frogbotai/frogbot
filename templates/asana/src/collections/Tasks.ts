@@ -4,12 +4,7 @@ import type { CollectionConfig, Where } from 'frogbot';
 import { autonumberField, autonumberKeyField } from 'frogbot';
 
 import { reassignAccess, recordAccess } from '../roles';
-import { inheritProject, syncDoneHook } from './hooks/syncDone';
-
-const relationId = (value: unknown) =>
-  typeof value === 'object' && value !== null && 'id' in value
-    ? value.id
-    : value;
+import { followParent, relationId, syncDoneHook } from './hooks/syncDone';
 
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
@@ -49,7 +44,7 @@ export const Tasks: CollectionConfig = {
     ],
   },
   hooks: {
-    beforeValidate: [inheritProject],
+    beforeValidate: [followParent],
     beforeChange: [syncDoneHook],
   },
   fields: [

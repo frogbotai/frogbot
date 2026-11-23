@@ -42,7 +42,7 @@ describe('asana template roles', () => {
 
     return {
       create: (collection: CollectionSlug, data: Record<string, unknown>) =>
-        frogbot.create({ collection, data, ...options }) as Promise<Doc>,
+        (frogbot.create as (args: object) => Promise<Doc>)({ collection, data, ...options }),
       update: (collection: CollectionSlug, id: Doc['id'], data: Record<string, unknown>) =>
         frogbot.update({ collection, id, data, ...options } as never) as Promise<Doc>,
       delete: (collection: CollectionSlug, id: Doc['id']) =>
@@ -138,6 +138,9 @@ describe('asana template roles', () => {
     await expect(
       as(member).update('tasks', elsewhere.id, { parent: elsewhere.id }),
     ).rejects.toThrow();
+    await expect(as(member).update('tasks', parent.id, { parent: subtask.id })).rejects.toThrow(
+      "A task can't be a subtask of itself or of its own subtask.",
+    );
   });
 
   it('keeps a member from reassigning their task, and lets a manager do it', async () => {
