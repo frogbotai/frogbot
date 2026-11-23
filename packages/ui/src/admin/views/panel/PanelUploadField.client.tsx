@@ -149,7 +149,10 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
   };
 
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const picked = [...(event.target.files ?? [])];
+    const room =
+      hasMany && typeof field.maxRows === 'number' ? field.maxRows - latestIds.current.length : 1;
+
+    const picked = [...(event.target.files ?? [])].slice(0, hasMany ? Math.max(room, 0) : 1);
 
     event.target.value = '';
     if (!picked.length) return;
