@@ -18,7 +18,7 @@ export type ValueProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children'> &
   ValueFormatOptions & {
     /** Shown when the value is empty. Default nothing, so empty cells stay blank. */
     empty?: string;
-    /** A number, a date, an ISO date string, or `null`. `percent` takes 0.42 for 42%; `duration` takes seconds. */
+    /** A number, a date, an ISO date string, plain text shown as is, or `null`. `percent` takes 0.42 for 42%; `duration` takes seconds. */
     value: Date | null | number | string | undefined;
   };
 
@@ -35,6 +35,8 @@ const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 const NUMERIC = /^\s*-?\d+(\.\d+)?\s*$/;
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;
+
 function toDate(value: Date | number | string): Date {
   if (value instanceof Date) return value;
 
@@ -45,12 +47,12 @@ function toDate(value: Date | number | string): Date {
   return new Date(value);
 }
 
-function kindOf(value: Date | number | string, format?: ValueFormat): ValueFormat {
+function kindOf(value: Date | number | string, format?: ValueFormat): ValueFormat | 'text' {
   if (format) return format;
 
-  return typeof value === 'number' || (typeof value === 'string' && NUMERIC.test(value))
-    ? 'number'
-    : 'date';
+  if (typeof value === 'number' || NUMERIC.test(String(value))) return 'number';
+
+  return value instanceof Date || ISO_DATE.test(value) ? 'date' : 'text';
 }
 
 function relative(date: Date, now: Date | number, locale?: string): string {
@@ -75,6 +77,17 @@ function duration(seconds: number): string {
   return `${sign}${minutes}:${rest}`;
 }
 
+function formatNumber(
+  number: number,
+  locale: string | undefined,
+  options: Intl.NumberFormatOptions,
+): string {
+  const format = new Intl.NumberFormat(locale, options);
+  const zero = format.format(0);
+
+  return format.format(Math.abs(number)) === zero ? zero : format.format(number);
+}
+
 function sameYear(date: Date, now: Date | number): boolean {
   return date.getFullYear() === new Date(now).getFullYear();
 }
@@ -90,6 +103,8 @@ export function formatValue(
   if (value === null || value === undefined || value === '') return '';
 
   const kind = kindOf(value, format);
+
+  if (kind === 'text') return String(value);
 
   if (kind === 'date' || kind === 'datetime' || kind === 'relative') {
     const date = toDate(value);
@@ -115,26 +130,22 @@ export function formatValue(
   if (kind === 'duration') return duration(number);
 
   if (kind === 'percent') {
-    return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(
-      number,
-    );
+    return formatNumber(number, locale, { style: 'percent', maximumFractionDigits: 1 });
   }
 
   if (kind === 'currency') {
-    return new Intl.NumberFormat(locale, {
+    return formatNumber(number, locale, {
       style: 'currency',
       currency,
       maximumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    }).format(number);
+    });
   }
 
   if (kind === 'compact') {
-    return new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }).format(
-      number,
-    );
+    return formatNumber(number, locale, { notation: 'compact', maximumFractionDigits: 1 });
   }
 
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(number);
+  return formatNumber(number, locale, { maximumFractionDigits: 2 });
 }
 
 /** A formatted number, amount, percent, date or duration, in tabular figures. */

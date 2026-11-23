@@ -24,6 +24,8 @@ function autoTone(ratio: number): StatusTone {
 
 /** A score or progress from 0 to a maximum, as a thin bar. */
 export function Meter({
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
   className,
   label,
   max = 100,
@@ -49,14 +51,15 @@ export function Meter({
           )}
           {valueShown && (
             <span className="fb-meter__value">
-              {Math.round(clamped)}
+              {max === 100 ? Math.round(clamped) : Math.round(clamped * 10) / 10}
               {max === 100 ? '' : ` / ${max}`}
             </span>
           )}
         </div>
       )}
       <div
-        aria-labelledby={label ? labelId : undefined}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy ?? (label ? labelId : undefined)}
         aria-valuemax={max}
         aria-valuemin={0}
         aria-valuenow={clamped}

@@ -18,8 +18,8 @@ export type MediaProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
 
 /** An image in a fixed-shape frame, with a placeholder when it's missing and an optional corner label. */
 export function Media({ alt, badge, className, ratio = '16/9', src, style, ...props }: MediaProps) {
-  const [failed, setFailed] = useState(false);
-  const shown = src && !failed;
+  const [failed, setFailed] = useState<string>();
+  const shown = src && src !== failed;
 
   return (
     <div
@@ -32,7 +32,7 @@ export function Media({ alt, badge, className, ratio = '16/9', src, style, ...pr
           alt={alt}
           className="fb-media__image"
           loading="lazy"
-          onError={() => setFailed(true)}
+          onError={() => setFailed(src)}
           src={src}
         />
       ) : (

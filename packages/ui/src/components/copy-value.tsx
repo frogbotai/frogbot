@@ -8,13 +8,15 @@ import CopyIcon from '../icons/icons/CopyIcon.js';
 import { copyText } from '../lib/copy-text.js';
 
 export type CopyValueProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
-  /** Hide all but the last four characters, for keys and secrets. */
+  /** Hide all but the last four characters, for keys and secrets. Values of 8 characters or fewer are hidden whole. */
   mask?: boolean;
   /** The text that is copied and shown. */
   value: string;
 };
 
 function masked(value: string): string {
+  if (value.length <= 8) return '•'.repeat(8);
+
   return `${'•'.repeat(Math.min(Math.max(value.length - 4, 4), 12))}${value.slice(-4)}`;
 }
 

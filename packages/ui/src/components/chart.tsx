@@ -36,12 +36,12 @@ const WIDTH = 600;
 const AXIS = 40;
 
 function niceScale(low: number, high: number): { max: number; min: number; step: number } {
-  const rough = Math.max(high - low, 1) / 4;
+  const rough = (high - low || 1) / 4;
   const power = 10 ** Math.floor(Math.log10(rough));
   const step = ([1, 2, 5, 10].find((factor) => factor * power >= rough) ?? 10) * power;
-  const min = Math.floor(low / step) * step;
+  const min = Math.floor(low / step + 1e-9) * step;
 
-  return { max: Math.max(Math.ceil(high / step) * step, min + step), min, step };
+  return { max: Math.max(Math.ceil(high / step - 1e-9) * step, min + step), min, step };
 }
 
 function finite(value: number | undefined): number {
@@ -62,9 +62,10 @@ function points(values: number[], width: number, height: number, max: number, mi
 
 /** A small trend line with no axes, for stat tiles and table cells. */
 export function Sparkline({ className, data, height = 24, width = 80, ...props }: SparklineProps) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const up = data.length > 1 && data[data.length - 1] >= data[0];
+  const values = data.filter((value) => Number.isFinite(value));
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const up = values.length > 1 && values[values.length - 1] >= values[0];
 
   return (
     <svg
@@ -76,18 +77,20 @@ export function Sparkline({ className, data, height = 24, width = 80, ...props }
       width={width}
       {...props}
     >
-      <polyline className="fb-sparkline__line" points={points(data, width, height, max, min)} />
+      <polyline className="fb-sparkline__line" points={points(values, width, height, max, min)} />
     </svg>
   );
 }
 
 function Bars({
+  format,
   labels,
   series,
   stacked,
   plot,
   y: toY,
 }: {
+  format?: ValueFormatOptions;
   labels: string[];
   plot: number;
   y: (value: number) => number;
@@ -128,7 +131,7 @@ function Bars({
               x={x}
               y={y}
             >
-              <title>{`${label} · ${item.name}: ${raw}`}</title>
+              <title>{`${label} · ${item.name}: ${formatValue(raw, format)}`}</title>
             </rect>
           );
         })}
@@ -204,7 +207,7 @@ export function Chart({
             <g key={tick}>
               <line className="fb-chart__grid" x1={AXIS} x2={WIDTH} y1={y} y2={y} />
               <text className="fb-chart__axis" textAnchor="end" x={AXIS - 8} y={y + 4}>
-                {formatValue(tick, { format: 'compact', ...format })}
+                {formatValue(tick, { format: tickStep < 1 ? 'number' : 'compact', ...format })}
               </text>
             </g>
           );
@@ -223,7 +226,14 @@ export function Chart({
           ),
         )}
         {type === 'bar' ? (
-          <Bars labels={labels} plot={plot} series={series} stacked={stacked} y={toY} />
+          <Bars
+            format={format}
+            labels={labels}
+            plot={plot}
+            series={series}
+            stacked={stacked}
+            y={toY}
+          />
         ) : (
           series.map((item, index) => (
             <g className={`fb-chart__series-${index + 1}`} key={index}>
