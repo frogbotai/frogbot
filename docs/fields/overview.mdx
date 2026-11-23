@@ -858,7 +858,7 @@ export const Price: Field = {
 }
 ```
 
-For dates written as Asana writes them, "Nov 24", with the year only when it isn't this year, point a date field's `Cell` at `@frogbotai/ui/admin#ShortDateCell`. An empty date shows nothing. Board and Gallery cards always show dates this way.
+For dates written as Asana writes them, "Nov 24", with the year only when it isn't this year, point a date field's `Cell` at `@frogbotai/ui/admin#ShortDateCell`. An empty date shows nothing. Board cards show day-only dates this way unless the field sets its own `displayFormat`.
 
 A custom `Cell` appears only in the List view; [Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show FrogBot's built-in display for the field. To draw a field the same way in a custom Board `Card` or Calendar `Event`, render `FieldCell` from `@frogbotai/ui/admin` with the Cell props below.
 

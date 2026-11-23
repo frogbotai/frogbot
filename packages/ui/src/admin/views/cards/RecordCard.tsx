@@ -8,6 +8,7 @@ import { formatDocTitle } from '@payloadcms/ui/shared';
 import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
+import { isShortDate } from '../../fields/shortDate.js';
 import { ShortDateCell } from '../../fields/ShortDateCell/index.client.js';
 import { getPath } from '../cells.js';
 import { DoneCheck } from '../records/DoneCheck.client.js';
@@ -92,7 +93,7 @@ export function RecordCard<TRow extends CardRow>({
         <div className="fb-card__title">{title}</div>
       </div>
       {cardColumns.map(({ accessor, field }) => {
-        const Cell = field.type === 'date' ? ShortDateCell : FieldCell;
+        const Cell = viewType === 'board' && isShortDate(field) ? ShortDateCell : FieldCell;
 
         return (
           <div className="fb-card__field" key={accessor}>

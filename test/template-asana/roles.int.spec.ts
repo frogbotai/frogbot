@@ -99,6 +99,16 @@ describe('asana template roles', () => {
     const cleared = await as(admin).update('users', member.id, { name: '' });
 
     expect(cleared.name).toBe('member@example.com');
+
+    const moved = await as(admin).update('users', member.id, { email: 'mia@example.com' });
+
+    expect(moved).toMatchObject({ email: 'mia@example.com', name: 'mia@example.com' });
+
+    await as(admin).update('users', member.id, { name: 'Mia Park' });
+
+    const kept = await as(admin).update('users', member.id, { email: 'park@example.com' });
+
+    expect(kept.name).toBe('Mia Park');
   });
 
   it('lets managers run projects and members only read them', async () => {

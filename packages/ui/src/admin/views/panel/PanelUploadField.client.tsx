@@ -52,7 +52,7 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
   const { config, getEntityConfig } = useConfig();
   const { permissions } = useAuth();
   const { i18n } = useTranslation();
-  const { id } = useDocumentInfo();
+  const { hasSavePermission, id, isTrashed } = useDocumentInfo();
   const { submit } = useForm();
   const layout = usePanelLayout();
   const { setValue, value } = useField<unknown>({ path });
@@ -105,7 +105,7 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
 
   if (!field || !relationTo) return null;
 
-  const readOnly = Boolean(field.admin?.readOnly);
+  const readOnly = Boolean(field.admin?.readOnly) || !hasSavePermission || Boolean(isTrashed);
   const canCreate =
     !readOnly &&
     field.admin?.allowCreate !== false &&

@@ -1,3 +1,5 @@
+import type { ClientField } from 'payload';
+
 /**
  * A date as Asana writes it: "Nov 24" this year, "Nov 24, 2027" in any other. Returns `undefined`
  * for a value that isn't a valid date.
@@ -31,4 +33,13 @@ export function shortDateDisplayFormat(value: unknown, now = new Date()): string
   return date && !Number.isNaN(date.getTime()) && date.getFullYear() !== now.getFullYear()
     ? 'MMM d, yyyy'
     : 'MMM d';
+}
+
+/** Whether a field is a day-only date with no `displayFormat` of its own, so a short date fits. */
+export function isShortDate(field: ClientField): boolean {
+  if (field.type !== 'date') return false;
+
+  const date = (field.admin?.date ?? {}) as { displayFormat?: string; pickerAppearance?: string };
+
+  return !date.displayFormat && [undefined, 'default', 'dayOnly'].includes(date.pickerAppearance);
 }

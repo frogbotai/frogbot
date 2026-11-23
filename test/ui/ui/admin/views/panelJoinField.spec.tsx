@@ -198,6 +198,68 @@ describe('PanelJoinField', () => {
     expect(screen.queryByRole('textbox', { name: 'New todo name' })).toBeNull();
   });
 
+  it('saves one record when Enter is pressed twice before the save returns', async () => {
+    let finish: () => void = () => undefined;
+
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method !== 'POST') return respond(url, init);
+
+      const doc = { id: 9, ...(JSON.parse(String(init.body)) as object) };
+
+      return new Promise((resolve) => {
+        finish = () => resolve({ json: () => Promise.resolve({ doc }), ok: true });
+      });
+    });
+
+    render(<PanelJoinField path="subtasks" />);
+    await screen.findByRole('button', { name: 'Spec the cap rules' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+
+    const input = screen.getByRole('textbox', { name: 'New todo name' });
+
+    fireEvent.change(input, { target: { value: 'Write the FAQ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await act(async () => {
+      finish();
+      await Promise.resolve();
+    });
+
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1);
+  });
+
+  it('lists a record added inline once after Show more', async () => {
+    mocks.paged = true;
+    render(<PanelJoinField path="subtasks" />);
+    await screen.findByRole('button', { name: 'Spec the cap rules' });
+
+    const input = await addInline('Write the FAQ');
+
+    await screen.findByRole('button', { name: 'Write the FAQ' });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      const page = new URL(url, 'http://localhost').searchParams.get('page');
+
+      if (init?.method || page !== '2') return respond(url, init);
+
+      return Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            docs: [rows[1], { id: 9, parent: 1, title: 'Write the FAQ' }],
+            hasNextPage: false,
+          }),
+        ok: true,
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    await screen.findByRole('button', { name: 'Price the tiers' });
+
+    expect(screen.getAllByRole('button', { name: 'Write the FAQ' })).toHaveLength(1);
+  });
+
   it('opens the create form with the title filled when the server refuses the inline add', async () => {
     mocks.refuse = true;
     render(<PanelJoinField path="subtasks" />);

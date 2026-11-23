@@ -8,7 +8,7 @@ import type {
   SanitizedFieldsPermissions,
 } from 'payload';
 
-import { shortDateDisplayFormat } from '../../fields/shortDate.js';
+import { isShortDate, shortDateDisplayFormat } from '../../fields/shortDate.js';
 import { usePanelLayout } from './PanelConfig.client.js';
 
 function permissionsAt(
@@ -28,12 +28,9 @@ function permissionsAt(
 function useShortDate(field: ClientField, path: string): ClientField {
   const value = useFormFields(([fields]) => (field.type === 'date' ? fields[path]?.value : null));
 
-  if (field.type !== 'date') return field;
+  if (field.type !== 'date' || !isShortDate(field)) return field;
 
-  const date = (field.admin?.date ?? {}) as { displayFormat?: string; pickerAppearance?: string };
-  const dayOnly = [undefined, 'default', 'dayOnly'].includes(date.pickerAppearance);
-
-  if (date.displayFormat || !dayOnly) return field;
+  const date: object = field.admin?.date ?? {};
 
   return {
     ...field,

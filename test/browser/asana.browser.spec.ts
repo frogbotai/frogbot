@@ -156,6 +156,7 @@ const panelShots = path.join(
 );
 
 const created: number[] = [];
+const createdUsers: number[] = [];
 
 const panel = (page: Page) => page.locator('.fb-record-panel');
 const bar = (page: Page) => page.locator('.fb-record-panel-header');
@@ -210,6 +211,8 @@ test.describe('the task panel', () => {
 
   test.afterEach(async ({ page }) => {
     for (const id of created.splice(0).reverse()) await page.request.delete(`/api/tasks/${id}`);
+
+    for (const id of createdUsers.splice(0)) await page.request.delete(`/api/users/${id}`);
   });
 
   test('a seeded task opens like Asana’s, and a subtask opens in place with a way back', async ({
@@ -355,6 +358,45 @@ test.describe('the task panel', () => {
         async () => ((await readTask(page, task.id)) as { attachments?: unknown[] }).attachments,
       )
       .toEqual([]);
+  });
+
+  test('a member who can’t edit the task gets no attachment + or remove', async ({
+    browser,
+    page,
+  }) => {
+    const email = `member-${Date.now()}@example.com`;
+    const made = await page.request.post('/api/users', {
+      data: { email, password: 'frogbot-test', roles: ['member'] },
+    });
+
+    expect(made.ok()).toBe(true);
+
+    const { doc: user } = (await made.json()) as { doc: { id: number } };
+
+    createdUsers.push(user.id);
+
+    const task = await findTask(page, 'Design the pricing page');
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+      timezoneId,
+    });
+
+    const member = await context.newPage();
+    const login = await member.request.post('/api/users/login', {
+      data: { email, password: 'frogbot-test' },
+    });
+
+    expect(login.ok()).toBe(true);
+    expect((await member.request.patch(`/api/tasks/${task.id}`, { data: {} })).status()).toBe(403);
+
+    await openTask(member, task.id, 'Design the pricing page');
+
+    const section = panel(member).locator('.fb-panel-upload');
+
+    await expect(section.locator('.fb-panel-upload__file')).toHaveCount(1);
+    await expect(section.getByRole('button', { name: 'Add file' })).toHaveCount(0);
+    await expect(section.getByRole('button', { name: /^Remove/ })).toHaveCount(0);
+    await context.close();
   });
 
   test('the pinned box stays put while the task scrolls, and a post shows in the tab', async ({

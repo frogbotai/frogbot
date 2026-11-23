@@ -84,6 +84,7 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   const [adding, setAdding] = useState(false);
   const loadingRef = useRef(false);
   const draftRef = useRef<HTMLInputElement>(null);
+  const addingRef = useRef(false);
   const drafting = draft !== undefined;
 
   const on = field?.on;
@@ -118,7 +119,14 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
 
         const result = (await response.json()) as { docs: Row[]; hasNextPage: boolean };
 
-        setRows((current) => (pageToLoad === 1 ? result.docs : [...current, ...result.docs]));
+        setRows((current) => {
+          if (pageToLoad === 1) return result.docs;
+
+          const seen = new Set(current.map((row) => row.id));
+
+          return [...current, ...result.docs.filter((row) => !seen.has(row.id))];
+        });
+
         setHasMore(result.hasNextPage);
         setPage(pageToLoad);
       } finally {
@@ -157,6 +165,9 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
   const add = async (title: string, next: boolean) => {
     const data = { ...createData, ...setPath(titleField!, title) };
 
+    if (addingRef.current) return;
+
+    addingRef.current = true;
     setAdding(true);
 
     try {
@@ -187,6 +198,7 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
       notify({ doc, operation: 'create', type: 'saved' });
       setDraft(next ? '' : undefined);
     } finally {
+      addingRef.current = false;
       setAdding(false);
     }
   };

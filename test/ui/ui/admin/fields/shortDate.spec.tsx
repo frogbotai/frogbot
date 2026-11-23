@@ -1,7 +1,9 @@
+import type { ClientField } from 'payload';
 import { describe, expect, it } from 'vitest';
 
 import {
   formatShortDate,
+  isShortDate,
   shortDateDisplayFormat,
 } from '../../../../../packages/ui/src/admin/fields/shortDate.js';
 
@@ -29,5 +31,20 @@ describe('shortDateDisplayFormat', () => {
     expect(shortDateDisplayFormat(new Date(2026, 4, 1), now)).toBe('MMM d');
     expect(shortDateDisplayFormat(new Date(2027, 4, 1), now)).toBe('MMM d, yyyy');
     expect(shortDateDisplayFormat(undefined, now)).toBe('MMM d');
+  });
+});
+
+describe('isShortDate', () => {
+  const date = (admin?: object) => ({ name: 'due', type: 'date', admin }) as ClientField;
+
+  it('takes day-only dates with no display format of their own', () => {
+    expect(isShortDate(date())).toBe(true);
+    expect(isShortDate(date({ date: { pickerAppearance: 'dayOnly' } }))).toBe(true);
+  });
+
+  it('leaves dates with a time or their own format, and other fields, alone', () => {
+    expect(isShortDate(date({ date: { pickerAppearance: 'dayAndTime' } }))).toBe(false);
+    expect(isShortDate(date({ date: { displayFormat: 'd MMM yyyy' } }))).toBe(false);
+    expect(isShortDate({ name: 'title', type: 'text' })).toBe(false);
   });
 });
