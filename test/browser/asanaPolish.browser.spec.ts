@@ -38,6 +38,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterEach(async ({ page }) => {
+  for (const key of ['collection-tasks', 'collection-tasks-view-list']) {
+    await page.request.delete(`/api/payload-preferences/${key}`);
+  }
+
   for (const id of tasks.splice(0)) await page.request.delete(`/api/tasks/${id}`);
 
   for (const { context, id } of members.splice(0)) {
@@ -235,4 +239,90 @@ test('list rows show the done circle, and the selection box only on hover or sel
   await expect(box(second)).toHaveCSS('opacity', '1');
 
   await box(first).locator('input').uncheck();
+});
+
+test('a long title in a grouped list ends in an ellipsis, not a lone “…”', async ({ page }) => {
+  const parent = await findTask(page, 'Design the pricing page');
+  const name = 'Write the onboarding checklist for every new enterprise customer we sign';
+  const response = await page.request.post('/api/tasks', {
+    data: { project: parent.project, status: 'todo', title: name },
+  });
+
+  tasks.push(((await response.json()) as { doc: Task }).doc.id);
+
+  await page.goto('/collections/tasks?groupBy=status');
+  await expect(page.locator('.fb-list-grid .table table')).not.toHaveCount(1);
+
+  const link = page
+    .locator('.collection-view--list tbody > tr', { hasText: name })
+    .locator('td.cell-title > :not(.fb-list-done)');
+
+  const shown = await link.evaluate((element) => {
+    const cell = element.parentElement!.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+
+    return {
+      ellipsis: getComputedStyle(element).textOverflow,
+      inside: box.right <= cell.right + 1,
+      truncated: element.scrollWidth > element.clientWidth,
+      width: box.width,
+    };
+  });
+
+  expect(shown).toMatchObject({ ellipsis: 'ellipsis', inside: true, truncated: true });
+  expect(shown.width).toBeGreaterThan(100);
+});
+
+test('a column resized narrower than its text clips it instead of running over the next one', async ({
+  page,
+}) => {
+  await page.request.post('/api/payload-preferences/collection-tasks-view-list', {
+    data: { value: { widths: { title: 160 } } },
+  });
+
+  await page.goto('/collections/tasks');
+
+  const cell = page
+    .locator('.collection-view--list tbody > tr', { hasText: 'Set up redirects from the old URLs' })
+    .locator('td.cell-title');
+
+  const shown = await cell.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const next = element.nextElementSibling!.getBoundingClientRect();
+    const text = element.querySelector<HTMLElement>(':scope > :not(.fb-list-done)')!;
+
+    return {
+      clipped: getComputedStyle(element).overflowX === 'hidden',
+      ellipsis: getComputedStyle(text).textOverflow,
+      textInside: text.getBoundingClientRect().right <= next.left + 1,
+      width: Math.round(box.width),
+    };
+  });
+
+  expect(shown).toMatchObject({
+    clipped: true,
+    ellipsis: 'ellipsis',
+    textInside: true,
+    width: 160,
+  });
+});
+
+test('selecting a row in one group shows every group’s selection boxes', async ({ page }) => {
+  await page.goto('/collections/tasks?groupBy=status');
+
+  const groups = page.locator('.fb-list-grid .table');
+
+  await expect(groups).not.toHaveCount(1);
+
+  const box = (group: number) =>
+    groups.nth(group).locator('tbody > tr').first().locator('td.cell-_select .select-row');
+
+  await page.mouse.move(0, 0);
+  await expect(box(1)).toHaveCSS('opacity', '0');
+
+  await box(0).locator('input').check();
+  await page.mouse.move(0, 0);
+  await expect(box(1)).toHaveCSS('opacity', '1');
+
+  await box(0).locator('input').uncheck();
 });
