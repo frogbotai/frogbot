@@ -15,6 +15,11 @@ export function ReportView({ children, className, ...props }: ReportViewProps) {
     <div className={`fb-report${className ? ` ${className}` : ''}`} {...props}>
       <ReactMarkdown
         components={{
+          a: ({ children: text, node: _, ...link }) => (
+            <a className="fb-report__link" {...link}>
+              {text}
+            </a>
+          ),
           table: ({ node: _, ...table }) => (
             <div className="fb-report__table-wrap">
               <table {...table} />

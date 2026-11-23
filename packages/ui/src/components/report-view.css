@@ -44,9 +44,15 @@
     margin-top: 0.25em;
   }
 
-  .fb-report a {
-    color: var(--color-text-brand);
+  .fb-report__link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-strong);
     text-underline-offset: 2px;
+  }
+
+  .fb-report__link:hover {
+    text-decoration-color: currentcolor;
   }
 
   .fb-report strong {
