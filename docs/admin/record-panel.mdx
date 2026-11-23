@@ -152,8 +152,8 @@ The edit page keeps the usual join table, and so do joins to other collections a
 
 An [upload field](/fields/upload) to one collection renders in the panel as a section, as Asana shows attachments: its label as the heading with **+**, and a row per file. No extra config.
 
-- **+** picks files and uploads them to the field's collection. It shows only with create access on that collection, and `admin.allowCreate: false` hides it.
-- A row opens its file in a new tab. Hovering it shows ✕, which removes the file from the field and leaves the file itself in its collection.
+- **+** picks files and uploads them to the field's collection. It shows only with edit access to the record and create access on that collection, and `admin.allowCreate: false` hides it.
+- A row opens its file in a new tab. With edit access, hovering it shows ✕, which removes the file from the field and leaves the file itself in its collection.
 - On a saved record each change saves at once, with no toast.
 
 The edit page and drawers keep the standard upload box, and so do upload fields to several collections and ones that set their own `admin.components.Field`.
