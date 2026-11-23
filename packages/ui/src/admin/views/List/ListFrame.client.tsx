@@ -30,6 +30,7 @@ import { CellToggleProvider } from './cellEdit/CellToggle.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
 import { ListGrid, ListGridProvider, type ListGridSettings } from './grid/ListGrid.client.js';
 import { RowHeightControl } from './grid/RowHeightControl.client.js';
+import { ListDoneChecks } from './ListDoneChecks.client.js';
 import { ListSummary, type ListSummaryProps } from './summary/ListSummary.client.js';
 
 /** The footer totals' setup, resolved on the server for the collection's list view. */
@@ -105,6 +106,7 @@ function useRecordRows(doneIds: string[] | undefined) {
 }
 
 function RecordRows({
+  checks,
   children,
   collectionSlug,
   doneIds,
@@ -112,6 +114,7 @@ function RecordRows({
   editableColumns,
   footer,
 }: {
+  checks: boolean;
   children: ReactNode;
   collectionSlug: string;
   doneIds?: string[];
@@ -136,6 +139,9 @@ function RecordRows({
           children
         )}
       </div>
+      {checks && doneIds ? (
+        <ListDoneChecks collectionSlug={collectionSlug} containerRef={ref} doneIds={doneIds} />
+      ) : null}
       {editableColumns?.length ? (
         <CellEditing
           cells={editableCells}
@@ -266,6 +272,7 @@ function ListFrameInner({
         >
           <RefreshOnPanelSave />
           <RecordRows
+            checks={viewType !== 'trash'}
             collectionSlug={collectionSlug}
             doneIds={doneIds}
             editableCells={editableCells}

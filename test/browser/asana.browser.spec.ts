@@ -490,3 +490,159 @@ test.describe('the task panel', () => {
     }
   });
 });
+
+const homeShots = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'test-results',
+  'asana-home',
+);
+
+test.describe('views and shell', () => {
+  const restore: Task[] = [];
+
+  test.afterEach(async ({ page }) => {
+    for (const task of restore.splice(0)) {
+      await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: task.completed } });
+    }
+  });
+
+  test('the dashboard opens on a greeting, My tasks and Projects, with no collection cards', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+
+    await prepareView(page);
+    await page.goto('/');
+
+    await expect(page.locator('.fb-welcome__heading')).toHaveText(
+      /^Good (morning|afternoon|evening), Browser$/,
+    );
+    await expect(page.locator('.fb-query-widget').getByText('My tasks')).toBeVisible();
+    await expect(page.locator('.fb-query-widget .fb-list > li').first()).toBeVisible();
+    await expect(
+      page.locator('.asana-projects__tile', { hasText: 'Website relaunch' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.asana-projects__tile', { hasText: 'Create project' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.collections, .activity-widget, .widget-wrapper:has(.collections)'),
+    ).toHaveCount(0);
+    await expect(page.locator('.welcome-widget')).toHaveCount(0);
+
+    for (const colorScheme of themes) {
+      await setAdminTheme(page, colorScheme);
+      await page.emulateMedia({ colorScheme });
+      await page.reload();
+
+      for (const width of [1280, 375]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(page.locator('.fb-welcome__heading')).toContainText('Good');
+        await expect(page.locator('.asana-projects__tile').last()).toBeVisible();
+
+        await page.screenshot({
+          animations: 'disabled',
+          fullPage: true,
+          path: path.join(homeShots, `home-${colorScheme}-${width}.png`),
+        });
+      }
+    }
+
+    expect(errors).toEqual([]);
+  });
+
+  test('board cards show an avatar and a short date with no captions, and four columns fit at 1280px', async ({
+    page,
+  }) => {
+    await prepareView(page);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/collections/tasks/board');
+
+    const card = page.locator('.frog-board__card', { hasText: 'Write the homepage copy' });
+
+    await expect(card.locator('.fb-card__meta .fb-card__avatar')).toHaveCount(1);
+    await expect(card.locator('.fb-card__avatar')).toHaveAttribute('title', 'Browser Tester');
+    await expect(card.locator('.fb-card__meta')).toHaveText(/^BT[A-Z][a-z]{2} \d{1,2}$/);
+    await expect(page.locator('.frog-board .fb-card__field-label')).toHaveCount(0);
+
+    const done = page.locator('.frog-board__column', { hasText: 'Done' }).first();
+    const last = (await done.boundingBox())!;
+    const board = (await page.locator('.frog-board').boundingBox())!;
+
+    expect(last.x + last.width).toBeLessThanOrEqual(board.x + board.width + 1);
+  });
+
+  test('a list row’s check circle completes the task, and the list shows one sort arrow', async ({
+    page,
+  }) => {
+    const task = await findTask(page, 'Write the homepage copy');
+
+    restore.push(task);
+    await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: false } });
+    await prepareView(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/collections/tasks');
+
+    const row = page.locator('tbody > tr', { hasText: 'Write the homepage copy' });
+    const check = row.locator('td.cell-title .fb-done-check');
+
+    await expect(check).toHaveAttribute('aria-pressed', 'false');
+    await check.click();
+    await expect(row).toHaveAttribute('data-done', '');
+    await expect.poll(async () => (await readTask(page, task.id)).completed).toBe(true);
+    await expect(page.locator('.fb-record-panel')).toHaveCount(0);
+
+    await row.locator('td.cell-title .fb-done-check').click();
+    await expect.poll(async () => (await readTask(page, task.id)).completed).toBe(false);
+
+    const visibleArrows = await page
+      .locator('thead .sort-column__button')
+      .evaluateAll(
+        (buttons) => buttons.filter((button) => getComputedStyle(button).opacity !== '0').length,
+      );
+
+    expect(visibleArrows).toBeLessThanOrEqual(1);
+  });
+
+  test('a completed task’s checkmark sits on its timeline bar, beside its title', async ({
+    page,
+  }) => {
+    const task = await findTask(page, 'Write the homepage copy');
+
+    restore.push(task);
+    await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: true } });
+    await prepareView(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/collections/tasks/timeline?date=${todayDate}&scale=week`);
+
+    const bar = page.locator('.frog-timeline__bar', { hasText: 'Write the homepage copy' });
+    const icon = (await bar.locator('.fb-record__done-icon').boundingBox())!;
+    const text = (await bar.locator('.collection-timeline__title-text').boundingBox())!;
+    const box = (await bar.boundingBox())!;
+
+    expect(icon.y).toBeGreaterThanOrEqual(box.y);
+    expect(icon.y + icon.height).toBeLessThanOrEqual(box.y + box.height);
+    expect(icon.x + icon.width).toBeLessThanOrEqual(text.x);
+  });
+
+  test('the sidebar lists Projects and Tasks first, and system collections under System', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/collections/tasks');
+
+    const group = page.locator('.frogbot-collections-section__group', {
+      has: page.locator('.frogbot-collections-section__group-label', { hasText: /^System$/ }),
+    });
+
+    await expect(group).toContainText('Audit Logs');
+    await expect(group).toContainText('Comments');
+    await expect(group).not.toContainText('Tasks');
+
+    const labels = await page
+      .locator('.frogbot-collections-section__group-label')
+      .allTextContents();
+
+    expect(labels.at(-1)).toBe('System');
+  });
+});

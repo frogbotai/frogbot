@@ -204,7 +204,11 @@
     min-width: 0;
   }
   .collection-timeline__title {
+    align-items: center;
+    display: inline-flex;
     font-weight: 500;
+    gap: 4px;
+    vertical-align: middle;
   }
 
   @media (pointer: coarse) {

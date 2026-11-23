@@ -68,3 +68,26 @@
     overflow-wrap: anywhere;
   }
 }
+
+@layer frogbot {
+  .fb-card__meta {
+    align-items: center;
+    color: var(--color-text-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 12px;
+    gap: 6px 10px;
+    line-height: 1.4;
+    min-width: 0;
+  }
+
+  .fb-card__fact {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .fb-card__avatar {
+    display: inline-flex;
+    flex: none;
+  }
+}

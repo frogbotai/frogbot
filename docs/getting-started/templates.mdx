@@ -35,6 +35,8 @@ Its `seed({ req, today })` takes the date the sample is arranged around, so a te
 
 ### asana
 
+The dashboard opens like Asana's Home: a greeting, **My tasks** (your open tasks by due date, each with a check circle that completes it) and **Projects** (a tile per project that opens its tasks, and **Create project** for managers). The layout is the `defaultLayout` in `src/frogbot.config.ts`.
+
 While the app has none of the template's records, the dashboard shows a **Seed your database** panel at the top. Its button calls `POST /api/seed`, which adds the sample records for whoever is signed in: three projects with tasks, every task assigned to you, and one task with subtasks, an attachment and two comments.
 
 The seed creates no user and deletes nothing, so it is safe on a deployed app, including one on Dojo. Once the template's records exist, the panel hides and the endpoint answers `409` without changing anything. To start over locally, delete the database.

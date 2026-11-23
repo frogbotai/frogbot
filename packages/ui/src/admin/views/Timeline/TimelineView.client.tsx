@@ -64,7 +64,8 @@ function readDate(row: Record<string, unknown>, path: string | undefined): strin
 function TimelineBarBody({ done, title }: { done: boolean; title: string }) {
   return (
     <span className="collection-timeline__title">
-      {done ? <CheckmarkCircleIcon className="fb-record__done-icon" size={14} /> : null} {title}
+      {done ? <CheckmarkCircleIcon className="fb-record__done-icon" size={14} /> : null}
+      <span className="collection-timeline__title-text">{title}</span>
     </span>
   );
 }

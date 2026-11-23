@@ -64,6 +64,7 @@ import { StepNavReset as StepNavReset_53ccb9913b2925da8adcdf5fd85e01f4 } from '@
 import { FolderIcon as FolderIcon_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchySidebarTabServer as HierarchySidebarTabServer_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { SettingsView as SettingsView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { ProjectsWidget as ProjectsWidget_65d7e5fba3654dc02bfa1e0ecc8497dd } from '../../components/ProjectsWidget';
 import { WelcomeWidget as WelcomeWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CollectionCards as CollectionCards_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CollectionQueryWidget as CollectionQueryWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -203,6 +204,8 @@ export const importMap = {
     HierarchySidebarTabServer_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#SettingsView':
     SettingsView_a9b31afd548db1251f21130da6e46588,
+  '/components/ProjectsWidget#ProjectsWidget':
+    ProjectsWidget_65d7e5fba3654dc02bfa1e0ecc8497dd,
   '@frogbotai/ui/admin/rsc#WelcomeWidget':
     WelcomeWidget_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#CollectionCards':

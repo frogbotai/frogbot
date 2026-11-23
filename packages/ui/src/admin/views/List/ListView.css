@@ -15,3 +15,15 @@
     border-bottom: 0;
   }
 }
+
+@layer frogbot {
+  .sort-column .sort-column__button {
+    opacity: 0;
+  }
+
+  .sort-column--sorted .sort-column__button.sort-column--active,
+  .sort-column:hover .sort-column__button,
+  .sort-column:focus-within .sort-column__button {
+    opacity: 1;
+  }
+}
