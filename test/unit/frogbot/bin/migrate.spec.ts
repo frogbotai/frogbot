@@ -209,6 +209,26 @@ describe('migrate', () => {
         "import { MigrateUpArgs, MigrateDownArgs, sql } from '@frogbotai/db-postgres'\n\nexport async function up({ db, req }: MigrateUpArgs): Promise<void> {\n}\n",
       );
     });
+
+    it.each([
+      ['--file', '@payloadcms/db-postgres/relationships-v2-v3'],
+      ['--name', '@payloadcms/db-mongodb/relationships-v2-v3'],
+    ])('refuses a predefined migration from @payloadcms through %s', async (flag, file) => {
+      await expect(migrate(['migrate:create', flag, file])).rejects.toThrow('exit:1');
+
+      expect(mocks.adapter.createMigration).not.toHaveBeenCalled();
+      expect(String(error.mock.calls[0]?.[0])).toContain(`can't use ${file}`);
+    });
+
+    it('creates from a FrogBot predefined migration', async () => {
+      await expect(
+        migrate(['migrate:create', 'upgrade', '--file', 'frogbot/migrations/upgrade-0.34']),
+      ).rejects.toThrow('exit:0');
+
+      expect(mocks.adapter.createMigration).toHaveBeenCalledWith(
+        expect.objectContaining({ file: 'frogbot/migrations/upgrade-0.34' }),
+      );
+    });
   });
 
   it('exits after migrate:status through tsx and the real SQLite adapter', async () => {
