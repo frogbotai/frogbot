@@ -89,6 +89,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
   const [loading, setLoading] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const savedRecord = useRef<string>(undefined);
   const [footer, setFooter] = useState<HTMLDivElement | null>(null);
   const panelRef = useRef(panel);
   const { save, setWidth, width } = usePanelWidth(
@@ -111,7 +112,10 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
   const shownRecord = content?.record;
 
   useLayoutEffect(() => {
-    if (shownRecord && bodyRef.current) bodyRef.current.scrollTop = 0;
+    const saved = savedRecord.current;
+
+    savedRecord.current = undefined;
+    if (shownRecord && shownRecord !== saved && bodyRef.current) bodyRef.current.scrollTop = 0;
   }, [shownRecord]);
 
   useEffect(() => {
@@ -171,7 +175,10 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     const isUpdate = current.state.mode === 'edit' && String(id) === current.state.id;
     if (!isCreate && !isUpdate) return;
 
-    if (isCreate) current.switchTo(id);
+    if (isCreate) {
+      savedRecord.current = `edit:${id}`;
+      current.switchTo(id);
+    }
 
     void fetch(
       formatAdminURL({
