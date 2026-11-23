@@ -231,36 +231,6 @@ export function repairLocalizedRows({
   return Object.keys(changed).length ? changed : null;
 }
 
-function mainLocalized(fields: readonly Field[], refs: Blocks): boolean {
-  return fields.some((field) => {
-    if (field.type === 'array' || field.type === 'blocks') return false;
-
-    if ('localized' in field && field.localized) return true;
-
-    if (field.type === 'tabs') return field.tabs.some((tab) => mainLocalized(tab.fields, refs));
-
-    return 'fields' in field && mainLocalized(field.fields, refs);
-  });
-}
-
-function mainLocalizedKeys(fields: readonly Field[], refs: Blocks): string[] {
-  return fields.flatMap((field) => {
-    if (field.type === 'tabs') {
-      return field.tabs.flatMap((tab) => {
-        if (!('name' in tab) || !tab.name) return mainLocalizedKeys(tab.fields, refs);
-
-        return tab.localized || mainLocalized(tab.fields, refs) ? [tab.name] : [];
-      });
-    }
-
-    if (!('name' in field) || !field.name) {
-      return 'fields' in field ? mainLocalizedKeys(field.fields, refs) : [];
-    }
-
-    return mainLocalized([field], refs) ? [field.name] : [];
-  });
-}
-
 function rowIds(value: unknown, ids: Set<string>): Set<string> {
   if (Array.isArray(value)) {
     for (const entry of value) {
@@ -388,17 +358,15 @@ const repairAfter: CollectionAfterChangeHook = async ({ collection, doc, operati
 
   if (!changed) return doc;
 
-  const mainKeys = [...mainLocalizedKeys(collection.fields, blocks), '_status'];
-  const data = mainKeys.some((key) => key in changed)
-    ? {
-        ...Object.fromEntries(
-          mainKeys.filter((key) => key in after).map((key) => [key, after[key]]),
-        ),
-        ...changed,
-      }
-    : changed;
+  const { id: _id, ...row } = after;
 
-  await req.payload.db.updateOne({ id, collection: collection.slug, data, locale, req });
+  await req.payload.db.updateOne({
+    id,
+    collection: collection.slug,
+    data: { ...row, ...changed },
+    locale,
+    req,
+  });
 
   return doc;
 };
