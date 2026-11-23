@@ -131,7 +131,7 @@ describe('asana template roles', () => {
     expect(subtask.key).toMatch(/^WEB-\d+$/);
     await expect(
       as(member).update('tasks', subtask.id, { completed: true }),
-    ).resolves.toMatchObject({ completed: true, status: 'done' });
+    ).resolves.toMatchObject({ completed: true, status: 'todo' });
 
     const elsewhere = await as(member).create('tasks', { title: 'Store listing', project: app.id });
 

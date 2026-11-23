@@ -47,7 +47,7 @@ const config: FrogBotConfig = {
           data: {
             title: 'Open tasks',
             relatedCollection: 'tasks',
-            where: { status: { not_equals: 'done' } },
+            where: { completed: { not_equals: true } },
             sortField: 'dueDate',
             sortDirection: 'asc',
             limit: 5,
