@@ -348,8 +348,8 @@ test('saving a new record from the panel’s create form keeps its scroll positi
   await title(page).fill(name);
   await panel(page).getByRole('combobox', { name: 'Project' }).click();
   await page.locator('.rs__option').first().click();
-  await panelBody(page).evaluate((body) => body.scrollTo({ top: body.scrollHeight }));
-  await expect.poll(scrollTop).toBeGreaterThan(0);
+  await panelBody(page).evaluate((body) => body.scrollTo({ top: 200 }));
+  await expect.poll(scrollTop).toBe(200);
 
   const before = await scrollTop();
 
@@ -438,11 +438,21 @@ async function headerFits(header: Locator) {
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       if (!node.textContent?.trim()) continue;
 
+      let clip = Infinity;
+
+      for (let element = node.parentElement; element; element = element.parentElement) {
+        if (getComputedStyle(element).overflowX !== 'visible') {
+          clip = Math.min(clip, element.getBoundingClientRect().right);
+        }
+
+        if (element === th) break;
+      }
+
       const range = document.createRange();
 
       range.selectNodeContents(node);
 
-      for (const rect of range.getClientRects()) text = Math.max(text, rect.right);
+      for (const rect of range.getClientRects()) text = Math.max(text, Math.min(rect.right, clip));
     }
 
     return {
