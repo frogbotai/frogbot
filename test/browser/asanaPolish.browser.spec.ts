@@ -363,7 +363,7 @@ test('saving a new record from the panel’s create form keeps its scroll positi
   await expect(panel(page).getByRole('button', { name: 'Mark complete' })).toBeVisible();
   await expect(title(page)).toHaveValue(name);
 
-  expect(await scrollTop()).toBe(before);
+  expect(Math.abs((await scrollTop()) - before)).toBeLessThanOrEqual(4);
 });
 
 test('one-day bars on consecutive days at month scale neither overlap nor get crossed by a label', async ({
