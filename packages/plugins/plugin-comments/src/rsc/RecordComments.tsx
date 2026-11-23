@@ -1,36 +1,8 @@
 import type { ReactNode } from 'react';
 
 import { Comments } from '../client/Comments.js';
-import { commentsCustomKey } from '../fields/comments.js';
 import { COMMENTS_LIMIT, toCommentItem } from '../shared.js';
-import type { CommentsConfig } from '../types.js';
-
-type Doc = Record<string, unknown> & { id: number | string };
-
-type AvatarSetting = 'default' | 'gravatar' | { Component: unknown } | undefined;
-
-type CommentsPayload = {
-  collections: Record<string, { config: { admin?: { useAsTitle?: string } } } | undefined>;
-  config: { admin?: { avatar?: AvatarSetting }; custom?: Record<string, unknown> };
-  importMap?: unknown;
-  find: (args: {
-    collection: string;
-    depth: number;
-    limit: number;
-    overrideAccess: false;
-    req: unknown;
-    sort: string;
-    where: Record<string, unknown>;
-  }) => Promise<{ docs: Doc[] }>;
-  findByID: (args: {
-    collection: string;
-    depth: number;
-    disableErrors: true;
-    id: number | string;
-    overrideAccess: false;
-    req: unknown;
-  }) => Promise<Doc | null>;
-};
+import { type CommentsPayload, type CommentsRequest, commentsTarget, type Doc } from './target.js';
 
 /** What `RecordComments` needs: the request, and the record to show comments for. */
 export type RecordCommentsProps = {
@@ -48,10 +20,7 @@ export type RecordCommentsProps = {
     key?: string;
     serverProps?: object;
   }) => ReactNode;
-  req: {
-    payload: CommentsPayload;
-    user?: ({ id: number | string } & Record<string, unknown>) | null;
-  };
+  req: CommentsRequest;
 };
 
 type AvatarComponent = (props: { size: number; user: Doc }) => ReactNode;
@@ -119,19 +88,12 @@ export async function RecordComments({
   renderComponent,
   req,
 }: RecordCommentsProps) {
+  const found = await commentsTarget({ collection, id, req });
   const { payload, user } = req;
-  const options = payload.config.custom?.[commentsCustomKey] as CommentsConfig | undefined;
-  const bodyField = options?.bodies[collection];
 
-  if (!user || !options || !bodyField) return null;
+  if (!found || !user) return null;
 
-  const record = await payload
-    .findByID({ collection, depth: 0, disableErrors: true, id, overrideAccess: false, req })
-    .catch(() => null);
-
-  if (!record) return null;
-
-  const since = typeof record.createdAt === 'string' ? record.createdAt : undefined;
+  const { options, schemaPath, target } = found;
 
   const { docs } = await payload
     .find({
@@ -145,13 +107,12 @@ export async function RecordComments({
         and: [
           { collection: { equals: collection } },
           { documentId: { equals: String(id) } },
-          ...(since ? [{ createdAt: { greater_than_equal: since } }] : []),
+          ...(target.since ? [{ createdAt: { greater_than_equal: target.since } }] : []),
         ],
       },
     })
     .catch(() => ({ docs: [] as Doc[] }));
 
-  const titleField = payload.collections[options.userSlug]?.config.admin?.useAsTitle;
   const authors = docs.map((doc) =>
     doc.author && typeof doc.author === 'object' ? (doc.author as Doc) : undefined,
   );
@@ -161,9 +122,9 @@ export async function RecordComments({
       avatars={customAvatars(payload, [...authors, user], renderComponent)}
       gravatar={(payload.config.admin?.avatar ?? 'gravatar') === 'gravatar'}
       heading={heading}
-      initial={docs.map((doc) => toCommentItem(doc, titleField)).reverse()}
-      schemaPath={`collection.${options.commentsSlug}.${bodyField}`}
-      target={{ collection, commentsSlug: options.commentsSlug, documentId: id, since, titleField }}
+      initial={docs.map((doc) => toCommentItem(doc, target.titleField)).reverse()}
+      schemaPath={schemaPath}
+      target={target}
       userId={user.id}
     />
   );

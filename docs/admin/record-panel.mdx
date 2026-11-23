@@ -30,8 +30,8 @@ From the top, the panel shows:
 1. The header, one bar pinned to the top, the same bar every side panel uses. On the right, always in this order: a status slot, a ••• menu, open full page and close (✕). The status slot shows one thing: **Unsaved** and **Save** while a collection without autosave has unsaved edits (and **Save** on a new record), otherwise **Mark complete** for collections with [`useAsDone`](/configuration/collections#admin-options), which saves at once and reads **Completed** in green, otherwise **Saved** for drafts autosave. Below 480 px wide, Mark complete shrinks to a check icon. The menu holds copy link, duplicate, create new, your `actions`, the last saved time and delete in red. On the left the header never repeats what you can see: nothing at rest, since the view behind the panel already names the collection (also after a reload or a shared link), and a back link (`‹ Budget feature`) when the record was opened from inside the panel. The title joins it once the body's title scrolls under the header. At narrow widths the back link and title truncate; the buttons never wrap.
 2. The `useAsTitle` field as a large heading you edit in place, wrapping onto more lines rather than cutting off. It needs a text, textarea or email field. Without one, the header always shows the title.
 3. Your `beforeFields` components.
-4. The `properties` fields as label and value rows.
-5. Every other field, in config order. No field appears twice.
+4. The `properties` fields as label and value rows. Values read flat, with no input border: hovering or focusing one gives it a rounded fill, and selects and relationships show their chevron. A click opens the input or picker, and an invalid value keeps its red border. The edit page and the fields below keep their usual inputs.
+5. Every other field, in config order. No field appears twice: the `useAsTitle` field, the `properties` and the `useAsDone` checkbox, which the header's Mark complete edits, are left out here. A join to the collection itself, such as subtasks, shows as a section: see [Related records](#related-records).
 6. Your `afterFields` components.
 7. Your `footer` components, pinned under the scrolling body.
 
@@ -123,6 +123,31 @@ export function SubtaskLink({ id, title }: { id: string; title: string }) {
 
 The back link asks before throwing away unsaved edits, and skips records deleted meanwhile. The chain lives in memory only: opening a record from the view, closing, opening the full page or deleting clears it, and a reload or shared link starts without a back link. The browser's Back button leaves the view, as before.
 
+## Related records
+
+A [join field](/fields/join) whose `collection` is the panel's own collection, such as subtasks, renders in the panel as a section: its label as the heading, a row per related record, and **+** to create one. No extra config:
+
+```ts
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  admin: { useAsDone: 'completed', useAsTitle: 'title' },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'completed', type: 'checkbox' },
+    { name: 'parent', type: 'relationship', relationTo: 'tasks' },
+    { name: 'subtasks', type: 'join', collection: 'tasks', on: 'parent', defaultSort: 'createdAt' },
+  ],
+}
+```
+
+- A row opens its record in the same panel, with a back link to the one you came from, as in [Opening a record from inside the panel](#opening-a-record-from-inside-the-panel). Cmd, Ctrl or Shift click opens its edit page in a new tab.
+- With `useAsDone`, each row has a check that saves at once.
+- **+** opens a create form in the panel with the join's `on` field set to the open record, and a back link to it. It shows only with create access, and `admin.allowCreate: false` hides it.
+- Rows follow the join's `where`, `defaultSort` (newest first when unset, as on the edit page) and `defaultLimit` (10), with **Show more** for the rest.
+- On a new record the section waits for the first save, like the join on the edit page.
+
+The edit page keeps the usual join table, and so do joins to other collections and joins that set their own `admin.components.Field`.
+
 ## Activity and comments
 
 Activity and comments are fields, so the full edit page shows them too. Put a tabs field at the end of `fields`, with [`commentsField()`](/plugins/comments#placing-the-field) from the comments plugin in one tab and [`activityField()`](/plugins/audit-log#activity-field) from the audit log plugin in another:
@@ -151,6 +176,14 @@ export const Tasks: CollectionConfig = {
 ```
 
 Either field also works alone, outside a tabs field. Posting a comment doesn't change the record, so the panel doesn't ask before closing.
+
+To pin the comment box to the bottom of the panel, as Asana does, add the comments plugin's footer. The tab then shows only the list, and a posted comment appears in it at once:
+
+```ts
+admin: {
+  components: { panel: { footer: ['@frogbotai/plugin-comments/rsc#CommentBoxFooter'] } },
+},
+```
 
 ## Saving
 

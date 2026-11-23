@@ -296,6 +296,120 @@
     grid-column: 2;
   }
 
+  /* Property values read flat: no input chrome at rest, a rounded fill on hover and focus. */
+  .fb-record-panel-properties__row
+    :is(
+      input:not([type="checkbox"], [type="radio"]),
+      textarea,
+      .form-input-group,
+      .rs__control,
+      .rs__control--is-focused
+    ) {
+    background: transparent;
+    border-color: transparent;
+    border-radius: var(--radius-medium);
+    box-shadow: none;
+  }
+
+  .fb-record-panel-properties__row .form-input-group input.form-input {
+    background: transparent;
+  }
+
+  .fb-record-panel-properties__row
+    :is(input:not([type="checkbox"], [type="radio"]), textarea, .form-input-group, .rs__control):is(
+      :hover,
+      :focus,
+      :focus-within
+    ) {
+    background: var(--color-bg-hover);
+  }
+
+  .fb-record-panel-properties__row
+    :is(
+      .rs__indicators,
+      .input-stepper,
+      .relationship-add-new,
+      .date-time-picker__input-wrapper > svg
+    ) {
+    visibility: hidden;
+  }
+
+  .fb-record-panel-properties__row
+    .field-type:is(:hover, :focus-within)
+    :is(
+      .rs__indicators,
+      .input-stepper,
+      .relationship-add-new,
+      .date-time-picker__input-wrapper > svg
+    ) {
+    visibility: visible;
+  }
+
+  .fb-record-panel-properties__row
+    .field-type.error
+    :is(input:not([type="checkbox"], [type="radio"]), textarea, .form-input-group),
+  .fb-record-panel-properties__row .react-select--error .rs__control {
+    border-color: var(--field-color-border-error, var(--color-border-danger-strong));
+  }
+
+  .fb-record-panel-properties__row .field-type.error .form-input-group input.form-input {
+    border-color: transparent;
+  }
+
+  .fb-panel-join {
+    margin-bottom: var(--spacer-5);
+  }
+
+  .fb-panel-join__rows {
+    border-top: 1px solid var(--color-border);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fb-panel-join__row {
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    gap: var(--spacer-2);
+    min-height: 36px;
+    padding: 0 var(--spacer-1);
+  }
+
+  .fb-panel-join__row:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .fb-panel-join__title,
+  .fb-panel-join__more {
+    background: none;
+    border: 0;
+    color: var(--color-text);
+    cursor: pointer;
+    flex: 1;
+    font: inherit;
+    min-width: 0;
+    overflow: hidden;
+    padding: var(--spacer-2) 0;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fb-panel-join__more {
+    color: var(--color-text-secondary);
+  }
+
+  .fb-panel-join__row--done .fb-panel-join__title {
+    color: var(--color-text-tertiary);
+  }
+
+  .fb-panel-join__title:focus-visible,
+  .fb-panel-join__more:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: var(--accessibility-outline-offset);
+  }
+
   .fb-record-panel__after-fields {
     margin-top: var(--spacer-5);
   }

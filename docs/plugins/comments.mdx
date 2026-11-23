@@ -66,6 +66,32 @@ For activity without comments, place `activityField()` alone and leave this plug
 
 The list shows the latest 50 comments, oldest first. Each shows the author's picture and name, when it was posted ("Just now", "6 minutes ago", then a date after a day), and "(edited)" when it was changed. Hovering your own comment shows a `···` menu to edit it in place or delete it. Typing in the box never marks the record's form as changed: **Comment** saves through the comments API.
 
+## Pinned comment box
+
+In the [record panel](/admin/record-panel#activity-and-comments), the box can stay pinned at the bottom while the record scrolls, as in Asana. Add `CommentBoxFooter` to the collection's panel footer:
+
+```ts
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  admin: {
+    components: { panel: { footer: ['@frogbotai/plugin-comments/rsc#CommentBoxFooter'] } },
+  },
+  fields: [
+    { name: 'title', type: 'text' },
+    {
+      type: 'tabs',
+      admin: { className: 'fb-pill-tabs' },
+      tabs: [
+        { label: 'Comments', fields: [commentsField()] },
+        { label: 'Activity', fields: [activityField()] },
+      ],
+    },
+  ],
+}
+```
+
+With it, `commentsField()` in the panel shows only the list, and a comment posted from the pinned box appears there without a reload. The edit page has no footer, so its field keeps its own box, and so does a panel without the footer. The footer renders nothing on a new record, or when the collection has no comments.
+
 ## Names and pictures
 
 Comments, the `@` menu and mentions name people the way the rest of the admin does:

@@ -5,6 +5,10 @@
     margin-block: var(--spacer-2);
   }
 
+  .fb-comments--pinned {
+    margin-block: 0;
+  }
+
   .fb-comments__list {
     display: grid;
     gap: var(--spacer-3);

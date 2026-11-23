@@ -80,7 +80,11 @@ export interface Config {
     'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    todos: {
+      subtasks: 'todos';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect;
     posts: PostsSelect;
@@ -332,7 +336,16 @@ export interface Todo {
   id: number;
   title: string;
   done?: boolean | null;
+  priority?: ('low' | 'medium' | 'high') | null;
+  due?: string | null;
+  owner?: (number | null) | User;
+  estimate?: number | null;
   parent?: (number | null) | Todo;
+  subtasks?: {
+    docs?: (number | Todo)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   notes?: string | null;
   createdBy?: {
     relationTo: 'users';
@@ -559,7 +572,12 @@ export interface ScrapsSelect {
 export interface TodosSelect {
   title?: boolean;
   done?: boolean;
+  priority?: boolean;
+  due?: boolean;
+  owner?: boolean;
+  estimate?: boolean;
   parent?: boolean;
+  subtasks?: boolean;
   notes?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;

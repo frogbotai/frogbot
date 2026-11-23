@@ -83,18 +83,30 @@ export const Scraps: CollectionConfig = {
   ],
 };
 
-/** `useAsDone`, subtasks opened from inside the panel, and a long notes field to scroll. */
+/**
+ * `useAsDone`, flat property values, subtasks as a same-collection join opened in the panel, and
+ * a long notes field to scroll.
+ */
 export const Todos: CollectionConfig = {
   slug: 'todos',
   admin: {
     ...admin,
     useAsDone: 'done',
-    components: { panel: { beforeFields: ['/components/PanelSlots#Subtasks'] } },
+    panel: { properties: ['priority', 'due', 'owner', 'estimate'] },
   },
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'done', type: 'checkbox' },
+    {
+      name: 'priority',
+      type: 'select',
+      options: ['low', 'medium', 'high'],
+    },
+    { name: 'due', type: 'date' },
+    { name: 'owner', type: 'relationship', relationTo: 'users' },
+    { name: 'estimate', type: 'number', min: 0 },
     { name: 'parent', type: 'relationship', relationTo: 'todos' },
+    { name: 'subtasks', type: 'join', collection: 'todos', defaultSort: 'createdAt', on: 'parent' },
     { name: 'notes', type: 'textarea' },
   ],
 };
