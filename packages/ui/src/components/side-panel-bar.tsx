@@ -269,11 +269,11 @@ export function useSidePanelEscape(
   const ref = useRef({ ignore, onClose });
   const active = Boolean(onClose);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     ref.current = { ignore, onClose };
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
