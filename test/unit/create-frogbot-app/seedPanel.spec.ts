@@ -6,12 +6,12 @@ const req = { frogbot };
 
 vi.mock('frogbot', () => ({ getCachedFrogBot: () => frogbot }));
 
-vi.mock('../../../templates/projects/src/components/SeedButton', () => ({
+vi.mock('../../../templates/asana/src/components/SeedButton', () => ({
   SeedButton: () => null,
 }));
 
-const { SeedPanel } = await import('../../../templates/projects/src/components/SeedPanel');
-const { SeedButton } = await import('../../../templates/projects/src/components/SeedButton');
+const { SeedPanel } = await import('../../../templates/asana/src/components/SeedPanel');
+const { SeedButton } = await import('../../../templates/asana/src/components/SeedButton');
 
 beforeEach(() => {
   count.mockReset();

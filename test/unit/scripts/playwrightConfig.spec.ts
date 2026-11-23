@@ -28,7 +28,7 @@ const allProjects = [
   'first-user-fields',
   'sign-in-two-factor',
   'linked-accounts',
-  'projects',
+  'asana',
 ];
 
 const dependencyURLs: Record<string, string[]> = {

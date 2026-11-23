@@ -17,12 +17,12 @@ type Doc = { id: number | string; [key: string]: unknown };
 
 type User = Doc & { collection: 'users'; roles: string[] };
 
-describe('projects template roles', () => {
+describe('asana template roles', () => {
   let booted: BootedFrogBot;
   let frogbot: FrogBotInstance;
 
   beforeAll(async () => {
-    booted = await bootFrogBot(dirname, 'template-projects-roles');
+    booted = await bootFrogBot(dirname, 'template-asana-roles');
     frogbot = booted.frogbot;
   });
 
@@ -118,6 +118,26 @@ describe('projects template roles', () => {
     await expect(as(manager).update('tasks', theirs.id, { status: 'done' })).resolves.toMatchObject(
       { status: 'done' },
     );
+  });
+
+  it('gives a member’s subtask its parent’s project and refuses a parent in another project', async () => {
+    const { manager, member } = await team();
+    const web = await as(manager).create('projects', { name: 'Website', key: 'WEB' });
+    const app = await as(manager).create('projects', { name: 'App', key: 'APP' });
+    const parent = await as(member).create('tasks', { title: 'Pricing page', project: web.id });
+    const subtask = await as(member).create('tasks', { title: 'FAQ', parent: parent.id });
+
+    expect(subtask.project).toMatchObject({ id: web.id });
+    expect(subtask.key).toMatch(/^WEB-\d+$/);
+    await expect(
+      as(member).update('tasks', subtask.id, { completed: true }),
+    ).resolves.toMatchObject({ completed: true, status: 'done' });
+
+    const elsewhere = await as(member).create('tasks', { title: 'Store listing', project: app.id });
+
+    await expect(
+      as(member).update('tasks', elsewhere.id, { parent: elsewhere.id }),
+    ).rejects.toThrow();
   });
 
   it('keeps a member from reassigning their task, and lets a manager do it', async () => {

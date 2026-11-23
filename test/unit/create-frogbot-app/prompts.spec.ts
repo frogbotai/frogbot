@@ -41,8 +41,8 @@ describe('template prompt', () => {
     });
   }
 
-  it('offers blank first, then projects and crm, and asks nothing else', async () => {
-    vi.mocked(p.select).mockResolvedValue('projects');
+  it('offers blank first, then asana and crm, and asks nothing else', async () => {
+    vi.mocked(p.select).mockResolvedValue('asana');
 
     const plan = await resolveTemplatePlan([]);
 
@@ -51,19 +51,25 @@ describe('template prompt', () => {
       message: 'Template',
       options: [
         { label: 'blank', value: 'blank' },
-        { label: 'projects', value: 'projects' },
+        { label: 'asana', value: 'asana' },
         { label: 'crm', value: 'crm' },
       ],
     });
     expect(p.confirm).not.toHaveBeenCalled();
-    expect(plan.template.name).toBe('projects');
+    expect(plan.template.name).toBe('asana');
   });
 
-  it('resolves --template projects without the prompt', async () => {
-    const plan = await resolveTemplatePlan(['--template', 'projects']);
+  it('resolves --template asana without the prompt', async () => {
+    const plan = await resolveTemplatePlan(['--template', 'asana']);
 
     expect(p.select).not.toHaveBeenCalled();
-    expect(plan.template).toMatchObject({ dir: 'projects', aiPaths: ['src/agents'] });
+    expect(plan.template).toMatchObject({ dir: 'asana', aiPaths: ['src/agents'] });
+  });
+
+  it('rejects --template projects, which was renamed to asana', async () => {
+    await expect(async () => resolveTemplatePlan(['--template', 'projects'])).rejects.toThrow(
+      'Unknown template "projects"',
+    );
   });
 
   it('has no seed flag or option', () => {

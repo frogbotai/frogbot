@@ -33,7 +33,7 @@ jobs:
             projects: --project custom-field --project blank --project chat-assets
             browsers: chromium
           - group: apps
-            projects: --project crm --project dojo --project projects --project forms
+            projects: --project crm --project dojo --project asana --project forms
             browsers: chromium
           - group: sign-in
             projects: >-

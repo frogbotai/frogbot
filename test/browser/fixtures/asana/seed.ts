@@ -1,7 +1,7 @@
 import config from '@frogbot-config';
 import { getFrogBot } from 'frogbot';
 
-import { seed } from '../../../../templates/projects/src/seed/index';
+import { seed } from '../../../../templates/asana/src/seed/index';
 import { user } from '../../__helpers/signIn';
 import { today } from '../crm/shared';
 

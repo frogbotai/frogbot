@@ -10,7 +10,7 @@ import { timezoneId, todayDate } from './fixtures/crm/shared';
 const shots = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   'test-results',
-  'projects-views',
+  'asana-views',
 );
 
 const views = [

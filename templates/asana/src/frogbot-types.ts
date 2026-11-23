@@ -139,6 +139,42 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_158A5976".
+ */
+export type LexicalNodes_158A5976 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_158A5976>
+  | SerializedHorizontalRuleNode
+  | SerializedUploadNode<'files'>
+  | SerializedUploadNode<'exports'>
+  | SerializedUploadNode<'imports'>
+  | SerializedUploadNode<'frogbot-chat-assets'>
+  | SerializedQuoteNode<LexicalNodes_158A5976>
+  | SerializedRelationshipNode<
+      | 'projects'
+      | 'tasks'
+      | 'users'
+      | 'plugin-ai-policy-spend'
+      | 'audit-logs'
+      | 'comments'
+      | 'chats'
+      | 'messages'
+      | 'frogbot-chat-turns'
+      | 'usage-logs'
+      | 'frogbot-waitpoints'
+      | 'folders'
+      | 'frogbot-autonumbers'
+      | 'frogbot-autonumber-keys'
+    >
+  | SerializedAutoLinkNode<LexicalNodes_158A5976, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_158A5976, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_158A5976>
+  | SerializedListItemNode<LexicalNodes_158A5976>
+  | SerializedHeadingNode<LexicalNodes_158A5976>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
  */
 export type LexicalNodes_3DE324E4 =
@@ -164,6 +200,7 @@ export interface Config {
     imports: Import;
     'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
+    comments: Comment;
     chats: Chat;
     messages: Message;
     'frogbot-chat-assets': FrogBotChatAsset;
@@ -174,7 +211,11 @@ export interface Config {
     'frogbot-autonumbers': FrogBotAutonumber;
     'frogbot-autonumber-keys': FrogBotAutonumberKey;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    tasks: {
+      subtasks: 'tasks';
+    };
+  };
   collectionsSelect: {
     projects: ProjectsSelect;
     tasks: TasksSelect;
@@ -184,6 +225,7 @@ export interface Config {
     imports: ImportsSelect;
     'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
+    comments: CommentsSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
@@ -395,7 +437,8 @@ export interface Task {
   id: number;
   _order?: string | null;
   title: string;
-  project: number | Project;
+  completed?: boolean | null;
+  project?: (number | null) | Project;
   /**
    * Number set by FrogBot when the record is created, unique within each project; read-only
    */
@@ -408,7 +451,14 @@ export interface Task {
   assignee?: (number | null) | User;
   startDate?: string | null;
   dueDate?: string | null;
+  parent?: (number | null) | Task;
   description?: string | null;
+  subtasks?: {
+    docs?: (number | Task)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  attachments?: (number | File)[] | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -643,6 +693,39 @@ export interface AuditLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: number;
+  collection: string;
+  documentId: string;
+  author?: (number | null) | User;
+  mentions?: (number | User)[] | null;
+  bodyField?: string | null;
+  notified?: (number | User)[] | null;
+  body_0?: LexicalRichText<LexicalNodes_158A5976> | null;
+  body?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chats".
  */
 export interface Chat {
@@ -860,6 +943,7 @@ export interface ProjectsSelect {
 export interface TasksSelect {
   _order?: boolean;
   title?: boolean;
+  completed?: boolean;
   project?: boolean;
   number?: boolean;
   key?: boolean;
@@ -867,7 +951,10 @@ export interface TasksSelect {
   assignee?: boolean;
   startDate?: boolean;
   dueDate?: boolean;
+  parent?: boolean;
   description?: boolean;
+  subtasks?: boolean;
+  attachments?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -1064,6 +1151,24 @@ export interface AuditLogsSelect {
   changes?: boolean;
   snapshot?: boolean;
   timestamp?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect {
+  collection?: boolean;
+  documentId?: boolean;
+  author?: boolean;
+  mentions?: boolean;
+  bodyField?: boolean;
+  notified?: boolean;
+  body_0?: boolean;
+  body?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -1283,6 +1388,7 @@ export interface CollectionQueryWidget {
       | 'exports'
       | 'imports'
       | 'audit-logs'
+      | 'comments'
       | 'chats'
       | 'usage-logs'
       | 'folders';
@@ -1316,6 +1422,7 @@ export interface ActivityWidget {
           | 'exports'
           | 'imports'
           | 'audit-logs'
+          | 'comments'
           | 'chats'
           | 'usage-logs'
           | 'folders'
@@ -1469,6 +1576,77 @@ export interface SerializedParagraphNode<
   type: 'paragraph';
   textFormat: number;
   textStyle: string;
+}
+
+export interface SerializedHorizontalRuleNode {
+  type: 'horizontalrule';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type SerializedUploadNode<
+  TSlugs extends keyof Config['collections'],
+  TFields = { [k: string]: unknown },
+> = {
+  type: 'upload';
+  format: LexicalElementFormat;
+  id: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+  fields: TFields;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface SerializedQuoteNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'quote';
+}
+
+export type SerializedRelationshipNode<
+  TSlugs extends keyof Config['collections'],
+> = {
+  type: 'relationship';
+  format: LexicalElementFormat;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface LexicalLinkFields {
+  [k: string]: unknown;
+  doc?: {
+    relationTo: string;
+    value:
+      | Config['db']['defaultIDType']
+      | { [k: string]: unknown; id: Config['db']['defaultIDType'] };
+  } | null;
+  linkType: 'custom' | 'internal';
+  newTab: boolean;
+  url?: string;
+}
+export interface SerializedLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'link';
+  fields: TFields;
+  id?: string;
+}
+export interface SerializedAutoLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'autolink';
+  fields: TFields;
 }
 
 export interface SerializedListNode<

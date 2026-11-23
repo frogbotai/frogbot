@@ -143,7 +143,7 @@ describe.skipIf(process.platform === 'win32')('create-frogbot-app command', () =
     ],
     [
       ['my-app', '--yes', '--template', 'missing'],
-      'Unknown template "missing". Valid templates: blank, projects, crm.',
+      'Unknown template "missing". Valid templates: blank, asana, crm.',
     ],
     [
       ['my-app', '--unknown'],
