@@ -121,4 +121,11 @@
   .fb-report tr:last-child td {
     border-bottom: 0;
   }
+
+  .fb-report__image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--fb-radius-md);
+  }
 }

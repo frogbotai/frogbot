@@ -217,7 +217,14 @@ export type TextField = RetypedField<PayloadTextField>;
 
 export type UIField = RetypedField<PayloadUIField>;
 
-export type UploadField = RetypedField<PayloadUploadField>;
+export type UploadField = RetypedField<PayloadUploadField> & {
+  /**
+   * How big the picture shows on the record. `small` (default) is a thumbnail beside the file
+   * name; `large` shows it across the form, for fields where the picture is the point, such as a
+   * product photo or a video thumbnail. Either way, clicking it opens it full size.
+   */
+  preview?: 'large' | 'small';
+};
 
 export type VectorField = Omit<
   RetypedField<Omit<PayloadJSONField, 'interfaceName' | 'jsonSchema' | 'type'>>,

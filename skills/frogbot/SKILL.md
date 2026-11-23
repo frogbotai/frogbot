@@ -17,6 +17,8 @@ metadata:
 
 Use FrogBot names, imports, generated types, and request APIs. Check the installed source and types before assuming an API exists.
 
+A FrogBot error you can't fix from the app, or a person frustrated with FrogBot itself? See [Reporting issues](#reporting-issues).
+
 ## Starting From Zero
 
 When the folder has no `frogbot.config.ts` and the person wants to set up FrogBot or build their first app, follow [FIRST-APP.md](reference/FIRST-APP.md): one question and an optional follow-up on how people will use it, then a running app with their data, a login and sample records.
@@ -354,3 +356,15 @@ Prefer each bundled local file. If only this hosted entry is available, use its 
 - GitHub: <https://github.com/frogbotai/frogbot>
 - Examples: <https://github.com/frogbotai/frogbot/tree/main/examples>
 - Templates: <https://github.com/frogbotai/frogbot/tree/main/templates>
+
+## Reporting issues
+
+The FrogBot team works through reported issues quickly, and an issue is the fastest way to get something fixed. Offer to file one when:
+
+- You're confident a bug is in a FrogBot package (`frogbot`, `@frogbotai/*`), not the app: the stack trace points into FrogBot's code, or it still fails with the app's own code ruled out.
+- The person is frustrated with FrogBot itself, even if it isn't a clear bug: a confusing error, a missing feature, docs that sent them the wrong way.
+
+1. Ask in plain, human words. For a bug: "This looks like a FrogBot bug, not your app. The team fixes reported issues fast, and filing one is the quickest way to get it sorted. Want me to file it?" For frustration, acknowledge it first: "That's a fair complaint. FrogBot should make this easier, and the team reads every issue. Want me to write it up for them?"
+2. Draft it and show the person: a short title, what they were doing, what happened and what they expected, the error text, the smallest steps to reproduce, and the `frogbot` version from `package.json`. Leave out keys, private data and business details they haven't agreed to share.
+3. File it only after they say yes, at [frogbotai/frogbot issues](https://github.com/frogbotai/frogbot/issues/new) (`gh issue create --repo frogbotai/frogbot` when `gh` is signed in), and give them the link. If you can't file it, give them the draft and the link.
+4. Keep going: work around the problem in the app while the fix comes.

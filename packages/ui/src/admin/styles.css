@@ -9,6 +9,7 @@
 @import "./views/Connections/index.css";
 @import "./views/Memory/index.css";
 @import "./views/List/ListView.css";
+@import "./widgets/CollectionQuery/index.css";
 
 @layer frogbot {
   /* Payload hovers this row on a plain fill but colors it for a brand fill; FrogBot's brand ink is dark. */
@@ -78,6 +79,11 @@
   body:has(.fb-nav-shell[data-nav-state="mobile-nav-closed"])
     .step-nav:has(.dashboard-breadcrumb-select, .dashboard-breadcrumb-dropdown__editing) {
     overflow: visible;
+  }
+
+  /* Payload stacks beforeDashboard and afterDashboard against the widgets with no gap. */
+  .dashboard > * + * {
+    margin-block-start: 1.5rem;
   }
 
   .frogbot-model-select .multi-value-label {
