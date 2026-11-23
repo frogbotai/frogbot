@@ -6,6 +6,7 @@ import {
 } from '@payloadcms/db-d1-sqlite';
 import type { MigrationArgs } from 'frogbot';
 import { sqliteAggregateAdapter } from 'frogbot/aggregate';
+import { installMigrateRefresh } from 'frogbot/internal';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteD1SearchAdapter } from 'frogbot/search';
 
@@ -32,6 +33,8 @@ export function sqliteD1Adapter(args: SQLiteAdapterArgs) {
       database.packageName = '@frogbotai/db-d1-sqlite';
 
       installSQLJobOperations({ adapter: database, dialect: 'sqlite' });
+
+      installMigrateRefresh(database);
 
       return database;
     },

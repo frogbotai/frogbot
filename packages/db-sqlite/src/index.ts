@@ -8,6 +8,7 @@ import {
 } from '@payloadcms/db-sqlite';
 import type { MigrationArgs } from 'frogbot';
 import { sqliteAggregateAdapter } from 'frogbot/aggregate';
+import { installMigrateRefresh } from 'frogbot/internal';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteSearchAdapter } from 'frogbot/search';
 
@@ -100,6 +101,8 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
       if (devSync) installDevSync(database);
 
       installSQLJobOperations({ adapter: database, dialect: 'sqlite' });
+
+      installMigrateRefresh(database);
 
       return database;
     },

@@ -6,6 +6,7 @@ import {
 } from '@payloadcms/db-vercel-postgres';
 import type { MigrationArgs } from 'frogbot';
 import { postgresAggregateAdapter } from 'frogbot/aggregate';
+import { installMigrateRefresh } from 'frogbot/internal';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { postgresSearchAdapter } from 'frogbot/search';
 
@@ -33,6 +34,8 @@ export function vercelPostgresAdapter(args: VercelPostgresAdapterArgs) {
       const database = adapter.init(initArgs);
 
       installSQLJobOperations({ adapter: database, dialect: 'postgres' });
+
+      installMigrateRefresh(database);
 
       return database;
     },

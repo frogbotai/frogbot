@@ -27,6 +27,7 @@ export {
   assertPostgresAdapter,
   assertSQLiteAdapter,
 } from '../database/guards.js';
+export { installMigrateRefresh } from '../database/migrateRefresh.js';
 export { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
 export {
   flattenTopLevelFields,
