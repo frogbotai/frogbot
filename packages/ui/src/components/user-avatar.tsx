@@ -14,6 +14,8 @@ export type UserAvatarProps = {
   name?: string;
   /** Diameter in pixels. Default 24. */
   size?: number;
+  /** A picture URL. Takes the place of Gravatar; initials show when it fails to load. */
+  src?: string;
 };
 
 /** One or two initials: `Colby Gilbert` → `CG`, `ro@example.com` → `R`. */
@@ -43,13 +45,21 @@ async function gravatarURL(email: string, size: number): Promise<string | undefi
 }
 
 /** A round user picture: Gravatar when asked for and found, otherwise initials. */
-export function UserAvatar({ className, email, gravatar, name, size = 24 }: UserAvatarProps) {
-  const [src, setSrc] = useState<string>();
+export function UserAvatar({
+  className,
+  email,
+  gravatar,
+  name,
+  size = 24,
+  src: picture,
+}: UserAvatarProps) {
+  const [found, setSrc] = useState<string>();
+  const src = picture ?? found;
 
   useEffect(() => {
     let current = true;
 
-    if (gravatar && email) {
+    if (gravatar && email && !picture) {
       void gravatarURL(email, size).then((url) => {
         if (current) setSrc(url);
       });
@@ -58,7 +68,7 @@ export function UserAvatar({ className, email, gravatar, name, size = 24 }: User
     return () => {
       current = false;
     };
-  }, [email, gravatar, size]);
+  }, [email, gravatar, picture, size]);
 
   return (
     <Avatar

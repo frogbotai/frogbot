@@ -20,17 +20,18 @@ function masked(value: string): string {
 
 /** An id, key or URL in monospace with a copy button. */
 export function CopyValue({ className, mask, value, ...props }: CopyValueProps) {
-  const [copied, setCopied] = useState(false);
+  const [result, setResult] = useState<'copied' | 'failed'>();
 
   useEffect(() => {
-    if (!copied) return;
+    if (!result) return;
 
-    const timer = setTimeout(() => setCopied(false), 1500);
+    const timer = setTimeout(() => setResult(undefined), 1500);
 
     return () => clearTimeout(timer);
-  }, [copied]);
+  }, [result]);
 
-  const copy = async () => setCopied(await copyText(value));
+  const copy = async () => setResult((await copyText(value)) ? 'copied' : 'failed');
+  const copied = result === 'copied';
   const Icon = copied ? CheckIcon : CopyIcon;
 
   return (
@@ -39,13 +40,16 @@ export function CopyValue({ className, mask, value, ...props }: CopyValueProps) 
         {mask ? masked(value) : value}
       </code>
       <button
-        aria-label={copied ? 'Copied' : 'Copy'}
+        aria-label={copied ? 'Copied' : result === 'failed' ? "Couldn't copy" : 'Copy'}
         className={`fb-copy-value__button${copied ? ' fb-copy-value__button--copied' : ''}`}
         onClick={copy}
         type="button"
       >
         <Icon aria-hidden size={14} />
       </button>
+      <span aria-live="polite" className="fb-copy-value__status" role="status">
+        {copied ? 'Copied' : result === 'failed' ? "Couldn't copy. Select the text instead." : ''}
+      </span>
     </div>
   );
 }

@@ -36,7 +36,11 @@ function Chip({ children, className, href, ...props }: ChipBase & { children: Re
     );
   }
 
-  return <span className={name}>{children}</span>;
+  return (
+    <span className={name} {...props}>
+      {children}
+    </span>
+  );
 }
 
 /** A person or agent as avatar and name, for owners, assignees and authors. */
@@ -45,10 +49,8 @@ export function PersonChip({ agent, email, name, src, ...props }: PersonChipProp
     <Chip {...props}>
       {agent ? (
         <AgentAvatar className="fb-chip__avatar" name={name} size={20} />
-      ) : src ? (
-        <img alt="" className="fb-chip__avatar" src={src} />
       ) : (
-        <UserAvatar className="fb-chip__avatar" email={email} name={name} size={20} />
+        <UserAvatar className="fb-chip__avatar" email={email} name={name} size={20} src={src} />
       )}
       <span className="fb-chip__label">{name}</span>
     </Chip>

@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react';
+import { useId } from 'react';
 
 import type { StatusTone } from './status-badge.js';
 
@@ -31,7 +32,8 @@ export function Meter({
   value,
   ...props
 }: MeterProps) {
-  const clamped = Math.min(Math.max(value, 0), max);
+  const labelId = useId();
+  const clamped = Number.isFinite(value) ? Math.min(Math.max(value, 0), max) : 0;
   const ratio = max ? clamped / max : 0;
   const color = tone === 'auto' ? autoTone(ratio) : tone;
   const valueShown = showValue ?? Boolean(label);
@@ -40,7 +42,11 @@ export function Meter({
     <div className={`fb-meter fb-meter--${color}${className ? ` ${className}` : ''}`} {...props}>
       {(label || valueShown) && (
         <div className="fb-meter__header">
-          {label && <span className="fb-meter__label">{label}</span>}
+          {label && (
+            <span className="fb-meter__label" id={labelId}>
+              {label}
+            </span>
+          )}
           {valueShown && (
             <span className="fb-meter__value">
               {Math.round(clamped)}
@@ -50,6 +56,7 @@ export function Meter({
         </div>
       )}
       <div
+        aria-labelledby={label ? labelId : undefined}
         aria-valuemax={max}
         aria-valuemin={0}
         aria-valuenow={clamped}

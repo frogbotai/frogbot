@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -13,6 +13,7 @@ import {
   Meter,
   PageHeader,
   PersonChip,
+  ReadMore,
   RecordChip,
   ReportView,
   Stat,
@@ -243,5 +244,118 @@ describe('ReportView, ActivityFeed, PageHeader and EmptyState', () => {
     expect(screen.getByRole('heading', { name: 'Invoices' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
     expect(screen.getByText('No contacts yet')).toBeTruthy();
+  });
+});
+
+describe('edge cases', () => {
+  it('reads a number held in a string as a number, with no date tooltip', () => {
+    const { container } = render(<Value format="currency" locale="en-US" value="4120" />);
+
+    expect(formatValue('42', { locale: 'en-US' })).toBe('42');
+    expect(container.firstElementChild?.textContent).toBe('$4,120');
+    expect(container.firstElementChild?.getAttribute('title')).toBeNull();
+  });
+
+  it('keeps the calendar day of a date-only string in any timezone', () => {
+    expect(formatValue('2026-11-18', { locale: 'en-US', now })).toBe('Nov 18');
+  });
+
+  it('leaves bad numbers blank and signs negative durations', () => {
+    expect(formatValue(Number.NaN)).toBe('');
+    expect(formatValue(Number.POSITIVE_INFINITY, { format: 'duration' })).toBe('');
+    expect(formatValue(-90, { format: 'duration' })).toBe('-1:30');
+  });
+
+  it('keeps the feed when one time is unreadable', () => {
+    render(
+      <ActivityFeed
+        items={[{ id: '1', action: 'did it', actor: { name: 'Ann Lee' }, time: 'not a date' }]}
+      />,
+    );
+
+    expect(screen.getByText('did it')).toBeTruthy();
+  });
+
+  it('draws negative bars and lines inside the plot, and describes the data', () => {
+    const { container } = render(
+      <>
+        <Chart labels={['a', 'b']} series={[{ name: 'Profit', values: [-5, 10] }]} type="bar" />
+        <Chart labels={['a', 'b']} series={[{ name: 'Change', values: [-50, 10] }]} />
+      </>,
+    );
+
+    const [bar] = container.querySelectorAll('rect');
+    const ys = (container.querySelector('polyline')?.getAttribute('points') ?? '')
+      .split(' ')
+      .map((point) => Number(point.split(',')[1]));
+
+    expect(Number(bar.getAttribute('y')) + Number(bar.getAttribute('height'))).toBeLessThanOrEqual(
+      200,
+    );
+    expect(Math.max(...ys)).toBeLessThanOrEqual(200);
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(0);
+    expect(screen.getAllByRole('img')[0].getAttribute('aria-label')).toBe('Profit: a -5, b 10');
+  });
+
+  it('names the meter by its label and treats NaN as 0', () => {
+    render(<Meter label="Fit score" value={Number.NaN} />);
+
+    expect(screen.getByRole('meter', { name: 'Fit score' }).getAttribute('aria-valuenow')).toBe(
+      '0',
+    );
+  });
+
+  it('says when copying fails', async () => {
+    Object.assign(navigator, {
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error('no')) },
+    });
+
+    document.execCommand = vi.fn(() => false);
+
+    render(<CopyValue value="abc" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+    expect(await screen.findByRole('button', { name: "Couldn't copy" })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toMatch(/Couldn't copy/);
+  });
+
+  it('passes props through a chip without a link, and shows initials until a picture loads', () => {
+    render(<PersonChip data-testid="chip" name="Jo Reyes" src="https://example.com/jo.png" />);
+
+    expect(screen.getByTestId('chip').textContent).toBe('JRJo Reyes');
+  });
+
+  it('shows Show more when text that fit is cut after a resize', () => {
+    let resize = () => {};
+
+    let height = 40;
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resize = callback;
+        }
+
+        disconnect() {}
+
+        observe() {}
+      },
+    );
+
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(() => 40);
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => height);
+
+    render(<ReadMore>{'long text '.repeat(50)}</ReadMore>);
+
+    expect(screen.queryByRole('button')).toBeNull();
+
+    height = 120;
+    act(() => resize());
+
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
+
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 });

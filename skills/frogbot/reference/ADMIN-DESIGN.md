@@ -29,13 +29,13 @@ Work these out from the request, the data and the collection names. Don't ask th
 
 ## Read-only is display, not a grey input
 
-A number, date or text the system saves and people only read (subscriber counts, scores, last synced, AI summaries) never shows as a disabled input. Either put it in `admin.panel.properties` or the sidebar as a label and value row, or give the field a custom `admin.components.Field` that renders `Fact` and `Value`:
+A number, date or text the system saves and people only read (subscriber counts, scores, last synced, AI summaries) never shows as a disabled input: a `readOnly` field alone still renders its greyed-out input. Give the field a custom `admin.components.Field` that renders `FactList`, `Fact` and `Value`, and keep it in the sidebar with the other facts the system writes:
 
 ```tsx
 // src/components/SubscribersField.tsx
 'use client';
 
-import { Fact, Value } from '@frogbotai/ui';
+import { Fact, FactList, Value } from '@frogbotai/ui';
 import { useField } from '@frogbotai/ui/admin';
 import type { NumberFieldClientProps } from 'frogbot';
 
@@ -43,9 +43,11 @@ export const SubscribersField = ({ field, path }: NumberFieldClientProps) => {
   const { value } = useField<number>({ path });
 
   return (
-    <Fact label={String(field.label ?? 'Subscribers')}>
-      <Value format="compact" value={value} />
-    </Fact>
+    <FactList layout="stacked">
+      <Fact label={String(field.label ?? 'Subscribers')}>
+        <Value format="compact" value={value} />
+      </Fact>
+    </FactList>
   );
 };
 ```

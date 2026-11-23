@@ -31,8 +31,26 @@ const relativeUnits: [Intl.RelativeTimeFormatUnit, number][] = [
   ['minute', 60],
 ];
 
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const NUMERIC = /^\s*-?\d+(\.\d+)?\s*$/;
+
 function toDate(value: Date | number | string): Date {
-  return value instanceof Date ? value : new Date(value);
+  if (value instanceof Date) return value;
+
+  const day = typeof value === 'string' ? DATE_ONLY.exec(value) : null;
+
+  if (day) return new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3]));
+
+  return new Date(value);
+}
+
+function kindOf(value: Date | number | string, format?: ValueFormat): ValueFormat {
+  if (format) return format;
+
+  return typeof value === 'number' || (typeof value === 'string' && NUMERIC.test(value))
+    ? 'number'
+    : 'date';
 }
 
 function relative(date: Date, now: Date | number, locale?: string): string {
@@ -46,14 +64,15 @@ function relative(date: Date, now: Date | number, locale?: string): string {
 }
 
 function duration(seconds: number): string {
-  const total = Math.max(0, Math.round(seconds));
+  const total = Math.round(Math.abs(seconds));
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const rest = String(total % 60).padStart(2, '0');
+  const sign = seconds < 0 && total ? '-' : '';
 
-  if (hours) return `${hours}:${String(minutes).padStart(2, '0')}:${rest}`;
+  if (hours) return `${sign}${hours}:${String(minutes).padStart(2, '0')}:${rest}`;
 
-  return `${minutes}:${rest}`;
+  return `${sign}${minutes}:${rest}`;
 }
 
 function sameYear(date: Date, now: Date | number): boolean {
@@ -70,7 +89,7 @@ export function formatValue(
 ): string {
   if (value === null || value === undefined || value === '') return '';
 
-  const kind = format ?? (typeof value === 'number' ? 'number' : 'date');
+  const kind = kindOf(value, format);
 
   if (kind === 'date' || kind === 'datetime' || kind === 'relative') {
     const date = toDate(value);
@@ -89,7 +108,9 @@ export function formatValue(
 
   const number = Number(value);
 
-  if (Number.isNaN(number)) return String(value);
+  if (!Number.isFinite(number)) {
+    return typeof value === 'string' && Number.isNaN(number) ? value : '';
+  }
 
   if (kind === 'duration') return duration(number);
 
@@ -128,9 +149,13 @@ export function Value({
   ...props
 }: ValueProps) {
   const text = formatValue(value, { currency, format, locale, now });
-  const date = value instanceof Date || (typeof value === 'string' && format !== 'number');
+  const kind =
+    value === null || value === undefined || value === '' ? undefined : kindOf(value, format);
+
   const title =
-    date && text && format !== 'datetime' ? toDate(value).toLocaleString(locale) : undefined;
+    kind && value && text && (kind === 'date' || kind === 'relative')
+      ? toDate(value).toLocaleString(locale)
+      : undefined;
 
   return (
     <span

@@ -18,7 +18,7 @@ export type ChartProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   labels: string[];
   /** One to five series; each takes the next chart colour from the theme. */
   series: ChartSeries[];
-  /** Bars side by side, or stacked when the series add up to a total. */
+  /** Bars side by side, or stacked when the series add up to a total. Stacked bars draw values below 0 as 0. */
   stacked?: boolean;
   /** `line` for change over time, `bar` for comparing items. */
   type?: 'bar' | 'line';
@@ -35,12 +35,17 @@ const WIDTH = 600;
 
 const AXIS = 40;
 
-function niceScale(value: number): { max: number; step: number } {
-  const rough = Math.max(value, 1) / 4;
+function niceScale(low: number, high: number): { max: number; min: number; step: number } {
+  const rough = Math.max(high - low, 1) / 4;
   const power = 10 ** Math.floor(Math.log10(rough));
   const step = ([1, 2, 5, 10].find((factor) => factor * power >= rough) ?? 10) * power;
+  const min = Math.floor(low / step) * step;
 
-  return { max: Math.max(Math.ceil(value / step), 1) * step, step };
+  return { max: Math.max(Math.ceil(high / step) * step, min + step), min, step };
+}
+
+function finite(value: number | undefined): number {
+  return Number.isFinite(value) ? (value as number) : 0;
 }
 
 function points(values: number[], width: number, height: number, max: number, min = 0): string {
@@ -80,14 +85,12 @@ function Bars({
   labels,
   series,
   stacked,
-  max,
   plot,
-  height,
+  y: toY,
 }: {
-  height: number;
   labels: string[];
-  max: number;
   plot: number;
+  y: (value: number) => number;
   series: ChartSeries[];
   stacked?: boolean;
 }) {
@@ -96,30 +99,36 @@ function Bars({
   const width = stacked ? inner : inner / series.length;
 
   return labels.map((label, index) => {
-    let base = height;
+    let base = 0;
 
     return (
-      <g key={label}>
+      <g key={index}>
         {series.map((item, position) => {
-          const top = !stacked || series.slice(position + 1).every((next) => !next.values[index]);
-          const value = item.values[index] ?? 0;
-          const size = (value / max) * height;
-          const x = AXIS + index * band + (band - inner) / 2 + (stacked ? 0 : position * width);
-          const y = stacked ? base - size : height - size;
+          const top =
+            !stacked ||
+            series.slice(position + 1).every((next) => !(finite(next.values[index]) > 0));
 
-          if (stacked) base -= size;
+          const raw = finite(item.values[index]);
+          const value = stacked ? Math.max(raw, 0) : raw;
+          const from = stacked ? base : 0;
+          const to = from + value;
+          const y = Math.min(toY(from), toY(to));
+          const size = Math.abs(toY(to) - toY(from));
+          const x = AXIS + index * band + (band - inner) / 2 + (stacked ? 0 : position * width);
+
+          if (stacked) base = to;
 
           return (
             <rect
               className={`fb-chart__bar fb-chart__series-${position + 1}`}
-              height={Math.max(size, 0) + (stacked && top && position > 0 && size > 0 ? 3 : 0)}
-              key={item.name}
+              height={size + (stacked && top && position > 0 && size > 0 ? 3 : 0)}
+              key={position}
               rx={top ? Math.min(3, width / 4) : 0}
               width={Math.max(width - (stacked ? 0 : 2), 1)}
               x={x}
               y={y}
             >
-              <title>{`${label} · ${item.name}: ${value}`}</title>
+              <title>{`${label} · ${item.name}: ${raw}`}</title>
             </rect>
           );
         })}
@@ -140,17 +149,31 @@ export function Chart({
   ...props
 }: ChartProps) {
   const plot = WIDTH - AXIS;
+  const values = series.flatMap((item) => item.values.map(finite));
   const totals = labels.map((_, index) =>
     stacked
-      ? series.reduce((sum, item) => sum + (item.values[index] ?? 0), 0)
-      : Math.max(...series.map((item) => item.values[index] ?? 0)),
+      ? series.reduce((sum, item) => sum + Math.max(finite(item.values[index]), 0), 0)
+      : Math.max(0, ...series.map((item) => finite(item.values[index]))),
   );
 
-  const { max, step: tickStep } = niceScale(Math.max(...totals));
+  const {
+    max,
+    min,
+    step: tickStep,
+  } = niceScale(stacked ? 0 : Math.min(0, ...values), Math.max(0, ...totals));
+
+  const toY = (value: number) => height - ((value - min) / (max - min)) * height;
   const ticks = Array.from(
-    { length: Math.round(max / tickStep) + 1 },
-    (_, index) => tickStep * index,
+    { length: Math.round((max - min) / tickStep) + 1 },
+    (_, index) => min + tickStep * index,
   );
+
+  const summary = series
+    .map(
+      (item) =>
+        `${item.name}: ${labels.map((label, index) => `${label} ${formatValue(item.values[index], format)}`).join(', ')}`,
+    )
+    .join('; ');
 
   const step = labels.length > 1 ? plot / (labels.length - 1) : 0;
   const band = plot / labels.length;
@@ -161,7 +184,7 @@ export function Chart({
       {series.length > 1 && (
         <ul className="fb-chart__legend">
           {series.map((item, index) => (
-            <li key={item.name}>
+            <li key={index}>
               <span className={`fb-chart__swatch fb-chart__series-${index + 1}`} />
               {item.name}
             </li>
@@ -171,11 +194,11 @@ export function Chart({
       <svg
         className="fb-chart__plot"
         role="img"
-        aria-label={series.map((item) => item.name).join(', ')}
+        aria-label={summary}
         viewBox={`0 -8 ${WIDTH} ${height + 32}`}
       >
         {ticks.map((tick) => {
-          const y = height - (tick / max) * height;
+          const y = toY(tick);
 
           return (
             <g key={tick}>
@@ -190,7 +213,7 @@ export function Chart({
           index % every ? null : (
             <text
               className="fb-chart__axis"
-              key={label}
+              key={index}
               textAnchor="middle"
               x={type === 'bar' ? AXIS + index * band + band / 2 : AXIS + index * step}
               y={height + 22}
@@ -200,27 +223,20 @@ export function Chart({
           ),
         )}
         {type === 'bar' ? (
-          <Bars
-            height={height}
-            labels={labels}
-            max={max}
-            plot={plot}
-            series={series}
-            stacked={stacked}
-          />
+          <Bars labels={labels} plot={plot} series={series} stacked={stacked} y={toY} />
         ) : (
           series.map((item, index) => (
-            <g className={`fb-chart__series-${index + 1}`} key={item.name}>
+            <g className={`fb-chart__series-${index + 1}`} key={index}>
               <polyline
                 className="fb-chart__line"
-                points={points(item.values, plot, height, max)}
+                points={points(item.values.map(finite), plot, height, max, min)}
                 transform={`translate(${AXIS} 0)`}
               />
               {item.values.map((value, point) => (
                 <circle
                   className="fb-chart__point"
                   cx={AXIS + point * step}
-                  cy={height - (value / max) * height}
+                  cy={toY(finite(value))}
                   key={point}
                   r={point === item.values.length - 1 ? 3.5 : 0}
                 >

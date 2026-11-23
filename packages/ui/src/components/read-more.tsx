@@ -19,15 +19,25 @@ export function ReadMore({ children, className, lines = 2, style, ...props }: Re
 
     if (!element || open) return;
 
-    setCut(element.scrollHeight > element.clientHeight + 1);
+    const measure = () => setCut(element.scrollHeight > element.clientHeight + 1);
+
+    measure();
+
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(measure);
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
   }, [children, lines, open]);
 
   return (
-    <div className={`fb-read-more${className ? ` ${className}` : ''}`} {...props}>
+    <div className={`fb-read-more${className ? ` ${className}` : ''}`} style={style} {...props}>
       <div
         className={`fb-read-more__text${open ? '' : ' fb-read-more__text--clamped'}`}
         ref={ref}
-        style={{ ...style, WebkitLineClamp: open ? undefined : lines }}
+        style={{ WebkitLineClamp: open ? undefined : lines }}
       >
         {children}
       </div>

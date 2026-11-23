@@ -24,6 +24,12 @@ export type ActivityFeedProps = Omit<HTMLAttributes<HTMLOListElement>, 'children
   now?: Date | number;
 };
 
+function isoTime(time: ActivityItem['time']): string | undefined {
+  const date = new Date(time);
+
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
 /** A record's history: who did what and when, people and agents alike. */
 export function ActivityFeed({ className, items, now, ...props }: ActivityFeedProps) {
   return (
@@ -43,7 +49,7 @@ export function ActivityFeed({ className, items, now, ...props }: ActivityFeedPr
           <div className="fb-activity__body">
             <p className="fb-activity__line">
               <span className="fb-activity__actor">{item.actor.name}</span> {item.action}
-              <time className="fb-activity__time" dateTime={new Date(item.time).toISOString()}>
+              <time className="fb-activity__time" dateTime={isoTime(item.time)}>
                 {formatValue(item.time, { format: 'relative', now })}
               </time>
             </p>

@@ -21,7 +21,7 @@ export function FactList({ className, layout = 'rows', ...props }: FactListProps
   );
 }
 
-/** One label and its value. An empty value shows a dash. */
+/** One label and its value, inside a `FactList`. An empty value shows a dash. */
 export function Fact({ children, className, label, ...props }: FactProps) {
   const empty = children === undefined || children === null || children === '';
 
