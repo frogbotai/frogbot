@@ -1,4 +1,4 @@
-import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { type BrowserContext, expect, type Locator, type Page, test } from '@playwright/test';
 
 import { prepareView } from './__helpers/viewShots';
 import { timezoneId, todayDate } from './fixtures/crm/shared';
@@ -9,6 +9,7 @@ type Task = { id: number; project?: number };
 
 const tasks: number[] = [];
 const members: { context: BrowserContext; id: number }[] = [];
+const projects: number[] = [];
 
 const panel = (page: Page) => page.locator('.fb-record-panel');
 const panelBody = (page: Page) => panel(page).locator('.fb-record-panel__body');
@@ -43,6 +44,8 @@ test.afterEach(async ({ page }) => {
   }
 
   for (const id of tasks.splice(0)) await page.request.delete(`/api/tasks/${id}`);
+
+  for (const id of projects.splice(0)) await page.request.delete(`/api/projects/${id}`);
 
   for (const { context, id } of members.splice(0)) {
     await context.request.delete(`/api/comments?where[author][equals]=${id}`);
@@ -328,3 +331,140 @@ test('selecting a row in one group shows every group’s selection boxes', async
 
   await box(0).locator('input').uncheck();
 });
+
+test('saving a new record from the panel’s create form keeps its scroll position', async ({
+  page,
+}) => {
+  const parent = await findTask(page, 'Design the pricing page');
+  const name = `Panel create ${Date.now()}`;
+  const scrollTop = () => panelBody(page).evaluate((body) => body.scrollTop);
+
+  await page.setViewportSize({ width: 1280, height: 360 });
+  await page.goto(`/collections/tasks?record=${parent.id}`);
+  await expect(title(page)).toHaveValue('Design the pricing page');
+  await panel(page).getByRole('button', { name: 'More options' }).click();
+  await page.locator('#action-panel-create').click();
+  await expect(title(page)).toHaveValue('');
+  await title(page).fill(name);
+  await panel(page).getByRole('combobox', { name: 'Project' }).click();
+  await page.locator('.rs__option').first().click();
+  await panelBody(page).evaluate((body) => body.scrollTo({ top: body.scrollHeight }));
+  await expect.poll(scrollTop).toBeGreaterThan(0);
+
+  const before = await scrollTop();
+
+  await page.locator('.fb-record-panel-header__save').click();
+
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('record'), { timeout: 10_000 })
+    .not.toBeNull();
+
+  tasks.push((await findTask(page, name)).id);
+  await expect(panel(page).getByRole('button', { name: 'Mark complete' })).toBeVisible();
+  await expect(title(page)).toHaveValue(name);
+
+  expect(await scrollTop()).toBe(before);
+});
+
+test('one-day bars on consecutive days at month scale neither overlap nor get crossed by a label', async ({
+  page,
+}) => {
+  const stamp = Date.now();
+  const project = await page.request.post('/api/projects', {
+    data: { key: `BK${stamp % 100000}`, name: `Changelogs ${stamp}` },
+  });
+
+  projects.push(((await project.json()) as { doc: { id: number } }).doc.id);
+
+  const day = (offset: number) => {
+    const date = new Date(`${todayDate}T12:00:00Z`);
+
+    date.setUTCDate(date.getUTCDate() + offset);
+
+    return date.toISOString();
+  };
+
+  for (const [offset, name] of [
+    [3, 'Ship the first changelog'],
+    [4, 'Ship the second changelog'],
+  ] as const) {
+    const response = await page.request.post('/api/tasks', {
+      data: { dueDate: day(offset), project: projects[0], startDate: day(offset), title: name },
+    });
+
+    tasks.push(((await response.json()) as { doc: Task }).doc.id);
+  }
+
+  await page.goto(`/collections/tasks/timeline?date=${todayDate}&scale=month`);
+
+  const bars = page.locator('.frog-timeline__bar', {
+    hasText: /Ship the (first|second) changelog/,
+  });
+
+  await expect(bars).toHaveCount(2);
+
+  const shown = await bars.evaluateAll((all) => {
+    const [a, b] = all.map((bar) => ({
+      box: bar.getBoundingClientRect(),
+      label: bar.querySelector('.frog-timeline__bar-content')!.getBoundingClientRect(),
+      outside: Boolean((bar as HTMLElement).dataset.labelOutside),
+    }));
+
+    const sameRow = Math.abs(a.box.y - b.box.y) < 1;
+    const hits = (box: DOMRect, other: DOMRect) =>
+      sameRow && box.x < other.right - 1 && box.right > other.x + 1;
+
+    return {
+      barsOverlap: hits(a.box, b.box),
+      firstLabelCrossesSecond: a.outside && hits(a.label, b.box),
+      secondLabelCrossesFirst: b.outside && hits(b.label, a.box),
+    };
+  });
+
+  expect(shown).toEqual({
+    barsOverlap: false,
+    firstLabelCrossesSecond: false,
+    secondLabelCrossesFirst: false,
+  });
+});
+
+async function headerFits(header: Locator) {
+  return header.evaluate((th) => {
+    const box = th.getBoundingClientRect();
+    const next = th.nextElementSibling?.getBoundingClientRect();
+    const walker = document.createTreeWalker(th, NodeFilter.SHOW_TEXT);
+    let text = 0;
+
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.textContent?.trim()) continue;
+
+      const range = document.createRange();
+
+      range.selectNodeContents(node);
+
+      for (const rect of range.getClientRects()) text = Math.max(text, rect.right);
+    }
+
+    return {
+      textBeforeNext: next ? text <= next.left + 1 : true,
+      textInside: text <= box.right + 1,
+    };
+  });
+}
+
+for (const grouped of [false, true]) {
+  test(`${grouped ? 'a grouped' : 'an ungrouped'} list header resized to the minimum stays inside its column`, async ({
+    page,
+  }) => {
+    await page.request.post('/api/payload-preferences/collection-tasks-view-list', {
+      data: { value: { widths: { dueDate: 60 } } },
+    });
+
+    await page.goto(`/collections/tasks${grouped ? '?groupBy=status' : ''}`);
+
+    const header = page.locator('.collection-view--list thead th', { hasText: 'Due Date' }).first();
+
+    await expect(header).toBeVisible();
+    expect(await headerFits(header)).toEqual({ textBeforeNext: true, textInside: true });
+  });
+}
