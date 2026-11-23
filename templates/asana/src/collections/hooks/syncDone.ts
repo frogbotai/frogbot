@@ -62,6 +62,7 @@ export const followParent: CollectionBeforeValidateHook = async ({
       id: task,
       depth: 0,
       disableErrors: true,
+      overrideAccess: true,
       req,
     });
 

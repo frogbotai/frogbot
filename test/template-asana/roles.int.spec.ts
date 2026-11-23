@@ -143,6 +143,38 @@ describe('asana template roles', () => {
     );
   });
 
+  it('gives a subtask its parent’s project and refuses a cycle with no user too', async () => {
+    const system = { overrideAccess: true } as const;
+    const project = await frogbot.create({
+      collection: 'projects',
+      data: { name: 'Website', key: 'WEB' },
+      ...system,
+    });
+
+    const parent = await frogbot.create({
+      collection: 'tasks',
+      data: { title: 'Pricing page', project: project.id },
+      ...system,
+    });
+
+    const subtask = await frogbot.create({
+      collection: 'tasks',
+      data: { title: 'FAQ', parent: parent.id },
+      depth: 0,
+      ...system,
+    });
+
+    expect(subtask.project).toBe(project.id);
+    await expect(
+      frogbot.update({
+        collection: 'tasks',
+        id: parent.id,
+        data: { parent: subtask.id },
+        ...system,
+      }),
+    ).rejects.toThrow("A task can't be a subtask of itself or of its own subtask.");
+  });
+
   it('keeps a member from reassigning their task, and lets a manager do it', async () => {
     const { manager, member, other } = await team();
     const project = await as(manager).create('projects', { name: 'Website', key: 'WEB' });
