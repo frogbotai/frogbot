@@ -11,6 +11,15 @@ const notes = 'A long note line that makes the panel body scroll.\n'.repeat(80);
 const panel = (page: Page) => page.locator('.fb-record-panel');
 const bar = (page: Page) => page.locator('.fb-record-panel-header');
 const start = (page: Page) => bar(page).locator('.fb-side-panel-bar__start');
+const lead = (page: Page) => bar(page).locator('.fb-side-panel-bar__lead');
+const crumbs = (page: Page) =>
+  start(page).evaluate((node) =>
+    [...node.children]
+      .filter((child) => !child.classList.contains('fb-side-panel-bar__lead'))
+      .map((child) => child.textContent)
+      .join(''),
+  );
+
 const body = (page: Page) => page.locator('.fb-record-panel__body');
 const title = (page: Page) => page.locator('.fb-record-panel-title__input');
 
@@ -72,19 +81,15 @@ for (const theme of themes) {
       await page.setViewportSize({ width: 1280, height: 640 });
     });
 
-    test('1. opened from the view: nothing on the left, the title once in the body', async ({
+    test('1. opened from the view: only Mark complete on the left, the title once in the body', async ({
       page,
     }) => {
       await budget(page);
       await openFromList(page, 'Budget feature');
 
-      await expect(start(page)).toHaveText('');
-      expect(await rightSide(page)).toEqual([
-        'Mark complete',
-        'More options',
-        'Open full page',
-        'Close',
-      ]);
+      await expect.poll(() => crumbs(page)).toBe('');
+      await expect(lead(page).getByRole('button', { name: 'Mark complete' })).toBeVisible();
+      expect(await rightSide(page)).toEqual(['More options', 'Open full page', 'Close']);
       await expect(bar(page).locator('.fb-side-panel-bar__title')).toHaveCount(0);
       await shoot(page, `${theme}-1-view`);
     });
@@ -94,12 +99,12 @@ for (const theme of themes) {
       await openFromList(page, 'Budget feature');
 
       await scrollBody(page);
-      await expect(start(page)).toHaveText('Budget feature');
+      await expect.poll(() => crumbs(page)).toBe('Budget feature');
       await expect(bar(page).locator('.fb-side-panel-bar__title')).toBeVisible();
       await shoot(page, `${theme}-2-scrolled`);
 
       await body(page).evaluate((node) => node.scrollTo(0, 0));
-      await expect(start(page)).toHaveText('');
+      await expect.poll(() => crumbs(page)).toBe('');
     });
 
     test('3. drilled in from the panel: only the way back', async ({ page }) => {
@@ -107,14 +112,14 @@ for (const theme of themes) {
       await openFromList(page, 'Budget feature');
       await drillIn(page);
 
-      await expect(start(page)).toHaveText('Budget feature');
+      await expect.poll(() => crumbs(page)).toBe('Budget feature');
       await expect(bar(page).getByRole('button', { name: 'Back to Budget feature' })).toBeVisible();
       await expect(bar(page).locator('.fb-side-panel-bar__title')).toHaveCount(0);
       await shoot(page, `${theme}-3-drilled`);
 
       await bar(page).getByRole('button', { name: 'Back to Budget feature' }).click();
       await expect(title(page)).toHaveValue('Budget feature');
-      await expect(start(page)).toHaveText('');
+      await expect.poll(() => crumbs(page)).toBe('');
     });
 
     test('4. drilled in and scrolled: the way back, then the title; Completed', async ({
@@ -132,7 +137,7 @@ for (const theme of themes) {
       );
 
       await scrollBody(page);
-      await expect(start(page)).toHaveText('Budget feature/Spec the cap rules');
+      await expect.poll(() => crumbs(page)).toBe('Budget feature/Spec the cap rules');
       await shoot(page, `${theme}-4-drilled-scrolled`);
     });
 
@@ -142,7 +147,7 @@ for (const theme of themes) {
       await page.goto(`/collections/todos?record=${parent}`);
       await expect(title(page)).toHaveValue('Budget feature');
       await expect(page.locator('.list-header__title, h1').first()).toContainText('Todos');
-      await expect(start(page)).toHaveText('');
+      await expect.poll(() => crumbs(page)).toBe('');
       await shoot(page, `${theme}-5-link`);
     });
 
@@ -160,7 +165,8 @@ for (const theme of themes) {
         'Open full page',
         'Close',
       ]);
-      await expect(start(page)).toHaveText('');
+      await expect.poll(() => crumbs(page)).toBe('');
+      await expect(lead(page)).toHaveCount(0);
       await shoot(page, `${theme}-6-unsaved`);
     });
 
@@ -173,7 +179,7 @@ for (const theme of themes) {
       await drillIn(page);
       await scrollBody(page);
 
-      await expect(start(page)).toHaveText('Budget feature/Spec the cap rules');
+      await expect.poll(() => crumbs(page)).toBe('Budget feature/Spec the cap rules');
       await expect(bar(page).locator('.fb-record-panel-header__complete-label')).toBeHidden();
       await expect(bar(page).locator('.fb-record-panel-header__complete-icon')).toBeVisible();
       expect((await bar(page).boundingBox())!.height).toBeLessThan(64);

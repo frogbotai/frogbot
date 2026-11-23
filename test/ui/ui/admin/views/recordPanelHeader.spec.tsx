@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   docInfo: {} as Record<string, unknown>,
+  modified: false,
   permissions: {} as Record<string, unknown>,
   submit: vi.fn(() => Promise.resolve()),
   useAsDone: undefined as string | undefined,
@@ -29,7 +30,7 @@ vi.mock('@payloadcms/ui', () => ({
   useDocumentTitle: () => ({ title: 'Budget feature' }),
   useField: () => ({ setValue: vi.fn(), value: false }),
   useForm: () => ({ submit: mocks.submit }),
-  useFormModified: () => false,
+  useFormModified: () => mocks.modified,
   useModal: () => ({ closeModal: vi.fn(), openModal: vi.fn() }),
   useTranslation: () => ({ i18n: { language: 'en' }, t: (key: string) => key }),
 }));
@@ -65,6 +66,7 @@ beforeEach(() => {
   mocks.permissions = { collections: { tasks: { create: false } } };
   mocks.docInfo = { collectionSlug: 'tasks', hasSavePermission: true };
   mocks.submit.mockClear();
+  mocks.modified = false;
   mocks.useAsDone = undefined;
 });
 
@@ -118,5 +120,15 @@ describe('record panel header', () => {
 
     expect(container.querySelector('.fb-side-panel-bar__lead')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark complete' })).toBeNull();
+  });
+
+  it('hides Mark complete while unsaved edits wait for Save, so it never saves them', () => {
+    mocks.modified = true;
+    mocks.useAsDone = 'completed';
+    mocks.docInfo = { collectionSlug: 'tasks', hasSavePermission: true, id: '1' };
+    render(<RecordPanelHeader />);
+
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'general:save' })).toBeTruthy();
   });
 });

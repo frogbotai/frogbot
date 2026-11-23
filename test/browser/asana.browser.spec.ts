@@ -507,6 +507,23 @@ test.describe('the task panel', () => {
     await shootPanel(page, '06-completed-task-full');
   });
 
+  test('an unsaved edit hides Mark complete until Save, so completing never saves it', async ({
+    page,
+  }) => {
+    const parent = await findTask(page, 'Design the pricing page');
+    const task = await createTask(page, { title: 'Check the copy', project: parent.project });
+
+    await openTask(page, task.id, 'Check the copy');
+    await title(page).fill('');
+    await expect(bar(page).getByRole('button', { name: 'Save' })).toBeVisible();
+    await expect(bar(page).locator('.fb-side-panel-bar__lead')).toHaveCount(0);
+
+    await title(page).fill('Check the copy');
+    await bar(page).getByRole('button', { name: 'Save' }).click();
+    await expect(bar(page).getByRole('button', { name: 'Mark complete' })).toBeVisible();
+    expect(await readTask(page, task.id)).toMatchObject({ completed: false });
+  });
+
   test('shoots the open task in light and dark, wide and narrow', async ({ page }) => {
     test.setTimeout(60_000);
 

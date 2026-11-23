@@ -177,7 +177,8 @@ function DeleteRecord({ onDeleted }: { onDeleted: () => void }) {
 
 /**
  * The panel's default header: the shared side panel bar, pinned to the top. A saved record of a
- * `useAsDone` collection leads with Mark complete, which shrinks to a check circle once the
+ * `useAsDone` collection leads with Mark complete, hidden while unsaved edits wait for Save
+ * so it never saves them silently. It shrinks to a check circle once the
  * body's title scrolls under the bar and saves without a toast. The status slot shows Unsaved
  * and Save while a form without autosave has edits, else Saved for autosave. The ••• menu holds copy link, duplicate,
  * create new, the plugin `actions`, the saved time and delete. On the left, a back link when the
@@ -348,7 +349,7 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
             : undefined
         }
         lead={
-          useAsDone && isEditing ? (
+          useAsDone && isEditing && (completing !== 'idle' || status !== 'save') ? (
             <MarkComplete
               compact={titleScrolledOut}
               onToggle={() => setCompleting('pending')}
