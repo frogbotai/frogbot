@@ -116,6 +116,37 @@ describe('pinned comment box', () => {
     await waitFor(() => expect(screen.getByTestId('list').textContent).toBe('1'));
   });
 
+  it('still shows a pinned post after its list was open, then its tab closed and reopened', async () => {
+    const other = { ...target, documentId: 41 };
+    const list = <Comments initial={[]} schemaPath="collection.comments.body" target={other} />;
+    const pinned = <PinnedCommentBox schemaPath="collection.comments.body" target={other} />;
+    const view = render(
+      <>
+        <div>{list}</div>
+        {pinned}
+      </>,
+    );
+
+    act(() => posts.get('41')?.());
+    await waitFor(() => expect(screen.getByTestId('list').textContent).toBe('1'));
+
+    view.rerender(
+      <>
+        <div />
+        {pinned}
+      </>,
+    );
+
+    view.rerender(
+      <>
+        <div>{list}</div>
+        {pinned}
+      </>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId('list').textContent).toBe('1'));
+  });
+
   it("leaves another record's list alone", () => {
     render(
       <>
