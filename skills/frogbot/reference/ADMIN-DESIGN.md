@@ -176,7 +176,18 @@ export async function InvoicesThisWeek({ req }: WidgetServerProps) {
         <CardTitle>Waiting for approval</CardTitle>
       </CardHeader>
       <CardContent>
-        <Stat label="Total waiting" value={<Value format="currency" value={sum(waiting.docs)} />} />
+        <Stat
+          label="Total waiting"
+          value={
+            <Value
+              format="currency"
+              value={waiting.docs.reduce(
+                (total, invoice) => total + Number(invoice.amount ?? 0),
+                0,
+              )}
+            />
+          }
+        />
         {waiting.docs.length ? (
           <List>
             {waiting.docs.map((invoice) => (
@@ -197,10 +208,6 @@ export async function InvoicesThisWeek({ req }: WidgetServerProps) {
       </CardContent>
     </Card>
   );
-}
-
-function sum(docs: Record<string, unknown>[]) {
-  return docs.reduce((total, doc) => total + Number(doc.amount ?? 0), 0);
 }
 ```
 
