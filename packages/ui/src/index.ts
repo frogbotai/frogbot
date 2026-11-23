@@ -43,6 +43,12 @@ export {
   AccordionItem,
   AccordionTrigger,
 } from './components/accordion.js';
+export {
+  ActivityFeed,
+  type ActivityFeedProps,
+  type ActivityItem,
+} from './components/activity-feed.js';
+export { AgentAvatar, type AgentAvatarProps } from './components/agent-avatar.js';
 export { Alert, AlertDescription, type AlertProps, AlertTitle } from './components/alert.js';
 export { Avatar, AvatarFallback, AvatarImage } from './components/avatar.js';
 export { Badge, type BadgeProps } from './components/badge.js';
@@ -55,6 +61,13 @@ export {
   CardHeader,
   CardTitle,
 } from './components/card.js';
+export {
+  Chart,
+  type ChartProps,
+  type ChartSeries,
+  Sparkline,
+  type SparklineProps,
+} from './components/chart.js';
 export { Checkbox, type CheckboxProps } from './components/checkbox.js';
 export { Collapsible, CollapsibleContent, CollapsibleTrigger } from './components/collapsible.js';
 export { CommandBlock, type CommandBlockProps } from './components/command-block.js';
@@ -86,6 +99,7 @@ export {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from './components/context-menu.js';
+export { CopyValue, type CopyValueProps } from './components/copy-value.js';
 export {
   Dialog,
   DialogClose,
@@ -116,12 +130,25 @@ export {
   DropdownMenuTrigger,
 } from './components/dropdown-menu.js';
 export { EditableText, type EditableTextProps } from './components/editable-text.js';
+export { EmptyState, type EmptyStateProps } from './components/empty-state.js';
+export {
+  PersonChip,
+  type PersonChipProps,
+  RecordChip,
+  type RecordChipProps,
+} from './components/entity-chip.js';
+export { Fact, FactList, type FactListProps, type FactProps } from './components/fact-list.js';
 export { Input } from './components/input.js';
 export { Label } from './components/label.js';
 export { List, ListItem, type ListItemProps, type ListProps } from './components/list.js';
+export { Media, type MediaProps } from './components/media.js';
+export { Meter, type MeterProps } from './components/meter.js';
 export { OptionPill, type OptionPillProps } from './components/option-pill.js';
+export { PageHeader, type PageHeaderProps } from './components/page-header.js';
 export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './components/popover.js';
 export { RadioGroup, RadioGroupItem } from './components/radio-group.js';
+export { ReadMore, type ReadMoreProps } from './components/read-more.js';
+export { ReportView, type ReportViewProps } from './components/report-view.js';
 export { ScrollArea, type ScrollAreaProps, ScrollBar } from './components/scroll-area.js';
 export { SearchInput, type SearchInputProps } from './components/search-input.js';
 export {
@@ -169,6 +196,8 @@ export {
 } from './components/sidebar.js';
 export { Skeleton } from './components/skeleton.js';
 export { Slider, type SliderProps } from './components/slider.js';
+export { Stat, StatGrid, type StatGridProps, type StatProps } from './components/stat.js';
+export { StatusBadge, type StatusBadgeProps, type StatusTone } from './components/status-badge.js';
 export {
   StatusIconWithText,
   type StatusIconWithTextProps,
@@ -180,6 +209,13 @@ export { Textarea, type TextareaProps } from './components/textarea.js';
 export { Toggle, type ToggleProps } from './components/toggle.js';
 export { Tooltip, type TooltipProps } from './components/tooltip.js';
 export { UserAvatar, type UserAvatarProps, userInitials } from './components/user-avatar.js';
+export {
+  formatValue,
+  Value,
+  type ValueFormat,
+  type ValueFormatOptions,
+  type ValueProps,
+} from './components/value.js';
 export { useControlledState } from './hooks/use-controlled-state.js';
 export { useHotkey } from './hooks/use-hotkey.js';
 export { useIsMobile } from './hooks/use-mobile.js';

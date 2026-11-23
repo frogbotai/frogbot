@@ -1,6 +1,6 @@
 # First App
 
-Use this when the person asks to set up FrogBot or build their first app and the folder has no `frogbot.config.ts`. The goal: one question, then a running app with their data, a login and sample records, before they open a browser.
+Use this when the person asks to set up FrogBot or build their first app and the folder has no `frogbot.config.ts`. The goal: one question (plus one optional follow-up), then a running app with their data, a login and sample records, before they open a browser.
 
 Don't run `npx skills add` first: `create-frogbot-app` installs this skill into the new app.
 
@@ -9,7 +9,7 @@ Don't run `npx skills add` first: `create-frogbot-app` installs this skill into 
 | #   | Do                                                                                                  |
 | --- | --------------------------------------------------------------------------------------------------- |
 | 1   | Check `node --version` is 24.22.3 or newer. If not, give <https://nodejs.org/en/download> and wait. |
-| 2   | Ask what the app is for, unless the prompt already says. One question, then build.                  |
+| 2   | Ask what the app is for, unless the prompt already says. Offer one optional follow-up, then build.  |
 | 3   | Create the app with every flag set, so nothing prompts.                                             |
 | 4   | Build the first version, with sample records.                                                       |
 | 5   | Start it with `frogbot up` and make their login.                                                    |
@@ -26,6 +26,14 @@ Ask: "What should the app keep track of, and who uses it?" If your client has a 
 - Projects and tasks for my team
 
 When the prompt already names the app ("rebuild our HubSpot", "import my Airtable CSVs"), skip the question. Ask for the CSV files when it mentions them.
+
+Then offer one optional follow-up, because knowing how people use the screens is what makes the first version feel built for them: "How do you picture people using it day to day? Feel free to brain dump: type or talk it through, messy is fine, the more I know the better I can shape it. Or pick one below, or skip and I'll decide." With a multiple-choice tool, give three one-click answers fitted to their app, plus **Skip, you decide**. For a lawn business, for example:
+
+- I check today's jobs on my phone and mark them done
+- My office manager chases unpaid invoices each week
+- Customers book and I approve
+
+Never ask more than this. Ask it in your own warm words, not as a form. Use the answer to pick the first screen, the default view and the one main action (see [ADMIN-DESIGN.md](ADMIN-DESIGN.md#start-from-the-person)). On skip, decide yourself and say what you assumed in one line.
 
 ## 2. Create the app
 

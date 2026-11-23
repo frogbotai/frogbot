@@ -1,0 +1,10 @@
+@layer frogbot {
+  .fb-value {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .fb-value--empty {
+    color: var(--color-text-tertiary);
+  }
+}

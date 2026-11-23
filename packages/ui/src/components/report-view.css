@@ -1,0 +1,124 @@
+@layer frogbot {
+  .fb-report {
+    max-width: 48rem;
+    color: var(--color-text);
+    font-size: var(--fb-text-sm);
+    line-height: 1.6;
+  }
+
+  .fb-report > :first-child {
+    margin-top: 0;
+  }
+
+  .fb-report :is(h1, h2, h3, h4) {
+    margin: 1.75em 0 0.5em;
+    color: var(--color-text);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .fb-report h1 {
+    font-size: var(--fb-text-2xl);
+    line-height: var(--fb-text-2xl--line-height);
+  }
+
+  .fb-report h2 {
+    font-size: var(--fb-text-lg);
+    line-height: var(--fb-text-lg--line-height);
+  }
+
+  .fb-report :is(h3, h4) {
+    font-size: var(--fb-text-base);
+    line-height: var(--fb-text-base--line-height);
+  }
+
+  .fb-report :is(p, ul, ol, blockquote, pre) {
+    margin: 0 0 1em;
+  }
+
+  .fb-report :is(ul, ol) {
+    padding-left: 1.25rem;
+  }
+
+  .fb-report li + li {
+    margin-top: 0.25em;
+  }
+
+  .fb-report__link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-strong);
+    text-underline-offset: 2px;
+  }
+
+  .fb-report__link:hover {
+    text-decoration-color: currentcolor;
+  }
+
+  .fb-report strong {
+    font-weight: 600;
+  }
+
+  .fb-report blockquote {
+    padding-left: 0.875rem;
+    color: var(--color-text-secondary);
+    border-left: 2px solid var(--color-border-strong);
+  }
+
+  .fb-report code {
+    padding: 0.125em 0.375em;
+    font-family: var(--fb-font-mono);
+    font-size: 0.875em;
+    background: var(--color-bg-secondary);
+    border-radius: var(--fb-radius-sm);
+  }
+
+  .fb-report pre {
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    background: var(--color-bg-secondary);
+    border-radius: var(--fb-radius-md);
+  }
+
+  .fb-report pre code {
+    padding: 0;
+    background: none;
+  }
+
+  .fb-report hr {
+    margin: 2em 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .fb-report__table-wrap {
+    margin: 0 0 1.25em;
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-md);
+  }
+
+  .fb-report table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fb-report :is(th, td) {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .fb-report th {
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-xs);
+    font-weight: 500;
+    background: var(--color-bg-secondary);
+  }
+
+  .fb-report tr:last-child td {
+    border-bottom: 0;
+  }
+}
