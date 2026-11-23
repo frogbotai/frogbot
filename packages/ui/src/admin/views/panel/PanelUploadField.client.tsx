@@ -11,7 +11,7 @@ import {
   useTranslation,
   withCondition,
 } from '@payloadcms/ui';
-import type { UploadFieldClient } from 'payload';
+import type { SanitizedFieldsPermissions, UploadFieldClient } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
@@ -48,11 +48,26 @@ function toIds(value: unknown): Id[] {
   });
 }
 
+function canUpdateField(fields: SanitizedFieldsPermissions | undefined, path: string): boolean {
+  let current = fields;
+
+  for (const name of path.split('.')) {
+    if (current === undefined || current === true) return true;
+    const field = current[name];
+
+    if (field === undefined || field === true) return true;
+    if (!field.update) return false;
+    current = field.fields;
+  }
+
+  return true;
+}
+
 function PanelUploadFieldComponent({ path }: { path: string }) {
   const { config, getEntityConfig } = useConfig();
   const { permissions } = useAuth();
   const { i18n } = useTranslation();
-  const { hasSavePermission, id, isTrashed } = useDocumentInfo();
+  const { docPermissions, hasSavePermission, id, isTrashed } = useDocumentInfo();
   const { submit } = useForm();
   const layout = usePanelLayout();
   const { setValue, value } = useField<unknown>({ path });
@@ -60,6 +75,8 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
   const [files, setFiles] = useState<Record<string, FileDoc>>({});
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
+  const requested = useRef(new Set<string>());
+  const latestIds = useRef<Id[]>([]);
 
   const field = layout
     ? (findPanelField(layout.collectionConfig.fields, path)?.field as UploadFieldClient | undefined)
@@ -72,9 +89,15 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
   const api = config.routes.api;
 
   useEffect(() => {
-    const missing = key ? key.split(',').filter((item) => !files[item]) : [];
+    latestIds.current = ids;
+  });
+
+  useEffect(() => {
+    const missing = key ? key.split(',').filter((item) => !requested.current.has(item)) : [];
 
     if (!relationTo || !missing.length) return;
+
+    for (const item of missing) requested.current.add(item);
 
     const query = qs.stringify(
       { depth: 0, limit: missing.length, where: { id: { in: missing } } },
@@ -86,15 +109,15 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
     })
       .then((response) => (response.ok ? response.json() : undefined))
       .then((result?: { docs: FileDoc[] }) => {
-        if (!result) return;
+        if (!result?.docs.length) return;
 
-        setFiles((current) => ({
-          ...current,
+        setFiles((known) => ({
+          ...known,
           ...Object.fromEntries(result.docs.map((doc) => [String(doc.id), doc])),
         }));
       })
       .catch(() => undefined);
-  }, [api, files, key, relationTo]);
+  }, [api, key, relationTo]);
 
   useEffect(() => {
     if (!pending) return;
@@ -105,9 +128,16 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
 
   if (!field || !relationTo) return null;
 
-  const readOnly = Boolean(field.admin?.readOnly) || !hasSavePermission || Boolean(isTrashed);
+  const readOnly =
+    Boolean(field.admin?.readOnly) ||
+    !hasSavePermission ||
+    Boolean(isTrashed) ||
+    !canUpdateField(docPermissions?.fields, path);
+
+  const full = hasMany && typeof field.maxRows === 'number' && ids.length >= field.maxRows;
   const canCreate =
     !readOnly &&
+    !full &&
     field.admin?.allowCreate !== false &&
     Boolean(permissions?.collections?.[relationTo]?.create);
 
@@ -119,7 +149,10 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
   };
 
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const picked = [...(event.target.files ?? [])];
+    const room =
+      hasMany && typeof field.maxRows === 'number' ? field.maxRows - latestIds.current.length : 1;
+
+    const picked = [...(event.target.files ?? [])].slice(0, hasMany ? Math.max(room, 0) : 1);
 
     event.target.value = '';
     if (!picked.length) return;
@@ -145,12 +178,14 @@ function PanelUploadFieldComponent({ path }: { path: string }) {
         }),
       );
 
-      setFiles((current) => ({
-        ...current,
+      for (const doc of added) requested.current.add(String(doc.id));
+
+      setFiles((known) => ({
+        ...known,
         ...Object.fromEntries(added.map((doc) => [String(doc.id), doc])),
       }));
 
-      save(hasMany ? [...ids, ...added.map((doc) => doc.id)] : [added[0].id]);
+      save(hasMany ? [...latestIds.current, ...added.map((doc) => doc.id)] : [added[0].id]);
     } catch (error) {
       toast.error(`Could not upload ${error instanceof Error ? error.message : 'the file'}`);
     } finally {

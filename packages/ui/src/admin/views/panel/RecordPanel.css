@@ -310,6 +310,11 @@
     padding-bottom: var(--spacer-4);
   }
 
+  /* A property its condition hides leaves an empty row, which would add a grid gap. */
+  .fb-record-panel-properties__row:empty {
+    display: none;
+  }
+
   .fb-record-panel-properties__row > .field-type,
   .fb-record-panel-properties__row > * > .field-type {
     align-items: center;
@@ -328,6 +333,11 @@
 
   .fb-record-panel-properties__row .field-type > :not(.field-label, label) {
     grid-column: 2;
+  }
+
+  /* Asana marks nothing as required in the panel; a missing value still shows its error. */
+  .fb-record-panel-properties__row .field-label .required {
+    display: none;
   }
 
   /* Property values read flat: no input chrome at rest, a rounded fill on hover and focus. */
@@ -459,17 +469,12 @@
     color: var(--color-text-tertiary);
   }
 
-  .fb-panel-join__row--draft {
-    box-shadow: inset 0 0 0 1px var(--color-border-selected-strong);
-  }
-
   .fb-panel-upload {
     margin-bottom: var(--spacer-5);
   }
 
   .fb-panel-upload__files {
-    display: grid;
-    gap: var(--spacer-1);
+    border-top: 1px solid var(--color-border);
     list-style: none;
     margin: 0;
     padding: 0;
@@ -477,12 +482,11 @@
 
   .fb-panel-upload__file {
     align-items: center;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-medium);
+    border-bottom: 1px solid var(--color-border);
     display: flex;
     gap: var(--spacer-2);
-    min-height: 40px;
-    padding: var(--spacer-1) var(--spacer-1) var(--spacer-1) var(--spacer-2);
+    min-height: 36px;
+    padding: 0 var(--spacer-1);
   }
 
   .fb-panel-upload__file:hover {
@@ -496,10 +500,10 @@
     color: var(--color-icon-secondary);
     display: inline-flex;
     flex: none;
-    height: 28px;
+    height: 24px;
     justify-content: center;
     overflow: hidden;
-    width: 28px;
+    width: 24px;
   }
 
   .fb-panel-upload__icon img {
@@ -536,7 +540,7 @@
     border-color: transparent;
     box-shadow: none;
     field-sizing: content;
-    min-height: calc(var(--text-body-medium-line-height, 20px) * 3);
+    min-height: 0;
     padding-left: var(--spacer-2);
     padding-right: var(--spacer-2);
     margin-left: calc(var(--spacer-2) * -1);
@@ -575,11 +579,6 @@
 
     .collection-view--panel-open {
       padding-right: 0;
-    }
-
-    .fb-record-panel-properties__row > .field-type,
-    .fb-record-panel-properties__row > * > .field-type {
-      display: block;
     }
   }
 }

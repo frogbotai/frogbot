@@ -55,4 +55,20 @@ describe('ShortDateCell', () => {
     );
     expect(render(<ShortDateCell {...props(null)} />).container.textContent).toBe('');
   });
+
+  it("writes a timezone field's day in its saved zone, as Payload's DateCell does", () => {
+    const year = new Date().getFullYear();
+    const cellData = `${year}-11-24T11:00:00.000Z`;
+    const field = { name: 'dueDate', type: 'date', timezone: true } as ClientField;
+
+    expect(
+      render(
+        <ShortDateCell
+          {...props(cellData)}
+          field={field}
+          rowData={{ id: 1, dueDate: cellData, dueDate_tz: 'Pacific/Auckland' }}
+        />,
+      ).container.textContent,
+    ).toBe('Nov 25');
+  });
 });

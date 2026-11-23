@@ -290,6 +290,21 @@ test.describe('the task panel', () => {
     expect(errors).toEqual([]);
   });
 
+  test('a subtask opened from the list links back to its parent, with no Project row', async ({
+    page,
+  }) => {
+    const subtask = await findTask(page, 'Write the pricing FAQ');
+
+    await openTask(page, subtask.id, 'Write the pricing FAQ');
+    await expect(row(page, 'project')).toHaveCount(0);
+    await expect(panel(page).locator('.fb-record-panel-properties__row:visible')).toHaveCount(4);
+    await expect(panel(page).locator('.field-label .required:visible')).toHaveCount(0);
+
+    await bar(page).getByRole('button', { name: 'Back to Design the pricing page' }).click();
+    await expect(title(page)).toHaveValue('Design the pricing page');
+    await expect(bar(page).getByRole('button', { name: /^Back to/ })).toHaveCount(0);
+  });
+
   test('+ adds a subtask inline in the parent’s project, and its check saves completed', async ({
     page,
   }) => {
@@ -300,6 +315,10 @@ test.describe('the task panel', () => {
 
     const draft = subtasks(page).getByRole('textbox', { name: 'New task name' });
     await expect(draft).toBeFocused();
+    const { totalDocs } = (await (await page.request.get('/api/tasks?limit=1')).json()) as {
+      totalDocs: number;
+    };
+
     await draft.fill('Price the add-ons');
     await draft.press('Enter');
 
@@ -309,6 +328,8 @@ test.describe('the task panel', () => {
     await expect(draft).toBeFocused();
     await expect(title(page)).toHaveValue('Design the pricing page');
     expect(Number(new URL(page.url()).searchParams.get('record'))).toBe(parent.id);
+    await expect(page.locator('.collection-list')).toContainText(`of ${totalDocs + 1} items`);
+    await expect(page.locator('.app-header__step-nav')).toContainText('Design the pricing page');
 
     await draft.press('Escape');
     await expect(draft).toHaveCount(0);

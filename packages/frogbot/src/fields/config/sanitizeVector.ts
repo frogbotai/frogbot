@@ -11,7 +11,7 @@ import {
   type OnAutonumberKey,
   sanitizeSystemKind,
 } from './sanitizeSystemKinds.js';
-import type { Field, JSONField, JSONSchemaTransform, VectorField } from './types.js';
+import type { Field, JSONField, JSONSchemaTransform, UploadField, VectorField } from './types.js';
 
 type VectorOwner =
   { block?: undefined; collection: string } | { block: string; collection?: undefined };
@@ -136,6 +136,18 @@ function withFieldCell<T extends Field>(field: T): T {
   };
 }
 
+export const LARGE_PREVIEW_CLASS = 'fb-upload-preview--large';
+
+function sanitizeUploadPreview(field: UploadField): Field {
+  const { preview, ...rest } = field;
+
+  if (preview !== 'large') return rest;
+
+  const className = [rest.admin?.className, LARGE_PREVIEW_CLASS].filter(Boolean).join(' ');
+
+  return { ...rest, admin: { ...rest.admin, className } } as Field;
+}
+
 function sanitizeFields(
   args: SanitizeVectorFieldsArgs,
   parent: string,
@@ -161,6 +173,8 @@ function sanitizeFields(
     if (field.type === 'json') return sanitizeJSONSchemaTransforms(field);
 
     if (field.type === 'checkbox') return withFieldCell(field);
+
+    if (field.type === 'upload' && 'preview' in field) return sanitizeUploadPreview(field);
 
     if ('fields' in field && Array.isArray(field.fields)) {
       return {

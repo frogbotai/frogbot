@@ -78,14 +78,16 @@ function Frame(props: CollectionViewFrameProps) {
   const collectionConfig = getEntityConfig({ collectionSlug: props.collectionSlug });
   const pluralLabel = getTranslation(collectionConfig.labels.plural, i18n);
   const isTrash = props.viewType === 'trash';
+  const listHref = props.tabs[0]?.href;
+  const trashLabel = i18n.t('general:trash');
 
   useEffect(() => {
     setStepNav(
       isTrash
-        ? [{ label: pluralLabel, url: props.tabs[0]?.href }, { label: i18n.t('general:trash') }]
+        ? [{ label: pluralLabel, url: listHref }, { label: trashLabel }]
         : [{ label: pluralLabel }],
     );
-  }, [i18n, isTrash, panelOpen, pathname, pluralLabel, props.tabs, setStepNav]);
+  }, [isTrash, listHref, panelOpen, pathname, pluralLabel, setStepNav, trashLabel]);
 
   useRecordLinks({ collectionSlug: props.collectionSlug, disabled: isTrash, viewRef });
 

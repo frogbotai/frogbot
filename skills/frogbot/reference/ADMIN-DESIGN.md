@@ -17,15 +17,17 @@ Work these out from the request, the data, the collection names and the optional
 
 ## Choose fields by what the text is
 
-| What it holds                                    | Use                                                                                       |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| A name, title or code, under about 60 characters | `text`                                                                                    |
-| A sentence or more: summary, lead, bio, notes    | `textarea`, never `text`                                                                  |
-| Formatted prose people write                     | `richText`                                                                                |
-| Markdown an agent writes, such as a report       | `textarea` hidden from the form, shown with `ReportView` in a custom field or view        |
-| Money, percent, rating, duration, URL            | the field kinds: `moneyField`, `percentField`, `ratingField`, `durationField`, `urlField` |
-| A fixed set of states                            | `select`, shown with `StatusBadge`                                                        |
-| One saved settings record                        | a global, not a collection with one row                                                   |
+| What it holds                                                | Use                                                                                       |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| A name, title or code, under about 60 characters             | `text`                                                                                    |
+| A sentence or more: summary, lead, bio, notes                | `textarea`, never `text`                                                                  |
+| Formatted prose people write                                 | `richText`                                                                                |
+| Markdown an agent writes, such as a report                   | `textarea` hidden from the form, shown with `ReportView` in a custom field or view        |
+| Money, percent, rating, duration, URL                        | the field kinds: `moneyField`, `percentField`, `ratingField`, `durationField`, `urlField` |
+| A fixed set of states                                        | `select`, shown with `StatusBadge`                                                        |
+| A picture that is the point: product, photo, video thumbnail | `upload` with `preview: 'large'`                                                          |
+| A thumbnail that is only a URL, such as a YouTube image      | `text` hidden from the form, shown with `Media` in a custom field                         |
+| One saved settings record                                    | a global, not a collection with one row                                                   |
 
 ## Read-only is display, not a grey input
 
@@ -55,6 +57,16 @@ export const SubscribersField = ({ field, path }: NumberFieldClientProps) => {
 ```ts
 { name: 'subscribers', type: 'number', admin: { readOnly: true, position: 'sidebar', components: { Field: '/components/SubscribersField#SubscribersField' } } }
 ```
+
+## Pictures
+
+Every image in an upload field opens full size when clicked. The thumbnail beside the file name stays small, which suits logos and attachments. When people open the record to look at the picture (a product, a photo, a video), give the field `preview: 'large'` and put it first in the form:
+
+```ts
+{ name: 'thumbnail', type: 'upload', relationTo: 'media', preview: 'large' }
+```
+
+A report shows images the app serves (`/api/media/file/...`) inline; an image on another site shows as a link, so opening a report never loads a third-party server.
 
 ## Default view fits the job
 
@@ -217,3 +229,5 @@ Register it in `admin.dashboard.widgets` and place it first in `defaultLayout`:
 widgets: [{ slug: 'invoices-this-week', Component: '/components/InvoicesThisWeek#InvoicesThisWeek', maxWidth: 'medium' }],
 defaultLayout: [{ widgetSlug: 'invoices-this-week', width: 'medium' }, { widgetSlug: 'activity', width: 'full' }],
 ```
+
+For a plain short list, use the built-in `collection-query` widget before writing your own. Its rows show the title, the first select and first number from the list view's `defaultFields`, and the sort field's date when it is one, red once a due date passes. Sort by the date people plan around, such as `dueDate` or `closeDate`.

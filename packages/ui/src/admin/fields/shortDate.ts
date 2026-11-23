@@ -1,12 +1,27 @@
 import type { ClientField } from 'payload';
 
+/** The zone a timezone date field was saved in, from its `<name>_tz` sibling, as Payload's `DateCell` reads it. */
+export function savedTimeZone(field: ClientField, row: unknown): string | undefined {
+  if (field.type !== 'date' || !field.timezone || typeof row !== 'object' || row === null) {
+    return undefined;
+  }
+
+  const zone = (row as Record<string, unknown>)[`${field.name}_tz`];
+
+  return typeof zone === 'string' && zone ? zone : undefined;
+}
+
 /**
- * A date as Asana writes it: "Nov 24" this year, "Nov 24, 2027" in any other. Returns `undefined`
- * for a value that isn't a valid date.
+ * A date as Asana writes it: "Nov 24" this year, "Nov 24, 2027" in any other, in `timeZone` when
+ * given and the viewer's zone otherwise. Returns `undefined` for a value that isn't a valid date.
  */
 export function formatShortDate(
   value: unknown,
-  { locale = 'en', now = new Date() }: { locale?: string; now?: Date } = {},
+  {
+    locale = 'en',
+    now = new Date(),
+    timeZone,
+  }: { locale?: string; now?: Date; timeZone?: string } = {},
 ): string | undefined {
   if (!(value instanceof Date) && typeof value !== 'string' && typeof value !== 'number') {
     return undefined;
@@ -16,10 +31,14 @@ export function formatShortDate(
 
   if (Number.isNaN(date.getTime())) return undefined;
 
+  const zone = timeZone ? { timeZone } : {};
+  const year = new Intl.DateTimeFormat('en', { ...zone, year: 'numeric' });
+
   return new Intl.DateTimeFormat(locale, {
+    ...zone,
     day: 'numeric',
     month: 'short',
-    ...(date.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+    ...(year.format(date) === year.format(now) ? {} : { year: 'numeric' }),
   }).format(date);
 }
 
