@@ -1,6 +1,6 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@frogbotai/db-sqlite';
 
-export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+export async function up({ db, req }: MigrateUpArgs): Promise<void> {
   await db.run(sql`CREATE TABLE \`users_rels\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
   	\`order\` integer,
@@ -139,11 +139,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, req }: MigrateDownArgs): Promise<void> {
   await db.run(sql`DROP TABLE \`users_rels\`;`);
   await db.run(sql`DROP TABLE \`payload_llm_instructions\`;`);
   await db.run(sql`DROP TABLE \`payload_llm_instructions_rels\`;`);

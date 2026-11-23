@@ -31,6 +31,7 @@ const checks = [
   { area: 'auth', project: '../../test/types/auth/tsconfig.fallback.json' },
   { area: 'auth', project: '../../test/types/auth/tsconfig.partial.json' },
   { area: 'search', project: '../../test/types/search/tsconfig.json' },
+  { area: 'database', project: '../../test/types/database/tsconfig.json' },
   { area: 'duplicate', project: '../../test/types/duplicate/tsconfig.json', after: 'copy' },
   {
     area: 'duplicate',

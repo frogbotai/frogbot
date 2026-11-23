@@ -1,12 +1,14 @@
 import { createClient } from '@libsql/client';
 import {
-  type MigrateDownArgs,
-  type MigrateUpArgs,
+  type MigrateDownArgs as PayloadMigrateDownArgs,
+  type MigrateUpArgs as PayloadMigrateUpArgs,
   type SQLiteAdapter,
   sqliteAdapter as createSQLiteAdapter,
   type SQLiteAdapterArgs as PayloadSQLiteAdapterArgs,
 } from '@payloadcms/db-sqlite';
+import type { MigrationArgs } from 'frogbot';
 import { sqliteAggregateAdapter } from 'frogbot/aggregate';
+import { installMigrateRefresh } from 'frogbot/internal';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteSearchAdapter } from 'frogbot/search';
 
@@ -16,7 +18,13 @@ import { sqliteSnapshot } from './snapshot.js';
 import { connectionPragmas, installWriteLock, takeCommitError } from './writeLock.js';
 
 export { sql } from '@payloadcms/db-sqlite';
-export type { MigrateDownArgs, MigrateUpArgs, SQLiteAdapter };
+export type { SQLiteAdapter };
+
+/** What a migration's `up` gets: `db`, the Drizzle instance inside the migration's transaction, and `req`. */
+export type MigrateUpArgs = MigrationArgs<PayloadMigrateUpArgs>;
+
+/** What a migration's `down` gets: `db`, the Drizzle instance inside the migration's transaction, and `req`. */
+export type MigrateDownArgs = MigrationArgs<PayloadMigrateDownArgs>;
 
 export type SQLiteAdapterArgs = PayloadSQLiteAdapterArgs & {
   /**
@@ -93,6 +101,8 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
       if (devSync) installDevSync(database);
 
       installSQLJobOperations({ adapter: database, dialect: 'sqlite' });
+
+      installMigrateRefresh(database);
 
       return database;
     },

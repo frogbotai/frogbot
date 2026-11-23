@@ -1,6 +1,7 @@
 import { loadConfig } from '../config/load.js';
 import { formatCliError } from './formatCliError.js';
 import { migrateUsage } from './help.js';
+import { assertFrogBotPredefined, rewriteMigrationFile } from './migrationFile.js';
 
 const COMMANDS = [
   'migrate',
@@ -117,25 +118,43 @@ export async function migrate(args: string[]): Promise<void> {
         await adapter.migrate({});
 
         break;
-      case 'migrate:create':
-        await adapter.createMigration({
+      case 'migrate:create': {
+        const migrationName = flags.name ?? positional[0];
+
+        assertFrogBotPredefined(flags.file ?? migrationName);
+
+        const created = await adapter.createMigration({
           file: flags.file,
           forceAcceptWarning: flags.forceAcceptWarning,
-          migrationName: flags.name ?? positional[0],
+          migrationName,
           payload,
           skipEmpty: flags.skipEmpty,
         });
 
+        if (created?.path) await rewriteMigrationFile(created.path);
+
         break;
+      }
+
       case 'migrate:down':
         await adapter.migrateDown();
         break;
       case 'migrate:fresh':
         await adapter.migrateFresh({ forceAcceptWarning: flags.forceAcceptWarning });
         break;
-      case 'migrate:refresh':
-        await adapter.migrateRefresh();
+      case 'migrate:refresh': {
+        const refreshed = await adapter.migrateRefresh();
+
+        if (refreshed?.cancelled) {
+          throw new Error(
+            'payload_migrations has a dev-mode row (batch -1), so migrate:refresh stopped before applying migrations.\n' +
+              'Run `frogbot migrate --force-accept-warning` to apply them anyway, or delete that row if the database already matches your migrations.',
+          );
+        }
+
         break;
+      }
+
       case 'migrate:reset':
         await adapter.migrateReset();
         break;

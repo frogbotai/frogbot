@@ -29,66 +29,68 @@ all changes that you attempt to make within the migration, and the `down` should
 Here is an example migration file:
 
 ```ts
-import { MigrateUpArgs, MigrateDownArgs } from '@frogbotai/your-db-adapter'
+import { type MigrateDownArgs, type MigrateUpArgs, sql } from '@frogbotai/db-sqlite'
 
-export async function up({ frogbot, req }: MigrateUpArgs): Promise<void> {
-  // Perform changes to your database here.
-  // You have access to `frogbot` as an argument, and
-  // everything is done in TypeScript.
+export async function up({ db, req }: MigrateUpArgs): Promise<void> {
+  await db.run(sql`ALTER TABLE posts ADD COLUMN summary text`)
 }
 
-export async function down({ frogbot, req }: MigrateDownArgs): Promise<void> {
-  // Do whatever you need to revert changes if the `up` function fails
+export async function down({ db, req }: MigrateDownArgs): Promise<void> {
+  await db.run(sql`ALTER TABLE posts DROP COLUMN summary`)
 }
 ```
 
+Every migration gets the same two arguments:
+
+| Argument | What it is |
+| --- | --- |
+| `db` | The database driver, inside the migration's transaction: Drizzle on Postgres and SQLite. On MongoDB, `migrationDatabase(req)` returns it (see below). |
+| `req` | The migration's request. It carries the transaction. |
+
+Migrations run before the app starts, so `req.frogbot` isn't there and the [Local API](/local-api/overview) isn't available. Change data with `db`, the way `migrate:create` writes its SQL.
+
 ## Using Transactions
 
-Each migration runs in a new [transaction](/database/transactions). To make database changes inside the transaction, pass the `req` object to any [Local API](/local-api/overview) or direct database call, such as `frogbot.db.updateMany()`.
+Each migration runs in a new [transaction](/database/transactions), and `db` is already inside it.
 
 - If no error is thrown, the transaction is committed after your `up` or `down` function runs.
 - If the migration errors at any point or fails to commit, the transaction is aborted, and no change is made to the database.
 
-### Using database directly with the transaction
-
-Additionally, you can bypass FrogBot's layer entirely and perform operations directly on your underlying database within the active transaction:
-
-### MongoDB:
+### Postgres
 
 ```ts
-import { type MigrateUpArgs } from '@frogbotai/db-mongodb'
+import { type MigrateUpArgs, sql } from '@frogbotai/db-postgres'
 
-export async function up({
-  session,
-  frogbot,
-  req,
-}: MigrateUpArgs): Promise<void> {
-  const posts = await frogbot.db.collections.posts.collection
-    .find({ session })
-    .toArray()
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+  await db.execute(sql`UPDATE posts SET summary = '' WHERE summary IS NULL`)
 }
 ```
 
-### Postgres:
-
-```ts
-import type { MigrateUpArgs } from '@frogbotai/db-postgres'
-import { sql } from '@frogbotai/db-postgres/drizzle'
-
-export async function up({ db, frogbot, req }: MigrateUpArgs): Promise<void> {
-  const { rows: posts } = await db.execute(sql`SELECT * from posts`)
-}
-```
-
-### SQLite:
+### SQLite
 
 In SQLite, transactions are disabled by default. [More](/database/transactions).
 
 ```ts
 import { type MigrateUpArgs, sql } from '@frogbotai/db-sqlite'
 
-export async function up({ db, frogbot, req }: MigrateUpArgs): Promise<void> {
-  const { rows: posts } = await db.run(sql`SELECT * from posts`)
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+  await db.run(sql`UPDATE posts SET summary = '' WHERE summary IS NULL`)
+}
+```
+
+### MongoDB
+
+On MongoDB, `await migrationDatabase(req)` returns `{ db, session }`: the database, and the migration's transaction when the database runs one (a replica set). Pass `session` to each call so the change joins the transaction.
+
+```ts
+import { type MigrateUpArgs, migrationDatabase } from '@frogbotai/db-mongodb'
+
+export async function up({ req }: MigrateUpArgs): Promise<void> {
+  const { db, session } = await migrationDatabase(req)
+
+  await db
+    .collection('posts')
+    .updateMany({ summary: { $exists: false } }, { $set: { summary: '' } }, { session })
 }
 ```
 
@@ -142,6 +144,8 @@ default, migrations will be named using a timestamp.
 ```bash
 npx frogbot migrate:create optional-name-here
 ```
+
+The file imports its types and `sql` from your adapter, and its `up` and `down` take `{ db, req }` (`{ req }` on MongoDB, with `const { db, session } = await migrationDatabase(req)`).
 
 See the [flags table](#commands) for `--name`, `--file`, `--skip-empty`, and `--force-accept-warning`.
 

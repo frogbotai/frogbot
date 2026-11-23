@@ -16,6 +16,9 @@ export const ALLOWLIST = [
 
 const SCAFFOLD_ROOTS = ['templates', 'packages/create-frogbot-app/dist/templates', 'examples'];
 
+const MIGRATION_ARGS =
+  /\{((?:[^{}]|\{[^{}]*\})*)\}\s*:\s*(?:[\w$]+\.|import\([^)]*\)\.)?Migrate(?:Up|Down)Args\b/g;
+
 const SCAFFOLD_PATTERN = /Payload|@payloadcms\//;
 
 const DOCS_PATTERN = /\bPayload\b|@payloadcms\//;
@@ -106,8 +109,18 @@ export function checkBranding({ files, allowlist = ALLOWLIST }) {
       .map((entry) => ({ entry, range: allowedLines(lines, entry.heading) }))
       .filter(({ range }) => range);
 
+    const signatureLines = new Set(
+      [...content.matchAll(MIGRATION_ARGS)]
+        .filter(([, args]) => /\bpayload\b/.test(args))
+        .map(({ index }) => content.slice(0, index).split('\n').length - 1),
+    );
+
+    for (const index of signatureLines) {
+      problems.push({ file, line: index + 1, text: lines[index].trim() });
+    }
+
     lines.forEach((line, index) => {
-      if (!pattern.test(line)) return;
+      if (signatureLines.has(index) || !pattern.test(line)) return;
 
       const section = sections.find(({ range }) => index >= range.start && index < range.end);
 

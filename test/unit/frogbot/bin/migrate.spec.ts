@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
@@ -17,11 +19,17 @@ const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 const mocks = vi.hoisted(() => ({
   adapter: {
-    createMigration: vi.fn(async () => {}),
+    createMigration: vi.fn(async (): Promise<{ created: boolean; path?: string } | void> => {}),
     migrate: vi.fn(async (_args?: { forceAcceptWarning?: boolean }) => {}),
     migrateDown: vi.fn(async () => {}),
     migrateFresh: vi.fn(async () => {}),
-    migrateRefresh: vi.fn(async () => {}),
+    migrateRefresh: vi.fn(
+      async (): Promise<{
+        cancelled?: true;
+        migrated: string[];
+        rolledBack: string[];
+      } | void> => {},
+    ),
     migrateReset: vi.fn(async () => {}),
     migrateStatus: vi.fn(async () => {}),
   },
@@ -177,6 +185,66 @@ describe('migrate', () => {
 
       await expect(migrate(['migrate'])).rejects.toThrow('exit:0');
       expect(mocks.adapter.migrate).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('fails migrate:refresh when it stopped at a dev-mode row', async () => {
+    mocks.adapter.migrateRefresh.mockResolvedValueOnce({
+      cancelled: true,
+      migrated: [],
+      rolledBack: [],
+    });
+
+    await expect(migrate(['migrate:refresh'])).rejects.toThrow('exit:1');
+    expect(String(error.mock.calls[0]?.[0])).toContain('dev-mode row');
+  });
+
+  describe('migrate:create', () => {
+    let directory: string | undefined;
+
+    afterEach(async () => {
+      if (directory) await rm(directory, { force: true, recursive: true });
+
+      directory = undefined;
+    });
+
+    it('writes the migration without a payload argument', async () => {
+      directory = await mkdtemp(join(tmpdir(), 'frogbot-migrate-create-'));
+      const file = join(directory, '20260101_000000_init.ts');
+
+      mocks.adapter.createMigration.mockImplementationOnce(async () => {
+        await writeFile(
+          file,
+          "import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'\n\nexport async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {\n}\n",
+        );
+
+        return { created: true, path: file };
+      });
+
+      await expect(migrate(['migrate:create', 'init'])).rejects.toThrow('exit:0');
+      expect(await readFile(file, 'utf8')).toBe(
+        "import { MigrateUpArgs, MigrateDownArgs, sql } from '@frogbotai/db-postgres'\n\nexport async function up({ db, req }: MigrateUpArgs): Promise<void> {\n}\n",
+      );
+    });
+
+    it.each([
+      ['--file', '@payloadcms/db-postgres/relationships-v2-v3'],
+      ['--name', '@payloadcms/db-mongodb/relationships-v2-v3'],
+    ])('refuses a predefined migration from @payloadcms through %s', async (flag, file) => {
+      await expect(migrate(['migrate:create', flag, file])).rejects.toThrow('exit:1');
+
+      expect(mocks.adapter.createMigration).not.toHaveBeenCalled();
+      expect(String(error.mock.calls[0]?.[0])).toContain(`can't use ${file}`);
+    });
+
+    it('creates from a FrogBot predefined migration', async () => {
+      await expect(
+        migrate(['migrate:create', 'upgrade', '--file', 'frogbot/migrations/upgrade-0.34']),
+      ).rejects.toThrow('exit:0');
+
+      expect(mocks.adapter.createMigration).toHaveBeenCalledWith(
+        expect.objectContaining({ file: 'frogbot/migrations/upgrade-0.34' }),
+      );
     });
   });
 

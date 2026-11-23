@@ -66,6 +66,26 @@ describe('checkBranding', () => {
     ['packages/plugins/plugin-x/README.md', 'Delegates to Payload.'],
     ['templates/blank/src/frogbot.config.ts', 'type PayloadRequest = unknown'],
     ['examples/demo/README.md', 'See PayloadCMS.'],
+    [
+      'examples/demo/src/migrations/1_init.ts',
+      'export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {',
+    ],
+    [
+      'docs/database/migrations.mdx',
+      'export async function down({ payload, req }: MigrateDownArgs) {',
+    ],
+    [
+      'examples/demo/src/migrations/1_init.ts',
+      'export async function up({ db, req: { payload } }: MigrateUpArgs): Promise<void> {',
+    ],
+    [
+      'docs/database/migrations.mdx',
+      'export async function up({ payload }: sqlite.MigrateUpArgs) {',
+    ],
+    [
+      'templates/blank/src/migrations/1_init.ts',
+      "export async function down({ payload }: import('@frogbotai/db-sqlite').MigrateDownArgs) {",
+    ],
   ])('rejects %s: %s', (file, line) => {
     const problems = check({ ...allowed, [file]: `${line}\n` });
 
@@ -78,10 +98,30 @@ describe('checkBranding', () => {
     ['packages/plugins/plugin-mcp/README.md', 'A dormant `payload-mcp-api-keys` collection.'],
     ['packages/frogbot/dist/README.md', 'Payload'],
     ['docs/node_modules/x/README.md', 'Payload'],
+    [
+      'examples/demo/src/migrations/1_init.ts',
+      'export async function up({ db, req }: MigrateUpArgs): Promise<void> {',
+    ],
+    [
+      'examples/demo/src/migrations/1_init.ts',
+      'export async function up({ db, req: { transactionID } }: sqlite.MigrateUpArgs) {',
+    ],
+    ['docs/database/migrations.mdx', 'Tables named `payload_kv` keep their name.'],
   ])('accepts %s: %s', (file, line) => {
     const problems = check({ ...allowed, [file]: `${line}\n` });
 
     expect(problems).toEqual([]);
+  });
+
+  it('rejects a migration signature with payload that Prettier split over lines', () => {
+    const file = 'examples/demo/src/migrations/1_init.ts';
+    const problems = check({
+      ...allowed,
+      [file]:
+        'export async function down({\n  db,\n  payload,\n  req,\n}: MigrateDownArgs): Promise<void> {}\n',
+    });
+
+    expect(problems).toEqual([{ file, line: 1, text: 'export async function down({' }]);
   });
 
   it('allows Payload only inside the allowlisted section', () => {

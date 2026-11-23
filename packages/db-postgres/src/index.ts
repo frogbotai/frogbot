@@ -1,19 +1,25 @@
 import {
+  type MigrateDownArgs as PayloadMigrateDownArgs,
+  type MigrateUpArgs as PayloadMigrateUpArgs,
   postgresAdapter as createPostgresAdapter,
   type PostgresAdapterArgs,
 } from '@payloadcms/db-postgres';
+import type { MigrationArgs } from 'frogbot';
 import { postgresAggregateAdapter } from 'frogbot/aggregate';
+import { installMigrateRefresh } from 'frogbot/internal';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { postgresSearchAdapter } from 'frogbot/search';
 
 import { syncSchema } from './schema/sync.js';
 
-export type {
-  MigrateDownArgs,
-  MigrateUpArgs,
-  PostgresAdapter,
-  PostgresAdapterArgs,
-} from '@payloadcms/db-postgres';
+export type { PostgresAdapter, PostgresAdapterArgs } from '@payloadcms/db-postgres';
+export { sql } from '@payloadcms/db-postgres';
+
+/** What a migration's `up` gets: `db`, the Drizzle instance inside the migration's transaction, and `req`. */
+export type MigrateUpArgs = MigrationArgs<PayloadMigrateUpArgs>;
+
+/** What a migration's `down` gets: `db`, the Drizzle instance inside the migration's transaction, and `req`. */
+export type MigrateDownArgs = MigrationArgs<PayloadMigrateDownArgs>;
 
 /**
  * Payload's Postgres adapter with FrogBot's job operations. Without `prodMigrations`, it also syncs the
@@ -31,6 +37,8 @@ export function postgresAdapter(args: PostgresAdapterArgs) {
       const database = adapter.init(initArgs);
 
       installSQLJobOperations({ adapter: database, dialect: 'postgres' });
+
+      installMigrateRefresh(database);
 
       return database;
     },

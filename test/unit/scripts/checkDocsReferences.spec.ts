@@ -5,12 +5,13 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
-  ALLOWLIST,
   checkDocsReferences,
   docsCommands,
   moduleExports,
   pluginCommands,
 } from '../../../scripts/check-docs-references.mjs';
+
+const allowlist = [{ name: '@frogbotai/your-db-adapter', reason: 'placeholder in migrations.mdx' }];
 
 const packages = [
   { name: 'frogbot', exports: { '.': './index.js' }, bin: { frogbot: './bin.js' } },
@@ -46,7 +47,7 @@ function check(content: string, reportStale = false) {
     packages,
     commands,
     exportsOf,
-    allowlist: ALLOWLIST,
+    allowlist,
     reportStale,
   });
 }
