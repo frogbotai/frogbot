@@ -4,6 +4,7 @@ import {
   EXCERPT_LENGTH,
   excerptOf,
   mentionChanges,
+  nameOf,
 } from '../../../packages/plugins/plugin-comments/src/mentions.js';
 
 const paragraph = (...children: Record<string, unknown>[]) => ({
@@ -41,6 +42,19 @@ describe('mentionChanges', () => {
     expect(mentionChanges({ author: 9, mentions: [2], notified: removed.notified }).fresh).toEqual(
       [],
     );
+  });
+});
+
+describe('nameOf', () => {
+  it('uses the email name for an email-only notification author', () => {
+    expect(nameOf({ id: 7, email: 'sam@example.com' }, 'name')).toBe('sam');
+    expect(nameOf({ id: 7, email: ' sam@example.com ' }, 'name')).toBe('sam');
+    expect(nameOf({ id: 7, name: 'sam@example.com' }, 'name')).toBe('sam');
+  });
+
+  it('keeps a real display name and falls back when the author is unavailable', () => {
+    expect(nameOf({ id: 7, email: 'sam@example.com', name: 'Sam Lee' }, 'name')).toBe('Sam Lee');
+    expect(nameOf(undefined, 'name')).toBe('Someone');
   });
 });
 

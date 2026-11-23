@@ -25,6 +25,7 @@ type Notifications = {
 };
 
 const NOTIFICATIONS_KEY = 'plugin-notifications';
+const EMAIL = /^\S+@\S+$/;
 
 /** How long an excerpt may be, in characters. */
 export const EXCERPT_LENGTH = 140;
@@ -91,9 +92,14 @@ function asUser(req: FrogBotRequest, user: unknown): FrogBotRequest {
   });
 }
 
-function nameOf(user: Doc | undefined, titleField: string | undefined): string {
+/** The author's display name, or the name portion of their email address. */
+export function nameOf(user: Doc | undefined, titleField: string | undefined): string {
   for (const value of [titleField && user?.[titleField], user?.email]) {
-    if (typeof value === 'string' && value) return value;
+    if (typeof value === 'string' && value.trim()) {
+      const name = value.trim();
+
+      return EMAIL.test(name) ? name.split('@')[0] : name;
+    }
   }
 
   return 'Someone';
