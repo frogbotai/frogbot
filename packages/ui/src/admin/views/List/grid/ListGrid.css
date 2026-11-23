@@ -84,6 +84,28 @@
     min-height: calc(var(--spacer-5) * 2);
   }
 
+  .fb-list-grid:not([data-row-height="tall"]) .table :is(th, td) {
+    white-space: nowrap;
+  }
+
+  .fb-list-grid[data-group-widths]:not([data-row-height="tall"]) .table-wrap--group-by .table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table td:has(> .fb-list-done) {
+    min-width: 240px;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"])
+    .table
+    td:has(> .fb-list-done:not(:empty))
+    > :not(.fb-list-done) {
+    max-width: 32rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .fb-list-grid .table tbody tr:is(:hover, :focus-within) {
     --fb-list-grid-row-bg: var(--color-bg-secondary);
   }
