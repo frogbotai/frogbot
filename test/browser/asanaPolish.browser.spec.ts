@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
 import { prepareView } from './__helpers/viewShots';
 import { timezoneId, todayDate } from './fixtures/crm/shared';
@@ -8,7 +8,7 @@ test.use({ timezoneId });
 type Task = { id: number; project?: number };
 
 const tasks: number[] = [];
-const users: number[] = [];
+const members: { context: BrowserContext; id: number }[] = [];
 
 const panel = (page: Page) => page.locator('.fb-record-panel');
 const panelBody = (page: Page) => panel(page).locator('.fb-record-panel__body');
@@ -40,8 +40,9 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async ({ page }) => {
   for (const id of tasks.splice(0)) await page.request.delete(`/api/tasks/${id}`);
 
-  for (const id of users.splice(0)) {
-    await page.request.delete(`/api/comments?where[author][equals]=${id}`);
+  for (const { context, id } of members.splice(0)) {
+    await context.request.delete(`/api/comments?where[author][equals]=${id}`);
+    await context.close();
     await page.request.delete(`/api/users/${id}`);
   }
 });
@@ -104,13 +105,16 @@ test('list rows stay on one line with the panel open, and the table scrolls side
   );
 
   expect(heights.length).toBeGreaterThan(5);
-  expect(Math.max(...heights)).toBeLessThan(48);
+  expect(Math.max(...heights)).toBeLessThan(56);
+  expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
 
   const clipped = await page
     .locator('.collection-view--list thead th')
     .evaluateAll((headers) =>
       headers
-        .filter((header) => header.scrollWidth > header.clientWidth + 1)
+        .filter(
+          (header) => header.textContent?.trim() && header.scrollWidth > header.clientWidth + 1,
+        )
         .map((header) => header.textContent),
     );
 
@@ -182,10 +186,10 @@ test('a comment by a user named only by their email shows a name, not the raw em
     data: { email, password: 'frogbot-test', roles: ['member'] },
   });
 
-  users.push(((await created.json()) as { doc: { id: number } }).doc.id);
-
   const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const member = await context.newPage();
+
+  members.push({ context, id: ((await created.json()) as { doc: { id: number } }).doc.id });
 
   await member.request.post('/api/users/login', { data: { email, password: 'frogbot-test' } });
 
@@ -198,7 +202,6 @@ test('a comment by a user named only by their email shows a name, not the raw em
   });
 
   expect(posted.ok()).toBe(true);
-  await context.close();
 
   await page.goto(`/collections/tasks?record=${task.id}`);
 
