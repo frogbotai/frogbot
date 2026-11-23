@@ -82,7 +82,7 @@ Nested fields use dot paths such as `workflow.stage` and `details.dueDate`.
 
 Board views use `pagination.defaultLimit` for each column, defaulting to 50. Columns lazy-load subsequent pages and virtualize their cards. `pagination.limits` applies only to list page-size controls. Omitting `admin.views` creates one default list view without a tab row, using FrogBot's normal list pagination defaults.
 
-A built-in card shows its title, then the `defaultFields` values on one quiet row with no captions, leaving out empty ones. A relationship to the users collection shows as a small avatar with the person's initials and their name on hover, and a day-only date shows short (`Nov 24`, with the year only when it isn't this year).
+A built-in card shows its title, then the `defaultFields` values on one quiet row with no captions, leaving out empty ones. A single relationship to the users collection shows as a small avatar with the person's initials and, on hover, the users collection's `useAsTitle` (the email when that's empty), and a day-only date shows short (`Nov 24`, with the year only when it isn't this year).
 
 Cards show the collection's [`admin.useAsThumbnail`](/configuration/collections#card-images) image, which defaults to the first upload field. A card with no image has no image area, so it stays compact. Set `useAsThumbnail: false` to show no images on the board.
 

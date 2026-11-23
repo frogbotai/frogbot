@@ -335,14 +335,21 @@ async function renderList(props: ListViewServerProps, inDrawer: boolean) {
   const rows =
     grouped?.docs ?? clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ?? docs;
 
-  const doneIds = await findDoneIds({
-    collectionSlug,
-    docs: rows,
-    req,
-    trash: clientProps.viewType === 'trash',
-    useAsDone: (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
-      ?.useAsDone,
-  });
+  const useAsDone = (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
+    ?.useAsDone;
+
+  const trash = clientProps.viewType === 'trash';
+  const doneIds = await findDoneIds({ collectionSlug, docs: rows, req, trash, useAsDone });
+  const doneCells =
+    doneIds && useAsDone && !trash
+      ? await findEditableCells({ collectionConfig, columns: [useAsDone], docs: rows, req })
+      : undefined;
+
+  const doneEditable =
+    doneCells &&
+    Object.entries(doneCells)
+      .filter(([, paths]) => paths.length)
+      .map(([id]) => id);
 
   const editableColumns = isList
     ? getEditableColumns({
@@ -370,6 +377,7 @@ async function renderList(props: ListViewServerProps, inDrawer: boolean) {
       BeforeList={clientProps.BeforeList}
       BeforeListTable={clientProps.BeforeListTable}
       Description={clientProps.Description ?? slots.Description}
+      doneEditable={doneEditable}
       doneIds={doneIds}
       grid={grid}
       editableCells={editableCells}

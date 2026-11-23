@@ -42,6 +42,8 @@ export type ListFrameClientProps = {
   BeforeList?: ReactNode;
   BeforeListTable?: ReactNode;
   Description?: ReactNode;
+  /** The rows whose done field this person can update, when that depends on the record. */
+  doneEditable?: string[];
   /** The done records among the rows, found on the server from `admin.useAsDone`. */
   doneIds?: string[];
   /** The collection list's column widths and row height; absent in the trash. */
@@ -109,6 +111,7 @@ function RecordRows({
   checks,
   children,
   collectionSlug,
+  doneEditable,
   doneIds,
   editableCells,
   editableColumns,
@@ -117,6 +120,7 @@ function RecordRows({
   checks: boolean;
   children: ReactNode;
   collectionSlug: string;
+  doneEditable?: string[];
   doneIds?: string[];
   editableCells?: Record<string, string[]>;
   editableColumns?: string[];
@@ -140,7 +144,12 @@ function RecordRows({
         )}
       </div>
       {checks && doneIds ? (
-        <ListDoneChecks collectionSlug={collectionSlug} containerRef={ref} doneIds={doneIds} />
+        <ListDoneChecks
+          collectionSlug={collectionSlug}
+          containerRef={ref}
+          doneEditable={doneEditable}
+          doneIds={doneIds}
+        />
       ) : null}
       {editableColumns?.length ? (
         <CellEditing
@@ -164,6 +173,7 @@ function RefreshOnPanelSave() {
 }
 
 function ListFrameInner({
+  doneEditable,
   doneIds,
   grid,
   editableCells,
@@ -274,6 +284,7 @@ function ListFrameInner({
           <RecordRows
             checks={viewType !== 'trash'}
             collectionSlug={collectionSlug}
+            doneEditable={doneEditable}
             doneIds={doneIds}
             editableCells={editableCells}
             editableColumns={editableColumns}

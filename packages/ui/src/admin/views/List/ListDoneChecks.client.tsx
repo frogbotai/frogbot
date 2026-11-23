@@ -46,15 +46,18 @@ function sameHosts(a: Host[], b: Host[]): boolean {
  * The check circle at the start of each row's title cell in a list whose collection sets
  * `admin.useAsDone`, as Asana's task list has. A click saves the done checkbox and reloads the
  * rows, or shows the saved state again when the save fails. Without update access to the
- * collection and its done field, the circle is read-only.
+ * collection and its done field, or to that row's record, the circle is read-only.
  */
 export function ListDoneChecks({
   collectionSlug,
   containerRef,
+  doneEditable,
   doneIds,
 }: {
   collectionSlug: string;
   containerRef: RefObject<HTMLDivElement | null>;
+  /** The rows whose done field this person can update, when that depends on the record. */
+  doneEditable?: string[];
   doneIds: string[];
 }) {
   const { getEntityConfig } = useConfig();
@@ -96,16 +99,27 @@ export function ListDoneChecks({
 
   const key = doneIds.join('\n');
 
-  useEffect(() => setPending({}), [key]);
+  useEffect(() => {
+    const saved = new Set(key.split('\n'));
+
+    setPending((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([id, value]) => saved.has(id) !== value),
+      );
+
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+  }, [key]);
 
   if (!useAsDone) return null;
 
   const done = new Set(doneIds);
+  const editable = doneEditable && new Set(doneEditable);
 
   return hosts.map(({ element, id }) =>
     createPortal(
       <DoneCheck
-        disabled={!canUpdate || saving}
+        disabled={!canUpdate || saving || (editable ? !editable.has(id) : false)}
         done={pending[id] ?? done.has(id)}
         onToggle={(next) => {
           setPending((current) => ({ ...current, [id]: next }));

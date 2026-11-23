@@ -776,10 +776,7 @@ test.describe('a member', () => {
     }
   });
 
-  test('a member’s failed list check on someone else’s task does not stay checked', async ({
-    browser,
-    page,
-  }) => {
+  test('a member’s list check is read-only on someone else’s task', async ({ browser, page }) => {
     const email = `member-${Date.now()}@example.com`;
     const made = await page.request.post('/api/users', {
       data: { email, password: 'frogbot-test', roles: ['member'] },
@@ -808,10 +805,10 @@ test.describe('a member', () => {
     const row = member.locator('tbody > tr', { hasText: 'Write the homepage copy' });
     const check = row.locator('td.cell-title .fb-done-check');
 
-    await check.click();
-    await expect(member.locator('.payload-toast-container')).toContainText(/./);
+    expect((await member.request.patch(`/api/tasks/${task.id}`, { data: {} })).status()).toBe(403);
+    await expect(check).toBeVisible();
+    await expect(check).toBeDisabled();
     await expect(check).toHaveAttribute('aria-pressed', 'false');
-    expect((await readTask(page, task.id)).completed).toBe(false);
     await context.close();
   });
 
