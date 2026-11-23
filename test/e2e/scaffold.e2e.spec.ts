@@ -16,6 +16,7 @@ import {
   FrogBotChatTransport,
   prepareChatRequest,
 } from '../../packages/ui/src/chat/rest/transport';
+import { describeLive } from '../live/live';
 import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
@@ -194,9 +195,8 @@ describe.skipIf(!RUN_E2E).each(templates)(
       expect(new TextDecoder().decode(value)).toContain('data:');
     });
 
-    it.skipIf(!process.env.OPENAI_API_KEY)(
-      'answers the first chat with the default model',
-      async () => {
+    describeLive('with a provider key', { keys: ['OPENAI_API_KEY'] }, () => {
+      it('answers the first chat with the default model', async () => {
         const res = await fetch(`${baseURL}/api/agents/assistant`, {
           method: 'POST',
           headers: {
@@ -219,122 +219,121 @@ describe.skipIf(!RUN_E2E).each(templates)(
           .join('');
 
         expect(text.toLowerCase()).toContain('ribbit');
-      },
-      120000,
-    );
+      }, 120000);
 
-    function expectPersisted(chatId: string | number) {
-      const db = new DatabaseSync(join(dataDir, 'e2e.db'));
-      const chat = db.prepare('SELECT count(*) AS count FROM chats WHERE id = ?').get(chatId) as {
-        count: number;
-      };
+      function expectPersisted(chatId: string | number) {
+        const db = new DatabaseSync(join(dataDir, 'e2e.db'));
+        const chat = db.prepare('SELECT count(*) AS count FROM chats WHERE id = ?').get(chatId) as {
+          count: number;
+        };
 
-      const messages = db
-        .prepare('SELECT role FROM messages WHERE chat_id = ? ORDER BY role')
-        .all(chatId) as Array<{ role: string }>;
+        const messages = db
+          .prepare('SELECT role FROM messages WHERE chat_id = ? ORDER BY role')
+          .all(chatId) as Array<{ role: string }>;
 
-      db.close();
+        db.close();
 
-      expect(chat.count).toBe(1);
-      expect(messages.map(({ role }) => role)).toEqual(['assistant', 'user']);
-    }
-
-    it('JSON agent POST returns 200 and persists one complete turn', async () => {
-      const response = await fetch(`${baseURL}/api/agents/assistant`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
-      });
-
-      const body = (await response.json()) as {
-        text: string;
-        finishReason: string;
-        chatId: string | number;
-      };
-
-      expect(response.status, JSON.stringify(body)).toBe(200);
-      expect(body.text).toBe('hello');
-      expect(body.finishReason).toBe('stop');
-
-      expectPersisted(body.chatId);
-    });
-
-    it('fully consumed SSE agent POST persists one complete turn', async () => {
-      const response = await fetch(`${baseURL}/api/agents/assistant`, {
-        method: 'POST',
-        headers: {
-          accept: 'text/event-stream',
-          'content-type': 'application/json',
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
-      });
-
-      expect(response.status).toBe(200);
-
-      const reader = response.body!.getReader();
-
-      for (;;) {
-        if ((await reader.read()).done) break;
+        expect(chat.count).toBe(1);
+        expect(messages.map(({ role }) => role)).toEqual(['assistant', 'user']);
       }
 
-      const chatId = response.headers.get('X-FrogBot-Chat-Id');
-
-      expect(chatId).not.toBeNull();
-
-      expectPersisted(chatId!);
-    });
-
-    it('sends homepage chat messages through the FrogBot transport', async () => {
-      const page = await fetch(baseURL);
-
-      expect(page.status).toBe(200);
-
-      let responseStatus: number | undefined;
-      const transport = new FrogBotChatTransport({
-        agentSlug: 'assistant',
-        sdk: createFrogBotSDK({
-          baseURL: `${baseURL}/api`,
-          headers: { authorization: `Bearer ${token}` },
-          fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
-            const response = await fetch(input, init);
-            responseStatus = response.status;
-
-            return response;
+      it('JSON agent POST returns 200 and persists one complete turn', async () => {
+        const response = await fetch(`${baseURL}/api/agents/assistant`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${token}`,
           },
-        }),
-        prepareSendMessagesRequest: prepareChatRequest(),
+          body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
+        });
+
+        const body = (await response.json()) as {
+          text: string;
+          finishReason: string;
+          chatId: string | number;
+        };
+
+        expect(response.status, JSON.stringify(body)).toBe(200);
+        expect(body.text).toBe('hello');
+        expect(body.finishReason).toBe('stop');
+
+        expectPersisted(body.chatId);
       });
 
-      const stream = await transport.sendMessages({
-        chatId: 'new:assistant',
-        messageId: 'user-1',
-        messages: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello!' }] }],
-        trigger: 'submit-message',
-        abortSignal: undefined,
+      it('fully consumed SSE agent POST persists one complete turn', async () => {
+        const response = await fetch(`${baseURL}/api/agents/assistant`, {
+          method: 'POST',
+          headers: {
+            accept: 'text/event-stream',
+            'content-type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
+        });
+
+        expect(response.status).toBe(200);
+
+        const reader = response.body!.getReader();
+
+        for (;;) {
+          if ((await reader.read()).done) break;
+        }
+
+        const chatId = response.headers.get('X-FrogBot-Chat-Id');
+
+        expect(chatId).not.toBeNull();
+
+        expectPersisted(chatId!);
       });
 
-      const chunks = [];
-      const reader = stream.getReader();
+      it('sends homepage chat messages through the FrogBot transport', async () => {
+        const page = await fetch(baseURL);
 
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
+        expect(page.status).toBe(200);
 
-      expect(responseStatus).toBe(200);
-      expect(chunks.length).toBeGreaterThan(0);
-      expect(
-        chunks.some((chunk) => chunk.type === 'text-delta'),
-        JSON.stringify(chunks),
-      ).toBe(true);
-      expect(transport.chatId).toBeDefined();
+        let responseStatus: number | undefined;
+        const transport = new FrogBotChatTransport({
+          agentSlug: 'assistant',
+          sdk: createFrogBotSDK({
+            baseURL: `${baseURL}/api`,
+            headers: { authorization: `Bearer ${token}` },
+            fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+              const response = await fetch(input, init);
+              responseStatus = response.status;
 
-      expectPersisted(transport.chatId!);
+              return response;
+            },
+          }),
+          prepareSendMessagesRequest: prepareChatRequest(),
+        });
+
+        const stream = await transport.sendMessages({
+          chatId: 'new:assistant',
+          messageId: 'user-1',
+          messages: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello!' }] }],
+          trigger: 'submit-message',
+          abortSignal: undefined,
+        });
+
+        const chunks = [];
+        const reader = stream.getReader();
+
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+
+        expect(responseStatus).toBe(200);
+        expect(chunks.length).toBeGreaterThan(0);
+        expect(
+          chunks.some((chunk) => chunk.type === 'text-delta'),
+          JSON.stringify(chunks),
+        ).toBe(true);
+        expect(transport.chatId).toBeDefined();
+
+        expectPersisted(transport.chatId!);
+      });
     });
 
     it('serves the REST API under /api', async () => {
