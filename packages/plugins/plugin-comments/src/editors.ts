@@ -42,29 +42,33 @@ export function commentFeatures(): CommentFeatures {
   ];
 }
 
-const placeholder = 'Add a comment or @mention someone';
+const commentAdmin = {
+  hideAddBlockButton: true,
+  hideDraggableBlockElement: true,
+  hideGutter: true,
+  hideInsertParagraphAtEnd: true,
+  placeholder: 'Add a comment or @mention someone',
+};
 
-function withPlaceholder<T>(adapter: T): T {
+function withCommentAdmin<T>(adapter: T): T {
   const { FieldComponent } = adapter as LexicalAdapter;
   const serverProps = FieldComponent?.serverProps;
 
-  if (!FieldComponent || typeof FieldComponent !== 'object' || serverProps?.admin?.placeholder) {
-    return adapter;
-  }
+  if (!FieldComponent || typeof FieldComponent !== 'object') return adapter;
 
   return {
     ...adapter,
     FieldComponent: {
       ...FieldComponent,
-      serverProps: { ...serverProps, admin: { ...serverProps?.admin, placeholder } },
+      serverProps: { ...serverProps, admin: { ...commentAdmin, ...serverProps?.admin } },
     },
   };
 }
 
 /**
  * `editor` for comments: `MentionFeature()` is added when it's missing, since mentions drive
- * notifications, and the box says "Add a comment or @mention someone" unless the editor sets
- * its own `admin.placeholder`.
+ * notifications. The box says "Add a comment or @mention someone" and has no block gutter, add
+ * block button, drag handle or insert-paragraph bar, unless the editor's `admin` sets its own.
  */
 export function withMentions(editor: CommentsEditor): CommentsEditor {
   return (args) => {
@@ -72,10 +76,10 @@ export function withMentions(editor: CommentsEditor): CommentsEditor {
     const { editorConfig, features, FieldComponent } = adapter as LexicalAdapter;
 
     if (!features || features.some((feature) => feature.key === 'mention')) {
-      return withPlaceholder(adapter);
+      return withCommentAdmin(adapter);
     }
 
-    return withPlaceholder(
+    return withCommentAdmin(
       lexicalEditor({
         admin: FieldComponent?.serverProps?.admin,
         features: [...(features as CommentFeatures), MentionFeature()],

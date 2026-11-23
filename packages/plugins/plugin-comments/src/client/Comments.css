@@ -111,4 +111,88 @@
     justify-content: flex-end;
     margin-top: var(--spacer-2);
   }
+
+  .fb-comments__editor--compact {
+    align-items: flex-end;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    display: flex;
+    gap: var(--spacer-2);
+    padding: var(--spacer-1) var(--spacer-1) var(--spacer-1) var(--spacer-3);
+  }
+
+  .fb-comments__editor--compact:focus-within {
+    border-color: var(--color-border-strong);
+  }
+
+  .fb-comments__editor--compact .rich-text-lexical {
+    --content-editable-padding-block-start: var(--spacer-1);
+    --content-editable-padding-inline-start: 0px;
+
+    flex: 1 1 auto;
+    gap: 0;
+    min-width: 0;
+  }
+
+  .fb-comments__editor--compact .shimmer-effect {
+    flex: 1 1 auto;
+    max-height: 28px;
+  }
+
+  .fb-comments__editor--compact .rich-text-lexical__label-row {
+    display: none;
+  }
+
+  .fb-comments__editor--compact .editor-container {
+    border: 0;
+  }
+
+  .fb-comments__editor--compact .ContentEditable__root {
+    max-height: 12rem;
+    overflow-y: auto;
+    padding: var(--spacer-1) 0;
+  }
+
+  .fb-comments__editor--compact .LexicalEditorTheme__placeholder {
+    color: var(--color-text-tertiary);
+    inset-inline-end: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fb-comments__editor--compact .ContentEditable__keyboard-hint {
+    display: none;
+  }
+
+  .fb-comments__send {
+    align-items: center;
+    background: var(--color-bg-brand);
+    border: 0;
+    border-radius: 9999px;
+    color: var(--color-text-onbrand);
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    height: 28px;
+    justify-content: center;
+    padding: 0;
+    width: 28px;
+  }
+
+  .fb-comments__send:hover:not(:disabled) {
+    background: var(--color-bg-brand-hover);
+  }
+
+  .fb-comments__send:disabled {
+    background: var(--color-bg-transparent-hover);
+    color: var(--color-icon-tertiary);
+    cursor: default;
+  }
+
+  .fb-comments__send:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: var(--accessibility-outline-offset);
+  }
 }
