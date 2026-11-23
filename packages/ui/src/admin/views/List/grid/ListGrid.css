@@ -95,6 +95,20 @@
     text-overflow: ellipsis;
   }
 
+  .fb-list-grid:not([data-row-height="tall"]) .table th:has(.sort-column__label) {
+    overflow: hidden;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table th .sort-column {
+    max-width: 100%;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table th .sort-column__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .fb-list-grid:not([data-row-height="tall"])
     .table
     td:not(.cell-_select, .cell-_dragHandle, [data-cell-editing])
