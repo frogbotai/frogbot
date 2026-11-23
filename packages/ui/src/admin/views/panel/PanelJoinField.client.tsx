@@ -76,7 +76,8 @@ function PanelJoinFieldComponent({ path }: { path: string }) {
 
   const field = findPanelField(collectionConfig.fields, path)?.field as JoinFieldClient | undefined;
   const useAsDone = getUseAsDone(collectionConfig);
-  const titleField = collectionConfig.admin?.useAsTitle;
+  const useAsTitle = collectionConfig.admin?.useAsTitle;
+  const titleField = useAsTitle && useAsTitle !== 'id' ? useAsTitle : undefined;
   const [rows, setRows] = useState<Row[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);

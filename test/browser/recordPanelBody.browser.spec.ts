@@ -104,7 +104,7 @@ test('the done field is left out of the panel body, and Mark complete sets it', 
   await expect.poll(async () => (await readTodo(page, id)).done).toBe(true);
 });
 
-test('subtasks: listed, opened in place with a way back, created with +, and checked in place', async ({
+test('subtasks: listed, opened in place with a way back, added inline with +, and checked in place', async ({
   page,
 }) => {
   const parent = await todo(page, { title: 'Budget feature' });
@@ -129,23 +129,25 @@ test('subtasks: listed, opened in place with a way back, created with +, and che
   await expect.poll(async () => (await readTodo(page, child)).done).toBe(true);
 
   await subtasks(page).getByRole('button', { name: 'Add todo' }).click();
-  await expect(title(page)).toHaveValue('');
-  await expect(back).toBeVisible();
-  await title(page).fill('Price the tiers');
-  await bar(page).getByRole('button', { name: 'Save' }).click();
-  await expect(bar(page).locator('.fb-record-panel-header__save')).toHaveCount(0);
-  await expect(back).toBeVisible();
 
-  const id = Number(new URL(page.url()).searchParams.get('record'));
-  created.push(id);
-  expect((await readTodo(page, id)).parent).toBe(parent);
-
-  await back.click();
+  const draft = subtasks(page).getByRole('textbox', { name: 'New todo name' });
+  await expect(draft).toBeFocused();
+  await draft.fill('Price the tiers');
+  await draft.press('Enter');
+  await expect(draft).toHaveValue('');
+  await expect(title(page)).toHaveValue('Budget feature');
 
   await expect(subtasks(page).locator('.fb-panel-join__title')).toHaveText([
     'Spec the cap rules',
     'Price the tiers',
   ]);
+
+  const { docs } = (await (
+    await page.request.get(`/api/todos?where[title][equals]=Price%20the%20tiers&depth=0`)
+  ).json()) as { docs: { id: number; parent?: number }[] };
+
+  created.push(docs[0].id);
+  expect(docs[0].parent).toBe(parent);
 });
 
 test('subtasks stay a section after the parent is saved', async ({ page }) => {

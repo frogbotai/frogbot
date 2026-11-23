@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   docId: 1 as number | undefined,
   paged: false,
   refuse: false,
+  useAsTitle: 'title' as string | undefined,
   notify: vi.fn(),
   open: vi.fn(),
   permissions: { create: true, update: true } as Record<string, boolean>,
@@ -27,7 +28,7 @@ vi.mock('@payloadcms/ui', () => ({
   useConfig: () => ({
     config: { routes: { api: '/api' } },
     getEntityConfig: () => ({
-      admin: { custom: { frogbot: { useAsDone: 'done' } }, useAsTitle: 'title' },
+      admin: { custom: { frogbot: { useAsDone: 'done' } }, useAsTitle: mocks.useAsTitle },
       labels: { singular: 'Todo' },
       fields: [
         { name: 'title', type: 'text' },
@@ -103,6 +104,7 @@ beforeEach(() => {
   mocks.docId = 1;
   mocks.paged = false;
   mocks.refuse = false;
+  mocks.useAsTitle = 'title';
   mocks.notify.mockReset();
   mocks.open.mockReset();
   mocks.permissions = { create: true, update: true };
@@ -112,6 +114,17 @@ beforeEach(() => {
 });
 
 describe('PanelJoinField', () => {
+  it("opens the create form, not an inline row, when useAsTitle is Payload's default 'id'", async () => {
+    mocks.useAsTitle = 'id';
+    render(<PanelJoinField path="subtasks" />);
+
+    await screen.findByRole('button', { name: '#2' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+
+    expect(screen.queryByRole('textbox', { name: 'New todo name' })).toBeNull();
+    expect(mocks.create).toHaveBeenCalledWith({ parent: 1 }, { from: 'panel' });
+  });
+
   it('lists the records whose on field is the open record, with the label as heading', async () => {
     render(<PanelJoinField path="subtasks" />);
 
