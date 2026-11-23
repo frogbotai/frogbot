@@ -175,4 +175,27 @@ describe('PanelUploadField', () => {
     expect(screen.queryByRole('button', { name: 'Add file' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Remove file-1.pdf' })).toBeTruthy();
   });
+
+  it('uploads only as many picked files as maxRows leaves room for', async () => {
+    mocks.field = { ...mocks.field, maxRows: 2 };
+
+    fetchMock.mockImplementation((url, init) =>
+      init?.method === 'POST'
+        ? Promise.resolve({
+            json: () => Promise.resolve({ doc: { filename: 'new.pdf', id: 7 } }),
+            ok: true,
+          })
+        : found(url, init),
+    );
+
+    const { container } = render(<PanelUploadField path="attachments" />);
+    await screen.findByText('file-1.pdf');
+
+    const files = [new File(['a'], 'a.pdf'), new File(['b'], 'b.pdf')];
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files } });
+    await flush();
+
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1);
+    expect(mocks.setValue).toHaveBeenLastCalledWith([1, 7]);
+  });
 });
