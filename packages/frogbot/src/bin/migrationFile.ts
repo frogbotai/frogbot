@@ -21,6 +21,20 @@ export function toFrogBotMigration(source: string): string {
     .replace(ADAPTER_IMPORT, "from '@frogbotai/$1'");
 }
 
+/**
+ * Refuses Payload's predefined migrations (`--file @payloadcms/...`): their bodies use a `payload` argument
+ * that FrogBot migrations don't get. `migrate:create` reads a predefined migration from `--file`, or from
+ * the name when there's no `--file`.
+ */
+export function assertFrogBotPredefined(importPath: string | undefined): void {
+  if (!importPath?.startsWith('@payloadcms/')) return;
+
+  throw new Error(
+    `migrate:create can't use ${importPath}: it's written for an argument FrogBot migrations don't get. ` +
+      'Create the migration without --file and write it with { db, req }.',
+  );
+}
+
 export async function rewriteMigrationFile(path: string): Promise<void> {
   await writeFile(path, toFrogBotMigration(await readFile(path, 'utf8')));
 }

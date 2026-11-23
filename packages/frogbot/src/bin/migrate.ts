@@ -1,7 +1,7 @@
 import { loadConfig } from '../config/load.js';
 import { formatCliError } from './formatCliError.js';
 import { migrateUsage } from './help.js';
-import { rewriteMigrationFile } from './migrationFile.js';
+import { assertFrogBotPredefined, rewriteMigrationFile } from './migrationFile.js';
 
 const COMMANDS = [
   'migrate',
@@ -119,10 +119,14 @@ export async function migrate(args: string[]): Promise<void> {
 
         break;
       case 'migrate:create': {
+        const migrationName = flags.name ?? positional[0];
+
+        assertFrogBotPredefined(flags.file ?? migrationName);
+
         const created = await adapter.createMigration({
           file: flags.file,
           forceAcceptWarning: flags.forceAcceptWarning,
-          migrationName: flags.name ?? positional[0],
+          migrationName,
           payload,
           skipEmpty: flags.skipEmpty,
         });
