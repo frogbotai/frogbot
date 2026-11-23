@@ -1,0 +1,36 @@
+@layer frogbot {
+  .fb-read-more {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .fb-read-more__text {
+    color: var(--color-text);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+    white-space: pre-line;
+  }
+
+  .fb-read-more__text--clamped {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+  }
+
+  .fb-read-more__toggle {
+    padding: 0;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--fb-text-sm);
+    font-weight: 500;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .fb-read-more__toggle:hover {
+    color: var(--color-text);
+  }
+}

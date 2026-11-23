@@ -38,7 +38,7 @@ Read the smallest relevant reference before editing:
 | Add root or collection HTTP routes                                                 | [ENDPOINTS.md](reference/ENDPOINTS.md)                             |
 | Configure database, storage, or email services                                     | [ADAPTERS.md](reference/ADAPTERS.md)                               |
 | Configure auth, admin UI, dashboard, navigation, preview, or localization          | [ADVANCED.md](reference/ADVANCED.md)                               |
-| Style a widget or custom view, or choose which fields a screen shows               | [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md)                       |
+| Choose fields and views, or build a widget, view or field from UI components       | [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md)                       |
 | Author a config-transforming plugin                                                | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           |
 | Configure and run agents or runtime skills                                         | [AGENTS.md](reference/AGENTS.md)                                   |
 | Define and register agent tools                                                    | [TOOLS.md](reference/TOOLS.md)                                     |
@@ -282,7 +282,7 @@ src/
 └── frogbot.config.ts
 ```
 
-Before you build a dashboard widget or custom view, or choose a collection's columns and fields, read [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md): built-in views first, `@frogbotai/ui` components and theme tokens, no hand-picked colours or font sizes, and plumbing fields hidden.
+Before you choose a collection's fields, columns and views, or build a dashboard widget, custom view or field, read [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md). Decide who uses each screen and what for without asking, show read-only data as text rather than grey inputs, open on the view that fits the job (a gallery for videos), and build from the `@frogbotai/ui` components it lists, such as `Stat`, `Value`, `StatusBadge`, `FactList` and `ReportView`, on the theme tokens.
 
 Give every collection that shows in the sidebar an `admin.icon` that says what it holds, Users included; without one the sidebar shows a folder. Pick from the names in [COLLECTIONS.md](reference/COLLECTIONS.md#icons).
 

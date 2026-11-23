@@ -1,0 +1,109 @@
+@layer frogbot {
+  .fb-stat {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .fb-stat__label {
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fb-stat__row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .fb-stat__value {
+    color: var(--color-text);
+    font-size: var(--fb-text-2xl);
+    font-weight: 600;
+    line-height: var(--fb-text-2xl--line-height);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .fb-stat--lg .fb-stat__value {
+    font-size: var(--fb-text-4xl);
+    line-height: var(--fb-text-4xl--line-height);
+    letter-spacing: -0.02em;
+  }
+
+  .fb-stat--sm .fb-stat__value {
+    font-size: var(--fb-text-lg);
+    line-height: var(--fb-text-lg--line-height);
+  }
+
+  .fb-stat__trend {
+    flex-shrink: 0;
+    margin-bottom: 0.375rem;
+  }
+
+  .fb-stat__change {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+  }
+
+  .fb-stat__delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fb-stat__delta--good {
+    color: var(--color-text-success);
+  }
+
+  .fb-stat__delta--bad {
+    color: var(--color-text-danger);
+  }
+
+  .fb-stat__change-label {
+    color: var(--color-text-tertiary);
+  }
+
+  .fb-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--fb-stat-min, 10rem)), 1fr));
+    gap: 1.5rem;
+  }
+
+  .fb-stat-grid--2 {
+    --fb-stat-min: 14rem;
+  }
+
+  .fb-stat-grid--3 {
+    --fb-stat-min: 12rem;
+  }
+
+  .fb-stat-grid--bordered {
+    gap: 0;
+    overflow: hidden;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-lg);
+  }
+
+  .fb-stat-grid--bordered > .fb-stat {
+    padding: 1rem 1.25rem;
+    box-shadow:
+      -1px 0 0 var(--color-border),
+      0 -1px 0 var(--color-border);
+  }
+}

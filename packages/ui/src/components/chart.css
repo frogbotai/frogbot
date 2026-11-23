@@ -1,0 +1,109 @@
+@layer frogbot {
+  .fb-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .fb-chart__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+    list-style: none;
+  }
+
+  .fb-chart__legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .fb-chart__swatch {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--fb-chart-color);
+    border-radius: 2px;
+  }
+
+  .fb-chart__plot {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .fb-chart__grid {
+    stroke: var(--color-border);
+    stroke-dasharray: 2 4;
+  }
+
+  .fb-chart__axis {
+    fill: var(--color-text-tertiary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fb-chart__line {
+    fill: none;
+    stroke: var(--fb-chart-color);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fb-chart__point {
+    fill: var(--fb-chart-color);
+    stroke: var(--color-bg);
+    stroke-width: 2;
+  }
+
+  .fb-chart__bar {
+    fill: var(--fb-chart-color);
+  }
+
+  .fb-chart__series-1 {
+    --fb-chart-color: var(--chart-1);
+  }
+
+  .fb-chart__series-2 {
+    --fb-chart-color: var(--chart-2);
+  }
+
+  .fb-chart__series-3 {
+    --fb-chart-color: var(--chart-3);
+  }
+
+  .fb-chart__series-4 {
+    --fb-chart-color: var(--chart-4);
+  }
+
+  .fb-chart__series-5 {
+    --fb-chart-color: var(--chart-5);
+  }
+
+  .fb-sparkline {
+    display: inline-block;
+    overflow: visible;
+    vertical-align: middle;
+  }
+
+  .fb-sparkline__line {
+    fill: none;
+    stroke: var(--color-text-secondary);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fb-sparkline--up .fb-sparkline__line {
+    stroke: var(--color-text-success);
+  }
+}
