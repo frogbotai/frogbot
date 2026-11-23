@@ -31,6 +31,7 @@ import { getUseAsDone } from '../records/state.js';
 import { usePanelLayout } from './PanelConfig.client.js';
 import { useRecordPanel } from './RecordPanelProvider.client.js';
 import { recordPanelStatus } from './status.js';
+import { useJoinParent } from './useJoinParent.js';
 
 const baseClass = 'fb-record-panel-header';
 
@@ -168,7 +169,8 @@ function DeleteRecord({ onDeleted }: { onDeleted: () => void }) {
  * shows Unsaved and Save while a form without autosave has edits, else Mark complete for
  * `useAsDone` collections, else Saved for autosave. The ••• menu holds copy link, duplicate,
  * create new, the plugin `actions`, the saved time and delete. On the left, a back link when the
- * record was opened from inside the panel, and the title once the body's title scrolls under the
+ * record was opened from inside the panel or sits under another through the collection's join to
+ * itself, and the title once the body's title scrolls under the
  * bar. The view behind the panel already names the collection, so the bar never does.
  */
 export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
@@ -193,8 +195,10 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   } = useDocumentInfo();
 
   const { title } = useDocumentTitle();
-  const titlePath = usePanelLayout()?.titlePath;
+  const layout = usePanelLayout();
+  const titlePath = layout?.titlePath;
   const collectionConfig = getEntityConfig({ collectionSlug });
+  const joinParent = useJoinParent(layout?.collectionConfig ?? collectionConfig);
   const useAsDone = getUseAsDone(collectionConfig);
   const autosave = Boolean(
     collectionConfig.versions &&
@@ -330,7 +334,9 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
         back={
           panel.parent
             ? { label: panel.parent.title || `#${panel.parent.id}`, onBack: panel.back }
-            : undefined
+            : joinParent
+              ? { label: joinParent.title, onBack: () => panel.open(joinParent.id) }
+              : undefined
         }
         labels={{
           close: t('general:close'),

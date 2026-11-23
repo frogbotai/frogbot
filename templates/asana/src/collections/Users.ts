@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'frogbot';
 
-import { nameFromEmail } from '../hooks/users';
+import { nameFromEmail, nameOrEmail } from '../hooks/users';
 import { aiLimitAccess, firstUserIsAdmin, userAccess } from '../roles';
 
 export const Users: CollectionConfig = {
@@ -10,7 +10,7 @@ export const Users: CollectionConfig = {
   auth: true,
   hooks: { beforeChange: [firstUserIsAdmin, nameFromEmail] },
   fields: [
-    { name: 'name', type: 'text' },
+    { name: 'name', type: 'text', hooks: { afterRead: [nameOrEmail] } },
     { name: 'monthlyBudget', type: 'number', access: aiLimitAccess },
     {
       name: 'models',
