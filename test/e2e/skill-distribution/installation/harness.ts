@@ -50,6 +50,7 @@ export const inventory = [
     'ENV',
     'FIELD-TYPE-GUARDS',
     'FIELDS',
+    'FIRST-APP',
     'GATEWAY',
     'HOOKS',
     'JOBS',
@@ -222,7 +223,7 @@ export function files(directory: string): string[] {
 export function expectFullSkill(directory: string): void {
   expect(files(canonicalSkill)).toEqual(inventory);
   expect(files(directory)).toEqual(inventory);
-  expect(inventory).toHaveLength(27);
+  expect(inventory).toHaveLength(28);
 
   for (const file of inventory) {
     const installed = path.join(directory, file);
