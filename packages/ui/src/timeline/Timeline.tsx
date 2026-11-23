@@ -60,6 +60,8 @@ export type TimelineProps<T extends TimelineItem> = UseTimelineProps<T> & {
 
 const ROW_HEIGHT = 32;
 const TRACK_PADDING = 6;
+const MIN_BAR_WIDTH = 20;
+const BAR_GAP = 4;
 const SINGLE_BAND: TimelineBand[] = [{ key: '' }];
 
 type Tick = { first: number; label: string; today: boolean };
@@ -286,7 +288,8 @@ export function Timeline<T extends TimelineItem>({
             '--frog-timeline-bar-color': item.color,
             left: percent(bar.first, days),
             top: TRACK_PADDING + bar.row * ROW_HEIGHT,
-            width: `calc(${percent(bar.last - bar.first + 1, days)} - 4px)`,
+            minWidth: MIN_BAR_WIDTH,
+            width: `calc(${percent(bar.last - bar.first + 1, days)} - ${BAR_GAP}px)`,
           } as CSSProperties
         }
         tabIndex={0}
@@ -344,6 +347,7 @@ export function Timeline<T extends TimelineItem>({
               timeline.items.filter((item) => getBand(item) === band.key),
               range,
               dateOnly,
+              Math.ceil((MIN_BAR_WIDTH + BAR_GAP) / TIMELINE_DAY_WIDTH[scale]),
             );
 
             return (

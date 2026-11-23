@@ -113,6 +113,29 @@ describe('timeline bars', () => {
     expect(row('c')).toBe(0);
   });
 
+  it('keeps a bar wider than its days from sharing a row with the next day', () => {
+    const at = (day: number) => `2026-06-${String(day).padStart(2, '0')}T12:00:00.000Z`;
+    const items = [
+      { end: at(16), id: 'a', start: at(16) },
+      { end: at(17), id: 'b', start: at(17) },
+      { end: at(18), id: 'c', start: at(18) },
+    ];
+
+    const rowsOf = (minDays: number) =>
+      layoutTimelineBars(items, range, {}, minDays).bars.map(({ item, row }) => [item.id, row]);
+
+    expect(rowsOf(1)).toEqual([
+      ['a', 0],
+      ['b', 0],
+      ['c', 0],
+    ]);
+    expect(rowsOf(2)).toEqual([
+      ['a', 0],
+      ['b', 1],
+      ['c', 0],
+    ]);
+  });
+
   it('clips bars at the range and drops ones outside it', () => {
     const { bars } = layoutTimelineBars(
       [

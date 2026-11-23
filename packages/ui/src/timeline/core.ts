@@ -161,11 +161,15 @@ export function getItemDays(
   return last < first ? { first, last: first } : { first, last };
 }
 
-/** Places items on the range and packs each into the first row where it overlaps nothing. */
+/**
+ * Places items on the range and packs each into the first row where it overlaps nothing. A bar
+ * takes at least `minDays` days of its row, so a bar drawn wider than its days can't cover the next.
+ */
 export function layoutTimelineBars<T extends TimelineItem>(
   items: T[],
   range: TimelineRange,
   dateOnly: TimelineDateOnly = {},
+  minDays = 1,
 ): { bars: TimelineBar<T>[]; rows: number } {
   const origin = range.days[0];
   const count = range.days.length;
@@ -185,7 +189,7 @@ export function layoutTimelineBars<T extends TimelineItem>(
   const bars = placed.map(({ first, item, last }) => {
     let row = rowEnds.findIndex((end) => end < first);
     if (row === -1) row = rowEnds.length;
-    rowEnds[row] = last;
+    rowEnds[row] = Math.max(last, first + minDays - 1);
 
     return {
       clippedEnd: last >= count,
