@@ -19,7 +19,7 @@ const renderBoard = (renderColumnHeader?: BoardProps<Row>['renderColumnHeader'])
       groupBy={(row) => row.status}
       renderCard={(row) => row.id}
       renderColumnHeader={renderColumnHeader}
-      rows={[]}
+      rows={[{ id: 'unsorted' }]}
     />,
   );
 
@@ -60,7 +60,7 @@ describe('Board column headers', () => {
     );
     expect(renderColumnHeader).toHaveBeenCalledWith(
       { color: undefined, key: '', label: 'Uncategorized' },
-      0,
+      1,
     );
   });
 });
@@ -97,7 +97,7 @@ describe('Board totals, collapse, hide and empty columns', () => {
       Boolean(column.querySelector('.frog-board__empty')),
     );
 
-    expect(empty).toEqual([false, true, true]);
+    expect(empty).toEqual([false, true]);
     expect(container.querySelector('.frog-board__empty')?.textContent).toBe('No cards');
   });
 
@@ -122,6 +122,7 @@ describe('Board totals, collapse, hide and empty columns', () => {
     const { container, getByRole } = renderWith({
       columnState: { collapsed: [], hidden: ['backlog', ''] },
       onColumnStateChange: vi.fn(),
+      rows: [{ id: 'a', status: 'done' }, { id: 'b' }],
     });
 
     expect(container.querySelectorAll('.frog-board__column')).toHaveLength(1);
