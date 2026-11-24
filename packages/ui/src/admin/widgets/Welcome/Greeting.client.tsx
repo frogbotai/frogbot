@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
-/** The greeting for the hour: morning until noon, afternoon until six, evening after. */
+/** The greeting for the hour: morning from midnight until noon, afternoon until six, evening after. */
 export function partOfDay(hour: number): 'afternoon' | 'evening' | 'morning' {
-  if (hour >= 5 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 18) return 'afternoon';
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
 
   return 'evening';
 }

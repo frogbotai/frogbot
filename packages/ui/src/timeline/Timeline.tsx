@@ -60,6 +60,8 @@ export type TimelineProps<T extends TimelineItem> = UseTimelineProps<T> & {
 
 const ROW_HEIGHT = 32;
 const TRACK_PADDING = 6;
+const MIN_BAR_WIDTH = 20;
+const BAR_GAP = 4;
 const SINGLE_BAND: TimelineBand[] = [{ key: '' }];
 
 type Tick = { first: number; label: string; today: boolean };
@@ -104,13 +106,22 @@ const MIN_INSIDE_LABEL = 48;
 
 type LabelPlacement = { room: number; side: 'end' | 'start' };
 
+function naturalWidth(content: HTMLElement): number {
+  const hidden = Array.from(content.querySelectorAll('*')).reduce(
+    (most, element) => Math.max(most, element.scrollWidth - element.clientWidth),
+    0,
+  );
+
+  return content.scrollWidth + hidden;
+}
+
 function placeLabel(bar: HTMLElement, padding: number): LabelPlacement | undefined {
   const content = bar.querySelector<HTMLElement>(':scope > .frog-timeline__bar-content');
   const track = bar.parentElement;
 
   if (!content || !track) return undefined;
 
-  const width = content.scrollWidth;
+  const width = naturalWidth(content);
   const inside = bar.clientWidth - padding;
 
   if (width <= Math.ceil(inside) || inside >= MIN_INSIDE_LABEL) return undefined;
@@ -277,7 +288,8 @@ export function Timeline<T extends TimelineItem>({
             '--frog-timeline-bar-color': item.color,
             left: percent(bar.first, days),
             top: TRACK_PADDING + bar.row * ROW_HEIGHT,
-            width: `calc(${percent(bar.last - bar.first + 1, days)} - 4px)`,
+            minWidth: MIN_BAR_WIDTH,
+            width: `calc(${percent(bar.last - bar.first + 1, days)} - ${BAR_GAP}px)`,
           } as CSSProperties
         }
         tabIndex={0}
@@ -335,6 +347,7 @@ export function Timeline<T extends TimelineItem>({
               timeline.items.filter((item) => getBand(item) === band.key),
               range,
               dateOnly,
+              Math.ceil((MIN_BAR_WIDTH + BAR_GAP) / TIMELINE_DAY_WIDTH[scale]),
             );
 
             return (

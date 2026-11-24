@@ -80,4 +80,15 @@
     max-width: calc(100% - 26px);
     vertical-align: middle;
   }
+
+  @media (pointer: fine) {
+    .fb-list-grid:has(.fb-list-done:not(:empty)):not(:has(tbody .select-row input:checked))
+      .table
+      tbody
+      tr:not(:hover, :focus-within)
+      .cell-_select
+      .select-row {
+      opacity: 0;
+    }
+  }
 }

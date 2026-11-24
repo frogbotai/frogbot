@@ -26,9 +26,9 @@ describe('firstName', () => {
 });
 
 describe('partOfDay', () => {
-  it('says morning from 5 to noon, afternoon until 6pm, evening otherwise', () => {
-    expect([4, 5, 11, 12, 17, 18, 23].map(partOfDay)).toEqual([
-      'evening',
+  it('says morning from midnight to noon, afternoon until 6pm, evening after', () => {
+    expect([0, 3, 11, 12, 17, 18, 23].map(partOfDay)).toEqual([
+      'morning',
       'morning',
       'morning',
       'afternoon',

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   groupBoardRows,
+  hideEmptyNoValue,
   isBoardNoopDrop,
   resolveBoardDrop,
   resolveBoardTarget,
@@ -23,6 +24,21 @@ describe('useBoard', () => {
       ['review', 0],
       ['done', 1],
       ['', 1],
+    ]);
+  });
+
+  it('hides the no-value column only while it is empty on the page and in total', () => {
+    const columns = [
+      { key: 'todo', rows: [] },
+      { key: '', rows: [] },
+    ];
+
+    expect(hideEmptyNoValue(columns).map(({ key }) => key)).toEqual(['todo']);
+    expect(hideEmptyNoValue(columns, { '': 0, todo: 0 }).map(({ key }) => key)).toEqual(['todo']);
+    expect(hideEmptyNoValue(columns, { '': 2 }).map(({ key }) => key)).toEqual(['todo', '']);
+
+    expect(hideEmptyNoValue([{ key: '', rows: [{ id: '1' }] }]).map(({ key }) => key)).toEqual([
+      '',
     ]);
   });
 

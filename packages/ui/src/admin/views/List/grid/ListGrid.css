@@ -84,6 +84,63 @@
     min-height: calc(var(--spacer-5) * 2);
   }
 
+  .fb-list-grid:not([data-row-height="tall"]) .table :is(th, td) {
+    white-space: nowrap;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"])
+    .table
+    td:not(.cell-_select, .cell-_dragHandle, [data-cell-editing]) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table th:has(.sort-column__label) {
+    overflow: hidden;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table th .sort-column {
+    max-width: 100%;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table th .sort-column__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"])
+    .table
+    td:not(.cell-_select, .cell-_dragHandle, [data-cell-editing])
+    > span:not(.fb-list-done) {
+    display: inline-block;
+    max-width: min(32rem, 100%);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"]) .table td.cell--linked > :is(a, button) {
+    display: block;
+    align-content: center;
+    max-width: 32rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  :where(.fb-list-grid:not([data-row-height="tall"]) .table td:has(> .fb-list-done)) {
+    min-width: 240px;
+  }
+
+  .fb-list-grid:not([data-row-height="tall"])
+    .table
+    td:has(> .fb-list-done:not(:empty))
+    > :not(.fb-list-done) {
+    max-width: min(32rem, calc(100% - 26px));
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .fb-list-grid .table tbody tr:is(:hover, :focus-within) {
     --fb-list-grid-row-bg: var(--color-bg-secondary);
   }
