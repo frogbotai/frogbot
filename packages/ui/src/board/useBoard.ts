@@ -94,6 +94,14 @@ export function groupBoardRows<T>({
   });
 }
 
+/** Drops the no-value column while it has no cards on the page and no total on the server. */
+export function hideEmptyNoValue<C extends { key: string; rows: unknown[] }>(
+  columns: C[],
+  totals?: Record<string, number>,
+): C[] {
+  return columns.filter(({ key, rows }) => key !== '' || rows.length > 0 || Boolean(totals?.['']));
+}
+
 export function resolveBoardTarget<T>({
   getId,
   groupBy,

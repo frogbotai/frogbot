@@ -162,6 +162,40 @@
     display: none;
   }
 
+  .fb-record-panel-header__complete--compact {
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: none;
+    color: var(--color-icon-tertiary);
+    justify-content: center;
+    padding: 0;
+    width: 32px;
+  }
+
+  .fb-record-panel-header__complete--compact:hover:not(:disabled) {
+    background: var(--color-bg-transparent-hover);
+    border: 0;
+    color: var(--color-icon-success);
+  }
+
+  .fb-record-panel-header__complete--compact.fb-record-panel-header__complete--done,
+  .fb-record-panel-header__complete--compact.fb-record-panel-header__complete--done:hover:not(
+      :disabled
+    ) {
+    background: none;
+    color: var(--color-icon-success);
+  }
+
+  .fb-record-panel-header__complete--compact .fb-record-panel-header__complete-check,
+  .fb-record-panel-header__complete--compact .fb-record-panel-header__complete-label {
+    display: none;
+  }
+
+  .fb-record-panel-header__complete--compact .fb-record-panel-header__complete-icon {
+    display: block;
+  }
+
   @container (width < 480px) {
     .fb-record-panel-header__complete {
       background: none;
@@ -276,6 +310,11 @@
     padding-bottom: var(--spacer-4);
   }
 
+  /* A property its condition hides leaves an empty row, which would add a grid gap. */
+  .fb-record-panel-properties__row:empty {
+    display: none;
+  }
+
   .fb-record-panel-properties__row > .field-type,
   .fb-record-panel-properties__row > * > .field-type {
     align-items: center;
@@ -294,6 +333,11 @@
 
   .fb-record-panel-properties__row .field-type > :not(.field-label, label) {
     grid-column: 2;
+  }
+
+  /* Asana marks nothing as required in the panel; a missing value still shows its error. */
+  .fb-record-panel-properties__row .field-label .required {
+    display: none;
   }
 
   /* Property values read flat: no input chrome at rest, a rounded fill on hover and focus. */
@@ -410,6 +454,112 @@
     outline-offset: var(--accessibility-outline-offset);
   }
 
+  .fb-panel-join__input {
+    background: none;
+    border: 0;
+    color: var(--color-text);
+    flex: 1;
+    font: inherit;
+    min-width: 0;
+    outline: none;
+    padding: var(--spacer-2) 0;
+  }
+
+  .fb-panel-join__input::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  .fb-panel-upload {
+    margin-bottom: var(--spacer-5);
+  }
+
+  .fb-panel-upload__files {
+    border-top: 1px solid var(--color-border);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fb-panel-upload__file {
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    gap: var(--spacer-2);
+    min-height: 36px;
+    padding: 0 var(--spacer-1);
+  }
+
+  .fb-panel-upload__file:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .fb-panel-upload__icon {
+    align-items: center;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-small);
+    color: var(--color-icon-secondary);
+    display: inline-flex;
+    flex: none;
+    height: 24px;
+    justify-content: center;
+    overflow: hidden;
+    width: 24px;
+  }
+
+  .fb-panel-upload__icon img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .fb-panel-upload__name {
+    color: var(--color-text);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  a.fb-panel-upload__name:hover {
+    text-decoration: underline;
+  }
+
+  .fb-panel-upload__remove {
+    visibility: hidden;
+  }
+
+  .fb-panel-upload__file:is(:hover, :focus-within) .fb-panel-upload__remove {
+    visibility: visible;
+  }
+
+  /* Long text in the body reads as flat text that becomes an input on click, as in Asana. */
+  .fb-record-panel__body .document-fields__edit .field-type.textarea textarea {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    field-sizing: content;
+    min-height: 0;
+    padding-left: var(--spacer-2);
+    padding-right: var(--spacer-2);
+    margin-left: calc(var(--spacer-2) * -1);
+    resize: none;
+    width: calc(100% + var(--spacer-2) * 2);
+  }
+
+  .fb-record-panel__body
+    .document-fields__edit
+    .field-type.textarea
+    textarea:hover:not(:read-only) {
+    border-color: var(--color-border);
+  }
+
+  .fb-record-panel__body .document-fields__edit .field-type.textarea textarea:focus {
+    background: var(--color-bg);
+    border-color: var(--color-border-selected-strong);
+  }
+
   .fb-record-panel__after-fields {
     margin-top: var(--spacer-5);
   }
@@ -429,11 +579,6 @@
 
     .collection-view--panel-open {
       padding-right: 0;
-    }
-
-    .fb-record-panel-properties__row > .field-type,
-    .fb-record-panel-properties__row > * > .field-type {
-      display: block;
     }
   }
 }

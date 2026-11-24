@@ -38,23 +38,34 @@ const config: FrogBotConfig = {
       beforeDashboard: ['/components/SeedPanel#SeedPanel'],
     },
     dashboard: {
-      widgets: [],
-      defaultLayout: [
+      widgets: [
+        {
+          slug: 'projects',
+          Component: '/components/ProjectsWidget#ProjectsWidget',
+          label: 'Projects',
+          minWidth: 'medium',
+        },
+      ],
+      defaultLayout: ({ req }) => [
         { widgetSlug: 'welcome', width: 'full' },
         {
           widgetSlug: 'collection-query',
           width: 'full',
           data: {
-            title: 'Open tasks',
+            title: 'My tasks',
             relatedCollection: 'tasks',
-            where: { completed: { not_equals: true } },
+            where: {
+              and: [
+                { completed: { not_equals: true } },
+                ...(req.user ? [{ assignee: { equals: req.user.id } }] : []),
+              ],
+            },
             sortField: 'dueDate',
             sortDirection: 'asc',
-            limit: 5,
+            limit: 8,
           },
         },
-        { widgetSlug: 'activity', width: 'full' },
-        { widgetSlug: 'collections', width: 'full' },
+        { widgetSlug: 'projects', width: 'full' },
       ],
     },
   },

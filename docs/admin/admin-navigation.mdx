@@ -66,7 +66,7 @@ export const Projects: CollectionConfig = {
 | `group` | Placement |
 | --- | --- |
 | `null` | A top-level link above the sections. |
-| Undefined | Directly under the Collections heading, as FrogBot's built-in collections are. |
+| Undefined | Directly under the Collections heading. FrogBot's and plugins' own collections, such as Audit Logs, Comments, Chats and Usage Logs, go in a **System** group after every other group instead, so the app's collections come first. |
 | A string or localized value | Under a named group label. |
 | `false` | Left out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. The collection keeps its routes. |
 

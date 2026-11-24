@@ -4,6 +4,7 @@ import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adc
 import { ListView as ListView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CommentBoxFooter as CommentBoxFooter_e8c8dd609de0901c90af99cf939acdd7 } from '@frogbotai/plugin-comments/rsc';
 import { FieldCell as FieldCell_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { ShortDateCell as ShortDateCell_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { CommentsField as CommentsField_e8c8dd609de0901c90af99cf939acdd7 } from '@frogbotai/plugin-comments/rsc';
 import { ActivityField as ActivityField_43354f5f91541cf6def56094146bbf90 } from '@frogbotai/plugin-audit-log/rsc';
 import { BoardView as BoardView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -63,6 +64,7 @@ import { StepNavReset as StepNavReset_53ccb9913b2925da8adcdf5fd85e01f4 } from '@
 import { FolderIcon as FolderIcon_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchySidebarTabServer as HierarchySidebarTabServer_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { SettingsView as SettingsView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { ProjectsWidget as ProjectsWidget_65d7e5fba3654dc02bfa1e0ecc8497dd } from '../../components/ProjectsWidget';
 import { WelcomeWidget as WelcomeWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CollectionCards as CollectionCards_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CollectionQueryWidget as CollectionQueryWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -87,6 +89,8 @@ export const importMap = {
   '@frogbotai/plugin-comments/rsc#CommentBoxFooter':
     CommentBoxFooter_e8c8dd609de0901c90af99cf939acdd7,
   '@frogbotai/ui/admin#FieldCell': FieldCell_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin#ShortDateCell':
+    ShortDateCell_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/plugin-comments/rsc#CommentsField':
     CommentsField_e8c8dd609de0901c90af99cf939acdd7,
   '@frogbotai/plugin-audit-log/rsc#ActivityField':
@@ -200,6 +204,8 @@ export const importMap = {
     HierarchySidebarTabServer_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#SettingsView':
     SettingsView_a9b31afd548db1251f21130da6e46588,
+  '/components/ProjectsWidget#ProjectsWidget':
+    ProjectsWidget_65d7e5fba3654dc02bfa1e0ecc8497dd,
   '@frogbotai/ui/admin/rsc#WelcomeWidget':
     WelcomeWidget_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#CollectionCards':

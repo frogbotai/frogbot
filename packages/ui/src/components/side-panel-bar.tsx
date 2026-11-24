@@ -40,6 +40,8 @@ export interface SidePanelBarProps {
   className?: string;
   /** What the record is, for example `Tasks`, when nothing is behind the panel. Ignored with `back`. */
   context?: string;
+  /** The record's main action, first on the left, such as Mark complete. */
+  lead?: ReactNode;
   /** The accessible names of the buttons, for translation. */
   labels?: { close?: string; expand?: string; more?: string };
   /** The ••• menu's items, such as `SidePanelMenuItem`s. Without any, the button is hidden. */
@@ -77,15 +79,18 @@ function BarButton({
 
 /**
  * The one top bar of every side panel. The right side never changes: the status slot, the •••
- * menu, expand and close, in that order. The left side never repeats a title the body shows: a
- * back link when the panel was drilled into, the collection's name when nothing is behind it,
- * and the title once the body's large title has scrolled out, or always when the body has none.
+ * menu, expand and close, in that order. The left side starts with the `lead` action, when there
+ * is one, and never repeats a title the body shows: a back link when the panel was drilled into,
+ * the collection's name when nothing is behind it, and the title once the body's large title has
+ * scrolled out, or always when the body has none. The back link shows its whole label unless the
+ * title follows it.
  */
 export function SidePanelBar({
   back,
   className,
   context,
   labels,
+  lead,
   menu,
   onClose,
   onExpand,
@@ -107,10 +112,13 @@ export function SidePanelBar({
   return (
     <div className={`${baseClass}${className ? ` ${className}` : ''}`}>
       <div className={`${baseClass}__start`}>
+        {lead ? <div className={`${baseClass}__lead`}>{lead}</div> : null}
         {crumbs.lead === 'back' && back ? (
           <button
             aria-label={`Back to ${back.label}`}
-            className={`${baseClass}__back`}
+            className={[`${baseClass}__back`, showTitle && `${baseClass}__back--capped`]
+              .filter(Boolean)
+              .join(' ')}
             onClick={back.onBack}
             title={back.label}
             type="button"
@@ -261,11 +269,11 @@ export function useSidePanelEscape(
   const ref = useRef({ ignore, onClose });
   const active = Boolean(onClose);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     ref.current = { ignore, onClose };
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active) return;
 
     const onKeyDown = (event: KeyboardEvent) => {

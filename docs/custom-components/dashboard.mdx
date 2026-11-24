@@ -254,7 +254,7 @@ Every dashboard can use these widgets alongside the ones in `widgets`:
 
 | Slug | Shows | `data` |
 | --- | --- | --- |
-| `welcome` | A greeting for the signed-in user. Full width only. | None |
+| `welcome` | Today's date and "Good morning", "Good afternoon" or "Good evening" with the user's first name (the first word of their `useAsTitle` field, or their email before the `@`), centered, in the viewer's own time zone. Full width only. | None |
 | `activity` | Recents and Pinned: the documents the user opened last and the ones they pinned. | `excludedCollections` |
 | `collections` | A card for each collection the sidebar lists. | None |
 | `collection-query` | A short list of one collection's documents: each row shows the title, the first select and first number from the collection's list view columns (the sort field first, when it is one), and, when sorted by a date, that date in the viewer's timezone. A due date reads Today, Tomorrow or `Dec 4`, and turns red once it passes. When the collection sets `admin.useAsDone`, each row starts with a check circle that marks the record done. | `title`, `relatedCollection`, `where`, `sortField`, `sortDirection`, `limit` |

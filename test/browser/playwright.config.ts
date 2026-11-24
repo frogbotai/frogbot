@@ -462,7 +462,7 @@ const testProjects = [
       'views.browser.spec.ts',
     ],
   }),
-  project({ name: 'asana', testMatch: 'asana.browser.spec.ts' }),
+  project({ name: 'asana', testMatch: ['asana.browser.spec.ts', 'asanaPolish.browser.spec.ts'] }),
   project({
     name: 'dojo',
     testMatch: [

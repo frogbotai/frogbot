@@ -606,6 +606,26 @@ describe('provider registry sync', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
+  it('names the host, error code and fix when models.dev is unreachable', async () => {
+    const { syncCatalog } = await loadSync();
+    const offline = () =>
+      new TypeError('fetch failed', {
+        cause: Object.assign(new Error('getaddrinfo ENOTFOUND models.dev'), { code: 'ENOTFOUND' }),
+      });
+
+    const message =
+      'models.dev is unreachable (ENOTFOUND): allow models.dev on this network, then rerun `pnpm bump <bump> --from sync-catalog`.';
+
+    await expect(syncCatalog({ fetchImpl: vi.fn().mockRejectedValue(offline()) })).rejects.toThrow(
+      message,
+    );
+    await expect(syncCatalog({ fetchImpl: logoFetch({ anthropic: offline() }) })).rejects.toThrow(
+      message,
+    );
+
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it('keeps the name and omits the logo on a provider 404', async () => {
     const { syncCatalog } = await loadSync();
     const fetchImpl = logoFetch({

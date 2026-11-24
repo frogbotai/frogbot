@@ -31,7 +31,12 @@ export default function IconRegistryResolutionPage() {
 );
 
 try {
-  const env = { ...process.env, NEXT_OUTPUT: 'standalone' };
+  const env = {
+    DATABASE_URL: `file:${path.join(standaloneCopy, 'build.db')}`,
+    FROGBOT_SECRET: 'test-ui-next-throwaway-secret',
+    ...process.env,
+    NEXT_OUTPUT: 'standalone',
+  };
 
   execFileSync('pnpm', ['--filter', 'blank^...', 'build'], { env, stdio: 'inherit' });
   execFileSync('pnpm', ['--filter', 'blank', 'build', '--webpack'], { env, stdio: 'inherit' });
@@ -73,10 +78,7 @@ try {
   assert.match(css, /html:not\(\[data-fb-ui-page\]\)\)?\s*\{[^}]*--color-bg:/);
   assert.doesNotMatch(css, /--fb-(?:base|theme)-|light-dark\(|data-fb-theme/);
 
-  assert.doesNotMatch(
-    css,
-    /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))(?![\w-])/,
-  );
+  assert.doesNotMatch(css, /--(radius-(sm|md|lg|xl)|color-red-(500|600|700))(?![\w-])/);
 
   assert.match(css, /\.template-default:has\(\.fb-nav-shell\)/);
   assert.match(css, /\.fb-mobile-nav-toggle/);

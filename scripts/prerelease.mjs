@@ -73,6 +73,12 @@ function sleep(ms) {
 function ensureDocker() {
   if (dockerUp()) return;
 
+  if (process.env.CLAUDE_CODE_REMOTE === 'true') {
+    fail(
+      'Docker is not running. Start it with `bash scripts/cloud-services.sh mongodb mongodb-search postgres redis storage`, then rerun.',
+    );
+  }
+
   if (process.platform !== 'darwin') {
     fail('Docker is not running. Start the Docker daemon and rerun.');
   }

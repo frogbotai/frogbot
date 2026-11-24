@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 
+import { writeOverrides } from '../../../scripts/lib/overrides.mjs';
+
 export interface LocalPackage {
   directory: string;
   name: string;
@@ -24,6 +26,11 @@ interface PackageJson {
   };
   version: string;
 }
+
+const NETWORK_VARIABLE =
+  /^(?:(?:https?|no|all)_proxy|node_extra_ca_certs|ssl_cert_(?:file|dir)|npm_config_(?:https?_proxy|proxy|noproxy|cafile|strict_ssl|registry|userconfig)|corepack_\w+)$/i;
+
+const SECRET_VARIABLE = /TOKEN|SECRET|AUTH|PASSWORD|CREDENTIAL|API_KEY/i;
 
 export function subprocessEnvironment(
   cwd: string,
@@ -49,6 +56,10 @@ export function subprocessEnvironment(
     'npm_config_user_agent',
   ]) {
     if (process.env[key] !== undefined) env[key] = process.env[key];
+  }
+
+  for (const [key, value] of Object.entries(process.env)) {
+    if (NETWORK_VARIABLE.test(key) && !SECRET_VARIABLE.test(key)) env[key] = value;
   }
 
   return {
@@ -262,18 +273,11 @@ export function packLocalClosure({
 }
 
 export function applyLocalOverrides(appDirectory: string, packages: LocalPackage[]): void {
-  const packagePath = path.join(appDirectory, 'package.json');
-  const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8')) as PackageJson & {
-    pnpm?: { overrides?: Record<string, string> };
-  };
-
-  const overrides = Object.fromEntries(
-    packages.map(({ name, tarball }) => [name, `file:${tarball}`]),
+  writeOverrides(
+    appDirectory,
+    Object.fromEntries(packages.map(({ name, tarball }) => [name, `file:${tarball}`])),
+    { env: subprocessEnvironment(appDirectory) },
   );
-
-  pkg.pnpm = { ...pkg.pnpm, overrides };
-
-  fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 
 export function serviceAvailable(port: number): Promise<boolean> {

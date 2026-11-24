@@ -1,0 +1,27 @@
+@layer frogbot {
+  .fb-welcome {
+    padding-block: var(--spacer-4) var(--spacer-2);
+    text-align: center;
+  }
+
+  .fb-welcome__date {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0 0 var(--spacer-1);
+  }
+
+  .fb-welcome__heading {
+    color: var(--color-text);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1.25;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .widget-wrapper:has(.fb-welcome) .widget-wrapper__controls {
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+  }
+}

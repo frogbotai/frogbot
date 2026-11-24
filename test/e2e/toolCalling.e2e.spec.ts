@@ -1,3 +1,5 @@
+import '../live/env';
+
 import type { ChildProcess } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -7,6 +9,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FrogBotRESTClient } from '../__helpers/shared/FrogBotRESTClient';
+import { describeLive } from '../live/live';
 import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
@@ -109,59 +112,63 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     expect(userId).toBeDefined();
   });
 
-  it('round-trips a tool result into the final answer', async () => {
-    const response = await client.post<AgentBody>(
-      '/api/agents/tool-demo',
-      { prompt },
-      { headers: { authorization: `Bearer ${token}` } },
-    );
+  describeLive('with a zen key', { keys: ['OPENCODE_API_KEY'] }, () => {
+    it('round-trips a tool result into the final answer', async () => {
+      const response = await client.post<AgentBody>(
+        '/api/agents/tool-demo',
+        { prompt },
+        { headers: { authorization: `Bearer ${token}` } },
+      );
 
-    expect(response.status, JSON.stringify(response.body)).toBe(200);
-    expect(response.body.text).toContain(sentinel);
-    expect(response.body.chatId).toBeDefined();
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body.text).toContain(sentinel);
+      expect(response.body.chatId).toBeDefined();
 
-    chatId = response.body.chatId;
-  });
+      chatId = response.body.chatId;
+    });
 
-  it('persists one transcript with the completed tool call', async () => {
-    const auth = { headers: { authorization: `Bearer ${token}` } };
-    const chats = await client.get<
-      FindBody<{
-        id: string | number;
-        agent: string;
-        user: string | number | { id: string | number };
-      }>
-    >('/api/chats', auth);
+    it('persists one transcript with the completed tool call', async () => {
+      const auth = { headers: { authorization: `Bearer ${token}` } };
+      const chats = await client.get<
+        FindBody<{
+          id: string | number;
+          agent: string;
+          user: string | number | { id: string | number };
+        }>
+      >('/api/chats', auth);
 
-    expect(chats.status, JSON.stringify(chats.body)).toBe(200);
-    expect(chats.body.docs).toHaveLength(1);
-    expect(chats.body.docs[0]?.agent).toBe('tool-demo');
+      expect(chats.status, JSON.stringify(chats.body)).toBe(200);
+      expect(chats.body.docs).toHaveLength(1);
+      expect(chats.body.docs[0]?.agent).toBe('tool-demo');
 
-    const owner = chats.body.docs[0]?.user;
+      const owner = chats.body.docs[0]?.user;
 
-    expect(typeof owner === 'object' ? owner.id : owner).toBe(userId);
+      expect(typeof owner === 'object' ? owner.id : owner).toBe(userId);
 
-    const messages = await client.get<
-      FindBody<{ role: string; parts: Array<Record<string, unknown>> }>
-    >(`/api/messages?where[chat][equals]=${chatId}&sort=createdAt`, auth);
+      const messages = await client.get<
+        FindBody<{ role: string; parts: Array<Record<string, unknown>> }>
+      >(`/api/messages?where[chat][equals]=${chatId}&sort=createdAt`, auth);
 
-    expect(messages.status, JSON.stringify(messages.body)).toBe(200);
-    expect(messages.body.docs).toHaveLength(2);
-    expect(messages.body.docs.map(({ role }) => role)).toEqual(['user', 'assistant']);
+      expect(messages.status, JSON.stringify(messages.body)).toBe(200);
+      expect(messages.body.docs).toHaveLength(2);
+      expect(messages.body.docs.map(({ role }) => role)).toEqual(['user', 'assistant']);
 
-    const assistant = messages.body.docs.find(({ role }) => role === 'assistant');
+      const assistant = messages.body.docs.find(({ role }) => role === 'assistant');
 
-    expect(assistant).toBeDefined();
-    expect(
-      assistant?.parts.some(
-        (part) =>
-          part.type === 'tool-get_secret_code' && JSON.stringify(part.output).includes(sentinel),
-      ),
-      JSON.stringify(assistant?.parts),
-    ).toBe(true);
-    expect(
-      assistant?.parts.some((part) => part.type === 'text' && String(part.text).includes(sentinel)),
-      JSON.stringify(assistant?.parts),
-    ).toBe(true);
+      expect(assistant).toBeDefined();
+      expect(
+        assistant?.parts.some(
+          (part) =>
+            part.type === 'tool-get_secret_code' && JSON.stringify(part.output).includes(sentinel),
+        ),
+        JSON.stringify(assistant?.parts),
+      ).toBe(true);
+      expect(
+        assistant?.parts.some(
+          (part) => part.type === 'text' && String(part.text).includes(sentinel),
+        ),
+        JSON.stringify(assistant?.parts),
+      ).toBe(true);
+    });
   });
 });

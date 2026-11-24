@@ -39,7 +39,7 @@ function bodyField(comments: CollectionConfig | undefined, name: string) {
 
 type Adapter = {
   features: { key: string }[];
-  FieldComponent: { serverProps?: { admin?: { placeholder?: string } } };
+  FieldComponent: { serverProps?: { admin?: Record<string, unknown> & { placeholder?: string } } };
 };
 
 function adapterOf(field: Extract<Field, { type: 'richText' }> | undefined): Adapter {
@@ -190,5 +190,27 @@ describe('commentsPlugin', () => {
       'Add a comment or @mention someone',
       'Reply to the customer',
     ]);
+  });
+
+  it('hides the block gutter and its buttons, unless the editor shows them', async () => {
+    const own = lexicalEditor({ admin: { hideGutter: false }, features: commentFeatures() });
+
+    const { comments } = await apply(config([deals(), tasks([commentsField({ editor: own })])]), {
+      collections: ['deals'],
+    });
+
+    const admins = ['body_0', 'body_1'].map(
+      (name) => adapterOf(bodyField(comments, name)).FieldComponent.serverProps?.admin,
+    );
+
+    for (const admin of admins) {
+      expect(admin).toMatchObject({
+        hideAddBlockButton: true,
+        hideDraggableBlockElement: true,
+        hideInsertParagraphAtEnd: true,
+      });
+    }
+
+    expect(admins.map((admin) => admin?.hideGutter).sort()).toEqual([false, true]);
   });
 });

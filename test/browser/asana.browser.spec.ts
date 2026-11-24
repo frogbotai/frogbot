@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { prepareView, shootView } from './__helpers/viewShots';
+import { setAdminTheme } from './__helpers/adminTheme';
+import { prepareView, shootView, themes } from './__helpers/viewShots';
 import { timezoneId, todayDate } from './fixtures/crm/shared';
 
 const shots = path.join(
@@ -155,6 +156,7 @@ const panelShots = path.join(
 );
 
 const created: number[] = [];
+const createdUsers: number[] = [];
 
 const panel = (page: Page) => page.locator('.fb-record-panel');
 const bar = (page: Page) => page.locator('.fb-record-panel-header');
@@ -209,6 +211,8 @@ test.describe('the task panel', () => {
 
   test.afterEach(async ({ page }) => {
     for (const id of created.splice(0).reverse()) await page.request.delete(`/api/tasks/${id}`);
+
+    for (const id of createdUsers.splice(0)) await page.request.delete(`/api/users/${id}`);
   });
 
   test('a seeded task opens like Asana’s, and a subtask opens in place with a way back', async ({
@@ -224,16 +228,34 @@ test.describe('the task panel', () => {
     await expect(panel(page).locator('#field-completed')).toHaveCount(0);
     await expect(panel(page).locator('.fb-record-panel-properties__row label')).toHaveText([
       'Assignee',
+      'Start Date',
       'Due Date',
       /^Project/,
       'Status',
     ]);
+    await expect(row(page, 'startDate').locator('input')).toHaveValue('Jun 11');
+    await expect(row(page, 'dueDate').locator('input')).toHaveValue('Jun 17');
+    await expect(panel(page).locator('.relationship--single-value__drawer-toggler')).toHaveCount(0);
+    await expect(
+      panel(page).locator(
+        ':is(#field-parent, #field-number, #field-key, #field-startDate, .file-field__upload):visible',
+      ),
+    ).toHaveCount(1);
+    await expect(
+      panel(page).locator('label:visible', { hasText: /^(Parent|Number|Key)$/ }),
+    ).toHaveCount(0);
+    await expect(panel(page).locator('#field-description')).toHaveAttribute(
+      'placeholder',
+      'What is this task about?',
+    );
     await expect(subtasks(page).locator('.fb-panel-join__title')).toHaveText([
       'Sketch the plan comparison table',
       'Write the pricing FAQ',
     ]);
     await expect(subtasks(page).getByRole('button', { name: 'Completed' })).toHaveCount(1);
-    await expect(panel(page)).toContainText(/pricing-notes(-\d+)?\.txt/);
+    await expect(panel(page).locator('.fb-panel-upload__file')).toHaveText([
+      /pricing-notes(-\d+)?\.txt/,
+    ]);
     await expect(panel(page).locator('.fb-pill-tabs')).toBeVisible();
     await expect(panel(page).locator('.fb-comments__item')).toHaveCount(2);
     await expect(
@@ -255,32 +277,153 @@ test.describe('the task panel', () => {
     await expect(row(page, 'project')).toHaveCount(0);
 
     const back = bar(page).getByRole('button', { name: 'Back to Design the pricing page' });
+    await expect(back).toHaveText('Design the pricing page');
+    expect(
+      await back
+        .locator('.fb-side-panel-bar__back-label')
+        .evaluate((label) => label.scrollWidth <= label.clientWidth),
+    ).toBe(true);
+
+    await shootPanel(page, '05-subtask-back-link');
     await back.click();
     await expect(title(page)).toHaveValue('Design the pricing page');
     expect(errors).toEqual([]);
   });
 
-  test('+ adds a subtask in the parent’s project, and its check saves completed', async ({
+  test('a subtask opened from the list links back to its parent, with no Project row', async ({
+    page,
+  }) => {
+    const subtask = await findTask(page, 'Write the pricing FAQ');
+
+    await openTask(page, subtask.id, 'Write the pricing FAQ');
+    await expect(row(page, 'project')).toHaveCount(0);
+    await expect(panel(page).locator('.fb-record-panel-properties__row:visible')).toHaveCount(4);
+    await expect(panel(page).locator('.field-label .required:visible')).toHaveCount(0);
+
+    await bar(page).getByRole('button', { name: 'Back to Design the pricing page' }).click();
+    await expect(title(page)).toHaveValue('Design the pricing page');
+    await expect(bar(page).getByRole('button', { name: /^Back to/ })).toHaveCount(0);
+  });
+
+  test('+ adds a subtask inline in the parent’s project, and its check saves completed', async ({
     page,
   }) => {
     const parent = await findTask(page, 'Design the pricing page');
 
     await openTask(page, parent.id, 'Design the pricing page');
     await subtasks(page).getByRole('button', { name: 'Add task' }).click();
-    await expect(title(page)).toHaveValue('');
-    await title(page).fill('Price the add-ons');
-    await bar(page).getByRole('button', { name: 'Save' }).click();
-    await expect(bar(page).locator('.fb-record-panel-header__save')).toHaveCount(0);
 
-    const id = Number(new URL(page.url()).searchParams.get('record'));
-    created.push(id);
-    expect(await readTask(page, id)).toMatchObject({ parent: parent.id, project: parent.project });
+    const draft = subtasks(page).getByRole('textbox', { name: 'New task name' });
+    await expect(draft).toBeFocused();
+    const { totalDocs } = (await (await page.request.get('/api/tasks?limit=1')).json()) as {
+      totalDocs: number;
+    };
 
-    await bar(page).getByRole('button', { name: 'Back to Design the pricing page' }).click();
+    await draft.fill('Price the add-ons');
+    await draft.press('Enter');
+
     const added = subtasks(page).locator('.fb-panel-join__row', { hasText: 'Price the add-ons' });
+    await expect(added).toBeVisible();
+    await expect(draft).toHaveValue('');
+    await expect(draft).toBeFocused();
+    await expect(title(page)).toHaveValue('Design the pricing page');
+    expect(Number(new URL(page.url()).searchParams.get('record'))).toBe(parent.id);
+    await expect(page.locator('.collection-list')).toContainText(`of ${totalDocs + 1} items`);
+    await expect(page.locator('.app-header__step-nav')).toContainText('Design the pricing page');
+
+    await draft.press('Escape');
+    await expect(draft).toHaveCount(0);
+    await expect(panel(page)).toBeVisible();
+
+    const subtask = await findTask(page, 'Price the add-ons');
+    created.push(subtask.id);
+    expect(subtask).toMatchObject({ parent: parent.id, project: parent.project });
+
     await added.getByRole('button', { name: 'Mark complete' }).click();
     await expect(added.getByRole('button', { name: 'Completed' })).toBeVisible();
-    await expect.poll(async () => readTask(page, id)).toMatchObject({ completed: true });
+    await expect.poll(async () => readTask(page, subtask.id)).toMatchObject({ completed: true });
+  });
+
+  test('Attachments + uploads a file to the task, and × removes it', async ({ page }) => {
+    const parent = await findTask(page, 'Design the pricing page');
+    const task = await createTask(page, { title: 'Collect the logos', project: parent.project });
+    const section = panel(page).locator('.fb-panel-upload');
+
+    await openTask(page, task.id, 'Collect the logos');
+
+    for (const [name, placeholder] of [
+      ['startDate', 'No start date'],
+      ['dueDate', 'No due date'],
+    ]) {
+      await expect(row(page, name).locator('input')).toHaveValue('');
+      await expect(row(page, name).locator('input')).toHaveAttribute('placeholder', placeholder);
+    }
+
+    await expect(section.locator('.fb-panel-section__heading')).toHaveText('Attachments');
+    await expect(section.locator('.fb-panel-upload__file')).toHaveCount(0);
+
+    const chooser = page.waitForEvent('filechooser');
+    await section.getByRole('button', { name: 'Add file' }).click();
+
+    await (
+      await chooser
+    ).setFiles({ name: 'logo-sheet.txt', mimeType: 'text/plain', buffer: Buffer.from('logos') });
+
+    const file = section.locator('.fb-panel-upload__file', { hasText: /logo-sheet(-\d+)?\.txt/ });
+    await expect(file).toBeVisible();
+    await expect
+      .poll(
+        async () => ((await readTask(page, task.id)) as { attachments?: unknown[] }).attachments,
+      )
+      .toHaveLength(1);
+
+    await file.hover();
+    await file.getByRole('button', { name: /^Remove logo-sheet/ }).click();
+    await expect(section.locator('.fb-panel-upload__file')).toHaveCount(0);
+    await expect
+      .poll(
+        async () => ((await readTask(page, task.id)) as { attachments?: unknown[] }).attachments,
+      )
+      .toEqual([]);
+  });
+
+  test('a member who can’t edit the task gets no attachment + or remove', async ({
+    browser,
+    page,
+  }) => {
+    const email = `member-${Date.now()}@example.com`;
+    const made = await page.request.post('/api/users', {
+      data: { email, password: 'frogbot-test', roles: ['member'] },
+    });
+
+    expect(made.ok()).toBe(true);
+
+    const { doc: user } = (await made.json()) as { doc: { id: number } };
+
+    createdUsers.push(user.id);
+
+    const task = await findTask(page, 'Design the pricing page');
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+      timezoneId,
+    });
+
+    const member = await context.newPage();
+    const login = await member.request.post('/api/users/login', {
+      data: { email, password: 'frogbot-test' },
+    });
+
+    expect(login.ok()).toBe(true);
+    expect((await member.request.patch(`/api/tasks/${task.id}`, { data: {} })).status()).toBe(403);
+
+    await openTask(member, task.id, 'Design the pricing page');
+
+    const section = panel(member).locator('.fb-panel-upload');
+
+    await expect(section.locator('.fb-panel-upload__file')).toHaveCount(1);
+    await expect(section.getByRole('button', { name: 'Add file' })).toHaveCount(0);
+    await expect(section.getByRole('button', { name: /^Remove/ })).toHaveCount(0);
+    await context.close();
   });
 
   test('the pinned box stays put while the task scrolls, and a post shows in the tab', async ({
@@ -298,6 +441,7 @@ test.describe('the task panel', () => {
 
     const pinned = footer(page).locator('.fb-comments--pinned');
     await expect(pinned).toBeVisible();
+    expect((await pinned.boundingBox())!.height).toBeLessThan(60);
     await expect(panel(page).locator('.fb-record-panel__body .fb-comments__box')).toHaveCount(0);
 
     const before = (await pinned.boundingBox())!;
@@ -309,8 +453,31 @@ test.describe('the task panel', () => {
     await expect(title(page)).not.toBeInViewport();
     expect((await pinned.boundingBox())!.y).toBe(before.y);
 
-    await pinned.locator('[contenteditable="true"]').fill('Draft is in the doc.');
-    await pinned.getByRole('button', { name: 'Comment' }).click();
+    const complete = bar(page).getByRole('button', { name: 'Mark complete' });
+    await expect(complete).toHaveClass(/__complete--compact/);
+    await expect(complete.locator('.fb-record-panel-header__complete-label')).toBeHidden();
+    await expect(bar(page).locator('.fb-side-panel-bar__title')).toHaveText(
+      'Plan the launch email',
+    );
+
+    const editor = pinned.locator('[contenteditable="true"]');
+    const send = pinned.getByRole('button', { name: 'Comment' });
+
+    expect((await pinned.boundingBox())!.height).toBeLessThan(60);
+    await expect(send).toBeDisabled();
+    await expect(editor).toBeVisible();
+    await shootPanel(page, '07-scrolled-compact-complete');
+    await editor.click();
+    await page.keyboard.type('Draft is in the doc.');
+    await expect(pinned.locator('.ContentEditable__keyboard-hint')).toBeHidden();
+    await expect(pinned.locator('.add-block-menu, .insert-paragraph-at-end')).toHaveCount(0);
+
+    const box = (await pinned.locator('.fb-comments__editor--compact').boundingBox())!;
+    const button = (await send.boundingBox())!;
+    expect(button.x + button.width).toBeLessThanOrEqual(box.x + box.width);
+    expect(button.y + button.height).toBeLessThanOrEqual(box.y + box.height);
+
+    await send.click();
 
     await expect(
       panel(page).locator('.fb-record-panel__body .fb-comments__item', {
@@ -339,7 +506,14 @@ test.describe('the task panel', () => {
       column('In progress').locator('.frog-board__card', { hasText: 'Book the launch review' }),
     ).toBeVisible();
 
-    await bar(page).getByRole('button', { name: 'Mark complete' }).click();
+    const complete = bar(page).locator('.fb-side-panel-bar__lead').getByRole('button', {
+      name: 'Mark complete',
+    });
+
+    const close = bar(page).getByRole('button', { name: 'Close' });
+    expect((await complete.boundingBox())!.x).toBeLessThan((await close.boundingBox())!.x);
+
+    await complete.click();
     await expect(bar(page).getByRole('button', { name: 'Completed' })).toBeVisible();
     await expect
       .poll(async () => readTask(page, task.id))
@@ -348,6 +522,341 @@ test.describe('the task panel', () => {
       column('In progress').locator('.frog-board__card', { hasText: 'Book the launch review' }),
     ).toBeVisible();
     await expect(row(page, 'status').locator('.rs__single-value')).toHaveText('In progress');
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0);
     await shootPanel(page, '06-completed-task-full');
+  });
+
+  test('an unsaved edit hides Mark complete until Save, so completing never saves it', async ({
+    page,
+  }) => {
+    const parent = await findTask(page, 'Design the pricing page');
+    const task = await createTask(page, { title: 'Check the copy', project: parent.project });
+
+    await openTask(page, task.id, 'Check the copy');
+    await title(page).fill('');
+    await expect(bar(page).getByRole('button', { name: 'Save' })).toBeVisible();
+    await expect(bar(page).locator('.fb-side-panel-bar__lead')).toHaveCount(0);
+
+    await title(page).fill('Check the copy');
+    await bar(page).getByRole('button', { name: 'Save' }).click();
+    await expect(bar(page).getByRole('button', { name: 'Mark complete' })).toBeVisible();
+    expect(await readTask(page, task.id)).toMatchObject({ completed: false });
+  });
+
+  test('Mark complete shows its whole focus ring in the lead slot', async ({ page }) => {
+    const task = await findTask(page, 'Design the pricing page');
+    await openTask(page, task.id, 'Design the pricing page');
+    const complete = bar(page).locator('.fb-side-panel-bar__lead button');
+    await expect(complete).toBeVisible();
+    await complete.focus();
+
+    const geometry = await complete.evaluate((button) => {
+      const style = getComputedStyle(button);
+      const ring =
+        style.outlineStyle === 'none'
+          ? 0
+          : parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+
+      const box = button.getBoundingClientRect();
+      const start = button.closest('.fb-side-panel-bar__start')!;
+      const clip = start.getBoundingClientRect();
+
+      return {
+        clipBottom: clip.bottom,
+        clipLeft: clip.left,
+        clipTop: clip.top,
+        focusVisible: button.matches(':focus-visible'),
+        overflow: getComputedStyle(start).overflow,
+        ring,
+        ringBottom: box.bottom + ring,
+        ringLeft: box.left - ring,
+        ringTop: box.top - ring,
+      };
+    });
+
+    expect(geometry.focusVisible).toBe(true);
+    expect(geometry.ring).toBeGreaterThan(0);
+    expect(geometry.overflow).toBe('hidden');
+    expect(geometry.ringLeft).toBeGreaterThanOrEqual(geometry.clipLeft);
+    expect(geometry.ringTop).toBeGreaterThanOrEqual(geometry.clipTop);
+    expect(geometry.ringBottom).toBeLessThanOrEqual(geometry.clipBottom);
+  });
+
+  test('shoots the open task in light and dark, wide and narrow', async ({ page }) => {
+    test.setTimeout(60_000);
+
+    const task = await findTask(page, 'Design the pricing page');
+
+    for (const theme of themes) {
+      await setAdminTheme(page, theme);
+
+      for (const viewport of [
+        { width: 1280, height: 1400 },
+        { width: 375, height: 1400 },
+      ]) {
+        await page.setViewportSize(viewport);
+        await openTask(page, task.id, 'Design the pricing page');
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect(panel(page).locator('.fb-comments__item')).toHaveCount(2);
+        await expect(row(page, 'dueDate').locator('input')).toHaveValue('Jun 17');
+        await expect(panel(page).locator('.fb-panel-upload__file')).toHaveCount(1);
+        await shootPanel(page, `panel-${theme}-${viewport.width}`);
+      }
+    }
+  });
+});
+
+const homeShots = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'test-results',
+  'asana-home',
+);
+
+test.describe('views and shell', () => {
+  const restore: Task[] = [];
+
+  test.afterEach(async ({ page }) => {
+    for (const task of restore.splice(0)) {
+      await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: task.completed } });
+    }
+  });
+
+  test('the dashboard opens on a greeting, My tasks and Projects, with no collection cards', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+
+    await prepareView(page);
+    await page.goto('/');
+
+    await expect(page.locator('.fb-welcome__heading')).toHaveText(
+      /^Good (morning|afternoon|evening), Browser$/,
+    );
+    await expect(page.locator('.fb-query-widget').getByText('My tasks')).toBeVisible();
+    await expect(page.locator('.fb-query-widget .fb-list > li').first()).toBeVisible();
+    await expect(
+      page.locator('.asana-projects__tile', { hasText: 'Website relaunch' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.asana-projects__tile', { hasText: 'Create project' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.collections, .activity-widget, .widget-wrapper:has(.collections)'),
+    ).toHaveCount(0);
+    await expect(page.locator('.welcome-widget')).toHaveCount(0);
+
+    for (const colorScheme of themes) {
+      await setAdminTheme(page, colorScheme);
+      await page.emulateMedia({ colorScheme });
+      await page.reload();
+
+      for (const width of [1280, 375]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(page.locator('.fb-welcome__heading')).toContainText('Good');
+        await expect(page.locator('.asana-projects__tile').last()).toBeVisible();
+
+        await page.screenshot({
+          animations: 'disabled',
+          fullPage: true,
+          path: path.join(homeShots, `home-${colorScheme}-${width}.png`),
+        });
+      }
+    }
+
+    expect(errors).toEqual([]);
+  });
+
+  test('board cards show an avatar and a short date with no captions, and four columns fit at 1280px', async ({
+    page,
+  }) => {
+    await prepareView(page);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/collections/tasks/board');
+
+    const card = page.locator('.frog-board__card', { hasText: 'Write the homepage copy' });
+
+    await expect(card.locator('.fb-card__meta .fb-card__avatar')).toHaveCount(1);
+    await expect(card.locator('.fb-card__avatar')).toHaveAttribute('title', 'Browser Tester');
+    await expect(card.locator('.fb-card__meta')).toHaveText(/^BT[A-Z][a-z]{2} \d{1,2}$/);
+    await expect(page.locator('.frog-board .fb-card__field-label')).toHaveCount(0);
+
+    const done = page.locator('.frog-board__column', { hasText: 'Done' }).first();
+    const last = (await done.boundingBox())!;
+    const board = (await page.locator('.frog-board').boundingBox())!;
+
+    expect(last.x + last.width).toBeLessThanOrEqual(board.x + board.width + 1);
+  });
+
+  test('a list row’s check circle completes the task, and the list shows one sort arrow', async ({
+    page,
+  }) => {
+    const task = await findTask(page, 'Write the homepage copy');
+
+    restore.push(task);
+    await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: false } });
+    await prepareView(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/collections/tasks');
+
+    const row = page.locator('tbody > tr', { hasText: 'Write the homepage copy' });
+    const check = row.locator('td.cell-title .fb-done-check');
+
+    await expect(check).toHaveAttribute('aria-pressed', 'false');
+    await check.click();
+    await expect(row).toHaveAttribute('data-done', '');
+    await expect.poll(async () => (await readTask(page, task.id)).completed).toBe(true);
+    await expect(page.locator('.fb-record-panel')).toHaveCount(0);
+
+    await row.locator('td.cell-title .fb-done-check').click();
+    await expect.poll(async () => (await readTask(page, task.id)).completed).toBe(false);
+
+    const visibleArrows = await page
+      .locator('thead .sort-column__button')
+      .evaluateAll(
+        (buttons) => buttons.filter((button) => getComputedStyle(button).opacity !== '0').length,
+      );
+
+    expect(visibleArrows).toBeLessThanOrEqual(1);
+  });
+
+  test('a completed task’s checkmark sits on its timeline bar, beside its title', async ({
+    page,
+  }) => {
+    const task = await findTask(page, 'Write the homepage copy');
+
+    restore.push(task);
+    await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: true } });
+    await prepareView(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/collections/tasks/timeline?date=${todayDate}&scale=week`);
+
+    const bar = page.locator('.frog-timeline__bar', { hasText: 'Write the homepage copy' });
+    const icon = (await bar.locator('.fb-record__done-icon').boundingBox())!;
+    const text = (await bar.locator('.collection-timeline__title-text').boundingBox())!;
+    const box = (await bar.boundingBox())!;
+
+    expect(icon.y).toBeGreaterThanOrEqual(box.y);
+    expect(icon.y + icon.height).toBeLessThanOrEqual(box.y + box.height);
+    expect(icon.x + icon.width).toBeLessThanOrEqual(text.x);
+  });
+
+  test('the sidebar lists Projects and Tasks first, and system collections under System', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/collections/tasks');
+
+    const group = page.locator('.frogbot-collections-section__group', {
+      has: page.locator('.frogbot-collections-section__group-label', { hasText: /^System$/ }),
+    });
+
+    await expect(group).toContainText('Audit Logs');
+    await expect(group).toContainText('Comments');
+    await expect(group).not.toContainText('Tasks');
+
+    const labels = await page
+      .locator('.frogbot-collections-section__group-label')
+      .allTextContents();
+
+    expect(labels.at(-1)).toBe('System');
+  });
+});
+
+test.describe('a member', () => {
+  const users: number[] = [];
+  const restore: Task[] = [];
+
+  test.afterEach(async ({ page }) => {
+    for (const id of users.splice(0)) await page.request.delete(`/api/users/${id}`);
+
+    for (const task of restore.splice(0)) {
+      await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: task.completed } });
+    }
+  });
+
+  test('a member’s list check is read-only on someone else’s task', async ({ browser, page }) => {
+    const email = `member-${Date.now()}@example.com`;
+    const made = await page.request.post('/api/users', {
+      data: { email, password: 'frogbot-test', roles: ['member'] },
+    });
+
+    const { doc: user } = (await made.json()) as { doc: { id: number } };
+
+    users.push(user.id);
+
+    const task = await findTask(page, 'Write the homepage copy');
+
+    restore.push(task);
+    await page.request.patch(`/api/tasks/${task.id}`, { data: { completed: false } });
+
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+      timezoneId,
+    });
+
+    const member = await context.newPage();
+
+    await member.request.post('/api/users/login', { data: { email, password: 'frogbot-test' } });
+    await member.setViewportSize({ width: 1440, height: 900 });
+    await member.goto('/collections/tasks');
+
+    const row = member.locator('tbody > tr', { hasText: 'Write the homepage copy' });
+    const check = row.locator('td.cell-title .fb-done-check');
+
+    expect((await member.request.patch(`/api/tasks/${task.id}`, { data: {} })).status()).toBe(403);
+    await expect(check).toBeVisible();
+    await expect(check).toBeDisabled();
+    await expect(check).toHaveAttribute('aria-pressed', 'false');
+    await context.close();
+  });
+
+  test('a member’s Home has no Create project, and a project tile opens only its tasks', async ({
+    browser,
+    page,
+  }) => {
+    const email = `member-${Date.now()}@example.com`;
+    const made = await page.request.post('/api/users', {
+      data: { email, password: 'frogbot-test', roles: ['member'] },
+    });
+
+    const { doc: user } = (await made.json()) as { doc: { id: number } };
+
+    users.push(user.id);
+
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+      timezoneId,
+    });
+
+    const member = await context.newPage();
+
+    await member.request.post('/api/users/login', { data: { email, password: 'frogbot-test' } });
+    await member.setViewportSize({ width: 1440, height: 900 });
+    await member.goto('/');
+
+    await expect(
+      member.locator('.asana-projects__tile', { hasText: 'Website relaunch' }),
+    ).toBeVisible();
+    await expect(
+      member.locator('.asana-projects__tile', { hasText: 'Create project' }),
+    ).toHaveCount(0);
+    await expect(member.locator('.fb-query-widget .fb-list > li')).toHaveCount(0);
+    await context.close();
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.locator('.asana-projects__tile', { hasText: 'Website relaunch' }).click();
+    await expect(page).toHaveURL(/where/);
+    await expect(page.locator('tbody > tr').first()).toBeVisible();
+    await expect
+      .poll(
+        async () => [
+          ...new Set(
+            (await page.locator('tbody td.cell-project').allTextContents()).map((p) => p.trim()),
+          ),
+        ],
+        { timeout: 15000 },
+      )
+      .toEqual(['Website relaunch']);
   });
 });

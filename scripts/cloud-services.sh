@@ -8,7 +8,7 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-[ "$#" -gt 0 ] || { echo "usage: scripts/cloud-services.sh <profile>... (mongodb postgres redis storage)" >&2; exit 2; }
+[ "$#" -gt 0 ] || { echo "usage: scripts/cloud-services.sh <profile>... (mongodb mongodb-search postgres redis storage)" >&2; exit 2; }
 
 root=$(cd "$(dirname "$0")/.." && pwd -P)
 

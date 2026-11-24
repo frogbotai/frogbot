@@ -56,7 +56,7 @@ describe('formatWhen', () => {
 describe('toCommentItem', () => {
   const base = { id: 1, body: null, createdAt: '2026-11-15T12:00:00.000Z' };
 
-  it('names the author by title field, then email, and marks later changes as edited', () => {
+  it('names the author by title field, then their email’s name, and marks later changes as edited', () => {
     const author = { id: 7, email: 'sam@example.com', name: 'Sam Lee' };
 
     expect(toCommentItem({ ...base, author, updatedAt: base.createdAt }, 'name')).toMatchObject({
@@ -69,6 +69,22 @@ describe('toCommentItem', () => {
         { ...base, author: { ...author, name: '' }, updatedAt: '2026-11-15T12:05:00.000Z' },
         'name',
       ),
-    ).toMatchObject({ authorName: 'sam@example.com', edited: true });
+    ).toMatchObject({ authorName: 'sam', edited: true });
+  });
+
+  it('reads a name that is only an email as the email’s name, never the raw email', () => {
+    const author = { id: 7, email: 'sam@example.com', name: 'sam@example.com' };
+
+    expect(toCommentItem({ ...base, author }, 'name').authorName).toBe('sam');
+    expect(
+      toCommentItem({ ...base, author: { id: 7, name: 'sam@example.com' } }, 'name'),
+    ).toMatchObject({
+      authorName: 'sam',
+    });
+    expect(
+      toCommentItem({ ...base, author: { id: 7, email: 'sam@example.com' } }, undefined),
+    ).toMatchObject({
+      authorName: 'sam',
+    });
   });
 });

@@ -2,7 +2,7 @@
 export type CommentItem = {
   authorEmail?: string;
   authorId?: number | string;
-  /** The author's display name: their title field, then email. */
+  /** The author's display name: their title field, or the part of their email before the @. */
   authorName: string;
   body: unknown;
   createdAt: string;
@@ -30,16 +30,21 @@ type Doc = Record<string, unknown> & { id: number | string };
 /** How many of the latest comments the list shows. */
 export const COMMENTS_LIMIT = 50;
 
+const EMAIL = /^\S+@\S+$/;
+
 function authorName(author: unknown, titleField: string | undefined): string {
   if (!author || typeof author !== 'object') return 'Someone';
 
   const doc = author as Doc;
+  const name = titleField ? doc[titleField] : undefined;
 
-  for (const value of [titleField && doc[titleField], doc.email]) {
-    if (typeof value === 'string' && value) return value;
-  }
+  if (typeof name === 'string' && name.trim() && !EMAIL.test(name.trim())) return name.trim();
 
-  return `#${doc.id}`;
+  const email = [doc.email, name].find(
+    (value): value is string => typeof value === 'string' && EMAIL.test(value.trim()),
+  );
+
+  return email ? email.trim().split('@')[0] : `#${doc.id}`;
 }
 
 /** Turns a comment read at depth 1 into what the list shows. */

@@ -110,7 +110,9 @@ describe('ListView', () => {
     function pageProps(overrides: Record<string, unknown> = {}) {
       return listProps({
         collectionConfig: {
+          access: { update: () => true },
           admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
+          fields: [{ name: 'completed', type: 'checkbox' }],
           labels: { plural: 'Tasks', singular: 'Task' },
           slug: 'tasks',
         },
@@ -229,6 +231,36 @@ describe('ListView', () => {
         }),
       );
       expect(mocks.ListFrameClient.mock.lastCall?.[0]).toMatchObject({ doneIds: ['a', 'c'] });
+    });
+
+    it('passes the rows whose done field this person can update, when access depends on the record', async () => {
+      setup();
+
+      find.mockImplementation(({ overrideAccess }: { overrideAccess: boolean }) =>
+        Promise.resolve({ docs: overrideAccess ? [{ id: 'b' }] : [] }),
+      );
+
+      render(
+        await ListView(
+          pageProps({
+            collectionConfig: {
+              access: { update: () => ({ assignee: { equals: 'u1' } }) },
+              admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
+              fields: [{ name: 'completed', type: 'checkbox' }],
+              labels: { plural: 'Tasks', singular: 'Task' },
+              slug: 'tasks',
+            },
+            data: {
+              docs: [
+                { completed: false, id: 'a', title: 'A' },
+                { completed: false, id: 'b', title: 'B' },
+              ],
+            },
+          }) as never,
+        ),
+      );
+
+      expect(mocks.ListFrameClient.mock.lastCall?.[0]).toMatchObject({ doneEditable: ['b'] });
     });
 
     it('puts each row id in its own cells, so a reordered table keeps it', async () => {

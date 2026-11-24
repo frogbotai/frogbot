@@ -64,7 +64,7 @@ export const Tasks: CollectionConfig = {
 
 For activity without comments, place `activityField()` alone and leave this plugin out. Either field shows its label as a heading, except when it is the only field in a tab, whose label already names it. Pass field options to change it, for example `commentsField({ label: 'Discussion' })`. Both fields show on the edit page and in the [record panel](/admin/record-panel#activity-and-comments).
 
-The list shows the latest 50 comments, oldest first. Each shows the author's picture and name, when it was posted ("Just now", "6 minutes ago", then a date after a day), and "(edited)" when it was changed. Hovering your own comment shows a `···` menu to edit it in place or delete it. Typing in the box never marks the record's form as changed: **Comment** saves through the comments API.
+The list shows the latest 50 comments, oldest first. Each shows the author's picture and name, when it was posted ("Just now", "6 minutes ago", then a date after a day), and "(edited)" when it was changed. Hovering your own comment shows a `···` menu to edit it in place or delete it. The box is one compact field that grows with its text, with the send button (↑, labelled **Comment**) inside it. Typing in it never marks the record's form as changed: send saves through the comments API.
 
 ## Pinned comment box
 
@@ -136,7 +136,7 @@ commentsPlugin({
 commentsField({ editor: lexicalEditor({ features: [...commentFeatures(), UploadFeature()] }) })
 ```
 
-Whichever editor applies, `MentionFeature()` is added when it's missing, because mentions record who a comment is for. `commentFeatures()` returns the compact set: bold, italic, strikethrough, inline code, links, lists and mentions.
+Whichever editor applies, `MentionFeature()` is added when it's missing, because mentions record who a comment is for. The box says "Add a comment or @mention someone" and has no block gutter, add block button, drag handle or insert-paragraph bar; set the editor's own `admin` (for example `lexicalEditor({ admin: { placeholder: 'Reply to the customer' } })`) to change any of them. `commentFeatures()` returns the compact set: bold, italic, strikethrough, inline code, links, lists and mentions.
 
 Each different editor gets its own hidden rich text field on the comments collection, so a comment is validated, and its uploads and links are populated, with exactly the features of the editor it was written in. You never name these fields: the API reads and writes a comment's rich text as `body`. A collection can't hold two comments fields with different editors.
 

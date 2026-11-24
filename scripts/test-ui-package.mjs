@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 
+import { writeOverrides } from './lib/overrides.mjs';
 import { declarationProblems, storeProblems, uiManifestProblems } from './lib/uiPackage.mjs';
 
 const repoRoot = process.cwd();
@@ -143,7 +144,6 @@ try {
           typescript: '6.0.3',
           vite: '^6.0.0',
         },
-        pnpm: { overrides: { '@frogbotai/protocol': `file:./${protocolTarball}` } },
       },
       null,
       2,
@@ -268,6 +268,7 @@ export const picker = (
 `,
   );
 
+  writeOverrides(appRoot, { '@frogbotai/protocol': `file:./${protocolTarball}` });
   run('pnpm', ['install', '--ignore-scripts'], appRoot);
 
   const store = fs.readdirSync(path.join(appRoot, 'node_modules/.pnpm'));
@@ -411,13 +412,13 @@ export default defineConfig({ build: { lib: { entry: 'src/icon.ts', formats: ['e
           react: '19.3.1',
           'react-dom': '19.3.1',
         },
-        pnpm: { overrides: files },
       },
       null,
       2,
     )}\n`,
   );
 
+  writeOverrides(nextApp, files);
   run('pnpm', ['install', '--ignore-scripts'], nextApp);
 
   assert.deepEqual(

@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   docId: 1 as number | undefined,
   paged: false,
+  refuse: false,
+  useAsTitle: 'title' as string | undefined,
   notify: vi.fn(),
   open: vi.fn(),
   permissions: { create: true, update: true } as Record<string, boolean>,
@@ -26,7 +28,7 @@ vi.mock('@payloadcms/ui', () => ({
   useConfig: () => ({
     config: { routes: { api: '/api' } },
     getEntityConfig: () => ({
-      admin: { custom: { frogbot: { useAsDone: 'done' } }, useAsTitle: 'title' },
+      admin: { custom: { frogbot: { useAsDone: 'done' } }, useAsTitle: mocks.useAsTitle },
       labels: { singular: 'Todo' },
       fields: [
         { name: 'title', type: 'text' },
@@ -70,6 +72,15 @@ const rows = [
 ];
 
 function respond(url: string, init?: RequestInit) {
+  if (init?.method === 'POST') {
+    const doc = { id: 9, ...(JSON.parse(String(init.body)) as object) };
+
+    return Promise.resolve({
+      json: () => Promise.resolve(mocks.refuse ? { errors: [{ message: 'Nope' }] } : { doc }),
+      ok: !mocks.refuse,
+    });
+  }
+
   if (init?.method === 'PATCH') {
     return Promise.resolve({
       json: () => Promise.resolve({ doc: { ...rows[0], done: true } }),
@@ -92,6 +103,8 @@ beforeEach(() => {
   mocks.create.mockReset();
   mocks.docId = 1;
   mocks.paged = false;
+  mocks.refuse = false;
+  mocks.useAsTitle = 'title';
   mocks.notify.mockReset();
   mocks.open.mockReset();
   mocks.permissions = { create: true, update: true };
@@ -101,6 +114,17 @@ beforeEach(() => {
 });
 
 describe('PanelJoinField', () => {
+  it("opens the create form, not an inline row, when useAsTitle is Payload's default 'id'", async () => {
+    mocks.useAsTitle = 'id';
+    render(<PanelJoinField path="subtasks" />);
+
+    await screen.findByRole('button', { name: '#2' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+
+    expect(screen.queryByRole('textbox', { name: 'New todo name' })).toBeNull();
+    expect(mocks.create).toHaveBeenCalledWith({ parent: 1 }, { from: 'panel' });
+  });
+
   it('lists the records whose on field is the open record, with the label as heading', async () => {
     render(<PanelJoinField path="subtasks" />);
 
@@ -142,12 +166,127 @@ describe('PanelJoinField', () => {
     expect(patch?.[1]?.body).toBe(JSON.stringify({ done: true }));
   });
 
-  it('creates a record with its on field set to the open record', () => {
-    render(<PanelJoinField path="subtasks" />);
-
+  async function addInline(name: string) {
     fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
 
-    expect(mocks.create).toHaveBeenCalledWith({ parent: 1 }, { from: 'panel' });
+    const input = screen.getByRole('textbox', { name: 'New todo name' });
+
+    fireEvent.change(input, { target: { value: name } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(true),
+    );
+
+    return input;
+  }
+
+  function posted() {
+    const call = fetchMock.mock.calls.findLast(([, init]) => init?.method === 'POST');
+
+    return JSON.parse(String(call?.[1]?.body)) as unknown;
+  }
+
+  it('adds a record inline with its on field set to the open record, and stays open', async () => {
+    render(<PanelJoinField path="subtasks" />);
+    await screen.findByRole('button', { name: 'Spec the cap rules' });
+
+    const input = await addInline('Write the FAQ');
+
+    expect(posted()).toEqual({ parent: 1, title: 'Write the FAQ' });
+
+    await screen.findByRole('button', { name: 'Write the FAQ' });
+
+    expect(mocks.notify).toHaveBeenCalledWith({
+      doc: { id: 9, parent: 1, title: 'Write the FAQ' },
+      operation: 'create',
+      type: 'saved',
+    });
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.open).not.toHaveBeenCalled();
+    expect((input as HTMLInputElement).value).toBe('');
+
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(screen.queryByRole('textbox', { name: 'New todo name' })).toBeNull();
+  });
+
+  it('saves one record when Enter is pressed twice before the save returns', async () => {
+    let finish: () => void = () => undefined;
+
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method !== 'POST') return respond(url, init);
+
+      const doc = { id: 9, ...(JSON.parse(String(init.body)) as object) };
+
+      return new Promise((resolve) => {
+        finish = () => resolve({ json: () => Promise.resolve({ doc }), ok: true });
+      });
+    });
+
+    render(<PanelJoinField path="subtasks" />);
+    await screen.findByRole('button', { name: 'Spec the cap rules' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+
+    const input = screen.getByRole('textbox', { name: 'New todo name' });
+
+    fireEvent.change(input, { target: { value: 'Write the FAQ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await act(async () => {
+      finish();
+      await Promise.resolve();
+    });
+
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1);
+  });
+
+  it('lists a record added inline once after Show more', async () => {
+    mocks.paged = true;
+    render(<PanelJoinField path="subtasks" />);
+    await screen.findByRole('button', { name: 'Spec the cap rules' });
+
+    const input = await addInline('Write the FAQ');
+
+    await screen.findByRole('button', { name: 'Write the FAQ' });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      const page = new URL(url, 'http://localhost').searchParams.get('page');
+
+      if (init?.method || page !== '2') return respond(url, init);
+
+      return Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            docs: [rows[1], { id: 9, parent: 1, title: 'Write the FAQ' }],
+            hasNextPage: false,
+          }),
+        ok: true,
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    await screen.findByRole('button', { name: 'Price the tiers' });
+
+    expect(screen.getAllByRole('button', { name: 'Write the FAQ' })).toHaveLength(1);
+  });
+
+  it('opens the create form with the title filled when the server refuses the inline add', async () => {
+    mocks.refuse = true;
+    render(<PanelJoinField path="subtasks" />);
+
+    await addInline('Write the FAQ');
+
+    await waitFor(() =>
+      expect(mocks.create).toHaveBeenCalledWith(
+        { parent: 1, title: 'Write the FAQ' },
+        { from: 'panel' },
+      ),
+    );
+
+    expect(screen.queryByRole('textbox', { name: 'New todo name' })).toBeNull();
   });
 
   it('hides + without create access or with allowCreate false, and the check without update access', async () => {
@@ -173,30 +312,31 @@ describe('PanelJoinField', () => {
     mocks.subtasks = { ...mocks.subtasks, admin: undefined };
   });
 
-  it('fills a hasMany on field as a list, and a nested one as a nested object, as the join does', () => {
+  it('fills a hasMany on field as a list, and a nested one as a nested object, as the join does', async () => {
     mocks.subtasks = { ...mocks.subtasks, on: 'parents' };
     const view = render(<PanelJoinField path="subtasks" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+    await addInline('A');
 
-    expect(mocks.create).toHaveBeenLastCalledWith({ parents: [1] }, { from: 'panel' });
+    expect(posted()).toEqual({ parents: [1], title: 'A' });
 
     view.unmount();
+    fetchMock.mockClear();
     mocks.subtasks = { ...mocks.subtasks, on: 'meta.parent' };
     render(<PanelJoinField path="subtasks" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+    await addInline('B');
 
-    expect(mocks.create).toHaveBeenLastCalledWith({ meta: { parent: 1 } }, { from: 'panel' });
+    expect(posted()).toEqual({ meta: { parent: 1 }, title: 'B' });
 
     mocks.subtasks = { ...mocks.subtasks, on: 'parent' };
   });
 
-  it('prefills an on field inside an array as an array row, as Payload does', () => {
+  it('prefills an on field inside an array as an array row, as Payload does', async () => {
     mocks.subtasks = { ...mocks.subtasks, on: 'items.parent' };
     render(<PanelJoinField path="subtasks" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Add todo' }));
+    await addInline('C');
 
-    expect(mocks.create).toHaveBeenLastCalledWith({ items: [{ parent: 1 }] }, { from: 'panel' });
+    expect(posted()).toEqual({ items: [{ parent: 1 }], title: 'C' });
 
     mocks.subtasks = { ...mocks.subtasks, on: 'parent' };
   });

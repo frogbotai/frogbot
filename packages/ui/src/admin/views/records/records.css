@@ -72,3 +72,32 @@
     outline-offset: var(--accessibility-outline-offset);
   }
 }
+
+@layer frogbot {
+  .fb-list-done {
+    display: inline-flex;
+    margin-inline-end: var(--spacer-2);
+    vertical-align: middle;
+  }
+
+  .fb-list-done:empty {
+    display: none;
+  }
+
+  td:has(> .fb-list-done:not(:empty)) > :not(.fb-list-done) {
+    display: inline-block;
+    max-width: calc(100% - 26px);
+    vertical-align: middle;
+  }
+
+  @media (pointer: fine) {
+    .fb-list-grid:has(.fb-list-done:not(:empty)):not(:has(tbody .select-row input:checked))
+      .table
+      tbody
+      tr:not(:hover, :focus-within)
+      .cell-_select
+      .select-row {
+      opacity: 0;
+    }
+  }
+}

@@ -143,4 +143,43 @@ describe('buildCollectionGroups', () => {
     expect(result.items).toEqual([]);
     expect(result.groups).toEqual([]);
   });
+
+  it('puts internal collections with no group under System, after the app’s groups', () => {
+    const base = config();
+    const internal = (slug: string, admin: Record<string, unknown> = {}) => ({
+      admin,
+      custom: { frogbot: { internal: true } },
+      label: slug,
+      labels: { plural: slug, singular: slug },
+      slug,
+    });
+
+    base.collections.unshift(
+      internal('audit-logs') as never,
+      internal('comments', { group: 'Discussion' }) as never,
+      internal('chats', { group: false }) as never,
+    );
+
+    const result = buildCollectionGroups({
+      config: base,
+      i18n,
+      permissions: collectionPermissions({
+        'audit-logs': true,
+        chats: true,
+        comments: true,
+        posts: true,
+        users: true,
+      }),
+      visibleEntities: {
+        collections: ['audit-logs', 'comments', 'chats', 'posts', 'users'],
+        globals: [],
+      },
+    });
+
+    expect(result.items).toEqual([{ label: 'Posts', path: '/control/collections/posts' }]);
+    expect(result.groups.map(({ label }) => label)).toEqual(['Discussion', 'Accounts', 'System']);
+    expect(result.groups.at(-1)?.items).toEqual([
+      { label: 'audit-logs', path: '/control/collections/audit-logs' },
+    ]);
+  });
 });

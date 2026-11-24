@@ -1,0 +1,50 @@
+.asana-projects__grid {
+  display: grid;
+  gap: var(--spacer-2);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.asana-projects__tile {
+  align-items: center;
+  border-radius: 8px;
+  color: var(--color-text);
+  display: flex;
+  font-size: 14px;
+  gap: var(--spacer-3);
+  min-width: 0;
+  padding: var(--spacer-2);
+  text-decoration: none;
+}
+
+.asana-projects__tile:hover {
+  background: var(--color-bg-secondary);
+}
+
+.asana-projects__tile:focus-visible {
+  outline: var(--accessibility-outline);
+}
+
+.asana-projects__icon {
+  align-items: center;
+  border-radius: 10px;
+  display: inline-flex;
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.asana-projects__icon--new {
+  border: 1px dashed var(--color-border-strong);
+  color: var(--color-text-secondary);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.asana-projects__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

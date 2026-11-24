@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
@@ -50,6 +51,7 @@ export const inventory = [
     'ENV',
     'FIELD-TYPE-GUARDS',
     'FIELDS',
+    'FIRST-APP',
     'GATEWAY',
     'HOOKS',
     'JOBS',
@@ -77,6 +79,41 @@ export function readJSON<T>(file: string): T {
 export const packageVersion = readJSON<{ version: string }>(
   path.join(repoRoot, 'package.json'),
 ).version;
+
+const NETWORK_VARIABLES = [
+  'HTTP_PROXY',
+  'HTTPS_PROXY',
+  'NO_PROXY',
+  'http_proxy',
+  'https_proxy',
+  'no_proxy',
+  'NODE_EXTRA_CA_CERTS',
+  'SSL_CERT_FILE',
+  'SSL_CERT_DIR',
+];
+
+function networkEnvironment(): NodeJS.ProcessEnv {
+  return Object.fromEntries(
+    NETWORK_VARIABLES.filter((key) => process.env[key] !== undefined).map((key) => [
+      key,
+      process.env[key],
+    ]),
+  );
+}
+
+function corepackHome(): string {
+  if (process.env.COREPACK_HOME) return process.env.COREPACK_HOME;
+
+  if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+    return path.join(process.env.LOCALAPPDATA, 'node', 'corepack');
+  }
+
+  return path.join(
+    process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), '.cache'),
+    'node',
+    'corepack',
+  );
+}
 
 export function createFixture(): InstallationFixture {
   const parent = path.join(repoRoot, 'test/.tmp');
@@ -127,8 +164,10 @@ export function createFixture(): InstallationFixture {
     GIT_TERMINAL_PROMPT: '0',
     npm_config_userconfig: path.join(root, 'npmrc'),
     npm_config_globalconfig: path.join(root, 'global-npmrc'),
+    COREPACK_HOME: corepackHome(),
     COREPACK_ENABLE_NETWORK: '0',
     COREPACK_ENABLE_DOWNLOAD_PROMPT: '0',
+    ...networkEnvironment(),
   };
 
   expect(
@@ -222,7 +261,7 @@ export function files(directory: string): string[] {
 export function expectFullSkill(directory: string): void {
   expect(files(canonicalSkill)).toEqual(inventory);
   expect(files(directory)).toEqual(inventory);
-  expect(inventory).toHaveLength(27);
+  expect(inventory).toHaveLength(28);
 
   for (const file of inventory) {
     const installed = path.join(directory, file);

@@ -9,14 +9,14 @@
   }
 
   .frog-board__column {
-    background: var(--color-bg-secondary);
+    background: color-mix(in srgb, var(--color-text) 3%, var(--color-bg));
     border: 1px solid var(--color-border);
     border-radius: 8px;
     display: flex;
-    flex: 1 1 300px;
+    flex: 1 1 228px;
     flex-direction: column;
     max-height: 70vh;
-    min-width: 300px;
+    min-width: 228px;
   }
 
   .frog-board__column-header {
@@ -158,14 +158,14 @@
   }
 
   .frog-board__card {
-    background: var(--color-bg-tertiary);
+    background: var(--card);
     border: 1px solid var(--special-border-translucent);
     border-radius: 6px;
     box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 8%, transparent);
     cursor: grab;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     padding: 12px;
   }
 
