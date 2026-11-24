@@ -112,6 +112,10 @@
       display: contents;
     }
 
+    .list-controls :is(.list-controls__toggle-sort, .list-controls__toggle-group-by) {
+      flex: 0 0 auto;
+    }
+
     .view-controls__toolbar > * {
       order: -1;
     }

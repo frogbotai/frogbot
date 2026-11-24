@@ -126,7 +126,6 @@
     font-size: 12px;
     height: 26px;
     margin-left: 2px;
-    min-width: 8px;
     padding: 0 6px;
     position: absolute;
     user-select: none;
@@ -164,6 +163,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .frog-timeline__bar[data-label-outside] {
+    background: color-mix(
+      in srgb,
+      var(--frog-timeline-bar-color, var(--color-border-strong)) 35%,
+      var(--color-bg)
+    );
   }
   .frog-timeline__bar[data-label-outside] > .frog-timeline__bar-content {
     color: var(--color-text);
@@ -205,10 +211,19 @@
   }
   .collection-timeline__title {
     align-items: center;
-    display: inline-flex;
+    display: flex;
     font-weight: 500;
     gap: 4px;
-    vertical-align: middle;
+    min-width: 0;
+  }
+  .collection-timeline__title > svg {
+    flex: none;
+  }
+  .collection-timeline__title-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   @media (pointer: coarse) {

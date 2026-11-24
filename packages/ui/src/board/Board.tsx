@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '../components/dropdown-menu.js';
 import { BoardColumn, type BoardColumnInfo } from './BoardColumn.js';
-import { useBoard, type UseBoardProps } from './useBoard.js';
+import { hideEmptyNoValue, useBoard, type UseBoardProps } from './useBoard.js';
 
 /** Which columns are collapsed to a strip and which are hidden, by column key. */
 export type BoardColumnState = { collapsed: string[]; hidden: string[] };
@@ -53,7 +53,8 @@ export function Board<T>(props: BoardProps<T>) {
   const active = props.rows.find((row) => props.getId(row) === board.activeId);
   const state = props.columnState ?? { collapsed: [], hidden: [] };
   const onChange = props.onColumnStateChange;
-  const hidden = board.columns.filter(({ key }) => state.hidden.includes(key));
+  const columns = hideEmptyNoValue(board.columns, props.totals);
+  const hidden = columns.filter(({ key }) => state.hidden.includes(key));
 
   const setCollapsed = (key: string, collapsed: boolean) =>
     onChange?.({ ...state, collapsed: toggle(state.collapsed, key, collapsed) });
@@ -67,7 +68,7 @@ export function Board<T>(props: BoardProps<T>) {
   return (
     <DndContext collisionDetection={collisionDetection} sensors={sensors} {...board.handlers}>
       <div className="frog-board">
-        {board.columns
+        {columns
           .filter(({ key }) => !state.hidden.includes(key))
           .map((column) => {
             const info = { color: column.color, key: column.key, label: column.label };
