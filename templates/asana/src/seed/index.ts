@@ -13,7 +13,11 @@ type SampleProject = {
     status: TaskStatus;
     startInDays?: number;
     dueInDays?: number;
-    subtasks?: Array<{ title: string; completed?: boolean }>;
+    subtasks?: Array<{
+      title: string;
+      completed?: boolean;
+      status?: TaskStatus;
+    }>;
     attachment?: { name: string; text: string };
     comments?: string[];
   }>;
@@ -41,7 +45,11 @@ const PROJECTS: SampleProject[] = [
         startInDays: -4,
         dueInDays: 2,
         subtasks: [
-          { title: 'Sketch the plan comparison table', completed: true },
+          {
+            title: 'Sketch the plan comparison table',
+            completed: true,
+            status: 'done',
+          },
           { title: 'Write the pricing FAQ' },
         ],
         attachment: {
@@ -231,6 +239,7 @@ export async function seed({
           collection: 'tasks',
           data: {
             ...task,
+            completed: task.status === 'done',
             project: project.id,
             assignee,
             startDate: daysFrom(today, startInDays),

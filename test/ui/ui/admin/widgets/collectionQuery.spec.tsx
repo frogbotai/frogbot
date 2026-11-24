@@ -1,8 +1,13 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { WidgetServerProps } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import { CollectionQueryWidget } from '../../../../../packages/ui/src/admin/widgets/CollectionQuery/index.js';
+
+vi.mock('@payloadcms/ui', () => ({
+  toast: { error: vi.fn() },
+  useConfig: () => ({ config: { routes: { api: '/api' } } }),
+}));
 
 vi.mock('@payloadcms/ui/rsc', () => ({
   CollectionQueryWidget: () => <p>Payload widget</p>,
@@ -164,6 +169,64 @@ describe('CollectionQueryWidget', () => {
       expect(screen.getByText('Payload widget')).toBeTruthy();
     },
   );
+
+  it('gives task rows a check circle that marks the task done', async () => {
+    const tasks = {
+      ...deals,
+      access: { update: vi.fn().mockResolvedValue(true) },
+      admin: { custom: { frogbot: { useAsDone: 'completed' } }, useAsTitle: 'name' },
+    };
+
+    const base = props(
+      { relatedCollection: 'tasks' },
+      vi.fn().mockResolvedValue({
+        docs: [{ id: 3, name: 'Write the pricing FAQ', completed: false }],
+      }),
+    );
+
+    Object.assign(base.req.payload.collections, { tasks: { config: tasks } });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ doc: { id: 3, completed: true } }), { status: 200 }),
+      );
+
+    vi.stubGlobal('fetch', fetchMock);
+    render(await CollectionQueryWidget(base));
+
+    const check = screen.getByRole('button', { name: 'Mark complete' });
+
+    fireEvent.click(check);
+
+    expect(await screen.findByRole('button', { name: 'Completed' })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/tasks/3'),
+      expect.objectContaining({ body: JSON.stringify({ completed: true }), method: 'PATCH' }),
+    );
+
+    vi.unstubAllGlobals();
+  });
+
+  it('shows the check circle read-only without update access', async () => {
+    const tasks = {
+      ...deals,
+      access: { update: vi.fn().mockResolvedValue(false) },
+      admin: { custom: { frogbot: { useAsDone: 'completed' } }, useAsTitle: 'name' },
+    };
+
+    const base = props(
+      { relatedCollection: 'tasks' },
+      vi.fn().mockResolvedValue({
+        docs: [{ id: 3, name: 'Write the pricing FAQ', completed: false }],
+      }),
+    );
+
+    Object.assign(base.req.payload.collections, { tasks: { config: tasks } });
+    render(await CollectionQueryWidget(base));
+
+    expect(screen.getByRole('button', { name: 'Mark complete' })).toHaveProperty('disabled', true);
+  });
 
   it('says so when nothing matches', async () => {
     render(

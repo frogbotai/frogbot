@@ -43,4 +43,16 @@
   .fb-query-widget__date--overdue {
     color: var(--color-text-danger);
   }
+
+  .fb-query-widget .fb-list__item:has(.fb-done-check--done) .fb-list__title {
+    color: var(--color-text-secondary);
+  }
+
+  .fb-query-widget .fb-list__item:has(.fb-done-check--done) .fb-list__meta {
+    opacity: 0.5;
+  }
+
+  .fb-query-widget .fb-list__item:has(.fb-done-check--done) .fb-query-widget__date--overdue {
+    color: inherit;
+  }
 }

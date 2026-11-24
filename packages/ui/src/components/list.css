@@ -83,6 +83,7 @@
     font-size: var(--fb-text-xs);
   }
 
+  .fb-list__leading :is(a, button, input, select, textarea, label, summary, [role], [tabindex]),
   .fb-list__subtitle :is(a, button, input, select, textarea, label, summary, [role], [tabindex]),
   .fb-list__meta :is(a, button, input, select, textarea, label, summary, [role], [tabindex]) {
     position: relative;
