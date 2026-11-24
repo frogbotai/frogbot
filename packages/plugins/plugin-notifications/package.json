@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-notifications",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "description": "In-app notifications with a bell and inbox for FrogBot apps.",
   "license": "MIT",
   "author": "Colby Gilbert",
