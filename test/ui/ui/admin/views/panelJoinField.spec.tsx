@@ -71,7 +71,9 @@ const rows = [
   { id: 3, done: true, title: 'Price the tiers' },
 ];
 
-function respond(url: string, init?: RequestInit) {
+type FetchResponse = { json: () => Promise<unknown>; ok: boolean };
+
+function respond(url: string, init?: RequestInit): Promise<FetchResponse> {
   if (init?.method === 'POST') {
     const doc = { id: 9, ...(JSON.parse(String(init.body)) as object) };
 
@@ -182,7 +184,7 @@ describe('PanelJoinField', () => {
   }
 
   function posted() {
-    const call = fetchMock.mock.calls.findLast(([, init]) => init?.method === 'POST');
+    const call = fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST').at(-1);
 
     return JSON.parse(String(call?.[1]?.body)) as unknown;
   }
@@ -365,13 +367,12 @@ describe('PanelJoinField', () => {
 
     mocks.paged = true;
 
-    fetchMock.mockImplementation(
-      (url: string) =>
-        Promise.resolve(
-          url.includes('page=2')
-            ? { json: () => body, ok: true }
-            : { json: () => Promise.resolve({ docs: [rows[0]], hasNextPage: true }), ok: true },
-        ) as never,
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        url.includes('page=2')
+          ? { json: () => body, ok: true }
+          : { json: () => Promise.resolve({ docs: [rows[0]], hasNextPage: true }), ok: true },
+      ),
     );
 
     render(<PanelJoinField path="subtasks" />);

@@ -1,4 +1,4 @@
-import { isValidElement, type ReactElement } from 'react';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -6,8 +6,13 @@ const mocks = vi.hoisted(() => ({
   initialState: {} as Record<string, unknown>,
 }));
 
-vi.mock('@payloadcms/ui/views/Document/handleServerFunction', async () => {
-  const { DocumentInfoProvider } = await import('@payloadcms/ui');
+vi.mock('@payloadcms/ui/views/Document/handleServerFunction', () => {
+  const DocumentInfoProvider = ({
+    children,
+  }: {
+    children: ReactNode;
+    initialState: Record<string, unknown>;
+  }) => children;
 
   return {
     renderDocumentHandler: ({ docID }: { docID: unknown }) => {
@@ -16,9 +21,7 @@ vi.mock('@payloadcms/ui/views/Document/handleServerFunction', async () => {
       return Promise.resolve({
         data: { id: 1 },
         Document: (
-          <DocumentInfoProvider initialState={mocks.initialState as never}>
-            {null}
-          </DocumentInfoProvider>
+          <DocumentInfoProvider initialState={mocks.initialState}>{null}</DocumentInfoProvider>
         ),
       });
     },

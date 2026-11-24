@@ -9,13 +9,14 @@ import { ActivityField } from '../../packages/plugins/plugin-audit-log/src/rsc/A
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
+import type { Account } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const credentials = { email: 'audit@frogbot.local', password: 'audit-password' };
 
 describe('audit log plugin integration', () => {
   let booted: BootedFrogBot;
-  let accountId: number | string;
+  let accountId: Account['id'];
   let authorization: Record<string, string>;
 
   beforeAll(async () => {
@@ -28,7 +29,7 @@ describe('audit log plugin integration', () => {
 
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
-    const account = await booted.restClient.post<{ doc: { id: number | string } }>(
+    const account = await booted.restClient.post<{ doc: Pick<Account, 'id'> }>(
       '/api/accounts',
       credentials,
     );
@@ -314,7 +315,7 @@ describe('audit log plugin integration', () => {
 
     const post = await booted.frogbot.create({
       collection: 'posts',
-      data: { title: 'Rel', author: accountId as number, vaultRef: vault.id },
+      data: { title: 'Rel', author: accountId, vaultRef: vault.id },
       overrideAccess: true,
     });
 
@@ -555,7 +556,7 @@ describe('audit log plugin integration', () => {
 
   describe('activityField', () => {
     async function activityAs(email: string, id: number | string) {
-      const existing = await booted.frogbot.find({
+      const existing = await booted.payload.find({
         collection: 'accounts',
         where: { email: { equals: email } },
         overrideAccess: true,
@@ -563,7 +564,7 @@ describe('audit log plugin integration', () => {
 
       const account =
         existing.docs[0] ??
-        (await booted.frogbot.create({
+        (await booted.payload.create({
           collection: 'accounts',
           data: { email, password: 'activity-password' },
           overrideAccess: true,

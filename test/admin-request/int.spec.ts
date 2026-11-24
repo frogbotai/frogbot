@@ -106,7 +106,7 @@ describe('admin request', () => {
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
-    const user = await booted.frogbot.create({
+    const user = await booted.payload.create({
       collection: usersSlug,
       data: { email: 'editor@frogbot.local', password: 'editor-password' },
       overrideAccess: true,

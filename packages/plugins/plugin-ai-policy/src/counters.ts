@@ -14,6 +14,14 @@ export type SpendSubject = { collection: string; id: number | string };
 
 type Counter = { id: number | string; amount?: number; period?: string };
 
+function counterOf(doc: unknown): Counter | null {
+  if (!doc || typeof doc !== 'object' || !('id' in doc)) return null;
+
+  const { id } = doc;
+
+  return typeof id === 'number' || typeof id === 'string' ? { id } : null;
+}
+
 /** Returns the month a moment belongs to, as `YYYY-MM`, on the calendar of an IANA time zone. */
 export type Period = (now?: Date) => string;
 
@@ -123,30 +131,36 @@ export async function addSpend(
   const period = options.period();
 
   const bump = async () =>
-    (await db.updateOne({
-      collection: SPEND_COUNTERS_SLUG,
-      where: { and: [{ key: { equals: key } }, { period: { greater_than_equal: period } }] },
-      data: { amount: { $inc: cost } },
-      options: { atomic: true },
-    })) as Counter | null;
+    counterOf(
+      await db.updateOne({
+        collection: SPEND_COUNTERS_SLUG,
+        where: { and: [{ key: { equals: key } }, { period: { greater_than_equal: period } }] },
+        data: { amount: { $inc: cost } },
+        options: { atomic: true },
+      }),
+    );
 
   const rollOver = async () =>
-    (await db.updateOne({
-      collection: SPEND_COUNTERS_SLUG,
-      where: { and: [{ key: { equals: key } }, { period: { less_than: period } }] },
-      data: { amount: cost, period },
-      options: { atomic: true },
-    })) as Counter | null;
+    counterOf(
+      await db.updateOne({
+        collection: SPEND_COUNTERS_SLUG,
+        where: { and: [{ key: { equals: key } }, { period: { less_than: period } }] },
+        data: { amount: cost, period },
+        options: { atomic: true },
+      }),
+    );
 
   const field = subject.collection === options.authCollection ? 'user' : 'apiKey';
 
   const create = async () =>
-    (await db
-      .create({
-        collection: SPEND_COUNTERS_SLUG,
-        data: { key, period, amount: cost, [field]: subject.id },
-      })
-      .catch(() => null)) as Counter | null;
+    counterOf(
+      await db
+        .create({
+          collection: SPEND_COUNTERS_SLUG,
+          data: { key, period, amount: cost, [field]: subject.id },
+        })
+        .catch(() => null),
+    );
 
   let counter: Counter | null = null;
 

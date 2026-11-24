@@ -108,20 +108,24 @@ describe('ListView', () => {
     const payload = { config: { routes: { admin: '/admin' } }, find, importMap: {} };
 
     function pageProps(overrides: Record<string, unknown> = {}) {
-      return listProps({
-        collectionConfig: {
-          access: { update: () => true },
-          admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
-          fields: [{ name: 'completed', type: 'checkbox' }],
-          labels: { plural: 'Tasks', singular: 'Task' },
-          slug: 'tasks',
-        },
-        collectionSlug: 'tasks',
-        params: { segments: ['collections', 'tasks'] },
-        payload,
-        server: { getHeaders: () => Promise.resolve(new Headers()), redirect: vi.fn() },
-        ...overrides,
-      });
+      const server = { getHeaders: () => Promise.resolve(new Headers()), redirect: vi.fn() };
+
+      return {
+        ...listProps({
+          collectionConfig: {
+            access: { update: () => true },
+            admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
+            fields: [{ name: 'completed', type: 'checkbox' }],
+            labels: { plural: 'Tasks', singular: 'Task' },
+            slug: 'tasks',
+          },
+          collectionSlug: 'tasks',
+          params: { segments: ['collections', 'tasks'] },
+          payload,
+          ...overrides,
+        }),
+        server,
+      };
     }
 
     function setup(saved?: Record<string, unknown>) {

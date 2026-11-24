@@ -18,6 +18,7 @@ import {
   urlField,
 } from 'frogbot';
 import { aiFieldPaths } from 'frogbot/fields';
+import { toPayloadRequest } from 'frogbot/internal';
 import { question } from 'frogbot/tools';
 
 import {
@@ -488,7 +489,7 @@ export default buildConfig({
             [paths.error]: error ?? null,
             ...(value !== undefined && { [aiFieldName]: value }),
           },
-          req,
+          req: toPayloadRequest(req),
         });
 
         return Response.json({ doc });

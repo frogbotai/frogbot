@@ -13,6 +13,7 @@ import { RecordComments } from '../../packages/plugins/plugin-comments/src/rsc/R
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
+import type { User } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -61,7 +62,7 @@ const mention = (id: number | string, label: string) => ({
 
 describe('comments plugin', () => {
   let booted: BootedFrogBot;
-  const users: Record<string, { headers: Record<string, string>; id: number | string }> = {};
+  const users: Record<string, { headers: Record<string, string>; id: User['id'] }> = {};
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
@@ -76,7 +77,7 @@ describe('comments plugin', () => {
 
     for (const name of ['ana', 'sam', 'blocked']) {
       const credentials = { email: `${name}@frogbot.local`, password: `${name}-password` };
-      const created = await booted.restClient.post<{ doc: Doc }>('/api/users', {
+      const created = await booted.restClient.post<{ doc: User }>('/api/users', {
         ...credentials,
         name,
       });
