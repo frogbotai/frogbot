@@ -10,6 +10,7 @@ import type {
   LanguageModelV4StreamPart,
   SharedV4Warning,
 } from '@ai-sdk/provider';
+import { APICallError } from '@ai-sdk/provider';
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -132,6 +133,18 @@ function makeAppWithMockProvider(providerName: string, mockModel?: LanguageModel
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
 
   return createApp({ registry, hooks });
+}
+
+function makeAppRejectingKey(providerName: string) {
+  const error = new APICallError({
+    message: 'Incorrect API key provided',
+    url: 'https://api.example.test/v1',
+    requestBodyValues: {},
+    statusCode: 401,
+    isRetryable: false,
+  });
+
+  return makeAppWithMockProvider(providerName, createMockLanguageModel({ error }));
 }
 
 function createDelayedStreamModel(opts: {
@@ -312,7 +325,7 @@ describe('gateway integration — /v1/chat/completions', () => {
   });
 
   it('cross-provider model id parses correctly for configured provider', async () => {
-    const app = makeApp();
+    const app = makeAppRejectingKey('anthropic');
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'anthropic/claude-sonnet-4-20250514',
       messages: [{ role: 'user', content: 'hello' }],
@@ -352,7 +365,7 @@ describe('gateway integration — /v1/messages', () => {
   });
 
   it('accepts valid request shape (fails at upstream, not validation)', async () => {
-    const app = makeApp();
+    const app = makeAppRejectingKey('anthropic');
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
       messages: [{ role: 'user', content: 'hello' }],
@@ -407,7 +420,7 @@ describe('gateway integration — /v1/messages', () => {
 
 describe('gateway integration — error headers', () => {
   it('returns x-should-retry header on retryable errors', async () => {
-    const app = makeApp();
+    const app = makeAppRejectingKey('openai');
     const { status, headers } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],

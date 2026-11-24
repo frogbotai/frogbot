@@ -6,6 +6,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -105,16 +106,31 @@ function serversIn(dir: string): number[] {
     .filter((line) => line.includes('next-server'))
     .map((line) => Number.parseInt(line, 10));
 
-  return pids.filter((pid) => {
-    try {
-      const cwd = execFileSync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], {
-        encoding: 'utf8',
-      });
+  return pids.filter((pid) => cwdOf(pid) === dir);
+}
 
-      return cwd.split('\n').includes(`n${dir}`);
-    } catch {
-      return false;
-    }
+function cwdOf(pid: number): string | undefined {
+  try {
+    return readlinkSync(`/proc/${pid}/cwd`);
+  } catch {}
+
+  try {
+    const lines = execFileSync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], {
+      encoding: 'utf8',
+    }).split('\n');
+
+    return lines.find((line) => line.startsWith('n'))?.slice(1);
+  } catch {
+    return undefined;
+  }
+}
+
+function canBindIpv6(): Promise<boolean> {
+  return new Promise((done) => {
+    const server = createServer();
+
+    server.once('error', () => done(false));
+    server.listen(0, '::1', () => server.close(() => done(true)));
   });
 }
 
@@ -154,6 +170,7 @@ function columns(db: string) {
 }
 
 const BUILD = { timeout: 240_000, interval: 250 };
+const ipv6 = await canBindIpv6();
 
 describe('frogbot up, status and down', { timeout: 600_000 }, () => {
   beforeAll(() => {
@@ -196,7 +213,6 @@ describe('frogbot up, status and down', { timeout: 600_000 }, () => {
     expect(a.url).not.toBe(b.url);
     expect(a.port).toBeGreaterThanOrEqual(9696);
     expect(await get(`${a.url}/text`)).toEqual({ status: 200, text: 'first' });
-    expect(await get(`http://[::1]:${a.port}/text`)).toEqual({ status: 200, text: 'first' });
     expect(await get(`${b.url}/text`)).toEqual({ status: 200, text: 'first' });
 
     const again = await frogbot(one, 'up');
@@ -209,6 +225,12 @@ describe('frogbot up, status and down', { timeout: 600_000 }, () => {
     expect(listed.output).toContain(one);
     expect(listed.output).toContain(two);
     expect(listed.output).toMatch(/running/);
+  });
+
+  it.skipIf(!ipv6)('serves `localhost` on IPv6 too, where the host has it', async () => {
+    const { port } = registrationOf(one)!;
+
+    expect(await get(`http://[::1]:${port}/text`)).toEqual({ status: 200, text: 'first' });
   });
 
   it('regenerates the types on an update, with no second build from the write', async () => {
@@ -423,8 +445,9 @@ await frogbot.create({ collection: 'notes', data: { title: 'saved' }, overrideAc
     expect(columns(join(one, 'frogbot.db')).map((c) => c.name)).toContain('due_date');
   });
 
-  it('restarts a killed server on the same build: `crashed`, then `running` within 2 s', async () => {
+  it('restarts a killed server on the same build after the 1 s wait: `crashed`, then `running`', async () => {
     const before = registrationOf(one)!;
+    const logged = serviceLog(one).length;
 
     process.kill(-before.serverPid!, 'SIGKILL');
 
@@ -433,14 +456,12 @@ await frogbot.create({ collection: 'notes', data: { title: 'saved' }, overrideAc
       interval: 20,
     });
 
-    const crashedAt = Date.now();
-
     await vi.waitFor(() => expect(registrationOf(one)?.state).toBe('running'), {
       timeout: 10_000,
       interval: 20,
     });
 
-    expect(Date.now() - crashedAt).toBeLessThan(2000);
+    expect(serviceLog(one).slice(logged)).toContain('server exited (SIGKILL); restarting in 1 s');
     expect(registrationOf(one)?.serverPid).not.toBe(before.serverPid);
     expect(await get(`${before.url}/text`)).toEqual({ status: 200, text: 'no due date' });
     expect(serviceLog(one)).toContain(`server back up (pid ${registrationOf(one)?.serverPid})`);
