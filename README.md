@@ -1,10 +1,10 @@
 <p align="center">
-  <a href="https://www.frogbot.ai"><img src="./.github/assets/frogbot-logo.svg" width="120" alt="FrogBot logo" /></a>
+  <a href="https://www.frogbot.ai"><img src="./.github/assets/frogbot-logo-square.svg" width="120" alt="FrogBot logo" /></a>
 </p>
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The open-source Lego bricks your coding agent builds client apps with.</strong></p>
+<p align="center"><strong>The open-source Lego bricks for coding agents.</strong></p>
 
 <p align="center">Turn vibe-coded slop into apps clients pay for.</p>
 
@@ -238,3 +238,5 @@ Contributions are welcome! Read [CONTRIBUTING.md](./CONTRIBUTING.md) before open
 ## License
 
 [MIT](./LICENSE) © Colby Gilbert
+
+The MIT license covers the code. The FrogBot name and logos, including the files in [`.github/assets`](./.github/assets), are trademarks of FrogBot, Inc. and are not licensed under MIT.
