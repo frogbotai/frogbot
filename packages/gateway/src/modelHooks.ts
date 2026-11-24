@@ -397,7 +397,7 @@ export function withImageModelHooks(model: ImageModelV4, options: ModelHookOptio
 }
 
 function withMethodHooks<T extends object>(args: {
-  method: 'doGenerate' | 'doRerank' | 'doEvaluate';
+  method: 'doGenerate' | 'doRerank' | 'doDecide' | 'doEvaluate';
   model: T;
   options: ModelHookOptions;
 }): T {
@@ -454,4 +454,5 @@ export const withRerankingModelHooks = (
 export const withEvaluationModelHooks = (
   model: Experimental_EvaluationModelV4,
   options: ModelHookOptions,
-): Experimental_EvaluationModelV4 => withMethodHooks({ method: 'doEvaluate', model, options });
+): Experimental_EvaluationModelV4 =>
+  withMethodHooks({ method: 'doDecide' in model ? 'doDecide' : 'doEvaluate', model, options });

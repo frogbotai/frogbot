@@ -107,6 +107,7 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 | `anthropic.authToken` | `string` | — | Token sent as `Authorization: Bearer`, instead of `apiKey`. Satisfies the startup check on its own. It isn't read from an environment variable, and setting both `authToken` and `apiKey` fails on startup; with `ANTHROPIC_API_KEY` set, the CLI discovers an `apiKey`, so unset it to use a token. |
 | `anthropic.name` | `string` | `'anthropic.messages'` | Provider name the AI SDK models report. |
 | `anthropic.generateId` | `() => string` | AI SDK default | Generates IDs for the AI SDK's response items. |
+| `anthropic.batchResultDownloads`, `google.batchResultDownloads`, `openai.batchResultDownloads`, `vercel.batchResultDownloads` | `{ maxLineBytes?: number }` | `{ maxLineBytes: 67108864 }` | Settings for downloading JSON Lines batch results. `maxLineBytes` caps the UTF-8 bytes in one result row, excluding the line feed. |
 | `anthropic-aws.region` | `string` | `AWS_REGION` | AWS region. Required; there's no fallback region. |
 | `anthropic-aws.workspaceId` | `string` | `ANTHROPIC_AWS_WORKSPACE_ID` | Anthropic workspace ID, sent in the `anthropic-workspace-id` header. |
 | `anthropic-aws.accessKeyId` | `string` | `AWS_ACCESS_KEY_ID` | AWS access key ID for SigV4 signing. Ignored when `apiKey` is set. |
@@ -116,6 +117,8 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 | `azure.tokenProvider` | `() => Promise<string>` | — | Returns a Microsoft Entra access token. Called on every request, instead of using `apiKey`. |
 | `azure.apiVersion` | `string` | `'v1'` | Azure API version. |
 | `azure.useDeploymentBasedUrls` | `boolean` | `false` | Uses the older `/deployments/<deployment>` URL format. |
+| `azure.speechBaseURL` | `string` | `https://<resourceName>.cognitiveservices.azure.com` | URL prefix for Azure Speech (MAI-Transcribe transcription and MAI-Voice speech), such as a regional endpoint. Speech calls ignore `baseURL` and `apiVersion`. |
+| `azure.maiBaseURL` | `string` | `https://<resourceName>.services.ai.azure.com/mai/v1` | URL prefix for MAI APIs (MAI-Image, MAI-Transcribe-2-Streaming). |
 | `baseten.modelURL` | `string` | — | URL of a custom Baseten model deployment (chat or embeddings), instead of the shared Model APIs. |
 | `baseten.performanceClient` | `BasetenPerformanceClientConstructor` | — | The `PerformanceClient` class from `@basetenlabs/performance-client`, which you install yourself, for batched embedding requests. |
 | `bedrock.region` | `string` | `AWS_REGION` | AWS region. CLI discovery uses `us-east-1` when `AWS_REGION` isn't set with a bearer token or profile. |
@@ -126,8 +129,10 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 | `black-forest-labs.pollIntervalMillis` | `number` | `500` for images, `2000` for video | Milliseconds between job status checks. |
 | `black-forest-labs.pollTimeoutMillis` | `number` | `60000` for images, `600000` for video | How long to wait for a job before failing. |
 | `cohere.generateId`, `google.generateId`, `huggingface.generateId`, `mistral.generateId` | `() => string` | AI SDK default | Generates IDs for the AI SDK's response items. |
-| `elevenlabs.webSocket`, `google.webSocket`, `openai.webSocket`, `vercel.webSocket`, `vertex.webSocket`, `xai.webSocket` | `WebSocketConstructor` | The runtime's `WebSocket` | WebSocket class for streaming connections, for runtimes whose built-in `WebSocket` can't send headers. |
+| `azure.webSocket`, `deepgram.webSocket`, `elevenlabs.webSocket`, `google.webSocket`, `mistral.webSocket`, `openai.webSocket`, `vercel.webSocket`, `vertex.webSocket`, `xai.webSocket` | `WebSocketConstructor` | The runtime's `WebSocket` | WebSocket class for streaming connections, for runtimes whose built-in `WebSocket` can't send headers. |
 | `google.name` | `string` | `'google.generative-ai'` | Provider name the AI SDK models report. |
+| `gladia.pollIntervalMs` | `number` | `1000` | Milliseconds between transcription job status checks. |
+| `gladia.pollTimeoutMs` | `number` | `600000` | How long to wait for a transcription job before failing. Raise it for long audio or audio intelligence add-ons. |
 | `klingai.accessKey` | `string` | `KLINGAI_ACCESS_KEY` | Kling AI access key. Used with `secretKey` when there's no `apiKey`. |
 | `klingai.secretKey` | `string` | `KLINGAI_SECRET_KEY` | Kling AI secret key. |
 | `klingai.apiKey` | `string` | `KLINGAI_API_KEY` | Kling AI API key. Satisfies the startup check on its own and takes precedence over `accessKey` and `secretKey`. The CLI discovers it before the access key pair. |

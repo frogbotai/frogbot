@@ -113,7 +113,7 @@ export function evaluateRoute(ctx: EvaluateRouteContext) {
 
       const result = await experimental_evaluate({
         model,
-        state: body.state,
+        state: Array.isArray(body.state) ? [{ type: 'json', value: body.state }] : body.state,
         questions: body.questions,
         headers: Object.fromEntries(headers),
         abortSignal: createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs).signal,

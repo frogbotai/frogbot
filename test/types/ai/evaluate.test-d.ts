@@ -46,7 +46,7 @@ expectTypeOf(evaluation).toMatchTypeOf<Promise<Result>>();
 
 type EnrichSpan = NonNullable<NonNullable<AIConfig['telemetry']>['enrichSpan']>;
 
-expectTypeOf<'experimental_evaluation'>().toMatchTypeOf<Parameters<EnrichSpan>[0]['spanType']>();
+expectTypeOf<'experimental_decision'>().toMatchTypeOf<Parameters<EnrichSpan>[0]['spanType']>();
 
 expectTypeOf<Result['answers']['refunded']['probability']>().toEqualTypeOf<number>();
 expectTypeOf<Result['answers']['team']['choice']>().toEqualTypeOf<'support' | 'billing'>();

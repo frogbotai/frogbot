@@ -260,6 +260,7 @@ async function collect(
       case 'tool-input-start':
       case 'tool-input-delta':
       case 'tool-input-end':
+      case 'ping':
       case 'raw':
         break;
 
@@ -271,7 +272,7 @@ async function collect(
   return generated;
 }
 
-const PREAMBLE = new Set(['stream-start', 'response-metadata', 'raw']);
+const PREAMBLE = new Set(['stream-start', 'response-metadata', 'ping', 'raw']);
 
 async function untilOutput(
   result: LanguageModelV4StreamResult,

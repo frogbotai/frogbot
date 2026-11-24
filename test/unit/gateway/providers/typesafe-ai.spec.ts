@@ -32,8 +32,8 @@ describe('TypeSafe AI provider', () => {
     expect(provider?.specificationVersion).toBe('v4');
     expect(provider?.evaluationModel('jev-latest')).toMatchObject({
       modelId: 'jev-latest',
-      provider: 'typesafe.evaluation',
-      supportedQuestionTypes: ['choice', 'score', 'boolean'],
+      provider: 'typesafe.decision',
+      supportedQuestionTypes: ['choice', 'score', 'boolean', 'box'],
     });
   });
 

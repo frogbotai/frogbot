@@ -102,7 +102,7 @@ describe('evaluateOperation', () => {
     expect(start).toHaveBeenCalledOnce();
     expect(evaluationModel).toHaveBeenCalledOnce();
     expect(doEvaluate).toHaveBeenCalledWith(
-      expect.objectContaining({ state: { refund: true }, questions }),
+      expect.objectContaining({ state: [{ type: 'json', value: { refund: true } }], questions }),
     );
     expect(result.answers.team.choice).toBe('billing');
     expect(result.usage).toEqual({ inputTokens: 120, outputTokens: 0, totalTokens: 120 });
