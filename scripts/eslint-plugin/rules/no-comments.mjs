@@ -15,7 +15,7 @@ const DIRECTIVES = [
   /^@jsx(?:ImportSource|Runtime|Frag)?\s/,
   /^Workaround: https?:\/\/\S+, remove when \S/,
   /^[#@] sourceMappingURL=/,
-  /^check: full-only$/,
+  /^check: (?:full-only|heavy)$/,
 ];
 
 const DISABLE = /^(?:eslint|oxlint)-disable(?:-next-line|-line)?(?:\s|$)/;

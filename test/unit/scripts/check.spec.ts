@@ -11,6 +11,7 @@ import {
   discoverChecks,
   eslintLines,
   fullOnlyChecks,
+  heavyChecks,
   labelLines,
   MAX_LINES,
   missingImportMaps,
@@ -106,6 +107,21 @@ describe('fullOnlyChecks', () => {
   it('marks generated full-only and keeps the fast checks in the default run', () => {
     expect(fullOnlyChecks()).toContain('generated');
     expect(fullOnlyChecks()).not.toContain('branding');
+  });
+
+  it('names the checks marked heavy, apart from the full-only marker', () => {
+    writeFileSync(
+      join(dir, 'check-big.mjs'),
+      '#!/usr/bin/env node\n// check: full-only\n// check: heavy\n',
+    );
+
+    writeFileSync(join(dir, 'check-slow.mjs'), '#!/usr/bin/env node\n// check: full-only\n');
+
+    expect(heavyChecks(dir)).toEqual(['big']);
+  });
+
+  it('marks test-types and typed-lint heavy so they never run side by side', () => {
+    expect(heavyChecks()).toEqual(['test-types', 'typed-lint']);
   });
 });
 

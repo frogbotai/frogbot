@@ -152,10 +152,11 @@ ruleTester.run('no-comments', rule, {
       languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
     },
     {
-      name: 'source map links and the check runner marker',
+      name: 'source map links and the check runner markers',
       code: [
         '#!/usr/bin/env node',
         '// check: full-only',
+        '// check: heavy',
         'export const run = 1;',
         '//# sourceMappingURL=run.js.map',
       ].join('\n'),
