@@ -31,7 +31,12 @@ export default function IconRegistryResolutionPage() {
 );
 
 try {
-  const env = { ...process.env, NEXT_OUTPUT: 'standalone' };
+  const env = {
+    DATABASE_URL: `file:${path.join(standaloneCopy, 'build.db')}`,
+    FROGBOT_SECRET: 'test-ui-next-throwaway-secret',
+    ...process.env,
+    NEXT_OUTPUT: 'standalone',
+  };
 
   execFileSync('pnpm', ['--filter', 'blank^...', 'build'], { env, stdio: 'inherit' });
   execFileSync('pnpm', ['--filter', 'blank', 'build', '--webpack'], { env, stdio: 'inherit' });
