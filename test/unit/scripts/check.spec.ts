@@ -18,6 +18,7 @@ import {
   parseArgs,
   prettierLines,
   report,
+  runChecks,
   stalePackages,
   tscLines,
 } from '../../../scripts/check.mjs';
@@ -376,5 +377,33 @@ describe('report', () => {
 
     expect(output).toHaveLength(MAX_LINES + 2);
     expect(output.slice(-2)).toEqual(['… 3 more', 'full log: .idea/tmp/c.log']);
+  });
+});
+
+describe('runChecks', () => {
+  it('runs the light checks side by side, then each heavy check alone', async () => {
+    const events: string[] = [];
+    let running = 0;
+
+    const results = await runChecks({
+      checks: ['big', 'a', 'huge', 'b'],
+      heavy: ['big', 'huge'],
+      run: async (name) => {
+        events.push(`start ${name} with ${running} running`);
+        running += 1;
+        await Promise.resolve();
+        running -= 1;
+
+        return name;
+      },
+    });
+
+    expect(events).toEqual([
+      'start a with 0 running',
+      'start b with 1 running',
+      'start big with 0 running',
+      'start huge with 0 running',
+    ]);
+    expect(results).toEqual(['a', 'b', 'big', 'huge']);
   });
 });
