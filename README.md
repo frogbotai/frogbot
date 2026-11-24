@@ -1,10 +1,10 @@
 <p align="center">
-  <a href="https://www.frogbot.ai"><img src="./.github/assets/frogbot-logo.svg" width="120" alt="FrogBot logo" /></a>
+  <a href="https://www.frogbot.ai"><img src="./.github/assets/frogbot-logo-square.svg" width="120" alt="FrogBot logo" /></a>
 </p>
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The open-source Lego bricks your coding agent builds client apps with.</strong></p>
+<p align="center"><strong>The open-source Lego bricks for coding agents.</strong></p>
 
 <p align="center">Turn vibe-coded slop into apps clients pay for.</p>
 
