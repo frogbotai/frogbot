@@ -33,7 +33,6 @@
 
   .collection-view--list tr[data-done] td.cell--linked > :is(a, button) {
     color: var(--color-text-tertiary);
-    text-decoration-line: line-through;
   }
 
   .fb-done-check {
