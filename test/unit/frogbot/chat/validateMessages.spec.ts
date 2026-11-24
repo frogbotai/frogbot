@@ -71,7 +71,7 @@ describe('describeMessagesError', () => {
 
   it('lists the part types for an unknown one', async () => {
     expect(await explain(user({ type: 'txt', text: 'Hi' }))).toBe(
-      "`messages[0].parts[0].type`: expected one of 'text' | 'reasoning' | 'custom' | 'source-url' | 'source-document' | 'file' | 'reasoning-file' | 'step-start' | 'data-*' | 'dynamic-tool' | 'tool-*', received 'txt'",
+      '`messages[0].parts[0].type`: Invalid UI message part type. Expected a known part type (for example "text" or "dynamic-tool") or a type starting with "data-" or "tool-", received \'txt\'',
     );
   });
 

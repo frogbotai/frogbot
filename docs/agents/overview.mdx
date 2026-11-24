@@ -805,7 +805,7 @@ curl http://localhost:3000/api/agents/support \
 
 FrogBot loads stored history, rejects chats owned by another authenticated user, and rejects client-supplied assistant or system messages. Custom access rules can allow anonymous callers to create and continue chats, but those chats are not private to the anonymous caller who created them because there is no anonymous identity to verify. Applications handling sensitive conversations should require authentication.
 
-Malformed input returns `400` naming the first field that failed and why, for example `` `messages[0].parts[0].type`: expected one of 'text' | 'file' | …, received 'txt' ``. An unknown slug returns `404`, and an aborted request returns a bodyless `499`.
+Malformed input returns `400` naming the first field that failed and why, for example `` `messages[0].parts[0].state`: expected one of 'input-streaming' | 'input-available' | …, received 'done' ``. An unknown slug returns `404`, and an aborted request returns a bodyless `499`.
 
 Errors are `{ error, code? }`. `code` is stable, so branch on it rather than the message:
 

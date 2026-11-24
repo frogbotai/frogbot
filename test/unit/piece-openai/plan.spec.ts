@@ -1,8 +1,10 @@
 import { zstdDecompressSync } from 'node:zlib';
 
 import { createOpenAI as createOpenAIProvider } from '@ai-sdk/openai';
+import type { LanguageModelV4StreamPart } from '@ai-sdk/provider';
 import { isGatewayError } from '@frogbotai/gateway/errors';
 import { generateText, streamText, tool, wrapLanguageModel } from 'ai';
+import { convertArrayToReadableStream, MockLanguageModelV4 } from 'ai/test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -315,6 +317,43 @@ describe('ChatGPT plan errors', () => {
       expect(sent).toHaveLength(2);
     },
   );
+
+  it('retries a busy plan that fails after ping parts, which are not output', async () => {
+    const parts = (busy: boolean): LanguageModelV4StreamPart[] => [
+      { type: 'stream-start', warnings: [] },
+      { type: 'ping' },
+      busy
+        ? { type: 'error', error: new Error('subscription_sharing_user_unavailable') }
+        : { type: 'text-start', id: 't' },
+      { type: 'text-delta', id: 't', delta: 'Hello' },
+      { type: 'text-end', id: 't' },
+      {
+        type: 'finish',
+        finishReason: { unified: 'stop', raw: 'stop' },
+        usage: {
+          inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+          outputTokens: { total: 1, text: 1, reasoning: 0 },
+        },
+      },
+    ];
+
+    let calls = 0;
+    const model = new MockLanguageModelV4({
+      doStream: () =>
+        Promise.resolve({ stream: convertArrayToReadableStream(parts(calls++ === 0)) }),
+    });
+
+    const result = await generateText({
+      model: wrapLanguageModel({
+        model,
+        middleware: createChatGPTMiddleware({ retryDelays: [0] }),
+      }),
+      prompt: 'Hi',
+    });
+
+    expect(result.text).toBe('Hello');
+    expect(calls).toBe(2);
+  });
 
   it('says busy, without retrying, when the plan is busy after output', async () => {
     replies.push(() =>
