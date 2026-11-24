@@ -17,7 +17,7 @@ test.afterEach(async ({ page }) => {
   await deleteMessage(page, saved);
 });
 
-test('unhidden Messages appears directly under Collections with its icon', async ({ page }) => {
+test('unhidden Messages appears in the System group with its icon', async ({ page }) => {
   await expandSidebar(page);
 
   const collections = page.locator('#frogbot-nav-section-collections');
@@ -25,7 +25,13 @@ test('unhidden Messages appears directly under Collections with its icon', async
 
   await expect(messages).toHaveAttribute('href', `/collections/${messagesSlug}`);
   await expect(messages.locator('svg')).toHaveCount(1);
-  await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveCount(0);
+  await expect(
+    collections
+      .locator('.frogbot-collections-section__group', {
+        has: page.locator('.frogbot-collections-section__group-label', { hasText: /^System$/ }),
+      })
+      .getByRole('link', { name: 'Messages' }),
+  ).toHaveCount(1);
 });
 
 test('sidebar gives Messages and Chats their own icons', async ({ page }) => {
