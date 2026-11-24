@@ -16,11 +16,11 @@ async function create(page: Page, collection: string, data: object): Promise<num
   return (await response.json()).doc.id;
 }
 
-async function expectApollo(scope: Locator, field: string) {
-  const fieldWith = (label: string) => scope.locator(field, { hasText: label });
-
-  await expect(fieldWith('Project Budget')).toContainText('$12.50');
-  await expect(fieldWith('Project Status').locator('.fb-option-pill--green')).toHaveText('Active');
+async function expectApollo(fieldWith: (name: string, label: string) => Locator) {
+  await expect(fieldWith('projectBudget', 'Project Budget')).toContainText('$12.50');
+  await expect(
+    fieldWith('projectStatus', 'Project Status').locator('.fb-option-pill--green'),
+  ).toHaveText('Active');
 }
 
 test.beforeEach(async ({ page }) => {
@@ -76,11 +76,10 @@ test('a Board card shows virtual path fields like their source', async ({ page }
 
   const card = page.locator('.frog-board__card', { hasText: titles.apollo });
 
-  await expectApollo(card, '.fb-card__field');
+  const fact = (name: string) => card.locator(`.fb-card__meta [data-field="${name}"]`);
 
-  await expect(card.locator('.fb-card__field', { hasText: 'Tag Names' })).toContainText(
-    'urgent, backend',
-  );
+  await expectApollo(fact);
+  await expect(fact('tagNames')).toContainText('urgent, backend');
 
   const loose = page.locator('.frog-board__card', { hasText: titles.loose });
 
@@ -92,7 +91,9 @@ test('a Calendar event shows virtual path fields like their source', async ({ pa
 
   const event = page.locator('.frog-calendar__event', { hasText: titles.apollo });
 
-  await expectApollo(event, '.collection-calendar__field');
+  await expectApollo((_name, label) =>
+    event.locator('.collection-calendar__field', { hasText: label }),
+  );
 });
 
 test('the tasks List shows 50 tasks with five tags each', async ({ page }) => {

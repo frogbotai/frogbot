@@ -172,7 +172,13 @@ function BoardMeta<TRow extends CardRow>({
           const label = name ?? email ?? String(user.id ?? '');
 
           return (
-            <span aria-label={label} className="fb-card__avatar" key={accessor} title={label}>
+            <span
+              aria-label={label}
+              className="fb-card__avatar"
+              data-field={accessor}
+              key={accessor}
+              title={label}
+            >
               <UserAvatar email={email} name={name} size={20} />
             </span>
           );
@@ -181,7 +187,7 @@ function BoardMeta<TRow extends CardRow>({
         const Cell = isShortDate(field) ? ShortDateCell : FieldCell;
 
         return (
-          <span className="fb-card__fact" key={accessor}>
+          <span className="fb-card__fact" data-field={accessor} key={accessor}>
             <Cell
               cellData={value}
               collectionSlug={collectionSlug}

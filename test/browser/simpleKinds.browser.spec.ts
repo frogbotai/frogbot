@@ -21,8 +21,6 @@ const zero = { title: 'Zero', progress: 0, timeSpent: 0 };
 
 const kindFields = ['progress', 'score', 'timeSpent', 'website', 'phone', 'sku'] as const;
 
-const kindLabels = ['Progress', 'Score', 'Time Spent', 'Website', 'Phone', 'Sku'];
-
 const longWebsite = `example.com/${'a'.repeat(300)}`;
 
 let ids: Record<'full' | 'empty' | 'zero', number | string>;
@@ -80,14 +78,8 @@ function boardCard(page: Page, title: string) {
   });
 }
 
-function boardValue(card: Locator, label: string) {
-  return card
-    .locator('.fb-card__field', {
-      has: card.page().locator('.fb-card__field-label', {
-        hasText: new RegExp(`^${label}$`),
-      }),
-    })
-    .locator('.fb-card__field-value');
+function boardValue(card: Locator, name: string) {
+  return card.locator(`.fb-card__meta [data-field="${name}"]`);
 }
 
 async function expectStars(scope: Locator, count: number) {
@@ -213,20 +205,20 @@ test('Board cards and Calendar events show kind values and leave empty ones blan
 
   const card = boardCard(page, full.title);
 
-  await expect(boardValue(card, 'Progress')).toHaveText('42.5%');
-  await expectStars(boardValue(card, 'Score'), 3);
-  await expect(boardValue(card, 'Time Spent')).toHaveText('1:30');
-  await expect(boardValue(card, 'Website').locator('a')).toHaveAttribute(
+  await expect(boardValue(card, 'progress')).toHaveText('42.5%');
+  await expectStars(boardValue(card, 'score'), 3);
+  await expect(boardValue(card, 'timeSpent')).toHaveText('1:30');
+  await expect(boardValue(card, 'website').locator('a')).toHaveAttribute(
     'href',
     'https://example.com/pricing',
   );
-  await expect(boardValue(card, 'Phone').locator('a')).toHaveAttribute('href', 'tel:5551234567');
-  await expect(boardValue(card, 'Sku')).toHaveText(full.sku);
+  await expect(boardValue(card, 'phone').locator('a')).toHaveAttribute('href', 'tel:5551234567');
+  await expect(boardValue(card, 'sku')).toHaveText(full.sku);
 
   const emptyCard = boardCard(page, empty.title);
 
-  for (const label of kindLabels) {
-    await expect(boardValue(emptyCard, label)).toHaveText('');
+  for (const name of kindFields) {
+    await expect(boardValue(emptyCard, name)).toHaveCount(0);
   }
 
   await page.goto(calendarPath);
@@ -258,7 +250,7 @@ test('a long URL is cut with an ellipsis in the List and stays inside its Board 
   await page.goto(boardPath);
 
   const card = boardCard(page, full.title);
-  const url = boardValue(card, 'Website').locator('.url-cell');
+  const url = boardValue(card, 'website').locator('.url-cell');
 
   await expect(url).toBeVisible();
 
