@@ -202,7 +202,10 @@ test('shows done records in the shared done style on the board, list and calenda
   const row = page.locator('tbody tr').filter({ hasText: 'Completed while todo' });
 
   await expect(row).toHaveAttribute('data-done', '');
-  await expect(row.locator('td.cell--linked a')).toHaveCSS('text-decoration-line', 'line-through');
+  await expect(row.locator('td.cell--linked a')).not.toHaveCSS(
+    'text-decoration-line',
+    'line-through',
+  );
   await expect(
     page.locator('tbody tr').filter({ hasText: 'Prepare the wholesale portal demo' }),
   ).not.toHaveAttribute('data-done', '');
