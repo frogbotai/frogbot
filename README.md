@@ -238,3 +238,5 @@ Contributions are welcome! Read [CONTRIBUTING.md](./CONTRIBUTING.md) before open
 ## License
 
 [MIT](./LICENSE) © Colby Gilbert
+
+The MIT license covers the code. The FrogBot name and logos, including the files in [`.github/assets`](./.github/assets), are trademarks of FrogBot, Inc. and are not licensed under MIT.
