@@ -60,7 +60,6 @@ describe('asana template subtasks', () => {
 
     await expect(update(subtask.id, { completed: true })).resolves.toMatchObject({
       completed: true,
-      status: 'done',
     });
 
     const after = await read(subtask.id);

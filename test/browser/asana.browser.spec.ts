@@ -341,9 +341,7 @@ test.describe('the task panel', () => {
 
     await added.getByRole('button', { name: 'Mark complete' }).click();
     await expect(added.getByRole('button', { name: 'Completed' })).toBeVisible();
-    await expect
-      .poll(async () => readTask(page, subtask.id))
-      .toMatchObject({ completed: true, status: 'done' });
+    await expect.poll(async () => readTask(page, subtask.id)).toMatchObject({ completed: true });
   });
 
   test('Attachments + uploads a file to the task, and × removes it', async ({ page }) => {
@@ -489,7 +487,7 @@ test.describe('the task panel', () => {
     await expect(panel(page).locator('.fb-comments__box')).toHaveCount(1);
   });
 
-  test('Mark complete shows Completed, sets Done and moves the card to Done', async ({ page }) => {
+  test('Mark complete shows Completed and leaves the status and column alone', async ({ page }) => {
     const parent = await findTask(page, 'Design the pricing page');
     const task = await createTask(page, {
       title: 'Book the launch review',
@@ -519,11 +517,11 @@ test.describe('the task panel', () => {
     await expect(bar(page).getByRole('button', { name: 'Completed' })).toBeVisible();
     await expect
       .poll(async () => readTask(page, task.id))
-      .toMatchObject({ completed: true, status: 'done' });
+      .toMatchObject({ completed: true, status: 'in-progress' });
     await expect(
-      column('Done').locator('.frog-board__card', { hasText: 'Book the launch review' }),
+      column('In progress').locator('.frog-board__card', { hasText: 'Book the launch review' }),
     ).toBeVisible();
-    await expect(row(page, 'status').locator('.rs__single-value')).toHaveText('Done');
+    await expect(row(page, 'status').locator('.rs__single-value')).toHaveText('In progress');
     await expect(page.locator('[data-sonner-toast]')).toHaveCount(0);
     await shootPanel(page, '06-completed-task-full');
   });
