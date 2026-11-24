@@ -188,6 +188,16 @@ You can access Mongoose models as follows:
 - Collection models - `frogbot.db.collections[myCollectionSlug]`
 - Versions model - `frogbot.db.versions[myEntitySlug]`
 
+`frogbot.db` is typed for any database adapter. `isMongooseAdapter(frogbot.db)`, exported by `@frogbotai/db-mongodb`, checks that it is this adapter and narrows its type, so `collections`, `versions` and `connection` type-check:
+
+```ts
+import { isMongooseAdapter } from '@frogbotai/db-mongodb'
+
+if (isMongooseAdapter(frogbot.db)) {
+  await frogbot.db.connection.collection('posts').createIndex({ title: 1 })
+}
+```
+
 ## Using other MongoDB implementations
 
 You can import the `compatibilityOptions` object to get the recommended settings for other MongoDB implementations. Since these databases aren't officially supported by frogbot, you may still encounter issues even with these settings (please create an issue or PR if you believe these options should be updated):
