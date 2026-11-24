@@ -440,7 +440,7 @@ const severityScore = result.answers.severity.score
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `string \| JSONObject \| DecisionStatePart[]` | Required | The shared state every question is asked about. An array is one state made of parts (`{ type: 'text', text }`, `{ type: 'file', data, mediaType }` or `{ type: 'json', value }`), not a batch. Wrap a JSON array in a `json` part. |
+| `state` | `string \| JSONObject \| DecisionStatePart[]` | Required | The shared state every question is asked about. An array is one state made of parts (`{ type: 'text', text }`, `{ type: 'file', data, mediaType }` or `{ type: 'json', value }`), not a batch. Wrap a JSON array in a `json` part; any other array throws a `TypeError`. |
 | `questions` | `Record<string, EvaluationQuestion>` | Required | Named questions. Each key becomes a key of `result.answers`. See [Question options](#question-options). |
 | `maxOutputTokens` | `number` | Provider default | Maximum output tokens, for models that support it. An integer of at least `1`. |
 | `reasoning` | `'provider-default' \| 'none' \| 'minimal' \| 'low' \| 'medium' \| 'high' \| 'xhigh' \| 'max'` | Provider default | Reasoning effort, for models that support it. |

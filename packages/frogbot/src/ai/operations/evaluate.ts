@@ -11,6 +11,25 @@ import type {
   SanitizedAIConfig,
 } from '../types.js';
 
+const STATE_PART_TYPES = new Set(['text', 'file', 'json']);
+
+function assertStateParts(state: unknown): void {
+  if (!Array.isArray(state)) return;
+
+  const parts = state.every(
+    (part: unknown) =>
+      !!part &&
+      typeof part === 'object' &&
+      STATE_PART_TYPES.has(String((part as { type?: unknown }).type)),
+  );
+
+  if (!parts) {
+    throw new TypeError(
+      "[frogbot] evaluate state: an array must hold state parts ({ type: 'text' | 'file' | 'json' }). Wrap a JSON array as [{ type: 'json', value: array }].",
+    );
+  }
+}
+
 export type EvaluateDeps = {
   gateway: Gateway;
   config: SanitizedAIConfig;
@@ -23,6 +42,8 @@ export async function evaluateOperation<const QUESTIONS extends Record<string, E
   const { gateway, config } = deps;
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
+
+  assertStateParts(aiSdkOpts.state);
 
   const modelId = resolveModel(input, config);
 
