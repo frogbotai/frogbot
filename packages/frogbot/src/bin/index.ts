@@ -11,7 +11,7 @@ import { formatCliError } from './formatCliError.js';
 import { generateImportMap } from './generateImportMap.js';
 import { generatePieceTypesCommand } from './generatePieceTypes.js';
 import { generateTypes } from './generateTypes.js';
-import { asksForHelp, commandHelp } from './help.js';
+import { asksForHelp, commandDocs, commandHelp } from './help.js';
 import { jobsRun } from './jobsRun.js';
 import {
   CliError,
@@ -82,7 +82,13 @@ export const commands: Record<string, Command> = {
     json: 'own',
   },
   'generate:types': {
-    run: () => generateTypes(),
+    run: (args) => {
+      if (args.length) {
+        throw usageError(`[frogbot] usage: frogbot ${commandDocs['generate:types'].usage}`);
+      }
+
+      return generateTypes();
+    },
     help: commandHelp['generate:types'],
     json: true,
   },
@@ -97,7 +103,13 @@ export const commands: Record<string, Command> = {
     json: true,
   },
   'generate:importmap': {
-    run: () => generateImportMap(),
+    run: (args) => {
+      if (args.length) {
+        throw usageError(`[frogbot] usage: frogbot ${commandDocs['generate:importmap'].usage}`);
+      }
+
+      return generateImportMap();
+    },
     help: commandHelp['generate:importmap'],
     json: true,
   },
@@ -211,14 +223,15 @@ export async function bin() {
 
   const command = process.argv[2]?.toLowerCase();
   const args = process.argv.slice(3);
-  const loaded = await readConfig(command);
+  const asksJson = Boolean(command && ownArgs(command, args).includes('--json'));
+  const restoreLoad = asksJson ? logToStderr() : () => undefined;
+  const loaded = await readConfig(command).finally(restoreLoad);
   const { config, loadError } = loaded;
   const appCommands = config?.cli.commands ?? {};
   const appCommand =
     command && Object.hasOwn(appCommands, command) ? appCommands[command] : undefined;
 
   const handler = command && Object.hasOwn(commands, command) ? commands[command] : undefined;
-  const asksJson = Boolean(command && ownArgs(command, args).includes('--json'));
 
   if (command && versionCommands.has(command)) {
     console.log(version);

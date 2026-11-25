@@ -92,9 +92,11 @@ export function describeDatabase(url: string | undefined, syncUrl?: string): Dat
   if (!scheme) return unreadable;
 
   try {
-    const { host, pathname, protocol, username } = new URL(url);
+    const { host, password, pathname, protocol, username } = new URL(url);
 
-    if (!username && url.split('?')[0]?.includes('@')) return unreadable;
+    if (!username && !password && url.includes('@')) {
+      return describeMultiHost(scheme, url.slice(scheme.length));
+    }
 
     return { local: false, label: `${protocol}//${host}${pathname === '/' ? '' : pathname}` };
   } catch {

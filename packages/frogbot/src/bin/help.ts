@@ -103,11 +103,11 @@ export const commandDocs: Record<string, CommandDoc> = {
     usage:
       'deploy [target] [--dry-run] [--json] [--no-interactive] [--env-file <path>] [target flags]',
   },
-  migrate: migrateDoc('migrate', 'Apply pending migrations', ' [--yes]'),
+  migrate: migrateDoc('migrate', 'Apply pending migrations', ' [--yes|--force-accept-warning]'),
   'migrate:create': migrateDoc(
     'migrate:create',
     'Write a migration from the schema',
-    ' [name] [--name <name>] [--file <path>] [--skip-empty] [--yes]',
+    ' [name] [--name <name>] [--file <path>] [--skip-empty] [--yes|--force-accept-warning]',
   ),
   'migrate:status': migrateDoc('migrate:status', 'Show applied and pending migrations'),
   'migrate:down': migrateDoc('migrate:down', 'Roll back the last batch of migrations'),
@@ -119,7 +119,7 @@ export const commandDocs: Record<string, CommandDoc> = {
   'migrate:fresh': migrateDoc(
     'migrate:fresh',
     'Drop all tables, then apply every migration',
-    ' [--yes]',
+    ' [--yes|--force-accept-warning]',
   ),
   users: {
     group: 'Database',

@@ -1,3 +1,5 @@
+import { parseArgs } from 'node:util';
+
 import { loadConfig } from '../config/load.js';
 import { formatCliError } from './formatCliError.js';
 import { migrateUsage } from './help.js';
@@ -22,30 +24,37 @@ type Flags = {
   skipEmpty?: boolean;
 };
 
-function parseFlags(args: string[]): { flags: Flags; positional: string[] } {
-  const flags: Flags = {};
-  const positional: string[] = [];
+function parseFlags(command: string, args: string[]): { flags: Flags; positional: string[] } {
+  try {
+    const { values, positionals } = parseArgs({
+      args,
+      allowPositionals: true,
+      strict: true,
+      options: {
+        file: { type: 'string' },
+        'force-accept-warning': { type: 'boolean' },
+        yes: { type: 'boolean', short: 'y' },
+        'skip-empty': { type: 'boolean' },
+        help: { type: 'boolean', short: 'h' },
+        name: { type: 'string' },
+      },
+    });
 
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === '--file') {
-      flags.file = args[++i];
-    } else if (arg === '--force-accept-warning' || arg === '--yes' || arg === '-y') {
-      flags.forceAcceptWarning = true;
-    } else if (arg === '--skip-empty') {
-      flags.skipEmpty = true;
-    } else if (arg === '--help' || arg === '-h') {
-      flags.help = true;
-    } else if (arg === '--name') {
-      flags.name = args[++i];
-    } else if (arg.startsWith('--name=')) {
-      flags.name = arg.slice('--name='.length);
-    } else if (!arg.startsWith('-')) {
-      positional.push(arg);
-    }
+    return {
+      flags: {
+        file: values.file,
+        forceAcceptWarning: values['force-accept-warning'] || values.yes,
+        help: values.help,
+        name: values.name,
+        skipEmpty: values['skip-empty'],
+      },
+      positional: positionals,
+    };
+  } catch (error) {
+    const reason = (error instanceof Error ? error.message : String(error)).split('. ')[0];
+
+    throw usageError(`[frogbot] ${reason}. Run \`frogbot ${command} --help\` for the flags.`);
   }
-
-  return { flags, positional };
 }
 
 const confirmNeeded = (command: string, what: string) =>
@@ -66,7 +75,7 @@ export async function migrate(args: string[]): Promise<Record<string, unknown>> 
     throw usageError(`[frogbot] unknown command: ${command}\n\n${migrateUsage}`);
   }
 
-  const { flags, positional } = parseFlags(args.slice(1));
+  const { flags, positional } = parseFlags(command, args.slice(1));
 
   if (flags.help) {
     console.log(migrateUsage);
