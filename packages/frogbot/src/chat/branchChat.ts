@@ -25,6 +25,7 @@ type ChatDocument = {
   title?: string | null;
   user?: { id: DocID } | DocID | null;
   agent?: string | null;
+  space?: { id: DocID } | DocID | null;
 };
 
 type MessageDocument = {
@@ -125,6 +126,7 @@ export async function branchChat({
         title,
         user: ownerId,
         agent: source.agent,
+        space: relationID(source.space),
         lastMessageAt: new Date().toISOString(),
       },
       depth: 0,

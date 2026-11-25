@@ -155,11 +155,9 @@ export function createAgentInstance(
       const runToolNames = [...Object.keys(run.mcpTools), ...Object.keys(run.spaceTools)];
       const memory = agentConfig.memory ? { req, agent: ctx.agent } : undefined;
       const space = await runSpace({ req, chatId });
+      const spacePrompt = space ? renderSpacePrompt(space) : '';
       const agentInstructions = await resolveAgentInstructions(agentConfig, req);
-      const base = space
-        ? `${agentInstructions}\n\n${renderSpacePrompt(space)}`
-        : agentInstructions;
-
+      const base = spacePrompt ? `${agentInstructions}\n\n${spacePrompt}` : agentInstructions;
       const instructions = memory ? `${base}\n\n${await pinnedMemoryPrompt(memory)}` : base;
 
       return {

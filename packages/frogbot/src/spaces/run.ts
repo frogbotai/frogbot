@@ -1,5 +1,6 @@
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { canAccessSpace } from './access.js';
 
 /** The Space a chat belongs to, as one agent run sees it. */
 export type RunSpace = {
@@ -128,7 +129,7 @@ async function loadSpace({ req, id }: { req: FrogBotRequest; id: DocID }) {
   };
 }
 
-/** The Space of the run's chat, or `undefined` when the chat has none. */
+/** The Space of the run's chat, or `undefined` when the chat has none or the run's user can no longer read it. */
 export async function runSpace({
   req,
   chatId,
@@ -140,5 +141,9 @@ export async function runSpace({
 
   if (id === undefined) return undefined;
 
-  return cached(spaces, req, id, () => loadSpace({ req, id }));
+  return cached(spaces, req, id, async () => {
+    if (req.user && !(await canAccessSpace({ req, id, kind: 'read' }))) return undefined;
+
+    return loadSpace({ req, id });
+  });
 }

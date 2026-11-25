@@ -62,6 +62,8 @@ In a chat with a Space, the system prompt is, in order:
 
 The agent reads a file when it needs one with `space_file_read({ filename })`, so large files never fill every prompt. The tool appears only in chats whose Space has files, and `space_file_read` is a reserved tool slug. Agents with `memory: true` can save to the `space` scope, which every chat in the Space then shares.
 
+A Space with no instructions and no files adds nothing to the prompt. When the person in the chat can no longer read the Space, the chat runs as if it had none: no instructions, files or `space` memories.
+
 Instructions can hold about 2,000 tokens, since they sit in every prompt. Put longer material in a file.
 
 ## Use your own collection

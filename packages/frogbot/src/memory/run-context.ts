@@ -1,7 +1,7 @@
 import { Forbidden } from 'payload';
 
 import { canAccessSpace } from '../spaces/access.js';
-import { runChat } from '../spaces/run.js';
+import { runChat, runSpace } from '../spaces/run.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { checkMemoryAccess } from './access.js';
 import { isMemoryAdapterError } from './errors.js';
@@ -53,7 +53,9 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
   }
 
   const own = agentRuns.has(source.agent);
-  const chat = await runChat({ req, chatId: source.agent.chatId });
+  const stored = await runChat({ req, chatId: source.agent.chatId });
+  const space = await runSpace({ req, chatId: source.agent.chatId });
+  const chat = stored?.space && !space ? { ...stored, space: null } : stored;
   const agent = own ? { slug: source.agent.slug } : undefined;
   const overrideAccess = own || source.overrideAccess !== false;
 

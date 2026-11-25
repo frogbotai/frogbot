@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import type { FrogBotInstance } from 'frogbot';
 import { databaseMemory } from 'frogbot/memory';
+import { branchChat } from 'frogbot/test';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { reportDocx, reportText } from '../__helpers/shared/office.js';
@@ -179,14 +180,45 @@ describe('Spaces', () => {
     expect(toolNames(model.requests[0])).not.toContain('space_file_read');
   });
 
-  it('offers no file tool when the Space has no files', async () => {
+  it('leaves the prompt as before for a Space with no instructions and no files', async () => {
     const chat = await createChat(await createSpace({ title: 'Empty' }));
 
     model.respond({ text: 'Hi.' });
     await send(chat, 'Hello.');
 
-    expect(systemText(model.requests[0])).toContain('## Space: Empty');
+    expect(systemText(model.requests[0])).not.toContain('## Space');
     expect(toolNames(model.requests[0])).not.toContain('space_file_read');
+  });
+
+  it('keeps the Space when a chat is branched', async () => {
+    const space = await createSpace({ title: 'Q3', instructions: 'Launch 9 July.' });
+    const chat = await createChat(space);
+
+    model.respond({ text: 'Hi.' });
+    await send(chat, 'Hello.');
+
+    const { docs } = await frogbot.find({
+      collection: 'messages',
+      where: { chat: { equals: chat.id } },
+      sort: '-createdAt',
+      limit: 1,
+      overrideAccess: true,
+    });
+
+    const { chatId } = await branchChat({
+      req: await frogbot.createRequest({ user }),
+      chatId: chat.id,
+      messageId: docs[0].id,
+    });
+
+    const branched = await frogbot.findByID({
+      collection: 'chats',
+      id: chatId,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(branched.space).toEqual(space.id);
   });
 
   it('shares space memories between chats of the same Space only', async () => {
@@ -297,8 +329,8 @@ describe('Spaces', () => {
   });
 
   it('moves a chat to another Space, and the next reply uses the new one', async () => {
-    const chat = await createChat(await createSpace({ title: 'Q2 launch' }));
-    const q3 = await createSpace({ title: 'Q3 launch' });
+    const chat = await createChat(await createSpace({ title: 'Q2 launch', instructions: 'Q2.' }));
+    const q3 = await createSpace({ title: 'Q3 launch', instructions: 'Q3.' });
 
     model.respond({ text: 'One.' }, { text: 'Two.' });
     await send(chat, 'Hello.');
