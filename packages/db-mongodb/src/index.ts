@@ -34,21 +34,25 @@ export type MigrationDatabase = {
   session?: MongooseAdapter['sessions'][string];
 };
 
+/** Whether a database adapter is this package's, so its MongoDB connection and sessions can be read. */
+export function isMongooseAdapter(adapter: { name: string }): adapter is MongooseAdapter {
+  return adapter.name === 'mongoose';
+}
+
 /**
  * The database a migration changes, from its `req`: `const { db, session } = await migrationDatabase(req)`.
  * Pass `session` to each call so the change joins the migration's transaction when there is one.
  */
 export async function migrationDatabase(req: MigrationRequest): Promise<MigrationDatabase> {
   const { db: adapter } = migrationPayloadRequest(req).payload;
-  const mongoose = adapter.name === 'mongoose' ? (adapter as MongooseAdapter) : undefined;
-  const db = mongoose?.connection?.db;
+  const db = isMongooseAdapter(adapter) ? adapter.connection?.db : undefined;
 
-  if (!mongoose || !db) {
+  if (!isMongooseAdapter(adapter) || !db) {
     throw new Error('[frogbot] migrationDatabase needs a connected MongoDB adapter.');
   }
 
   const transactionID = await req.transactionID;
-  const session = transactionID === undefined ? undefined : mongoose.sessions[transactionID];
+  const session = transactionID === undefined ? undefined : adapter.sessions[transactionID];
 
   return session ? { db, session } : { db };
 }

@@ -6,7 +6,7 @@ const packument = (versions: string[]) =>
   Response.json({ versions: Object.fromEntries(versions.map((version) => [version, {}])) });
 
 function bulk(advisories: { severity: string; title: string; vulnerable_versions: string }[]) {
-  return vi.fn<typeof fetch>((input) =>
+  return vi.fn<typeof globalThis.fetch>((input) =>
     Promise.resolve(
       String(input).endsWith('/advisories/bulk')
         ? Response.json({
@@ -26,7 +26,7 @@ describe('next-advisories', () => {
   });
 
   it('fails and names the patched version', async () => {
-    const fetch = vi.fn<typeof fetch>((input, init) => {
+    const fetch = vi.fn<typeof globalThis.fetch>((input, init) => {
       const version = (JSON.parse(String(init?.body ?? '{"next":[]}')) as { next: string[] })
         .next[0];
 
@@ -68,7 +68,7 @@ describe('next-advisories', () => {
   });
 
   it('names the next minor instead of blaming the registry when no later patch is published', async () => {
-    const fetch = vi.fn<typeof fetch>((input, init) => {
+    const fetch = vi.fn<typeof globalThis.fetch>((input, init) => {
       if (!String(input).endsWith('/advisories/bulk')) {
         return Promise.resolve(packument(['16.4.5', '16.4.6', '16.5.0']));
       }
@@ -109,7 +109,9 @@ describe('next-advisories', () => {
   });
 
   it('fails when npm cannot be reached', async () => {
-    const fetch = vi.fn<typeof fetch>(() => Promise.reject(new TypeError('fetch failed')));
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.reject(new TypeError('fetch failed')),
+    );
 
     expect(await nextAdvisories({ fetch, version: '16.4.6' })).toMatchObject({ code: 1 });
   });

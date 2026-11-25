@@ -11,6 +11,7 @@ import { FrogBotNav } from '../../../../../../packages/ui/src/admin/elements/Nav
 
 type NavClientProps = {
   CustomAvatar?: ReactNode;
+  accountName?: string;
   afterAccountMenu?: ReactNode;
   beforeAccountMenu?: ReactNode;
   items?: unknown[];
@@ -153,7 +154,7 @@ function renderedItemIcon(index: number) {
   return <>{items?.[index]?.icon}</>;
 }
 
-function props() {
+function props(collections: Record<string, unknown> = {}) {
   const req = { user: { collection: 'users', id: 'user-1' } } as PayloadRequest;
   const find = vi.fn().mockResolvedValue({ docs: [] });
 
@@ -171,6 +172,7 @@ function props() {
         globals: [],
         routes: { admin: '/admin' },
       },
+      collections,
       find,
       importMap: { [sectionPath]: VisibleEntitiesSection },
     },
@@ -304,7 +306,6 @@ describe('FrogBotNav', () => {
   });
 
   it("names the account by its collection's useAsTitle, else name", async () => {
-    const base = props();
     const user = {
       collection: 'users',
       email: 'sam@example.com',
@@ -315,13 +316,11 @@ describe('FrogBotNav', () => {
 
     const collections = { users: { config: { admin: { useAsTitle: 'fullName' } } } };
 
-    render(
-      await FrogBotNav({ ...base, payload: { ...base.payload, collections }, user } as typeof base),
-    );
+    render(await FrogBotNav({ ...props(collections), user }));
 
     expect(navClient.mock.calls[0]?.[0].accountName).toBe('Sam Lee');
 
-    render(await FrogBotNav({ ...base, user }));
+    render(await FrogBotNav({ ...props(), user }));
 
     expect(navClient.mock.calls[1]?.[0].accountName).toBe('sam');
   });

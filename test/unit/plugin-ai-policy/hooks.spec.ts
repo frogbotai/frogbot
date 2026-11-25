@@ -57,22 +57,35 @@ function fakeDB(seed: Partial<Counter>[] = []) {
     ...counter,
   }));
 
-  const updateOne = vi.fn(async ({ collection, where, data }: Record<string, never>) => {
-    await Promise.resolve();
+  const updateOne = vi.fn(
+    async ({
+      collection,
+      where,
+      data,
+    }: {
+      collection: string;
+      where: { and?: Clause[] } & Clause;
+      data: Record<string, unknown>;
+    }) => {
+      await Promise.resolve();
 
-    if (collection !== SPEND_COUNTERS_SLUG) return null;
+      if (collection !== SPEND_COUNTERS_SLUG) return null;
 
-    const counter = counters.find((each) => matches(each, where));
+      const counter = counters.find((each) => matches(each, where));
 
-    if (!counter) return null;
+      if (!counter) return null;
 
-    const { amount, period: next } = data as { amount: number | { $inc: number }; period?: string };
+      const { amount, period: next } = data as {
+        amount: number | { $inc: number };
+        period?: string;
+      };
 
-    counter.amount = typeof amount === 'number' ? amount : counter.amount + amount.$inc;
-    if (next) counter.period = next;
+      counter.amount = typeof amount === 'number' ? amount : counter.amount + amount.$inc;
+      if (next) counter.period = next;
 
-    return { ...counter };
-  });
+      return { ...counter };
+    },
+  );
 
   const create = vi.fn(async ({ data }: { data: Omit<Counter, 'id'> }) => {
     await Promise.resolve();
@@ -162,7 +175,7 @@ describe('plugin-ai-policy hooks', () => {
     await settle(hooks, { req });
 
     const userWrites = db.updateOne.mock.calls
-      .map(([args]) => args as { collection: string; data: Record<string, unknown> })
+      .map(([args]) => args)
       .filter(({ collection }) => collection === 'users');
 
     expect(userWrites.map(({ data }) => Object.keys(data).sort())).toEqual([

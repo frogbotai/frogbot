@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'frogbot';
+import type { CollectionConfig, SelectField } from 'frogbot';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -336,7 +336,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'postgres')('syncSchema on Post
   });
 
   it('adds a select option and makes it the default of a new indexed column on a table with rows', async () => {
-    const stage = (defaultValue: string, ...options: string[]): Field => ({
+    const stage = (defaultValue: string, ...options: string[]): SelectField => ({
       name: 'stage',
       type: 'select',
       enumName: 'deal_stage',

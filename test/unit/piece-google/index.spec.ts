@@ -164,6 +164,7 @@ describe('Google identity', () => {
         slug: 'connections',
         encryption,
         entries: { [piece.piece]: { piece, oauth: true, secret: false } },
+        apps: {},
       });
 
       const req = {

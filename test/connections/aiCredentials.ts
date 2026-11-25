@@ -1,6 +1,7 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createOpenAI } from '@frogbotai/piece-openai';
 import { buildConfig, type FrogBotConfig, type FrogBotRequest, type Tool } from 'frogbot';
+import { toPayloadRequest } from 'frogbot/internal';
 import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import { vi } from 'vitest';
 import { z } from 'zod';
@@ -207,7 +208,7 @@ export async function bootLinked(overrides: Partial<FrogBotConfig>) {
     });
 
   const picker = async (req: FrogBotRequest) => {
-    const response = await manifest.handler({ ...req, payload });
+    const response = await manifest.handler({ ...toPayloadRequest(req), payload });
 
     const { agents } = (await response.json()) as {
       agents: { slug: string; models: string[]; defaultModel?: string }[];

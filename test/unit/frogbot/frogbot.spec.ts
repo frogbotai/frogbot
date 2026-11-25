@@ -128,6 +128,7 @@ function makeConfig(): FrogBotSanitizedConfig {
       enabled: false,
       encryption: createCredentialEncryption({ secret: 'test-secret-min-32-chars-long-for-jwt' }),
       entries: {},
+      apps: {},
     },
     pieces: { instances: [] },
     settings: [],

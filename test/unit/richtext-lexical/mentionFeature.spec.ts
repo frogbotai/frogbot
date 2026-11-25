@@ -16,7 +16,12 @@ import {
   convertLexicalToPlaintext,
   MentionPlaintextConverter,
 } from '@frogbotai/richtext-lexical/plaintext';
-import { MentionJSXConverter, RichText } from '@frogbotai/richtext-lexical/react';
+import {
+  type DefaultNodeTypes,
+  type JSXConvertersFunction,
+  MentionJSXConverter,
+  RichText,
+} from '@frogbotai/richtext-lexical/react';
 import { editorConfigFactory } from '@payloadcms/richtext-lexical';
 import type { SanitizedConfig } from 'payload';
 import { createElement } from 'react';
@@ -140,11 +145,13 @@ describe('MentionFeature', () => {
 
     expect(html).toContain('<span class="mention" data-id="7">@Sam</span>');
 
+    const jsxConverters: JSXConvertersFunction<DefaultNodeTypes> = ({ defaultConverters }) => ({
+      ...defaultConverters,
+      ...MentionJSXConverter,
+    });
+
     const jsx = renderToStaticMarkup(
-      createElement(RichText, {
-        converters: ({ defaultConverters }) => ({ ...defaultConverters, ...MentionJSXConverter }),
-        data,
-      }),
+      createElement(RichText<DefaultNodeTypes>, { converters: jsxConverters, data }),
     );
 
     expect(jsx).toContain(

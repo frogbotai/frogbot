@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import type { MongooseAdapter } from '@frogbotai/db-mongodb';
+import { isMongooseAdapter, type MongooseAdapter } from '@frogbotai/db-mongodb';
 import { buildConfig } from 'frogbot';
 import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import type { Payload } from 'payload';
@@ -51,7 +51,9 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('MongoDB migrations'
     });
 
     payload = getFrogBotPayload(frogbot);
-    adapter = payload.db as MongooseAdapter;
+    if (!isMongooseAdapter(payload.db)) throw new Error('expected the MongoDB adapter');
+
+    adapter = payload.db;
     migrationDir = await mkdtemp(join(tmpdir(), 'frogbot-migrations-mongo-'));
     adapter.migrationDir = migrationDir;
 

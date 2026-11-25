@@ -1,10 +1,13 @@
-import type { TaskConfig, Where } from 'payload';
+import type { Job, PayloadRequest, TaskConfig, Where } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { Connections } from '../../../../packages/frogbot/src/connections/api.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
-import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/src/connections/types.js';
+import type {
+  SanitizedConnectionEntry,
+  SanitizedConnectionsConfig,
+} from '../../../../packages/frogbot/src/connections/types.js';
 import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 import type { KVLock, KVLockCallback } from '../../../../packages/frogbot/src/kv/types.js';
@@ -160,11 +163,13 @@ function harness() {
     logger: { warn: vi.fn() },
   };
 
+  const entries: Record<string, SanitizedConnectionEntry> = {};
   const connectionsConfig: SanitizedConnectionsConfig = {
     enabled: true,
     slug: 'connections',
     encryption: createCredentialEncryption({ secret: 'test' }),
-    entries: {},
+    entries,
+    apps: {},
   };
 
   const connections = new Connections(frogbot as never, connectionsConfig);
@@ -172,7 +177,7 @@ function harness() {
   frogbot.createRequest.mockImplementation(() => Promise.resolve({ frogbot, user: undefined }));
 
   const link = () => {
-    connectionsConfig.entries.hook = { piece: hook, oauth: false, secret: true };
+    entries.hook = { piece: hook, oauth: false, secret: true };
   };
 
   const payload = {};
@@ -182,10 +187,26 @@ function harness() {
     jobs: { tasks: [] },
   })!.tasks!.find(({ slug }) => slug === TRIGGER_POLL_TASK_SLUG) as TaskConfig;
 
+  const { handler } = pollTask;
+
+  if (typeof handler !== 'function') throw new Error('the poll task has no handler function');
+
+  const job: Job<string> = {
+    id: 1,
+    input: {},
+    taskStatus: {},
+    totalTried: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+
   const poll = () =>
-    pollTask.handler({
+    handler({
       input: { agentSlug: 'ops', instanceSlug: 'hook', triggerSlug: 'polled' },
-      req: { payload },
+      req: { payload } as PayloadRequest,
+      job,
+      inlineTask: vi.fn(),
+      tasks: {},
     });
 
   return {

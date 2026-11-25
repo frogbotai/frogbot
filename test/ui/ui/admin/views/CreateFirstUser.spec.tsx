@@ -336,7 +336,7 @@ describe('create-first-user view', () => {
   const respond = (status: number, body: unknown, errorToast = vi.fn()) =>
     act(() => ui.handleResponse!(Response.json(body, { status }), vi.fn(), errorToast));
 
-  it.each([
+  it.each<[false | { requireEmail: boolean }, string[]]>([
     [false, ['email', 'password', 'confirm-password', 'username']],
     [{ requireEmail: false }, ['email', 'username', 'password', 'confirm-password']],
   ])(

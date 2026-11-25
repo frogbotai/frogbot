@@ -84,7 +84,7 @@ function workflowArgs(replay?: WaitpointReplay): Parameters<PayloadWorkflowHandl
     config: { serverURL: 'https://example.com', routes: { api: '/api' } },
   } as Payload;
 
-  storage.context = { rearm: new Map(), payload };
+  storage.context = { rearm: new Map(), tokens: new Set(), payload };
 
   return {
     job: { ...jobRow(1, true), waitpoint: replay },

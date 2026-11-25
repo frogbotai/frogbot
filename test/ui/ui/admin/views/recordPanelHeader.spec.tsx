@@ -100,7 +100,7 @@ beforeEach(() => {
 describe('record panel header', () => {
   it('links a subtask opened from a view back to its parent task', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn(() =>
+    const fetchMock = vi.fn((_url: string) =>
       Promise.resolve({
         json: () => Promise.resolve({ id: 4, title: 'Design the pricing page' }),
         ok: true,
