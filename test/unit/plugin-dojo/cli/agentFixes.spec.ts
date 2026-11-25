@@ -65,17 +65,46 @@ describe('deployments logs --follow --json on a failed build', () => {
     expect(JSON.parse(result.stdout().join('\n'))).toEqual({
       ok: false,
       code: 'BUILD_FAILED',
-      error: 'Build failed: npm ci failed. Fix it, then frogbot deploy ships it again.',
-      deploymentId: '7',
+      error: 'Build failed: npm ci failed\nFix it, then frogbot deploy ships it again.',
+      deploymentId: 7,
+    });
+  });
+
+  it('keeps the build’s failing tail in the one value, as deploy does', async () => {
+    const { dojo, run } = await setup();
+
+    dojo.build = {
+      lines: ['step 1', 'Error: Cannot find module x'],
+      status: 'failed',
+      error: 'npm ci failed',
+      tail: ['Error: Cannot find module x'],
+    };
+
+    const result = await run(['deployments', 'logs', '7', '--follow', '--json']);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'BUILD_FAILED',
+      error:
+        'Build failed: npm ci failed\nError: Cannot find module x\nFix it, then frogbot deploy ships it again.',
+      deploymentId: 7,
     });
   });
 });
+
+const asOwner = {
+  'GET /api/members': {
+    body: { docs: [{ id: 'm1', email: 'colby@example.com', role: 'owner', user: 1 }] },
+  },
+};
 
 describe('--purge-trash', () => {
   const trashList = { 'GET /api/apps': { body: { docs: trashed } } };
 
   it('deletes the workspace’s apps in Trash for good, by name, then the workspace', async () => {
     const { dojo, run } = await setup({
+      ...asOwner,
       ...trashList,
       'POST /api/apps/8/delete-permanently': { body: { deleted: true } },
       'POST /api/apps/9/delete-permanently': { body: { deleted: true } },
@@ -109,7 +138,7 @@ describe('--purge-trash', () => {
   });
 
   it('lists the apps it will purge when it asks, and purges nothing on no', async () => {
-    const { dojo, run } = await setup(trashList);
+    const { dojo, run } = await setup({ ...asOwner, ...trashList });
 
     const result = await run(['workspaces', 'delete', 'trend-capital', '--purge-trash'], {
       isTTY: true,
@@ -168,6 +197,7 @@ describe('--purge-trash', () => {
 
   it('names the apps already gone when the purge fails partway', async () => {
     const { run } = await setup({
+      ...asOwner,
       ...trashList,
       'POST /api/apps/8/delete-permanently': { body: { deleted: true } },
       'POST /api/apps/9/delete-permanently': {
@@ -193,6 +223,7 @@ describe('--purge-trash', () => {
 
   it('names what it purged when apps the caller can’t see still block the delete', async () => {
     const { dojo, run } = await setup({
+      ...asOwner,
       ...trashList,
       'POST /api/apps/8/delete-permanently': { body: { deleted: true } },
       'POST /api/apps/9/delete-permanently': { body: { deleted: true } },
@@ -220,6 +251,108 @@ describe('--purge-trash', () => {
       'POST /api/apps/9/delete-permanently',
       'POST /api/workspaces/1/delete',
     ]);
+  });
+
+  it('purges nothing when the caller isn’t the workspace’s Owner', async () => {
+    const { dojo, run } = await setup({
+      'GET /api/members': {
+        body: { docs: [{ id: 'm1', email: 'colby@example.com', role: 'admin', user: 1 }] },
+      },
+      ...trashList,
+    });
+
+    const result = await run([
+      'workspaces',
+      'delete',
+      'trend-capital',
+      '--purge-trash',
+      '--yes',
+      '--json',
+    ]);
+
+    expect(result.code).toBe(2);
+    expect(JSON.parse(result.stdout().join('\n')).error).toBe(
+      "Only trend-capital's Owner can delete it, so nothing was deleted. You are admin.",
+    );
+    expect(changes(dojo)).toEqual([]);
+    expect(dojo.requests.some(({ path }) => path === '/api/apps')).toBe(false);
+  });
+
+  it('purges nothing for the default project, which Dojo never deletes', async () => {
+    const { dojo, run } = await setup({
+      'GET /api/projects': {
+        body: { docs: [{ ...project, id: 'p0', name: 'General', isDefault: true }] },
+      },
+      ...trashList,
+    });
+
+    const result = await run(['projects', 'delete', 'General', '--purge-trash', '--yes', '--json']);
+
+    expect(result.code).toBe(2);
+    expect(JSON.parse(result.stdout().join('\n')).error).toBe(
+      "General is the workspace's default project, which Dojo never deletes, so nothing was deleted.",
+    );
+    expect(changes(dojo)).toEqual([]);
+    expect(dojo.requests.some(({ path }) => path === '/api/apps')).toBe(false);
+  });
+
+  it('names the apps already gone when Dojo refuses the delete after the purge for any reason', async () => {
+    const { run } = await setup({
+      ...asOwner,
+      ...trashList,
+      'POST /api/apps/8/delete-permanently': { body: { deleted: true } },
+      'POST /api/apps/9/delete-permanently': { body: { deleted: true } },
+      'POST /api/workspaces/1/delete': {
+        status: 400,
+        body: { errors: [{ message: 'Type the name.', data: { code: 'name_mismatch' } }] },
+      },
+    });
+
+    const result = await run([
+      'workspaces',
+      'delete',
+      'trend-capital',
+      '--purge-trash',
+      '--yes',
+      '--json',
+    ]);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      code: 'name_mismatch',
+      status: 400,
+      error:
+        "Dojo couldn't delete trend-capital: Type the name. Already deleted for good from Trash: old-crm, leads.",
+    });
+  });
+
+  it('keeps needs: sign-in in --json when the sign-in is lost partway through the purge', async () => {
+    const { run } = await setup({
+      ...asOwner,
+      ...trashList,
+      'POST /api/apps/8/delete-permanently': { body: { deleted: true } },
+      'POST /api/apps/9/delete-permanently': {
+        status: 401,
+        body: { errors: [{ message: 'You are not allowed to perform this action.' }] },
+      },
+    });
+
+    const result = await run([
+      'workspaces',
+      'delete',
+      'trend-capital',
+      '--purge-trash',
+      '--yes',
+      '--json',
+    ]);
+
+    expect(result.code).toBe(3);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'SIGN_IN_REQUIRED',
+      needs: 'sign-in',
+      error: expect.stringContaining('Already deleted for good: old-crm.'),
+    });
   });
 
   it('names --purge-trash when Dojo refuses a workspace delete over its apps', async () => {
