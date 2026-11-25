@@ -1928,14 +1928,34 @@ describe('frogbot sanitize', () => {
       const setupResult = await hooks[0]({ req } as never);
 
       expect(hooks).toHaveLength(3);
-      expect(hooks[1]).toBe(first);
-      expect(hooks[2]).toBe(second);
+
+      if (phase !== 'afterError') {
+        expect(hooks[1]).toBe(first);
+        expect(hooks[2]).toBe(second);
+      }
+
       expect(req).toHaveProperty('frogbot', frogbot);
       expect(setupResult).toBeUndefined();
     }
 
     expect(first).not.toHaveBeenCalled();
     expect(second).not.toHaveBeenCalled();
+  });
+
+  it('wraps collection afterError hooks so their result is passed through', async () => {
+    const appHook = vi.fn(() => ({ status: 418 }));
+    const result = sanitize(
+      makeConfig({
+        collections: [{ slug: 'users', auth: true, fields: [], hooks: { afterError: [appHook] } }],
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const args = { req: {} };
+
+    expect(await users.hooks.afterError[1](args as never)).toEqual({ status: 418 });
+    expect(appHook).toHaveBeenCalledWith(args);
   });
 
   it('leaves afterMe, afterLogout, and afterError unset when no hooks are declared', async () => {
