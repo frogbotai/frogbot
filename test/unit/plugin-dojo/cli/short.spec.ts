@@ -20,16 +20,22 @@ const deploy = (id: number, fields: Record<string, unknown> = {}) => ({
   id,
   status: 'ready',
   runtimeStatus: 'superseded',
-  createdAt: `2026-11-2${id % 10}T00:00:00Z`,
-  liveAt: `2026-11-2${id % 10}T00:01:00Z`,
+  createdAt: `2026-11-20T00:${id}:00Z`,
+  liveAt: `2026-11-20T01:${id}:00Z`,
   ...fields,
 });
 
 async function setup({
   linked = true,
   isTTY = false,
+  app: appFields = {},
   replies = {},
-}: { linked?: boolean; isTTY?: boolean; replies?: Record<string, Reply> } = {}) {
+}: {
+  linked?: boolean;
+  isTTY?: boolean;
+  app?: Record<string, unknown>;
+  replies?: Record<string, Reply>;
+} = {}) {
   const dojo = await startFakeDojo();
   const cwd = await tempDir();
   const env = {
@@ -43,8 +49,8 @@ async function setup({
   dojo.apps.push({ id: 7, name: 'Deals', slug: 'deals', workspace: 1 });
 
   for (const [route, reply] of Object.entries({
-    'GET /api/apps/7/cli': { body: app },
-    'GET /api/apps/deals/cli': { body: app },
+    'GET /api/apps/7/cli': { body: { ...app, ...appFields } },
+    'GET /api/apps/deals/cli': { body: { ...app, ...appFields } },
     ...replies,
   })) {
     dojo.replies.set(route, reply);
@@ -91,7 +97,7 @@ describe("frogbot dojo's daily commands", () => {
         status: 'ready',
         runtimeStatus: 'live',
         failed: false,
-        createdAt: '2026-11-20T00:00:00Z',
+        createdAt: '2026-11-20T00:30:00Z',
         finishedAt: null,
         error: null,
       },
@@ -118,7 +124,7 @@ describe("frogbot dojo's daily commands", () => {
     expect(result.stdout()).toEqual([
       'deals  https://deals.frogbot.app',
       'Status: failed',
-      'Last deploy: 31  failed/superseded  2026-11-21T00:00:00Z',
+      'Last deploy: 31  failed/superseded  2026-11-20T00:31:00Z',
       '[frogbot] pnpm build failed',
       'frogbot dojo logs shows why.',
     ]);
@@ -199,6 +205,53 @@ describe("frogbot dojo's daily commands", () => {
       deploymentId: 33,
     });
     expect(paths(dojo)).toContain('POST /api/apps/7/deployments/28/rollback');
+  });
+
+  it('a second rollback goes further back, not to the build the first one left', async () => {
+    const { dojo, run } = await setup({
+      app: { deployment: 33 },
+      replies: {
+        ...deployments(
+          deploy(33, { runtimeStatus: 'live', rollbackOf: 28 }),
+          deploy(30),
+          deploy(28),
+          deploy(27),
+        ),
+        'POST /api/apps/7/deployments/27/rollback': { status: 201, body: { deploymentId: 34 } },
+      },
+    });
+
+    const result = await run('rollback', '--json');
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ rolledBackTo: '27' });
+    expect(paths(dojo)).toContain('POST /api/apps/7/deployments/27/rollback');
+  });
+
+  it('rollback skips a deployment that went live after the current one', async () => {
+    const { dojo, run } = await setup({
+      replies: {
+        ...deployments(
+          deploy(30, { runtimeStatus: 'live' }),
+          deploy(29, { liveAt: '2026-11-20T01:31:00Z' }),
+          deploy(28),
+        ),
+        'POST /api/apps/7/deployments/28/rollback': { status: 201, body: { deploymentId: 33 } },
+      },
+    });
+
+    expect((await run('rollback')).code).toBe(0);
+    expect(paths(dojo)).toContain('POST /api/apps/7/deployments/28/rollback');
+  });
+
+  it('rollback refuses when the version the current one restored is out of reach', async () => {
+    const { dojo, run } = await setup({
+      app: { deployment: 33 },
+      replies: deployments(deploy(33, { runtimeStatus: 'live', rollbackOf: 5 }), deploy(30)),
+    });
+
+    expect((await run('rollback')).code).toBe(2);
+    expect(paths(dojo).some((path) => path.endsWith('/rollback'))).toBe(false);
   });
 
   it('rollback takes an explicit id', async () => {
