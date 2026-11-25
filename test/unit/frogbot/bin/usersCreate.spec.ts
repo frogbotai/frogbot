@@ -66,7 +66,15 @@ describe('describeDatabase', () => {
     ],
     [
       'postgres://admin:2024/Spring@db.example.com/app',
-      { local: false, label: 'a database URL that could not be read' },
+      { local: false, label: 'postgres://db.example.com/app' },
+    ],
+    [
+      'postgres://admin:4821?Kx@db.example.com/app',
+      { local: false, label: 'postgres://db.example.com/app' },
+    ],
+    [
+      'postgres://admin:9911#Kx@db.example.com:5432/app',
+      { local: false, label: 'postgres://db.example.com:5432/app' },
     ],
     ['not a url', { local: false, label: 'a database URL that could not be read' }],
     [undefined, { local: false, label: "the adapter's database (it doesn't say where)" }],

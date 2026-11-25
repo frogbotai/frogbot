@@ -271,6 +271,24 @@ describe('migrate', () => {
     await expect(migrate(['migrate:nope'])).rejects.toMatchObject({ exitCode: 2 });
   });
 
+  it.each([
+    ['migrate:fresh', '--yse'],
+    ['migrate', '-x'],
+    ['migrate:create', '--bogus=1'],
+  ])(
+    'throws a usage error, exiting 2, without touching the database for `%s %s`',
+    async (...args) => {
+      await expect(migrate(args)).rejects.toMatchObject({ exitCode: 2 });
+
+      expect(mocks.adapter.migrateFresh).not.toHaveBeenCalled();
+      expect(mocks.adapter.migrate).not.toHaveBeenCalled();
+    },
+  );
+
+  it('still accepts `-y` and `--skip-empty`', async () => {
+    await expect(migrate(['migrate:status', '-y', '--skip-empty'])).resolves.toBeDefined();
+  });
+
   describe('migrate:create', () => {
     let directory: string | undefined;
 

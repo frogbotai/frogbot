@@ -524,6 +524,68 @@ describe('frogbot bin', () => {
       ]);
     });
 
+    it.each([
+      ['help', '--json'],
+      ['migrate:status', '--json'],
+      ['generate:types', '--json'],
+    ])("keeps the config's own logs off stdout for `%s %s`", async (...args) => {
+      mocks.findConfigFile.mockReturnValue('/app/frogbot.config.ts');
+
+      mocks.loadConfig.mockImplementation(() => {
+        process.stdout.write('from-config\n');
+        console.log('from-config');
+
+        return Promise.resolve({ cli: { commands: {} } });
+      });
+
+      process.argv = ['node', 'frogbot', ...args];
+
+      const { chunks, error } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(chunks()).toHaveLength(1);
+      expect(JSON.parse(chunks()[0])).toMatchObject({ success: true });
+      expect(error).toHaveBeenCalledWith('from-config');
+    });
+
+    it('lists `--force-accept-warning` in `help --json` for the migrate commands that take it', async () => {
+      process.argv = ['node', 'frogbot', 'help', '--json'];
+
+      const { json } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      const [{ groups }] = json() as [
+        { groups: { commands: { name: string; flags: string[] }[] }[] },
+      ];
+      const listed = new Map(groups.flatMap(({ commands }) => commands.map((c) => [c.name, c])));
+
+      for (const name of ['migrate', 'migrate:create', 'migrate:fresh']) {
+        expect(listed.get(name)?.flags, name).toContain('--force-accept-warning');
+      }
+    });
+
+    it.each(['generate:types', 'generate:importmap'])(
+      'refuses an unknown flag for `%s` with exit 2, without running it',
+      async (command) => {
+        process.argv = ['node', 'frogbot', command, '--bogus', '--json'];
+
+        const { json } = capture();
+
+        await expect(bin()).rejects.toThrow('exit:2');
+
+        expect(mocks.calls).toEqual(['loadEnv']);
+        expect(json()).toEqual([
+          expect.objectContaining({
+            command,
+            success: false,
+            error: expect.objectContaining({ code: 'USAGE_ERROR' }),
+          }),
+        ]);
+      },
+    );
+
     it('leaves `check --json` and `deploy --json` to print their own result', async () => {
       process.argv = ['node', 'frogbot', 'check', '--json'];
 
