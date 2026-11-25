@@ -1,24 +1,16 @@
 import { loadConfig, resolveConfigDir } from '../config/load.js';
 import { writeGeneratedTypes } from '../typegen/index.js';
-import { formatCliError } from './formatCliError.js';
 
-export async function generateTypes(): Promise<void> {
+/** `frogbot generate:types`: writes `frogbot-types.ts`, and resolves to its path and whether it changed. */
+export async function generateTypes(): Promise<{ path: string; changed: boolean }> {
   const cwd = process.cwd();
+  const frogbotConfig = await loadConfig({ cwd, mode: 'codegen' });
+  const { outputPath, changed } = await writeGeneratedTypes(
+    frogbotConfig,
+    resolveConfigDir(cwd) ?? cwd,
+  );
 
-  try {
-    const frogbotConfig = await loadConfig({ cwd, mode: 'codegen' });
-    const { outputPath, changed } = await writeGeneratedTypes(
-      frogbotConfig,
-      resolveConfigDir(cwd) ?? cwd,
-    );
+  console.log(`[frogbot] types ${changed ? 'written to' : 'unchanged at'} ${outputPath}`);
 
-    if (changed) {
-      console.log(`[frogbot] types written to ${outputPath}`);
-    } else {
-      console.log(`[frogbot] types unchanged at ${outputPath}`);
-    }
-  } catch (err) {
-    console.error(formatCliError(err));
-    process.exit(1);
-  }
+  return { path: outputPath, changed };
 }

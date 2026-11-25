@@ -121,10 +121,11 @@ adapter.
 | `--name <name>` | `migrate:create` | Name of the migration file. Same as the positional `name`, and takes precedence over it. Also accepts `--name=<name>`. |
 | `--file <path>` | `migrate:create` | Creates the migration from a predefined migration instead of the schema: a module path or package export that provides `upSQL`, `downSQL`, and `imports`. |
 | `--skip-empty` | `migrate:create` | On Postgres and SQLite, exits without creating a file when no schema changes are detected, instead of asking whether to create a blank one. On MongoDB, which doesn't detect schema changes, no file is written. |
-| `--force-accept-warning` | `migrate`, `migrate:create`, `migrate:fresh` | Answers yes to confirmation prompts. `migrate` applies pending migrations to a database that dev-mode schema push changed, `migrate:fresh` drops the database without asking, and on Postgres and SQLite `migrate:create` writes a blank migration when there are no changes. |
+| `--yes` | `migrate`, `migrate:create`, `migrate:fresh` | Answers yes to confirmation prompts. `migrate` applies pending migrations to a database that dev-mode schema push changed, `migrate:fresh` drops the database without asking, and on Postgres and SQLite `migrate:create` writes a blank migration when there are no changes. Without a terminal, a command that would ask stops with exit code `2` and names `--yes` instead of waiting. `--force-accept-warning` does the same. |
+| `--json` | every `migrate` command | Prints one result object on stdout and sends logs to stderr. See [JSON output](/getting-started/cli#json-output). |
 | `--help`, `-h` | Every command | Prints usage. |
 
-When `frogbot migrate` runs without an interactive terminal, such as in CI, it fails if Drizzle's development push has marked the database with a `batch -1` row in `payload_migrations` (on Postgres, or on a SQLite database an earlier FrogBot pushed). Run `frogbot migrate --force-accept-warning` to apply migrations anyway, or delete that row if the database already matches your migrations. FrogBot's [SQLite schema sync](/database/sqlite#prototyping-in-development-mode) leaves no such mark.
+When `frogbot migrate` runs without an interactive terminal, such as in CI, it stops with exit code `2` if Drizzle's development push has marked the database with a `batch -1` row in `payload_migrations` (on Postgres, or on a SQLite database an earlier FrogBot pushed). Run `frogbot migrate --yes` to apply migrations anyway, or delete that row if the database already matches your migrations. FrogBot's [SQLite schema sync](/database/sqlite#prototyping-in-development-mode) leaves no such mark.
 
 ### Migrate
 
@@ -134,7 +135,7 @@ The `migrate` command will run any migrations that have not yet been run.
 npx frogbot migrate
 ```
 
-See the [flags table](#commands) for `--force-accept-warning`.
+See the [flags table](#commands) for `--yes`.
 
 ### Create
 
@@ -147,7 +148,7 @@ npx frogbot migrate:create optional-name-here
 
 The file imports its types and `sql` from your adapter, and its `up` and `down` take `{ db, req }` (`{ req }` on MongoDB, with `const { db, session } = await migrationDatabase(req)`).
 
-See the [flags table](#commands) for `--name`, `--file`, `--skip-empty`, and `--force-accept-warning`.
+See the [flags table](#commands) for `--name`, `--file`, `--skip-empty`, and `--yes`.
 
 #### Upgrading from earlier FrogBot versions
 

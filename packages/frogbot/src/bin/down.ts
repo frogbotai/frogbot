@@ -2,6 +2,7 @@ import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { downUsage } from './help.js';
+import { usageError } from './json.js';
 import { uninstallLaunchAgent } from './service/launchAgent.js';
 import { appDir, appPaths, registrationFile, serviceId } from './service/paths.js';
 import { isAlive, owns, readRegistration, removeRegistration } from './service/registration.js';
@@ -16,7 +17,7 @@ type Deps = { uninstall?: typeof uninstallLaunchAgent; log?: (line: string) => v
 export async function down(
   args: string[] = [],
   { uninstall = uninstallLaunchAgent, log = console.log }: Deps = {},
-): Promise<void> {
+): Promise<{ folder: string; wasRunning: boolean } | void> {
   const option = args.find((arg) => arg.startsWith('-'));
 
   if (option === '--help' || option === '-h') {
@@ -26,7 +27,7 @@ export async function down(
   }
 
   if (option || args.length > 1) {
-    throw new Error(
+    throw usageError(
       `[frogbot] ${option ? `unknown option ${option}` : 'too many folders'}; ${downUsage.replace('[frogbot] ', '')}`,
     );
   }
@@ -48,7 +49,7 @@ export async function down(
         : `[frogbot] ${dir} is not running`,
     );
 
-    return;
+    return { folder: dir, wasRunning: false };
   }
 
   if (owns(readRegistration(file), found)) await stopProcess(found.pid);
@@ -57,4 +58,6 @@ export async function down(
   rmSync(appPaths(dir).builds, { recursive: true, force: true });
 
   log(`[frogbot] stopped ${dir}`);
+
+  return { folder: dir, wasRunning: true };
 }

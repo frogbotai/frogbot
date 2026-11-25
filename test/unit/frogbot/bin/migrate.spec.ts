@@ -67,7 +67,6 @@ describe('migrate', () => {
   const migrating = process.env.PAYLOAD_MIGRATING;
   const stdinDescriptor = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
   let log: ReturnType<typeof vi.spyOn>;
-  let error: ReturnType<typeof vi.spyOn>;
 
   const setTTY = (value: boolean | undefined) => {
     Object.defineProperty(process.stdin, 'isTTY', { configurable: true, value });
@@ -77,7 +76,7 @@ describe('migrate', () => {
     vi.clearAllMocks();
     mocks.find.mockResolvedValue({ docs: [] });
     log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     vi.spyOn(process, 'exit').mockImplementation((code) => {
       throw new Error(`exit:${code}`);
@@ -94,22 +93,25 @@ describe('migrate', () => {
     vi.restoreAllMocks();
   });
 
-  describe('success path exits 0', () => {
+  describe('success path', () => {
     for (const [command, method] of COMMAND_TABLE) {
-      it(`\`${command}\` runs the adapter, logs completion, and exits 0`, async () => {
-        await expect(migrate([command])).rejects.toThrow('exit:0');
+      it(`\`${command}\` runs the adapter and logs completion`, async () => {
+        await expect(migrate([command])).resolves.toBeDefined();
         expect(mocks.adapter[method]).toHaveBeenCalledTimes(1);
         expect(log).toHaveBeenCalledWith(`[frogbot] ${command} complete.`);
       });
     }
   });
 
-  describe('failure path exits 1', () => {
-    it('logs the failure and exits 1 when the adapter command rejects', async () => {
+  describe('failure path', () => {
+    it('throws the failure, exiting 1, when the adapter command rejects', async () => {
       mocks.adapter.migrateStatus.mockRejectedValueOnce(new Error('boom'));
 
-      await expect(migrate(['migrate:status'])).rejects.toThrow('exit:1');
-      expect(error).toHaveBeenCalledWith('[frogbot] migrate:status failed: boom');
+      await expect(migrate(['migrate:status'])).rejects.toMatchObject({
+        message: '[frogbot] migrate:status failed: boom',
+        exitCode: 1,
+        code: 'MIGRATE_FAILED',
+      });
     });
 
     it('prints the driver cause under a migrate failure', async () => {
@@ -119,8 +121,8 @@ describe('migrate', () => {
         }),
       );
 
-      await expect(migrate(['migrate:status'])).rejects.toThrow('exit:1');
-      expect(error).toHaveBeenCalledWith(
+      await expect(migrate(['migrate:status'])).rejects.toHaveProperty(
+        'message',
         expect.stringMatching(
           /^\[frogbot\] migrate:status failed: Failed query: select \* from "posts"\n {2}Caused by: Error: relation "posts" does not exist/,
         ),
@@ -129,11 +131,17 @@ describe('migrate', () => {
   });
 
   describe('dev-push marker pre-check', () => {
-    it('fails fast without migrating when a marker row exists and stdin is not a TTY', async () => {
+    it('fails fast with exit 2 without migrating when a marker row exists and stdin is not a TTY', async () => {
       mocks.find.mockResolvedValue({ docs: [{ batch: -1 }] });
       setTTY(undefined);
 
-      await expect(migrate(['migrate'])).rejects.toThrow('exit:1');
+      await expect(migrate(['migrate'])).rejects.toMatchObject({
+        exitCode: 2,
+        code: 'CONFIRM_REQUIRED',
+        message:
+          '[frogbot] migrate failed: payload_migrations has a dev-mode row (batch -1): this database was changed by schema push in dev mode.\n' +
+          'Run `frogbot migrate --yes` to apply migrations anyway, or delete that row if the database already matches your migrations.',
+      });
       expect(mocks.find).toHaveBeenCalledWith({
         collection: 'payload-migrations',
         limit: 1,
@@ -141,17 +149,13 @@ describe('migrate', () => {
         where: { batch: { equals: -1 } },
       });
       expect(mocks.adapter.migrate).not.toHaveBeenCalled();
-      expect(error).toHaveBeenCalledWith(
-        '[frogbot] migrate failed: payload_migrations has a dev-mode row (batch -1): this database was changed by schema push in dev mode.\n' +
-          'Run `frogbot migrate --force-accept-warning` to apply migrations anyway, or delete that row if the database already matches your migrations.',
-      );
     });
 
     it('migrates without the pre-check when --force-accept-warning is set and stdin is not a TTY', async () => {
       mocks.find.mockResolvedValue({ docs: [{ batch: -1 }] });
       setTTY(undefined);
 
-      await expect(migrate(['migrate', '--force-accept-warning'])).rejects.toThrow('exit:0');
+      await expect(migrate(['migrate', '--force-accept-warning'])).resolves.toBeDefined();
       expect(mocks.find).not.toHaveBeenCalled();
       expect(mocks.adapter.migrate).toHaveBeenCalledWith({ forceAcceptWarning: true });
     });
@@ -160,14 +164,14 @@ describe('migrate', () => {
       mocks.find.mockResolvedValue({ docs: [{ batch: -1 }] });
       setTTY(true);
 
-      await expect(migrate(['migrate', '--force-accept-warning'])).rejects.toThrow('exit:0');
+      await expect(migrate(['migrate', '--force-accept-warning'])).resolves.toBeDefined();
       expect(mocks.adapter.migrate).toHaveBeenCalledWith({ forceAcceptWarning: true });
     });
 
     it('migrates normally with --force-accept-warning and no marker row', async () => {
       setTTY(undefined);
 
-      await expect(migrate(['migrate', '--force-accept-warning'])).rejects.toThrow('exit:0');
+      await expect(migrate(['migrate', '--yes'])).resolves.toBeDefined();
       expect(mocks.adapter.migrate).toHaveBeenCalledWith({ forceAcceptWarning: true });
     });
 
@@ -175,15 +179,15 @@ describe('migrate', () => {
       mocks.find.mockResolvedValue({ docs: [{ batch: -1 }] });
       setTTY(true);
 
-      await expect(migrate(['migrate'])).rejects.toThrow('exit:0');
-      expect(mocks.adapter.migrate).toHaveBeenCalledWith({});
+      await expect(migrate(['migrate'])).resolves.toBeDefined();
+      expect(mocks.adapter.migrate).toHaveBeenCalledWith({ shouldPrompt: true });
     });
 
     it('proceeds when the marker query itself fails', async () => {
       mocks.find.mockRejectedValue(new Error('relation does not exist'));
       setTTY(undefined);
 
-      await expect(migrate(['migrate'])).rejects.toThrow('exit:0');
+      await expect(migrate(['migrate'])).resolves.toBeDefined();
       expect(mocks.adapter.migrate).toHaveBeenCalledTimes(1);
     });
   });
@@ -195,8 +199,76 @@ describe('migrate', () => {
       rolledBack: [],
     });
 
-    await expect(migrate(['migrate:refresh'])).rejects.toThrow('exit:1');
-    expect(String(error.mock.calls[0]?.[0])).toContain('dev-mode row');
+    await expect(migrate(['migrate:refresh'])).rejects.toMatchObject({
+      exitCode: 2,
+      message: expect.stringContaining('dev-mode row'),
+    });
+  });
+
+  describe('without a terminal', () => {
+    beforeEach(() => setTTY(undefined));
+
+    it.each([
+      ['migrate', 'migrate', 'apply migrations over dev-mode changes'],
+      ['migrate:fresh', 'migrateFresh', 'drop every table'],
+    ] as const)(
+      'stops `%s` with exit 2 naming --yes instead of asking',
+      async (command, method, what) => {
+        mocks.adapter[method].mockResolvedValueOnce({
+          cancelled: true,
+          migrated: [],
+          rolledBack: [],
+        } as never);
+
+        await expect(migrate([command])).rejects.toMatchObject({
+          exitCode: 2,
+          code: 'CONFIRM_REQUIRED',
+          message: `[frogbot] ${command} would ask whether to ${what}, and there's no terminal to answer. Run \`frogbot ${command} --yes\` to go ahead.`,
+        });
+        expect(mocks.adapter[method]).toHaveBeenCalledWith(
+          expect.objectContaining({ shouldPrompt: false }),
+        );
+      },
+    );
+
+    it('stops migrate:create of an empty migration with exit 2 naming --yes', async () => {
+      mocks.adapter.createMigration.mockResolvedValueOnce({ created: false });
+
+      await expect(migrate(['migrate:create', 'empty'])).rejects.toMatchObject({
+        exitCode: 2,
+        code: 'CONFIRM_REQUIRED',
+      });
+      expect(mocks.adapter.createMigration).toHaveBeenCalledWith(
+        expect.objectContaining({ shouldPrompt: false }),
+      );
+    });
+
+    it('drops tables with --yes, as with --force-accept-warning', async () => {
+      await expect(migrate(['migrate:fresh', '--yes'])).resolves.toBeDefined();
+
+      expect(mocks.adapter.migrateFresh).toHaveBeenCalledWith({
+        forceAcceptWarning: true,
+        shouldPrompt: false,
+      });
+    });
+  });
+
+  it('resolves to the migrations migrate:status found, for --json', async () => {
+    const status = [{ Name: '20260101_000000_init', Batch: 1, Ran: 'Yes' }];
+
+    mocks.adapter.migrateStatus.mockResolvedValueOnce(status as never);
+
+    await expect(migrate(['migrate:status'])).resolves.toEqual({ migrations: status });
+  });
+
+  it('resolves to what migrate applied, for --json', async () => {
+    mocks.adapter.migrate.mockResolvedValueOnce({ migrated: ['a'], rolledBack: [] } as never);
+
+    await expect(migrate(['migrate'])).resolves.toEqual({ migrated: ['a'], rolledBack: [] });
+  });
+
+  it('throws a usage error, exiting 2, for an unknown migrate command', async () => {
+    await expect(migrate(['migrate:nope'])).rejects.toMatchObject({ exitCode: 2 });
   });
 
   describe('migrate:create', () => {
@@ -221,7 +293,7 @@ describe('migrate', () => {
         return { created: true, path: file };
       });
 
-      await expect(migrate(['migrate:create', 'init'])).rejects.toThrow('exit:0');
+      await expect(migrate(['migrate:create', 'init'])).resolves.toEqual({ path: file });
       expect(await readFile(file, 'utf8')).toBe(
         "import { MigrateUpArgs, MigrateDownArgs, sql } from '@frogbotai/db-postgres'\n\nexport async function up({ db, req }: MigrateUpArgs): Promise<void> {\n}\n",
       );
@@ -231,16 +303,15 @@ describe('migrate', () => {
       ['--file', '@payloadcms/db-postgres/relationships-v2-v3'],
       ['--name', '@payloadcms/db-mongodb/relationships-v2-v3'],
     ])('refuses a predefined migration from @payloadcms through %s', async (flag, file) => {
-      await expect(migrate(['migrate:create', flag, file])).rejects.toThrow('exit:1');
+      await expect(migrate(['migrate:create', flag, file])).rejects.toThrow(`can't use ${file}`);
 
       expect(mocks.adapter.createMigration).not.toHaveBeenCalled();
-      expect(String(error.mock.calls[0]?.[0])).toContain(`can't use ${file}`);
     });
 
     it('creates from a FrogBot predefined migration', async () => {
       await expect(
         migrate(['migrate:create', 'upgrade', '--file', 'frogbot/migrations/upgrade-0.34']),
-      ).rejects.toThrow('exit:0');
+      ).resolves.toBeDefined();
 
       expect(mocks.adapter.createMigration).toHaveBeenCalledWith(
         expect.objectContaining({ file: 'frogbot/migrations/upgrade-0.34' }),

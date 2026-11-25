@@ -51,7 +51,10 @@ describe('frogbot down', () => {
   });
 
   it('prints "not running" for an app that is not up', async () => {
-    await down([dir], { log, uninstall });
+    await expect(down([dir], { log, uninstall })).resolves.toEqual({
+      folder: dir,
+      wasRunning: false,
+    });
 
     expect(lines).toEqual([`[frogbot] ${dir} is not running`]);
   });
@@ -78,7 +81,10 @@ describe('frogbot down', () => {
     writeRegistration(file, registration(child.pid!));
     mkdirSync(join(dir, '.frogbot', 'builds', 'a'), { recursive: true });
 
-    await down([dir], { log, uninstall });
+    await expect(down([dir], { log, uninstall })).resolves.toEqual({
+      folder: dir,
+      wasRunning: true,
+    });
 
     expect(isAlive(child.pid)).toBe(false);
     expect(readRegistration(file)).toBeUndefined();
@@ -89,9 +95,10 @@ describe('frogbot down', () => {
   it('rejects an option instead of reading it as a folder', async () => {
     const untouched = vi.fn(() => Promise.resolve(false));
 
-    await expect(down(['--bogus'], { log, uninstall: untouched })).rejects.toThrow(
-      '[frogbot] unknown option --bogus; usage: frogbot down [folder]',
-    );
+    await expect(down(['--bogus'], { log, uninstall: untouched })).rejects.toMatchObject({
+      exitCode: 2,
+      message: '[frogbot] unknown option --bogus; usage: frogbot down [folder] [--json]',
+    });
     expect(untouched).not.toHaveBeenCalled();
   });
 
@@ -115,7 +122,11 @@ describe('frogbot down', () => {
     expect(isAlive(process.pid)).toBe(true);
 
     writeRegistration(file, { ...registration(2 ** 22 + 12_345), serverPid: child.pid });
-    await down([dir], { log, uninstall });
+
+    await expect(down([dir], { log, uninstall })).resolves.toEqual({
+      folder: dir,
+      wasRunning: false,
+    });
 
     expect(isAlive(child.pid)).toBe(false);
     expect(readRegistration(file)).toBeUndefined();

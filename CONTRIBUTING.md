@@ -189,6 +189,12 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 - **Keep `req.frogbot` structural.** `FrogBot` and every class reachable from its public API (`Connections`, `ConnectionStore`, `TriggerSubscriptions`, piece instances) have no `private`, `protected`, `#private` or symbol-keyed members, or two installed copies of `frogbot` stop being compatible. Keep internal state in a module-level `WeakMap`; `pnpm --filter frogbot typecheck duplicate` enforces this.
 - **User-facing copy says FrogBot.** Docs, templates, examples, READMEs and scaffolded files describe everything as FrogBot behavior (`pnpm check branding`). A config object, option set or props type documented in `docs/` gets one table of every field its type accepts, on one page that others link to (`pnpm check option-tables`).
 
+### CLI
+
+- **A small core.** A new top-level `frogbot` command or `frogbot dojo` verb needs a daily-use reason: something people or agents run every day, such as `deploy`, `logs` or `status`. Admin-only Dojo actions (handovers, Trash, project sharing, key rotation, leaving a workspace, templates) belong in MCP and the API, not new CLI verbs. Matching an MCP tool is not a reason.
+- **Agents first.** Every command that finishes takes `--json` and prints exactly one value on stdout, failures included (`bin/json.ts`); it uses the exit codes `0` success, `1` failure, `2` usage, `3` sign-in, `4` payment; its errors name the next CLI step, never a web page or "ask the person"; and anything it would ask takes `--yes`, so it never waits without a terminal.
+- **Listed in help.** A built-in gets a group, summary and usage in `bin/help.ts`; a plugin command sets `summary`, `usage` and `group` on its handler.
+
 ### UI
 
 - **Firmware is the spec.** Firmware (`~/code/firmware`) is FrogBot's previous iteration. Before building an admin or UI surface, find its Firmware implementation (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`) and follow it; port, don't redesign. For example, the api-keys UI is one button in the collection list view that opens a modal (create, then a one-time key reveal), as in `apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`. New UI work trends toward the Firmware desktop look, never away.

@@ -10,8 +10,14 @@ import { withDojoJobs } from './jobs.js';
 import { withDojoSignIn } from './signIn.js';
 import { withDojoStorage } from './storage.js';
 
-const dojoCommand: CLICommand = async ({ args }) =>
-  (await import('./cli/commands.js')).runDojoCommand(args, 'frogbot dojo');
+const dojoCommand: CLICommand = Object.assign(
+  async ({ args }: { args: string[] }) =>
+    (await import('./cli/commands.js')).runDojoCommand(args, 'frogbot dojo'),
+  {
+    group: 'Dojo',
+    summary: 'Sign in, and manage apps, env, domains, logs, keys and billing on Dojo',
+  },
+);
 
 export type DojoPluginOptions = {
   /** Adds the "Made with FrogBot" badge to every admin page on Dojo. Default `true`. */

@@ -4,6 +4,7 @@ import { BasePayload } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { jobsRun } from '../../../../packages/frogbot/src/bin/jobsRun.js';
+import { CliError } from '../../../../packages/frogbot/src/bin/json.js';
 import type { FrogBotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
 import { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
@@ -25,6 +26,13 @@ vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
   createPayloadRequest: vi.fn(({ req, payload }) => Promise.resolve({ ...req, payload })),
 }));
+
+function outcome(run: Promise<void>): Promise<unknown> {
+  return run.then(
+    () => new Error('exit:0'),
+    (error: unknown) => (error instanceof CliError ? new Error(`exit:${error.exitCode}`) : error),
+  );
+}
 
 function deferred() {
   let resolve!: () => void;
@@ -65,7 +73,7 @@ describe('jobs:run lifecycle', () => {
   let listeners: { SIGINT: number; SIGTERM: number };
 
   async function start(args = ['--cron', '* * * * * *']) {
-    worker = jobsRun(args).catch((error: unknown) => error);
+    worker = outcome(jobsRun(args));
 
     await vi.waitFor(() => expect(onInit).toHaveBeenCalledOnce());
 
@@ -318,7 +326,6 @@ describe('jobs:run lifecycle', () => {
 
     expect(await worker).toEqual(new Error('exit:0'));
     expect(mocks.payload.destroy).toHaveBeenCalledOnce();
-    expect(exit).toHaveBeenCalledOnce();
   });
 
   it('drains scheduling on signal without starting another batch', async () => {
@@ -363,7 +370,7 @@ describe('jobs:run lifecycle', () => {
 
     fail(failure);
 
-    worker = jobsRun([]).catch((error: unknown) => error);
+    worker = outcome(jobsRun([]));
 
     expect(await worker).toEqual(new Error('exit:1'));
     expect(error).toHaveBeenCalledWith(`[frogbot] jobs:run failed: ${phase} failure`);
@@ -376,7 +383,7 @@ describe('jobs:run lifecycle', () => {
 
     mocks.payload.init.mockImplementation(() => initializing.promise);
 
-    worker = jobsRun([]).catch((error: unknown) => error);
+    worker = outcome(jobsRun([]));
 
     await vi.waitFor(() => expect(mocks.payload.init).toHaveBeenCalledOnce());
 
@@ -396,7 +403,7 @@ describe('jobs:run lifecycle', () => {
 
     onInit.mockImplementation(() => initializing.promise);
 
-    worker = jobsRun(['--cron=* * * * * *']).catch((error: unknown) => error);
+    worker = outcome(jobsRun(['--cron=* * * * * *']));
 
     await vi.waitFor(() => expect(onInit).toHaveBeenCalledOnce());
 
@@ -422,7 +429,7 @@ describe('jobs:run lifecycle', () => {
       return config;
     });
 
-    worker = jobsRun([]).catch((error: unknown) => error);
+    worker = outcome(jobsRun([]));
     process.emit('SIGTERM');
     loading.resolve();
 
@@ -474,7 +481,7 @@ describe('jobs:run lifecycle', () => {
     async (arg) => {
       const code = arg === '--help' ? 0 : 2;
 
-      await expect(jobsRun([arg])).rejects.toThrow(`exit:${code}`);
+      expect(await outcome(jobsRun([arg]))).toEqual(new Error(`exit:${code}`));
 
       expect(mocks.loadConfig).not.toHaveBeenCalled();
       expect(mocks.payload.init).not.toHaveBeenCalled();
@@ -483,7 +490,7 @@ describe('jobs:run lifecycle', () => {
   );
 
   it('prints the Croner reason for an invalid --cron', async () => {
-    await expect(jobsRun(['--cron=bogus'])).rejects.toThrow('exit:2');
+    expect(await outcome(jobsRun(['--cron=bogus']))).toEqual(new Error('exit:2'));
 
     const [[message], [usage]] = error.mock.calls as [[string], [string]];
 

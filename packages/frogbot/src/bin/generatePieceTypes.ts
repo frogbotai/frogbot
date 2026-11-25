@@ -6,8 +6,11 @@ import { parseArgs } from 'node:util';
 import { format, resolveConfig } from 'prettier';
 
 import { generatePieceTypes } from '../pieces/generateTypes.js';
+import { CliError, usageError } from './json.js';
 
-export async function generatePieceTypesCommand(args: string[]): Promise<void> {
+export async function generatePieceTypesCommand(
+  args: string[],
+): Promise<{ path: string; changed: boolean }> {
   const { positionals, values } = parseArgs({
     args,
     allowPositionals: true,
@@ -15,8 +18,8 @@ export async function generatePieceTypesCommand(args: string[]): Promise<void> {
   });
 
   if (positionals.length !== 1 || !values.export || !values.output) {
-    throw new Error(
-      '[frogbot] usage: frogbot generate:piece-types <module> --export <factory> --output <file> [--check]',
+    throw usageError(
+      '[frogbot] usage: frogbot generate:piece-types <module> --export <factory> --output <file> [--check] [--json]',
     );
   }
 
@@ -33,8 +36,13 @@ export async function generatePieceTypesCommand(args: string[]): Promise<void> {
     return undefined;
   });
 
-  if (existing === content) return;
-  if (values.check) throw new Error(`[frogbot] Piece types are stale: ${output}`);
+  if (existing === content) return { path: output, changed: false };
+  if (values.check) {
+    throw new CliError(`[frogbot] Piece types are stale: ${output}`, { code: 'TYPES_STALE' });
+  }
+
   await writeFile(output, content);
   console.log(`[frogbot] Piece types written to ${output}`);
+
+  return { path: output, changed: true };
 }

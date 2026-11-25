@@ -73,13 +73,49 @@ describe('frogbot up', () => {
       autostart: false,
     });
 
-    await up([], { log, spawnSupervisor });
+    await expect(up([], { log, spawnSupervisor })).resolves.toEqual({
+      folder: dir,
+      url: 'http://127.0.0.1:3007',
+      mode: 'production',
+      state: 'running',
+      log: join(dir, '.frogbot', 'service.log'),
+    });
 
     expect(lines).toEqual([
       `[frogbot] ${dir} is already up at http://127.0.0.1:3007, watching for changes`,
     ]);
     expect(spawnSupervisor).not.toHaveBeenCalled();
   });
+
+  it('exits 1 for an app already up whose build failed, naming its log', async () => {
+    writeRegistration(registrationFile(serviceId(dir)), {
+      id: serviceId(dir),
+      dir,
+      url: 'http://127.0.0.1:3007',
+      port: 3007,
+      pid: process.pid,
+      frogbot: '0.38.0',
+      startedAt: new Date().toISOString(),
+      state: 'build failed',
+      lastError: 'Type error: nope',
+      log: join(dir, '.frogbot', 'service.log'),
+      autostart: false,
+    });
+
+    await expect(up([], { log, spawnSupervisor: vi.fn() })).rejects.toMatchObject({
+      exitCode: 1,
+      code: 'BUILD_FAILED',
+      message: `[frogbot] ${dir} is already up at http://127.0.0.1:3007, but its build failed; it rebuilds on your next change\n[frogbot] last error: Type error: nope\n[frogbot] log: ${join(dir, '.frogbot', 'service.log')}`,
+    });
+    expect(lines).toEqual([]);
+  });
+
+  it.each([['--nope'], ['--dev', '--autostart']])(
+    'throws a usage error, exiting 2, for %j',
+    (...args) => {
+      expect(() => parseUpArgs(args)).toThrow(expect.objectContaining({ exitCode: 2 }));
+    },
+  );
 
   it('exits 1 for --autostart on an app already up without it', async () => {
     writeRegistration(registrationFile(serviceId(dir)), {

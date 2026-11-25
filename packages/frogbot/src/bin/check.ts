@@ -7,6 +7,7 @@ import { loadConfig, resolveConfigDir } from '../config/load.js';
 import { writeGeneratedTypes } from '../typegen/index.js';
 import { formatCliError } from './formatCliError.js';
 import { generateImportMap } from './generateImportMap/index.js';
+import { logToStderr } from './json.js';
 import {
   checkNextAdvisories,
   describeNextAdvisories,
@@ -110,14 +111,6 @@ async function nextAdvisoryWarnings(
   } catch {
     return [];
   }
-}
-
-function logToStderr(): () => void {
-  const { debug, info, log } = console;
-
-  console.log = console.info = console.debug = console.error;
-
-  return () => Object.assign(console, { debug, info, log });
 }
 
 /** Options for {@link check}; tests pass their own `fetch` for npm. */

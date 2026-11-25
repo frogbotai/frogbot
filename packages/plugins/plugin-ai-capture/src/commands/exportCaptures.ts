@@ -31,7 +31,7 @@ export function exportCapturesCommand({
   collectionSlug: string;
   storage: CaptureStorage;
 }): CLICommand {
-  return async ({ args, getFrogBot }) => {
+  const run: CLICommand = async ({ args, getFrogBot }) => {
     const parsed = parseExportCapturesArgs(args);
     const frogbot = await getFrogBot({ disableOnInit: true });
     const destination = parsed.output ? createWriteStream(parsed.output) : undefined;
@@ -65,4 +65,11 @@ export function exportCapturesCommand({
       );
     }
   };
+
+  return Object.assign(run, {
+    group: 'AI',
+    summary: 'Export captured AI calls as JSONL',
+    usage:
+      'export:captures [--output <file>] [--user <id>] [--api-key <id>] [--from <date>] [--to <date>] [--operation <name>]',
+  });
 }

@@ -17,6 +17,7 @@ options:
   --queue <name>        queue to process and schedule (default: default)
   --all-queues         process and schedule all queues; excludes --queue
   --handle-schedules   enqueue scheduled jobs before running each batch (default: off)
+  --json               one result object on stdout when the worker stops
   --help, -h           show this help
 
 The first tick runs at the next cron match, in the process's local timezone.

@@ -71,6 +71,15 @@ describe('checkDocsReferences', () => {
     ]);
   });
 
+  it.each([
+    'npx frogbot',
+    'npx frogbot --help',
+    'npx frogbot help --json',
+    'npx frogbot --version',
+  ])('accepts the front door, `%s`', (line) => {
+    expect(check(fence(line))).toEqual([]);
+  });
+
   it('reports an unexported core subpath', () => {
     const problems = check(fence("import { a } from 'frogbot/shared'", 'ts'));
 

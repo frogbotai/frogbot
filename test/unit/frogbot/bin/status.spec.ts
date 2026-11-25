@@ -124,8 +124,50 @@ describe('frogbot status', () => {
     );
   });
 
-  it('prints its usage for any argument', () => {
-    expect(() => status(['--json'])).toThrow('[frogbot] usage: frogbot status');
+  it('throws its usage, exiting 2, for any argument', () => {
+    expect(() => status(['all'])).toThrow(
+      expect.objectContaining({ exitCode: 2, message: '[frogbot] usage: frogbot status [--json]' }),
+    );
+  });
+
+  it('resolves to every app for --json, with the advisory of one that is up', () => {
+    const advisory = 'next 16.4.2 has 1 security advisory; run `pnpm add next@16.4.6`';
+
+    writeRegistration(
+      registrationFile('one'),
+      registration({
+        state: 'build failed',
+        lastError: 'build failed (exit 1)\nType error: x',
+        advisory,
+      }),
+    );
+
+    writeRegistration(
+      registrationFile('two'),
+      registration({
+        id: 'two',
+        dir: '/apps/two',
+        url: 'http://127.0.0.1:3001',
+        pid: 2 ** 22 + 12_345,
+      }),
+    );
+
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    expect(status()).toEqual({
+      apps: [
+        {
+          folder: '/apps/one',
+          url: 'http://127.0.0.1:3000',
+          mode: 'production',
+          state: 'build failed',
+          uptime: expect.any(String),
+          lastError: 'Type error: x',
+          advisory,
+        },
+        { folder: '/apps/two', url: 'http://127.0.0.1:3001', mode: 'production', state: 'stopped' },
+      ],
+    });
   });
 
   it("says when a stopped app's server is still running", () => {

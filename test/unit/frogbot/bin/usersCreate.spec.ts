@@ -103,44 +103,37 @@ describe('users', () => {
     return { _internal: { payloadConfig: Promise.resolve(payloadConfig) } } as never;
   }
 
-  it('prints usage and returns 2 for bad arguments', async () => {
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    await expect(users(['create'], {})).resolves.toBe(2);
-
-    expect(error.mock.calls.flat()).toEqual([
-      '[frogbot] users: give the email of the user to create.',
-      '[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes]',
-    ]);
+  it('throws a usage error, exiting 2, with the usage for bad arguments', async () => {
+    await expect(users(['create'], {})).rejects.toMatchObject({
+      exitCode: 2,
+      code: 'USAGE_ERROR',
+      message:
+        'users: give the email of the user to create.\n[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]',
+    });
   });
 
   it('refuses a collection without auth before touching the database', async () => {
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
     await expect(
       users(['create', 'a@b.co', '--collection', 'posts'], { config: app('file:./x.db') }),
-    ).resolves.toBe(1);
-
-    expect(error).toHaveBeenCalledWith(
-      '[frogbot] users create: "posts" isn\'t an auth collection in this app.',
-    );
+    ).rejects.toMatchObject({
+      exitCode: 1,
+      code: 'NOT_AUTH_COLLECTION',
+      message: '[frogbot] users create: "posts" isn\'t an auth collection in this app.',
+    });
   });
 
   it('refuses a collection that signs in without a password, and prints none', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     await expect(
       users(['create', 'a@b.co', '--collection', 'sso'], { config: app('file:./x.db') }),
-    ).resolves.toBe(1);
+    ).rejects.toThrow('"sso" signs in without a password');
 
     expect(log.mock.calls.flat().join('\n')).not.toContain('Password:');
-    expect(error.mock.calls.flat().join('\n')).toContain('"sso" signs in without a password');
   });
 
   it('asks for --yes on an embedded replica that syncs to a remote libsql database', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const db = sqliteAdapter({
       client: {
         url: 'file:./replica.db',
@@ -149,29 +142,28 @@ describe('users', () => {
       },
     });
 
-    await expect(users(['create', 'a@b.co'], { config: app(db) })).resolves.toBe(1);
+    const failure = await users(['create', 'a@b.co'], { config: app(db) }).catch((e: Error) => e);
 
     expect(log.mock.calls.flat()).toEqual([
       '[frogbot] users create: database file:./replica.db, a replica of libsql://prod-org.turso.io',
     ]);
-    expect(error.mock.calls.flat().join('\n')).toContain('Run again with --yes');
-    expect([...log.mock.calls, ...error.mock.calls].flat().join('\n')).not.toContain(
+    expect(failure).toMatchObject({ code: 'CONFIRM_REQUIRED', exitCode: 1 });
+    expect(String(failure)).toContain('Run again with --yes');
+    expect([...log.mock.calls.flat(), String(failure)].join('\n')).not.toContain(
       'turso-secret-token',
     );
   });
 
   it('names a remote database and writes nothing without --yes', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    await expect(
-      users(['create', 'a@b.co'], { config: app('postgres://u:secret@db.host/app') }),
-    ).resolves.toBe(1);
+    const failure = await users(['create', 'a@b.co'], {
+      config: app('postgres://u:secret@db.host/app'),
+    }).catch((e: Error) => e);
 
     expect(log.mock.calls.flat()).toEqual([
       '[frogbot] users create: database postgres://db.host/app',
     ]);
-    expect(error.mock.calls.flat().join('\n')).toContain('Run again with --yes');
-    expect([...log.mock.calls, ...error.mock.calls].flat().join('\n')).not.toContain('secret');
+    expect(String(failure)).toContain('Run again with --yes');
+    expect([...log.mock.calls.flat(), String(failure)].join('\n')).not.toContain('secret');
   });
 });

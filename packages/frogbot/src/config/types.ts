@@ -95,8 +95,18 @@ export type CLICommandContext = {
   getFrogBot: (options?: Omit<InitOptions, 'config'>) => Promise<FrogBot>;
 };
 
-/** A command run by `frogbot <name>`. A thrown error prints and exits 1; otherwise `frogbot` exits with `process.exitCode ?? 0` once it resolves. */
-export type CLICommand = (context: CLICommandContext) => unknown | Promise<unknown>;
+/**
+ * A command run by `frogbot <name>`. A thrown error prints and exits 1; otherwise `frogbot` exits with `process.exitCode ?? 0` once it resolves.
+ * Set `summary`, `usage` and `group` on the function (`Object.assign(run, { summary })`) for `frogbot --help` to list it.
+ */
+export type CLICommand = ((context: CLICommandContext) => unknown | Promise<unknown>) & {
+  /** One line for `frogbot --help`, such as `Export captured AI calls as JSONL`. */
+  summary?: string;
+  /** The arguments after `frogbot`, such as `export:captures [--output <file>]`. With it, `frogbot <name> --help` prints it and the summary instead of running the command. */
+  usage?: string;
+  /** The heading `frogbot --help` lists the command under. Default `Plugins`. */
+  group?: string;
+};
 
 type FrogBotOverridden =
   | 'admin'

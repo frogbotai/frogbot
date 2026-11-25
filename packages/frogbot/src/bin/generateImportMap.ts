@@ -1,22 +1,16 @@
 import { loadConfig } from '../config/load.js';
-import { formatCliError } from './formatCliError.js';
 import { generateImportMap as generate } from './generateImportMap/index.js';
 
-export async function generateImportMap(): Promise<void> {
-  const cwd = process.cwd();
+/** `frogbot generate:importmap`: writes the admin import map, and resolves to its path and whether it changed. */
+export async function generateImportMap(): Promise<{ path: string | null; changed: boolean }> {
+  const frogbotConfig = await loadConfig({ cwd: process.cwd(), mode: 'codegen' });
+  const result = await generate(await frogbotConfig._internal.payloadConfig);
 
-  try {
-    const frogbotConfig = await loadConfig({ cwd, mode: 'codegen' });
-    const payloadConfig = await frogbotConfig._internal.payloadConfig;
-    const result = await generate(payloadConfig);
-
-    if (result?.changed) {
-      console.log(`[frogbot] import map written to ${result.outputPath}`);
-    } else if (result) {
-      console.log(`[frogbot] import map unchanged at ${result.outputPath}`);
-    }
-  } catch (err) {
-    console.error(formatCliError(err));
-    process.exit(1);
+  if (result) {
+    console.log(
+      `[frogbot] import map ${result.changed ? 'written to' : 'unchanged at'} ${result.outputPath}`,
+    );
   }
+
+  return { path: result?.outputPath ?? null, changed: Boolean(result?.changed) };
 }

@@ -6,9 +6,10 @@ import type { DatabaseAdapter } from '../database/types.js';
 import type { FrogBot } from '../frogbot.js';
 import { toPayloadRequest } from '../seams/request.js';
 import { formatCliError } from './formatCliError.js';
+import { CliError, usageError } from './json.js';
 
 export const usersUsage =
-  '[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes]';
+  '[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]';
 
 export type UsersCreateOptions = {
   email: string;
@@ -21,36 +22,38 @@ export type DatabaseLocation = { local: boolean; label: string };
 
 type ValidationErrors = { data?: { errors?: { path?: string; message?: string }[] } };
 
-class UsageError extends Error {}
-
-/** Reads `users create`'s arguments, or throws a `UsageError` naming what's wrong. */
+/** Reads `users create`'s arguments, or throws a usage error (exit 2) naming what's wrong and the usage. */
 export function parseUsersArgs(args: string[]): UsersCreateOptions {
-  let parsed: ReturnType<typeof parse>;
-
   try {
-    parsed = parse(args);
+    return readUsersArgs(args);
   } catch (error) {
-    throw new UsageError(error instanceof Error ? error.message : String(error));
+    throw usageError(
+      `users: ${error instanceof Error ? error.message : String(error)}\n${usersUsage}`,
+    );
   }
+}
+
+function readUsersArgs(args: string[]): UsersCreateOptions {
+  const parsed = parse(args);
 
   const [subcommand, email, ...extra] = parsed.positionals;
 
-  if (subcommand !== 'create') throw new UsageError('the only users command is `create`.');
-  if (!email) throw new UsageError('give the email of the user to create.');
-  if (extra.length) throw new UsageError(`unexpected argument "${extra[0]}".`);
+  if (subcommand !== 'create') throw new Error('the only users command is `create`.');
+  if (!email) throw new Error('give the email of the user to create.');
+  if (extra.length) throw new Error(`unexpected argument "${extra[0]}".`);
 
   const data: Record<string, string> = {};
 
   for (const pair of parsed.values.set ?? []) {
     const at = pair.indexOf('=');
 
-    if (at < 1) throw new UsageError(`--set takes <field>=<value>, not "${pair}".`);
+    if (at < 1) throw new Error(`--set takes <field>=<value>, not "${pair}".`);
 
     data[pair.slice(0, at)] = pair.slice(at + 1);
   }
 
   for (const field of ['email', 'password']) {
-    if (field in data) throw new UsageError(`--set can't set ${field}.`);
+    if (field in data) throw new Error(`--set can't set ${field}.`);
   }
 
   return { email, collection: parsed.values.collection, data, yes: parsed.values.yes ?? false };
@@ -127,10 +130,8 @@ function createError(slug: string, error: unknown): string {
   return `${slug} rejected the user: ${fields}. Pass a missing field with --set <field>=<value>.`;
 }
 
-function fail(message: string): number {
-  console.error(`[frogbot] users create: ${message}`);
-
-  return 1;
+function fail(code: string, message: string): CliError {
+  return new CliError(`[frogbot] users create: ${message}`, { code });
 }
 
 /**
@@ -140,37 +141,29 @@ function fail(message: string): number {
  */
 export async function users(
   args: string[],
-  { config, loadError }: { config?: FrogBotSanitizedConfig; loadError?: unknown },
-): Promise<number> {
-  let options: UsersCreateOptions;
+  {
+    config,
+    loadError,
+    json = false,
+  }: { config?: FrogBotSanitizedConfig; loadError?: unknown; json?: boolean },
+): Promise<Record<string, unknown>> {
+  const options = parseUsersArgs(args);
 
-  try {
-    options = parseUsersArgs(args);
-  } catch (error) {
-    if (!(error instanceof UsageError)) throw error;
+  if (loadError) throw new CliError(formatCliError(loadError), { code: 'CONFIG_INVALID' });
 
-    console.error(`[frogbot] users: ${error.message}`);
-    console.error(usersUsage);
-
-    return 2;
-  }
-
-  if (loadError) {
-    console.error(formatCliError(loadError));
-
-    return 1;
-  }
-
-  if (!config) return fail('there is no FrogBot app here (no frogbot.config.ts found).');
+  if (!config) throw fail('NO_APP', 'there is no FrogBot app here (no frogbot.config.ts found).');
 
   const payloadConfig = await config._internal.payloadConfig;
   const slug = options.collection ?? payloadConfig.admin.user;
   const collection = payloadConfig.collections.find((entry) => entry.slug === slug);
 
-  if (!collection?.auth) return fail(`"${slug}" isn't an auth collection in this app.`);
+  if (!collection?.auth) {
+    throw fail('NOT_AUTH_COLLECTION', `"${slug}" isn't an auth collection in this app.`);
+  }
 
   if (collection.auth.disableLocalStrategy) {
-    return fail(
+    throw fail(
+      'NO_PASSWORD_LOGIN',
       `"${slug}" signs in without a password (disableLocalStrategy), so there is no login to create. Sign in with its provider instead.`,
     );
   }
@@ -181,7 +174,8 @@ export async function users(
   console.log(`[frogbot] users create: database ${database.label}`);
 
   if (!database.local && !options.yes) {
-    return fail(
+    throw fail(
+      'CONFIRM_REQUIRED',
       "this isn't a local SQLite file, so nothing was written. Run again with --yes if this is the database to add the user to.",
     );
   }
@@ -210,7 +204,10 @@ export async function users(
         });
 
         if (docs.length > 0) {
-          return `the ${slug} collection already has users, so nothing was written. Sign in with one of them, or add users in the admin.`;
+          return fail(
+            'USERS_EXIST',
+            `the ${slug} collection already has users, so nothing was written. Sign in with one of them, or add users in the admin.`,
+          );
         }
 
         const user = firstUser({ collection, email: options.email, data: options.data });
@@ -218,22 +215,24 @@ export async function users(
         try {
           await instance.create({ ...user.create, req });
         } catch (error) {
-          return createError(slug, error);
+          return fail('CREATE_FAILED', createError(slug, error));
         }
 
         return user;
       },
     });
 
-    if (typeof created === 'string') return fail(created);
+    if (created instanceof CliError) throw created;
 
     const { password } = created;
 
-    console.log(`Created ${options.email} in ${slug}.`);
-    console.log(`Password: ${password}`);
-    console.log('It is shown only this once. Change it on the account page after signing in.');
+    if (!json) {
+      console.log(`Created ${options.email} in ${slug}.`);
+      console.log(`Password: ${password}`);
+      console.log('It is shown only this once. Change it on the account page after signing in.');
+    }
 
-    return 0;
+    return { email: options.email, collection: slug, database: database.label, password };
   } finally {
     await frogbot?.destroy();
   }

@@ -383,7 +383,16 @@ export function checkDocsReferences({
     ),
   );
 
-  const knownCommands = new Set(commands);
+  const knownCommands = new Set([
+    ...commands,
+    undefined,
+    'help',
+    '--help',
+    '-h',
+    '--version',
+    '-v',
+  ]);
+
   const used = new Set();
   const problems = [];
   const named = [];

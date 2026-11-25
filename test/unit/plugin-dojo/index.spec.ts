@@ -119,6 +119,12 @@ const dojoDependencies = {
 
 const dojoCommands = { dojo: expect.any(Function) };
 
+it('lists `frogbot dojo` under a Dojo heading in `frogbot --help`, leaving `--help` to the command', () => {
+  const { dojo } = apply(template()).cli?.commands ?? {};
+
+  expect([dojo?.group, typeof dojo?.summary, dojo?.usage]).toEqual(['Dojo', 'string', undefined]);
+});
+
 describe('dojo() outside Dojo', () => {
   it('only lists the badge and adds its commands when DOJO is unset', () => {
     vi.stubEnv('DOJO', undefined);

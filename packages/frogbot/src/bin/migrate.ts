@@ -1,6 +1,7 @@
 import { loadConfig } from '../config/load.js';
 import { formatCliError } from './formatCliError.js';
 import { migrateUsage } from './help.js';
+import { CliError, usageError } from './json.js';
 import { assertFrogBotPredefined, rewriteMigrationFile } from './migrationFile.js';
 
 const COMMANDS = [
@@ -29,7 +30,7 @@ function parseFlags(args: string[]): { flags: Flags; positional: string[] } {
     const arg = args[i];
     if (arg === '--file') {
       flags.file = args[++i];
-    } else if (arg === '--force-accept-warning') {
+    } else if (arg === '--force-accept-warning' || arg === '--yes' || arg === '-y') {
       flags.forceAcceptWarning = true;
     } else if (arg === '--skip-empty') {
       flags.skipEmpty = true;
@@ -47,29 +48,34 @@ function parseFlags(args: string[]): { flags: Flags; positional: string[] } {
   return { flags, positional };
 }
 
+const confirmNeeded = (command: string, what: string) =>
+  new CliError(
+    `[frogbot] ${command} would ask whether to ${what}, and there's no terminal to answer. Run \`frogbot ${command} --yes\` to go ahead.`,
+    { code: 'CONFIRM_REQUIRED', exitCode: 2 },
+  );
+
 /**
- * Thin wrapper around Payload's migration commands. Uses FrogBot's own
- * config loader (which handles frogbot.config.ts under modern Node), then
- * delegates to the active database adapter.
+ * Thin wrapper around Payload's migration commands. Uses FrogBot's own config loader (which handles
+ * frogbot.config.ts under modern Node), then delegates to the active database adapter. Without a terminal
+ * it never asks: a command that would stops with exit code 2 naming `--yes`.
  */
-export async function migrate(args: string[]): Promise<void> {
+export async function migrate(args: string[]): Promise<Record<string, unknown>> {
   const command = args[0];
 
-  if (!command || command === '--help' || command === '-h') {
-    console.error(migrateUsage);
-    process.exit(command ? 0 : 2);
-  }
-
-  if (!(COMMANDS as readonly string[]).includes(command)) {
-    console.error(`[frogbot] unknown command: ${command}\n\n${migrateUsage}`);
-    process.exit(2);
+  if (!command || !(COMMANDS as readonly string[]).includes(command)) {
+    throw usageError(`[frogbot] unknown command: ${command}\n\n${migrateUsage}`);
   }
 
   const { flags, positional } = parseFlags(args.slice(1));
+
   if (flags.help) {
     console.log(migrateUsage);
-    process.exit(0);
+
+    return {};
   }
+
+  const yes = Boolean(flags.forceAcceptWarning);
+  const shouldPrompt = Boolean(process.stdin.isTTY);
 
   process.env.PAYLOAD_MIGRATING = 'true';
 
@@ -87,16 +93,21 @@ export async function migrate(args: string[]): Promise<void> {
   });
 
   const adapter = payload.db;
+  let result: { cancelled?: boolean; migrated?: string[]; rolledBack?: string[] } | void =
+    undefined;
+
+  let path: string | undefined;
+  let migrations: unknown[] | undefined;
 
   try {
     switch (command) {
       case 'migrate':
-        if (flags.forceAcceptWarning) {
-          await adapter.migrate({ forceAcceptWarning: true });
+        if (yes) {
+          result = await adapter.migrate({ forceAcceptWarning: true });
           break;
         }
 
-        if (!process.stdin.isTTY) {
+        if (!shouldPrompt) {
           const hasDevModeMigrations = await payload
             .find({
               collection: 'payload-migrations',
@@ -108,14 +119,18 @@ export async function migrate(args: string[]): Promise<void> {
             .catch(() => false);
 
           if (hasDevModeMigrations) {
-            throw new Error(
-              'payload_migrations has a dev-mode row (batch -1): this database was changed by schema push in dev mode.\n' +
-                'Run `frogbot migrate --force-accept-warning` to apply migrations anyway, or delete that row if the database already matches your migrations.',
+            throw new CliError(
+              '[frogbot] migrate failed: payload_migrations has a dev-mode row (batch -1): this database was changed by schema push in dev mode.\n' +
+                'Run `frogbot migrate --yes` to apply migrations anyway, or delete that row if the database already matches your migrations.',
+              { code: 'CONFIRM_REQUIRED', exitCode: 2 },
             );
           }
         }
 
-        await adapter.migrate({});
+        result = await adapter.migrate({ shouldPrompt });
+        if (result?.cancelled && !shouldPrompt) {
+          throw confirmNeeded(command, 'apply migrations over dev-mode changes');
+        }
 
         break;
       case 'migrate:create': {
@@ -128,27 +143,40 @@ export async function migrate(args: string[]): Promise<void> {
           forceAcceptWarning: flags.forceAcceptWarning,
           migrationName,
           payload,
+          shouldPrompt,
           skipEmpty: flags.skipEmpty,
         });
 
         if (created?.path) await rewriteMigrationFile(created.path);
 
+        if (created && !created.created && !shouldPrompt && !flags.skipEmpty) {
+          throw confirmNeeded(command, 'create an empty migration (no schema changes)');
+        }
+
+        path = created?.path;
+
         break;
       }
 
       case 'migrate:down':
-        await adapter.migrateDown();
+        result = await adapter.migrateDown();
         break;
       case 'migrate:fresh':
-        await adapter.migrateFresh({ forceAcceptWarning: flags.forceAcceptWarning });
+        result = await adapter.migrateFresh({ forceAcceptWarning: yes, shouldPrompt });
+
+        if (result?.cancelled && !shouldPrompt) {
+          throw confirmNeeded(command, 'drop every table');
+        }
+
         break;
       case 'migrate:refresh': {
-        const refreshed = await adapter.migrateRefresh();
+        result = await adapter.migrateRefresh();
 
-        if (refreshed?.cancelled) {
-          throw new Error(
+        if (result?.cancelled) {
+          throw new CliError(
             'payload_migrations has a dev-mode row (batch -1), so migrate:refresh stopped before applying migrations.\n' +
-              'Run `frogbot migrate --force-accept-warning` to apply them anyway, or delete that row if the database already matches your migrations.',
+              'Run `frogbot migrate --yes` to apply them anyway, or delete that row if the database already matches your migrations.',
+            { code: 'CONFIRM_REQUIRED', exitCode: 2 },
           );
         }
 
@@ -156,17 +184,24 @@ export async function migrate(args: string[]): Promise<void> {
       }
 
       case 'migrate:reset':
-        await adapter.migrateReset();
+        result = await adapter.migrateReset();
         break;
       case 'migrate:status':
-        await adapter.migrateStatus();
+        migrations = (await adapter.migrateStatus()) ?? [];
         break;
     }
   } catch (err) {
-    console.error(formatCliError(err, `${command} failed`));
-    process.exit(1);
+    if (err instanceof CliError) throw err;
+
+    throw new CliError(formatCliError(err, `${command} failed`), { code: 'MIGRATE_FAILED' });
   }
 
   console.log(`[frogbot] ${command} complete.`);
-  process.exit(0);
+
+  return {
+    ...(result?.migrated && { migrated: result.migrated }),
+    ...(result?.rolledBack && { rolledBack: result.rolledBack }),
+    ...(path && { path }),
+    ...(migrations && { migrations }),
+  };
 }
