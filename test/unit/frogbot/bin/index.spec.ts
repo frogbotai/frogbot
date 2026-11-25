@@ -559,6 +559,7 @@ describe('frogbot bin', () => {
       const [{ groups }] = json() as [
         { groups: { commands: { name: string; flags: string[] }[] }[] },
       ];
+
       const listed = new Map(groups.flatMap(({ commands }) => commands.map((c) => [c.name, c])));
 
       for (const name of ['migrate', 'migrate:create', 'migrate:fresh']) {
