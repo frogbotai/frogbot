@@ -1,6 +1,6 @@
 {
   "name": "asana",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "private": true,
   "description": "The FrogBot Asana template: projects and tasks with subtasks, comments and activity, and sample data.",
   "license": "MIT",
