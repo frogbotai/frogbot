@@ -101,6 +101,16 @@ function verbJSON(program: string, name: string, verb: Verb | RawVerb) {
   };
 }
 
+function nounJSON(program: string, name: string, noun: Noun) {
+  return {
+    name,
+    summary: noun.summary,
+    verbs: Object.entries(noun.verbs).map(([verb, spec]) =>
+      verbJSON(program, `${name} ${verb}`, spec),
+    ),
+  };
+}
+
 /** `--help --json`: every command, and each noun's verbs, with usage and flags, as one JSON value. */
 export function helpJSON(program: string) {
   const dailyNames = new Set(Object.keys(daily));
@@ -110,13 +120,7 @@ export function helpJSON(program: string) {
     exitCodes: { 0: 'success', 1: 'failure', 2: 'usage', 3: 'sign-in needed', 4: 'payment needed' },
     commands: Object.entries(dojoCommands).map(([name, command]) =>
       isNoun(command)
-        ? {
-            name,
-            summary: command.summary,
-            verbs: Object.entries(command.verbs).map(([verb, spec]) =>
-              verbJSON(program, `${name} ${verb}`, spec),
-            ),
-          }
+        ? nounJSON(program, name, command)
         : { ...verbJSON(program, name, command), ...(dailyNames.has(name) && { daily: true }) },
     ),
   };
@@ -124,6 +128,12 @@ export function helpJSON(program: string) {
 
 function print(io: DojoIO, lines: string[], to: 'stdout' | 'stderr'): void {
   io[to].write(`${lines.join('\n')}\n`);
+}
+
+function printHelp(io: DojoIO, json: boolean, lines: string[], value: () => unknown): number {
+  print(io, json ? [JSON.stringify(value(), null, 2)] : lines, 'stdout');
+
+  return 0;
 }
 
 function usageError(io: DojoIO, message: string, lines: string[], args: string[]): number {
@@ -146,13 +156,14 @@ async function runCommand(
   args: string[],
   io: DojoIO,
 ): Promise<number> {
-  if (args.some((arg) => arg === '--help' || arg === '-h')) {
-    print(io, verbHelp(io.program, name, verb), 'stdout');
+  const json = args.includes('--json');
 
-    return 0;
+  if (args.some((arg) => arg === '--help' || arg === '-h')) {
+    return printHelp(io, json, verbHelp(io.program, name, verb), () =>
+      verbJSON(io.program, name, verb),
+    );
   }
 
-  const json = args.includes('--json');
   const waits = args.includes('--wait');
   const rest = args.filter((arg) => arg !== '--json' && arg !== '--wait');
   const out = { ...(json ? jsonIO(io) : io), ...(waits && { waits }) };
@@ -184,13 +195,7 @@ export async function runDojo(args: string[], io: DojoIO): Promise<number> {
   if (!name) return usageError(io, 'Name a command.', topHelp(io.program), args);
 
   if (helpFlags.has(name)) {
-    print(
-      io,
-      flags.length ? [JSON.stringify(helpJSON(io.program), null, 2)] : topHelp(io.program),
-      'stdout',
-    );
-
-    return 0;
+    return printHelp(io, flags.length > 0, topHelp(io.program), () => helpJSON(io.program));
   }
 
   const command = Object.hasOwn(dojoCommands, name) ? dojoCommands[name] : undefined;
@@ -213,9 +218,9 @@ export async function runDojo(args: string[], io: DojoIO): Promise<number> {
   if (!verbName) return usageError(io, `Name a verb.`, nounHelp(io.program, name, command), args);
 
   if (helpFlags.has(verbName)) {
-    print(io, nounHelp(io.program, name, command), 'stdout');
-
-    return 0;
+    return printHelp(io, flags.length > 0, nounHelp(io.program, name, command), () =>
+      nounJSON(io.program, name, command),
+    );
   }
 
   const verb = Object.hasOwn(command.verbs, verbName) ? command.verbs[verbName] : undefined;
