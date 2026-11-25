@@ -247,6 +247,12 @@ describe('review fix list for PR #704', () => {
     expect(JSON.stringify(toProblem(error))).not.toContain('10.0.0.5');
   });
 
+  it('keeps an upstream 502 gateway status on internal', () => {
+    const error = new GatewayError({ code: 'upstream_refused', status: 502, message: 'raw body' });
+
+    expect(toProblem(error)).toMatchObject({ code: 'internal', status: 502 });
+  });
+
   it('keeps KV lock keys out of the response', () => {
     for (const error of [kvLockHeld(), kvLeaseLost()]) {
       const problem = toProblem(error);

@@ -22,7 +22,7 @@ export { isGatewayError };
  * A gateway failure at 500 or above is `internal`, so its message stays in the log.
  */
 export function gatewayFrogBotError(cause: GatewayError): FrogBotError {
-  if (cause.status >= 500) return frogbotError('internal', { cause });
+  if (cause.status >= 500) return frogbotError('internal', { status: cause.status, cause });
 
   const retryAfter = 'retryAfterSeconds' in cause ? Number(cause.retryAfterSeconds) : undefined;
 
