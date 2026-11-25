@@ -186,6 +186,14 @@ export const projects: Noun = {
       run: async (input) => {
         const project = await findProject(input);
         const purging = input.values['purge-trash'] === true;
+
+        if (purging && project.isDefault) {
+          throw new ShareError(
+            `${project.name} is the workspace's default project, which Dojo never deletes, so nothing was deleted.`,
+            2,
+          );
+        }
+
         const trashed = purging
           ? await trashedApps(input.dojo(), 'project', project.id, project.name)
           : [];

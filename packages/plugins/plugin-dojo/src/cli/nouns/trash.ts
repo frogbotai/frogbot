@@ -58,7 +58,7 @@ export async function purgeApps(dojo: DojoClient, apps: TrashedApp[]): Promise<v
       throw new ShareError(
         `${error.message} Already deleted for good: ${gone.join(', ')}. Rerun to carry on.`,
         error.exitCode,
-        { code: error.code, status: error.status, url: error.url },
+        carried(error),
       );
     });
   }
@@ -73,10 +73,17 @@ async function purgeOne(dojo: DojoClient, app: TrashedApp): Promise<void> {
   });
 }
 
+const carried = (error: ShareError) => ({
+  code: error.code,
+  status: error.status,
+  url: error.url,
+  ...error.step,
+});
+
 /**
- * Sends a delete; when Dojo refuses it because apps remain (409), the refusal names the next step. Without
- * `--purge-trash` that is the flag. After a purge (`purged` holds the slugs, possibly none), the apps left are ones
- * the caller can't see, so it names what was purged and who can move the rest.
+ * Sends a delete. After a purge (`purged` holds the slugs, possibly none), any refusal names what was already
+ * deleted for good. A refusal because apps remain (409) also names the next step: without `--purge-trash` that is
+ * the flag; after a purge the apps left are ones the caller can't see, so it names who can move them.
  */
 export async function namingPurge<T>(
   purged: string[] | undefined,
@@ -85,16 +92,20 @@ export async function namingPurge<T>(
   try {
     return await send();
   } catch (error) {
-    if (!(error instanceof ShareError) || error.status !== 409) throw error;
+    if (!(error instanceof ShareError)) throw error;
 
-    const next = purged
-      ? `${purged.length ? `Already deleted for good from Trash: ${purged.join(', ')}. ` : ''}The apps left are ones you can't see: their Admins can move them with apps move or delete them with apps delete, then rerun.`
-      : 'Rerun with --purge-trash to delete its apps in Trash for good first; apps outside Trash need apps move or apps delete.';
+    const gone = purged?.length ? `Already deleted for good from Trash: ${purged.join(', ')}.` : '';
+    const left =
+      error.status !== 409
+        ? ''
+        : purged
+          ? "The apps left are ones you can't see: their Admins can move them with apps move or delete them with apps delete, then rerun."
+          : 'Rerun with --purge-trash to delete its apps in Trash for good first; apps outside Trash need apps move or apps delete.';
 
-    throw new ShareError(`${error.message} ${next}`, error.exitCode, {
-      code: error.code,
-      status: error.status,
-      url: error.url,
-    });
+    const next = [gone, left].filter(Boolean).join(' ');
+
+    if (!next) throw error;
+
+    throw new ShareError(`${error.message} ${next}`, error.exitCode, carried(error));
   }
 }

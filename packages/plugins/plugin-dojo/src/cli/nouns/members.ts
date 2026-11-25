@@ -50,7 +50,8 @@ async function inWorkspace({ io, dojo, values }: VerbInput): Promise<Workspace> 
   });
 }
 
-async function listMembers(dojo: DojoClient, workspace: Workspace): Promise<Member[]> {
+/** Every member of `workspace`, with their role. */
+export async function listMembers(dojo: DojoClient, workspace: Workspace): Promise<Member[]> {
   return dojoList<Member>(
     dojo,
     `/api/members?depth=0&limit=100&sort=email&${whereEquals('workspace', workspace.id)}`,

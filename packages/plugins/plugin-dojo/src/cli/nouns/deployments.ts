@@ -187,9 +187,13 @@ export const deployments: Noun = {
 
         if (build.status === 'failed') {
           throw new ShareError(
-            `Build failed: ${build.error || 'see the log above'}. Fix it, then frogbot deploy ships it again.`,
+            [
+              `Build failed: ${build.error || 'see the log above'}`,
+              ...(build.tail ?? []),
+              'Fix it, then frogbot deploy ships it again.',
+            ].join('\n'),
             1,
-            { code: 'BUILD_FAILED', deploymentId: id },
+            { code: 'BUILD_FAILED', deploymentId: /^\d+$/.test(id) ? Number(id) : id },
           );
         }
 
