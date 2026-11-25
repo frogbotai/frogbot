@@ -61,7 +61,10 @@ function topHelp(program: string): string[] {
     `Usage: ${program} <command> [--json]`,
     '',
     "Daily, on the folder's app (.frogbot/app.json) unless you name one:",
-    ...list(entries.filter(([name]) => dailyNames.has(name))),
+    ...list([
+      ...entries.filter(([name]) => dailyNames.has(name)),
+      ['env set KEY=value', { summary: "Set keys on the folder's app. It restarts once." }],
+    ]),
     '',
     'Commands:',
     ...list(entries.filter(([name]) => !dailyNames.has(name))),

@@ -10,14 +10,14 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). `npx frogbot dojo <c
 
 Run these in the app's folder:
 
-| Command                                 | Does                                                                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `npx frogbot deploy`                    | Ships this folder, the first time and every time after.                                                 |
-| `npx frogbot dojo status`               | The address, the status (`live`, `paused`, `deploying`, `failed`, `not_deployed`), and the last deploy. |
-| `npx frogbot dojo logs [--follow]`      | The runtime log; when the last deploy failed, its build or start log instead, with the error.           |
-| `npx frogbot dojo open`                 | Prints the live address. It opens a browser only at a terminal, so it never opens one for you.          |
-| `npx frogbot dojo rollback [id]`        | Puts back the newest version that went live before the current one, or the deployment you name.         |
-| `npx frogbot dojo env set KEY=value...` | Sets keys; the app restarts once. The first argument is an app only when it has no `=`.                 |
+| Command                                 | Does                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `npx frogbot deploy`                    | Ships this folder, the first time and every time after.                                                            |
+| `npx frogbot dojo status`               | The address, the status (`live`, `paused`, `deploying`, `failed`, `not_deployed`, `removed`), and the last deploy. |
+| `npx frogbot dojo logs [--follow]`      | The runtime log; when the last deploy failed, its build or start log instead, with the error.                      |
+| `npx frogbot dojo open`                 | Prints the live address. It opens a browser only at a terminal, so it never opens one for you.                     |
+| `npx frogbot dojo rollback [id]`        | Puts back the newest version that went live before the current one, or the deployment you name.                    |
+| `npx frogbot dojo env set KEY=value...` | Sets keys; the app restarts once. The first argument is an app only when it has no `=`.                            |
 
 Each also takes an app's slug to act on another app: `status deals`, `logs deals`, `open deals`. `rollback` acts on the folder's app only; `deployments rollback <app> <id>` names another.
 
@@ -112,7 +112,7 @@ An app's environment keys on Dojo. Owners only.
 
 - `npx frogbot dojo env list <app>` prints `<KEY> ••••<last 4>` per key.
 - `npx frogbot dojo env set <app> KEY=value...` sets one or more keys. Values go only as `KEY=value` arguments; there is no file or stdin option. Tell the user first that the live app restarts once. It prints `[frogbot] Set 1 key on <app>. It restarts once.`
-- `npx frogbot dojo env unset <app> KEY... --yes` removes keys, after the question above; the app restarts once.
+- `npx frogbot dojo env unset <app> KEY... --yes` removes keys, after the question above; the app restarts once. In the app's folder leave `<app>` out; with two or more names, a first one that could be a slug (lower case, digits and `-`) is read as the app.
 
 Keys in the local `.env` reach Dojo on the first `deploy`; on later deploys, pass `--update-keys` to send local values that differ from live, or use `env set`.
 

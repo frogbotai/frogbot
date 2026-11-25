@@ -108,7 +108,7 @@ export const env: Noun = {
     unset: {
       summary: 'Remove keys. The app restarts once without them.',
       args: '[app] <KEY>...',
-      appFirst: (first) => !/^[A-Z_][A-Z0-9_]*$/.test(first),
+      appFirst: (first) => /^[a-z0-9][a-z0-9-]*$/.test(first),
       confirm: ({ positionals: [ref, ...names] }) => `Remove ${names.join(', ')} from ${ref}?`,
       run: async ({ io, dojo, positionals: [ref = '', ...names] }) => {
         const values = Object.fromEntries(names.map((name) => [checkName(name), null]));

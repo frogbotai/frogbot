@@ -5,6 +5,7 @@ import { createDojo } from './dojo.js';
 import { ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { linkPath, readLink } from './link.js';
+import { findApp } from './nouns/resolve.js';
 
 /** A flag of one verb, as `node:util` `parseArgs` takes it, with its help line. */
 export type VerbFlag = {
@@ -226,7 +227,14 @@ export async function runVerb(
   };
 
   if (verb.confirm) refuseWithoutTerminal();
-  if (typeof verb.confirm === 'function') await input.confirm(verb.confirm(input));
+
+  if (typeof verb.confirm === 'function') {
+    if (positionals !== given && !confirmed) {
+      positionals[0] = (await findApp(input.dojo(), positionals[0] ?? '')).slug;
+    }
+
+    await input.confirm(verb.confirm(input));
+  }
 
   return (await verb.run(input)) ?? 0;
 }

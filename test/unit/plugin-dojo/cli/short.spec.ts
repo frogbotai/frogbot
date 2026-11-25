@@ -347,6 +347,7 @@ describe("frogbot dojo's daily commands", () => {
       'status',
       'open',
       'rollback',
+      'env',
     ]);
   });
 

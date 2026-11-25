@@ -49,7 +49,7 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 
 | Command | Arguments | Description |
 | --- | --- | --- |
-| `status` | `[app]` | The app's address, its status (`live`, `paused`, `deploying`, `failed`, `not_deployed`) and its last deploy. |
+| `status` | `[app]` | The app's address, its status (`live`, `paused`, `deploying`, `failed`, `not_deployed`, `removed`) and its last deploy. |
 | `logs` | `[app]`, `--follow` | The runtime log, or the last deploy's build or start log when it failed. |
 | `open` | `[app]` | Prints the live address, and opens it when there's a terminal. |
 | `rollback` | `[id]` | Puts back the newest version that went live before the current one, or the deployment you name. Acts on this folder's app. |
