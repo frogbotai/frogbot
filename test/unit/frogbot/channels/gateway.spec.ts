@@ -54,7 +54,7 @@ function exclusiveLock() {
   return vi.fn(
     async (_key: string, _ttl: number, run: (args: { signal: AbortSignal }) => Promise<void>) => {
       if (held) {
-        throw kvLockHeld(_key);
+        throw kvLockHeld();
       }
 
       held = true;

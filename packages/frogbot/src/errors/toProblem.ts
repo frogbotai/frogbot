@@ -58,7 +58,7 @@ export function toProblem(error: unknown, options: ToProblemOptions = {}): Probl
     ...(known.retryAfter !== undefined ? { retryAfter: known.retryAfter } : {}),
     ...(options.requestId ? { requestId: options.requestId } : {}),
     ...(isFrogBotError(error) && known.data ? { data: known.data } : {}),
-    errors: entries(error, known),
+    errors: entries(error, known, options),
   };
 }
 
@@ -81,7 +81,7 @@ export function toFrogBotError(error: unknown, options: ToProblemOptions = {}): 
 
   const status = error.status ?? 500;
 
-  const hidden = (status >= 500 || error.isPublic === false) && !options.debug;
+  const hidden = isHidden(error, status, options);
 
   if (hidden && (!code || error.isPublic === false)) {
     return frogbotError(code ?? (status >= 500 ? 'internal' : 'request.rejected'), {
@@ -110,10 +110,22 @@ function isPayloadError(error: unknown): error is PayloadErrorLike {
   );
 }
 
-function entries(error: unknown, known: FrogBotError): ProblemEntry[] {
+function isHidden(error: PayloadErrorLike, status: number, options: ToProblemOptions): boolean {
+  if (options.debug || error.isPublic === true) return false;
+
+  return error.isPublic === false || status >= 500;
+}
+
+function entries(error: unknown, known: FrogBotError, options: ToProblemOptions): ProblemEntry[] {
   if (known.fields) return [{ message: known.message, data: { errors: known.fields } }];
 
-  if (!isFrogBotError(error) && known.code !== 'internal' && isPayloadError(error) && error.data) {
+  if (
+    !isFrogBotError(error) &&
+    known.code !== 'internal' &&
+    isPayloadError(error) &&
+    error.data &&
+    !isHidden(error, error.status ?? 500, options)
+  ) {
     return [{ message: known.message, name: error.name, data: error.data as ProblemEntry['data'] }];
   }
 

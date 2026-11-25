@@ -47,7 +47,7 @@ export async function runKVLock<T>({
 
   const checkDeadline = () => {
     if (!controller.signal.aborted && performance.now() >= deadline) {
-      failLease(kvLeaseLost(key));
+      failLease(kvLeaseLost());
     }
 
     return !controller.signal.aborted;
@@ -67,7 +67,7 @@ export async function runKVLock<T>({
     release ??= (async () => {
       try {
         const released = await kv.releaseLock(acquired);
-        if (checkDeadline() && !released) failLease(kvLeaseLost(key));
+        if (checkDeadline() && !released) failLease(kvLeaseLost());
       } catch (error) {
         recordError(error);
         checkDeadline();
@@ -95,7 +95,7 @@ export async function runKVLock<T>({
       const extended = await kv.extendLock(lock, ttl);
       if (!checkDeadline()) return;
       if (!extended) {
-        failLease(kvLeaseLost(key));
+        failLease(kvLeaseLost());
 
         return;
       }
@@ -123,7 +123,7 @@ export async function runKVLock<T>({
         }
 
         if (!lock) {
-          recordError(kvLockHeld(key));
+          recordError(kvLockHeld());
 
           return false;
         }

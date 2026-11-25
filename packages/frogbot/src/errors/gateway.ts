@@ -17,8 +17,13 @@ const GATEWAY_CODES: Partial<Record<GatewayErrorCode, FrogBotErrorCode>> = {
 
 export { isGatewayError };
 
-/** The `FrogBotError` for an AI gateway error: its `ai.*` code, status, message and Retry-After. */
+/**
+ * The `FrogBotError` for an AI gateway error: its `ai.*` code, status, message and Retry-After.
+ * A gateway failure at 500 or above is `internal`, so its message stays in the log.
+ */
 export function gatewayFrogBotError(cause: GatewayError): FrogBotError {
+  if (cause.status >= 500) return frogbotError('internal', { cause });
+
   const retryAfter = 'retryAfterSeconds' in cause ? Number(cause.retryAfterSeconds) : undefined;
 
   return frogbotError(GATEWAY_CODES[cause.code] ?? 'ai.request-rejected', {

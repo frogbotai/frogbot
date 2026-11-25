@@ -248,7 +248,7 @@ describe('review fix list for PR #704', () => {
   });
 
   it('keeps KV lock keys out of the response', () => {
-    for (const error of [kvLockHeld('auth:user:42'), kvLeaseLost('auth:user:42')]) {
+    for (const error of [kvLockHeld(), kvLeaseLost()]) {
       const problem = toProblem(error);
 
       expect(problem.status).toBe(409);

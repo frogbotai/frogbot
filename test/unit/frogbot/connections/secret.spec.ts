@@ -289,7 +289,7 @@ describe('static connection endpoints', () => {
 
   it('reports lock contention without leaking the lock key', async () => {
     const { endpoints, request, upsert } = setup();
-    upsert.mockRejectedValue(kvLockHeld('private-owner-key'));
+    upsert.mockRejectedValue(kvLockHeld());
     const response = await routed(() => endpoints[0].handler(request()));
 
     expect(response.status).toBe(409);

@@ -8,6 +8,24 @@ import { toProblem } from './toProblem.js';
 
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
 
+type AppErrorResult = { response?: unknown; status?: number };
+
+const appErrorResults = new WeakMap<object, AppErrorResult>();
+
+/** Remembers what a collection's own `afterError` hook returned, so the root hook keeps it. */
+export function recordAppErrorResult(req: object, result: unknown): void {
+  if (!result || typeof result !== 'object') return;
+
+  const { response, status } = result as AppErrorResult;
+  const previous = appErrorResults.get(req) ?? {};
+
+  appErrorResults.set(req, {
+    ...previous,
+    ...(response ? { response } : {}),
+    ...(typeof status === 'number' ? { status } : {}),
+  });
+}
+
 export const PROBLEM_CONTENT_TYPE = 'application/problem+json';
 
 /** The incoming `X-Request-Id`, or a new `req_<16 hex>` id. */
@@ -46,20 +64,34 @@ export function problemResponse(
 }
 
 /**
- * Core's root `afterError` hook, run before the app's: rewrites every routed error, FrogBot's and
- * Payload's, to a `Problem` with its headers, and logs `FrogBotError`s and hidden errors with the
- * request ID the caller sees.
+ * Core's root `afterError` hook, run before the app's: rewrites every routed REST error, FrogBot's
+ * and Payload's, to a `Problem` with its headers, and logs `FrogBotError`s and hidden errors with
+ * the request ID the caller sees. A collection hook's own response is kept as it is, with only the
+ * request ID added, and its status replaces the Problem's. GraphQL errors are left to Payload.
  */
-export const problemAfterError: PayloadAfterErrorHook = ({ error, req }) => {
-  const problem = toProblem(error, {
-    requestId: requestIdFor(req),
+export const problemAfterError: PayloadAfterErrorHook = ({ error, graphqlResult, req }) => {
+  if (graphqlResult) return;
+
+  const requestId = requestIdFor(req);
+  const app = appErrorResults.get(req);
+
+  req.responseHeaders ??= new Headers();
+
+  if (app?.response) {
+    req.responseHeaders.set('X-Request-Id', requestId);
+
+    return;
+  }
+
+  const converted = toProblem(error, {
+    requestId,
     signedIn: Boolean(req.user),
     debug: req.payload?.config.debug === true,
   });
 
-  const headers = problemHeaders(problem, error);
-  req.responseHeaders ??= new Headers();
-  headers.forEach((value, key) => req.responseHeaders!.set(key, value));
+  const problem = app?.status ? { ...converted, status: app.status } : converted;
+
+  problemHeaders(problem, error).forEach((value, key) => req.responseHeaders!.set(key, value));
 
   if (isFrogBotError(error)) {
     const level = problem.status >= 500 ? 'error' : 'info';

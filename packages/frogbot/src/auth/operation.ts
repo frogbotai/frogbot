@@ -166,14 +166,14 @@ async function withSessionLock<T>({
 
   for (;;) {
     const remaining = deadline - Date.now();
-    if (remaining <= 0) throw kvLockHeld(key);
+    if (remaining <= 0) throw kvLockHeld();
     const wait = new AbortController();
     let occupied: unknown;
     try {
       occupied = await Promise.race([
         kv.get(key),
         setTimeout(remaining, undefined, { signal: wait.signal, ref: false }).then(() => {
-          throw kvLockHeld(key);
+          throw kvLockHeld();
         }),
       ]);
     } finally {
