@@ -24,6 +24,7 @@ type Deploy = {
   liveAt?: string | null;
   error?: string | null;
   runtimeError?: string | null;
+  rollbackOf?: string | number | null;
 };
 
 const editorNeeded = 'editor or owner access to the app';
@@ -140,9 +141,22 @@ const rollback: Verb = {
 
 async function previousLive(dojo: DojoClient, app: LiveApp, program: string): Promise<string> {
   const deploys = await recentDeploys(dojo, app, 50);
-  const target = deploys.find(
-    (deploy) => deploy.liveAt && String(deploy.id) !== String(app.deployment ?? ''),
-  );
+  const same = (a: unknown, b: unknown) => a != null && String(a) === String(b);
+  const byId = (id: unknown) => deploys.find((deploy) => same(deploy.id, id));
+  const current = byId(app.deployment);
+  const source = current?.rollbackOf == null ? current : byId(current.rollbackOf);
+  const before = source?.liveAt ? Date.parse(source.liveAt) : Infinity;
+
+  const target =
+    (source || !current) &&
+    deploys.find(
+      (deploy) =>
+        deploy.liveAt &&
+        Date.parse(deploy.liveAt) < before &&
+        !same(deploy.id, app.deployment) &&
+        !same(deploy.id, source?.id) &&
+        !same(deploy.rollbackOf, source?.id),
+    );
 
   if (!target) {
     throw new ShareError(
