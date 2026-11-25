@@ -57,12 +57,12 @@ describe('Space access', () => {
     return stored.space;
   }
 
-  async function token(user: User): Promise<string> {
+  async function token(email: string): Promise<string> {
     const response = await frogbot.handleRequest(
       new Request('http://localhost/api/users/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: user.email, password: 'frogbot-test-password' }),
+        body: JSON.stringify({ email, password: 'frogbot-test-password' }),
       }),
     );
 
@@ -111,7 +111,7 @@ describe('Space access', () => {
     const annSpace = await createSpace('Ann private', ann);
     const annFile = await addFile(annSpace, 'plan.md', 'Ann plan.', ann);
     const benSpace = await createSpace('Ben', ben);
-    const auth = { authorization: `JWT ${await token(ben)}` };
+    const auth = { authorization: `JWT ${await token(`ben-${sequence}@frogbot.local`)}` };
 
     await frogbot.handleRequest(
       new Request(`http://localhost/api/${FILES}?where[id][exists]=true`, {
