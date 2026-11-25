@@ -78,7 +78,17 @@ export function defaultSpacesCollection({
         relationTo: userSlug,
         index: true,
         admin: { position: 'sidebar' },
-        hooks: { beforeChange: [({ req, value }) => value ?? req.user?.id] },
+        hooks: {
+          beforeChange: [
+            ({ operation, originalDoc, overrideAccess, req, value }) => {
+              if (overrideAccess) return value ?? req.user?.id;
+
+              return operation === 'create'
+                ? req.user?.id
+                : (originalDoc as { user?: unknown } | undefined)?.user;
+            },
+          ],
+        },
       },
     ],
   };
@@ -115,7 +125,13 @@ export function spaceFilesCollection({ spacesSlug }: { spacesSlug: string }): Co
 
   const updatable = scoped('update');
 
-  const write: Access = async (args) => {
+  const create: Access = async ({ data, req }) => {
+    const target = spaceIDOf((data as { space?: unknown } | undefined)?.space);
+
+    return target !== undefined && canAccessSpace({ req, id: target, kind: 'update' });
+  };
+
+  const update: Access = async (args) => {
     const target = spaceIDOf((args.data as { space?: unknown } | undefined)?.space);
 
     if (
@@ -124,8 +140,6 @@ export function spaceFilesCollection({ spacesSlug }: { spacesSlug: string }): Co
     ) {
       return false;
     }
-
-    if (args.id === undefined) return target !== undefined;
 
     return updatable(args);
   };
@@ -140,9 +154,9 @@ export function spaceFilesCollection({ spacesSlug }: { spacesSlug: string }): Co
     admin: { hidden: true, useAsTitle: 'filename' },
     graphQL: false,
     access: {
-      create: write,
+      create,
       read: scoped('read'),
-      update: write,
+      update,
       delete: updatable,
     },
     hooks: {

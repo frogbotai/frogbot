@@ -180,14 +180,22 @@ describe('Spaces', () => {
     expect(toolNames(model.requests[0])).not.toContain('space_file_read');
   });
 
-  it('leaves the prompt as before for a Space with no instructions and no files', async () => {
-    const chat = await createChat(await createSpace({ title: 'Empty' }));
+  it('adds only the space memory scope for a Space with no instructions and no files', async () => {
+    const plain = await createChat();
+    const empty = await createChat(await createSpace({ title: 'Empty' }));
 
-    model.respond({ text: 'Hi.' });
-    await send(chat, 'Hello.');
+    model.respond({ text: 'One.' }, { text: 'Two.' });
+    await send(plain, 'Hello.');
+    await send(empty, 'Hello.');
 
-    expect(systemText(model.requests[0])).not.toContain('## Space');
-    expect(toolNames(model.requests[0])).not.toContain('space_file_read');
+    const scopes = /Scopes: [^.]+\./;
+
+    expect(systemText(model.requests[0])).toMatch('Scopes: me, agent, team.');
+    expect(systemText(model.requests[1]).replace(scopes, '')).toBe(
+      systemText(model.requests[0]).replace(scopes, ''),
+    );
+    expect(systemText(model.requests[1])).toContain('Scopes: me, agent, team, space.');
+    expect(toolNames(model.requests[1])).toEqual(toolNames(model.requests[0]));
   });
 
   it('keeps the Space when a chat is branched', async () => {
