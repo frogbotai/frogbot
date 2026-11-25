@@ -168,6 +168,9 @@ async function runAppCommand(
   }
 }
 
+const configError = (loadError: unknown) =>
+  new CliError(formatCliError(loadError), { code: 'CONFIG_INVALID' });
+
 async function flush(): Promise<void> {
   await Promise.all(
     [process.stdout, process.stderr].map(
@@ -177,7 +180,7 @@ async function flush(): Promise<void> {
 }
 
 function unknownCommand(command: string, { config, loadError }: LoadedConfig): CliError {
-  if (loadError) return new CliError(formatCliError(loadError), { code: 'CONFIG_INVALID' });
+  if (loadError) return configError(loadError);
 
   if (command === 'dojo') {
     return usageError(
@@ -224,12 +227,16 @@ export async function bin() {
   }
 
   if (!command || (helpCommands.has(command) && !appCommand)) {
-    if (asksJson) writeJson(overviewJson(appCommands));
-    else console.log(overview(appCommands));
+    if (asksJson) {
+      writeJson({
+        ...overviewJson(appCommands),
+        ...(loadError !== undefined && failureJson('help', configError(loadError))),
+      });
+    } else console.log(overview(appCommands));
 
-    if (loadError) console.error(formatCliError(loadError));
+    if (loadError !== undefined) console.error(formatCliError(loadError));
 
-    return process.exit(loadError ? 1 : 0);
+    return process.exit(loadError === undefined ? 0 : 1);
   }
 
   if (handler && !appCommand && asksForHelp(command, args)) {

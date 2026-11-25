@@ -61,6 +61,15 @@ export function age(since: number, now = Date.now()): string {
   return `${Math.floor(seconds / 86_400)} d`;
 }
 
+/** Whether an app that is up has no server answering: no build has worked, or its server crashed or failed to start. */
+export function nothingServes(found: Registration): boolean {
+  return (
+    found.state === 'build failed' ||
+    found.state === 'crashed' ||
+    (found.state === 'update failed' && !found.serverPid)
+  );
+}
+
 /** What `up` prints for an app already up: that it is watching, its last build, and its last error. */
 export function alreadyUp(found: Registration, now = Date.now()): string[] {
   const built = Date.parse(found.builtAt ?? '');
@@ -71,7 +80,9 @@ export function alreadyUp(found: Registration, now = Date.now()): string[] {
   const serving =
     found.state === 'build failed'
       ? `${found.dir} is already up at ${found.url}, but its build failed; it rebuilds on your next change`
-      : `${found.dir} is already up at ${found.url}, ${watching}${last}`;
+      : nothingServes(found)
+        ? `${found.dir} is already up at ${found.url}, but nothing is serving (${found.state}); it rebuilds on your next change`
+        : `${found.dir} is already up at ${found.url}, ${watching}${last}`;
 
   return [
     `[frogbot] ${serving}`,
@@ -425,7 +436,7 @@ async function keepRunning(
   const moving = typeof requested === 'number' && requested !== found.port;
 
   if (!switching && !moving) {
-    if (found.state === 'build failed') {
+    if (nothingServes(found)) {
       throw new CliError(`${alreadyUp(found).join('\n')}\n[frogbot] log: ${found.log}`, {
         code: 'BUILD_FAILED',
       });

@@ -672,7 +672,7 @@ describe('frogbot bin', () => {
       ['hello', 'runtime'],
       ['migrate', 'runtime'],
     ])('loads the config for `%s` in %s mode', async (command, mode) => {
-      withConfig({ hello: vi.fn() });
+      withConfig({ hello: vi.fn<CLICommand>() });
       process.argv = ['node', 'frogbot', command];
 
       await bin();
@@ -698,10 +698,10 @@ describe('frogbot bin', () => {
 
     it('lists app commands under their group, before Contributing, with their summary', async () => {
       withConfig({
-        start: Object.assign(vi.fn(), { summary: 'My own start' }),
-        hello: vi.fn(),
-        dojo: Object.assign(vi.fn(), { group: 'Dojo', summary: 'Dojo things' }),
-        'export:all': Object.assign(vi.fn(), { summary: 'Export everything' }),
+        start: Object.assign(vi.fn<CLICommand>(), { summary: 'My own start' }),
+        hello: vi.fn<CLICommand>(),
+        dojo: Object.assign(vi.fn<CLICommand>(), { group: 'Dojo', summary: 'Dojo things' }),
+        'export:all': Object.assign(vi.fn<CLICommand>(), { summary: 'Export everything' }),
       });
 
       process.argv = ['node', 'frogbot'];
@@ -729,7 +729,7 @@ describe('frogbot bin', () => {
 
     it('lists app commands with their usage and flags in `help --json`', async () => {
       withConfig({
-        'export:all': Object.assign(vi.fn(), {
+        'export:all': Object.assign(vi.fn<CLICommand>(), {
           summary: 'Export everything',
           usage: 'export:all [--output <file>]',
         }),
@@ -758,7 +758,7 @@ describe('frogbot bin', () => {
     it.each(['--help', '-h'])(
       "prints an app command's usage and summary for %s without running it",
       async (flag) => {
-        const run = vi.fn();
+        const run = vi.fn<CLICommand>();
 
         withConfig({
           'export:all': Object.assign(run, {
@@ -782,7 +782,7 @@ describe('frogbot bin', () => {
     );
 
     it('passes `--help` to an app command without a usage, which prints its own', async () => {
-      const dojo = Object.assign(vi.fn(), { group: 'Dojo', summary: 'Dojo things' });
+      const dojo = Object.assign(vi.fn<CLICommand>(), { group: 'Dojo', summary: 'Dojo things' });
 
       withConfig({ dojo });
       process.argv = ['node', 'frogbot', 'dojo', '--help'];
@@ -848,6 +848,23 @@ describe('frogbot bin', () => {
 
         expect(String(log.mock.calls[0]?.[0])).toMatch(/^FrogBot /);
         expect(error.mock.calls).toEqual([['[frogbot] failed to load config']]);
+      });
+
+      it('prints the commands with `success: false` and the load error for `help --json`, and exits 1', async () => {
+        process.argv = ['node', 'frogbot', 'help', '--json'];
+        captureExit();
+
+        const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+        await expect(bin()).rejects.toThrow('exit:1');
+
+        expect(write).toHaveBeenCalledOnce();
+        expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
+          command: 'help',
+          success: false,
+          error: { code: 'CONFIG_INVALID', message: 'failed to load config' },
+          groups: expect.any(Array),
+        });
       });
 
       it('treats a missing FROGBOT_CONFIG_PATH file as a load error', async () => {

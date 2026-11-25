@@ -110,6 +110,56 @@ describe('frogbot up', () => {
     expect(lines).toEqual([]);
   });
 
+  it.each([
+    ['dev', 'update failed', undefined, ['--dev']],
+    ['production', 'crashed', undefined, []],
+  ] as const)(
+    'exits 1 for an app already up in %s whose state is %s and nothing serves',
+    async (mode, state, serverPid, args) => {
+      writeRegistration(registrationFile(serviceId(dir)), {
+        id: serviceId(dir),
+        dir,
+        url: 'http://127.0.0.1:3007',
+        port: 3007,
+        pid: process.pid,
+        serverPid,
+        frogbot: '0.38.0',
+        startedAt: new Date().toISOString(),
+        mode,
+        state,
+        log: join(dir, '.frogbot', 'service.log'),
+        autostart: false,
+      });
+
+      await expect(up([...args], { log, spawnSupervisor: vi.fn() })).rejects.toMatchObject({
+        exitCode: 1,
+        code: 'BUILD_FAILED',
+        message: expect.stringContaining(`but nothing is serving (${state})`),
+      });
+    },
+  );
+
+  it('succeeds for an app whose last update failed while the earlier build still serves', async () => {
+    writeRegistration(registrationFile(serviceId(dir)), {
+      id: serviceId(dir),
+      dir,
+      url: 'http://127.0.0.1:3007',
+      port: 3007,
+      pid: process.pid,
+      serverPid: process.pid,
+      frogbot: '0.38.0',
+      startedAt: new Date().toISOString(),
+      state: 'update failed',
+      lastError: 'Type error: nope',
+      log: join(dir, '.frogbot', 'service.log'),
+      autostart: false,
+    });
+
+    await expect(up([], { log, spawnSupervisor: vi.fn() })).resolves.toMatchObject({
+      state: 'update failed',
+    });
+  });
+
   it.each([['--nope'], ['--dev', '--autostart']])(
     'throws a usage error, exiting 2, for %j',
     (...args) => {
@@ -315,6 +365,7 @@ describe('the already-up line', () => {
         {
           ...found,
           state: 'update failed',
+          serverPid: 4242,
           builtAt: '2026-11-12T11:59:15.000Z',
           lastError: 'build failed (exit 1)',
         },

@@ -56,7 +56,7 @@ describe('frogbot deploy', () => {
         .stderr()
         .slice(2)
         .map((line) => line.trim().split(/\s+/)[0]),
-    ).toEqual(['docker', 'fly', 'gcp', 'aws', 'azure']);
+    ).toEqual(['docker']);
   });
 
   it('names an unknown target, lists the targets and exits 2', async () => {
@@ -127,7 +127,7 @@ describe('frogbot deploy', () => {
   describe('--help', () => {
     const dojo = { ...recordingTarget().target, usage: '[--app <slug or id>] [--no-keys]' };
 
-    it('lists every target with its own flags, plugin targets first', () => {
+    it('lists dojo and docker with their own flags, and not the customer-cloud targets', () => {
       const help = deployHelp(['--help'], { config: appConfig({ dojo }) }).split('\n');
 
       expect(help[0]).toBe(
@@ -137,7 +137,7 @@ describe('frogbot deploy', () => {
       expect(help).toContain('          [--tag <tag>]');
       expect(
         help.filter((line) => /^ {2}\S/.test(line)).map((line) => line.trim().split(' ')[0]),
-      ).toEqual(['dojo', 'docker', 'fly', 'gcp', 'aws', 'azure']);
+      ).toEqual(['dojo', 'docker']);
     });
 
     it('prints one target with the shared and cloud flags', () => {
