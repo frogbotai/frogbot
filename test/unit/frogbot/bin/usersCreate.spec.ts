@@ -73,6 +73,14 @@ describe('describeDatabase', () => {
       { local: false, label: 'postgres://db.example.com/app' },
     ],
     [
+      'postgres://db.example.com/app?password=sec@ret',
+      { local: false, label: 'postgres://db.example.com/app' },
+    ],
+    [
+      'postgres://db.example.com/app?sslcert=/home/a@b/c',
+      { local: false, label: 'postgres://db.example.com/app' },
+    ],
+    [
       'postgres://admin:9911#Kx@db.example.com:5432/app',
       { local: false, label: 'postgres://db.example.com:5432/app' },
     ],
