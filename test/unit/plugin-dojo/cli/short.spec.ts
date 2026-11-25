@@ -433,4 +433,17 @@ describe("frogbot dojo's daily commands", () => {
     expect(remove?.usage).toBe('frogbot apps delete [app] [--yes] [--json] [--wait]');
     expect(remove?.flags.map(({ name }) => name)).toEqual(['--yes', '--json', '--wait']);
   });
+
+  it.each([
+    [['apps', '--help', '--json'], 'apps'],
+    [['status', '--help', '--json'], 'status'],
+    [['apps', 'delete', '--help', '--json'], 'apps delete'],
+  ])('%j prints one JSON value', async (args, name) => {
+    const { run } = await setup();
+
+    const result = await run(...args);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ name });
+  });
 });
