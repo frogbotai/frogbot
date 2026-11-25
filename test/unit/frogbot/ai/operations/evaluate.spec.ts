@@ -102,7 +102,7 @@ describe('evaluateOperation', () => {
     expect(start).toHaveBeenCalledOnce();
     expect(evaluationModel).toHaveBeenCalledOnce();
     expect(doEvaluate).toHaveBeenCalledWith(
-      expect.objectContaining({ state: { refund: true }, questions }),
+      expect.objectContaining({ state: [{ type: 'json', value: { refund: true } }], questions }),
     );
     expect(result.answers.team.choice).toBe('billing');
     expect(result.usage).toEqual({ inputTokens: 120, outputTokens: 0, totalTokens: 120 });
@@ -138,6 +138,51 @@ describe('evaluateOperation', () => {
     ).rejects.toThrow();
 
     expect(finish).toHaveBeenCalledExactlyOnceWith({ error: expect.any(Error) });
+  });
+
+  it('rejects an array state that is not state parts instead of sending it empty', async () => {
+    const doEvaluate = vi.fn();
+    const { gateway, operation } = makeGateway(
+      new Experimental_EvaluationMockModelV4({ doEvaluate }),
+    );
+
+    await expect(
+      evaluateOperation(
+        { gateway, config: makeConfig() },
+        {
+          model: 'typesafe-ai/jev',
+          state: ['charged twice', { refund: true }] as never,
+          questions: { refunded: questions.refunded },
+        },
+      ),
+    ).rejects.toThrow(
+      "[frogbot] evaluate state: an array must hold state parts ({ type: 'text' | 'file' | 'json' }). Wrap a JSON array as [{ type: 'json', value: array }].",
+    );
+
+    expect(operation).not.toHaveBeenCalled();
+    expect(doEvaluate).not.toHaveBeenCalled();
+  });
+
+  it('passes an array of state parts through', async () => {
+    const doEvaluate = vi.fn(() =>
+      Promise.resolve({
+        answers: { refunded: { type: 'boolean' as const, probability: 0.9 } },
+        warnings: [],
+      }),
+    );
+
+    const { gateway } = makeGateway(new Experimental_EvaluationMockModelV4({ doEvaluate }));
+    const state = [
+      { type: 'text' as const, text: 'charged twice' },
+      { type: 'json' as const, value: ['a', 1] },
+    ];
+
+    await evaluateOperation(
+      { gateway, config: makeConfig() },
+      { model: 'typesafe-ai/jev', state, questions: { refunded: questions.refunded } },
+    );
+
+    expect(doEvaluate).toHaveBeenCalledWith(expect.objectContaining({ state }));
   });
 
   it('enforces the requested alias before contacting the gateway', async () => {

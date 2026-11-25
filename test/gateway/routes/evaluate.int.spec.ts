@@ -106,7 +106,7 @@ describe('standalone evaluation route', () => {
           refunded: { type: 'boolean', probability: 0.91 },
         },
         usage: { inputTokens: 471, outputTokens: 71 },
-        providerMetadata: { typesafe: { confidence: { team: 0.7, urgency: 0.6 } } },
+        providerMetadata: { typesafe: { confidence: { team: 0.7, urgency: 0.6 }, legend: {} } },
       });
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(String(fetch.mock.calls[0][0])).toBe('https://api.typesafe.ai/v1/systemone');

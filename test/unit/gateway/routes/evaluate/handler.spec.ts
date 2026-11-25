@@ -153,13 +153,30 @@ describe('evaluateRoute', () => {
     ]);
     expect(doEvaluate).toHaveBeenCalledWith(
       expect.objectContaining({
-        state,
+        state: [{ type: 'json', value: state }],
         questions: allQuestions,
         providerOptions: { typesafe: { initial: true, locale: 'en' } },
         headers: expect.objectContaining({ 'x-correlation-id': 'hook-correlation' }),
       }),
     );
     expect(JSON.stringify(doEvaluate.mock.calls[0][0])).not.toContain('caller-secret');
+  });
+
+  it('evaluates an array state as one JSON value, not as state parts', async () => {
+    const doEvaluate = vi.fn((_options: Experimental_EvaluationModelV4CallOptions) =>
+      Promise.resolve({
+        answers: { approved: { type: 'boolean' as const, probability: 0.5 } },
+        warnings: [],
+      }),
+    );
+
+    const app = makeApp(new Experimental_EvaluationMockModelV4({ doEvaluate }));
+    const state = ['refund requested', { amount: 49 }];
+
+    const res = await post(app, { model: 'typesafe-ai/jev', state, questions });
+
+    expect(res.status).toBe(200);
+    expect(doEvaluate.mock.calls[0][0].state).toEqual([{ type: 'json', value: state }]);
   });
 
   it('keeps missing usage optional in hooks and omits unreported metadata', async () => {

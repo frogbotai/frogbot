@@ -85,12 +85,13 @@ type Issue = {
   expected?: string;
   values?: unknown[];
   prefix?: string;
+  options?: unknown[];
   errors?: Issue[][];
 };
 
 /**
  * Names the first field `validateChatMessages` rejected and why, as
- * `` `messages[0].parts[0].type`: expected one of 'text' | 'file' | …, received 'txt' ``.
+ * `` `messages[0].parts[0].state`: expected one of 'input-streaming' | 'input-available' | …, received 'done' ``.
  */
 export function describeMessagesError(error: unknown, messages: unknown[]): string | undefined {
   if (!error || typeof error !== 'object') return undefined;
@@ -137,6 +138,12 @@ function describeIssue(issue: Issue, input: unknown, base: string): string {
 
   if (issue.code === 'invalid_union' && issue.errors?.length) {
     return describeUnion(issue.errors, value, path);
+  }
+
+  if (issue.code === 'invalid_union' && issue.options?.length) {
+    return issue.message.startsWith('Invalid discriminator value')
+      ? `\`${path}\`: ${expectation(issue.options.map(show))}, received ${show(value)}`
+      : `\`${path}\`: ${issue.message.replace(/\.$/, '')}, received ${show(value)}`;
   }
 
   return `\`${path}\`: ${reason(issue, value)}`;

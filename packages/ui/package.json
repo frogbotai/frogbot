@@ -132,7 +132,7 @@
   "peerDependencies": {
     "@payloadcms/translations": "catalog:",
     "@payloadcms/ui": "catalog:",
-    "ai": "^7.0.116",
+    "ai": "^7.0.181",
     "frogbot": "workspace:*",
     "payload": "catalog:",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
@@ -160,7 +160,7 @@
     "@types/markdown-it": "^14.1.2",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "ai": "7.0.116",
+    "ai": "7.0.181",
     "eslint": "^9.16.0",
     "frogbot": "workspace:*",
     "jsdom": "^24.1.3",
@@ -277,7 +277,7 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/react": "4.0.119",
+    "@ai-sdk/react": "4.0.186",
     "@date-fns/tz": "^1.2.0",
     "@dnd-kit/core": "^6.3.1",
     "@frogbotai/protocol": "workspace:*",

@@ -842,7 +842,7 @@ describe('agent endpoints', () => {
 
     expect(response.status).toBe(400);
     expect((await response.json()).error).toMatch(
-      /^`messages\[0\]\.parts\[0\]\.type`: expected one of 'text' \| .*'file' \| .*, received 'txt'$/,
+      /^`messages\[0\]\.parts\[0\]\.type`: Invalid UI message part type\. .*"data-" or "tool-", received 'txt'$/,
     );
   });
 

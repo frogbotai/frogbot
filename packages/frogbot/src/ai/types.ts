@@ -187,7 +187,8 @@ export type AITelemetrySpanType =
   | 'tool'
   | 'embedding'
   | 'reranking'
-  | 'experimental_evaluation';
+  | 'experimental_decision'
+  | 'experimental_extraction';
 
 export type AIEnrichSpanArgs = {
   spanType: AITelemetrySpanType;

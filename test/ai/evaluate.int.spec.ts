@@ -46,6 +46,7 @@ const upstreamResult = {
       score: 1.5,
       probabilities: { 0: 0, 1: 0.5, 2: 0.5 },
       confidence: 0.64,
+      legend: { 0: 'none', 1: 'minor', 2: 'major' },
     },
   },
   usage: { input_tokens: 471, output_tokens: 71 },
@@ -184,7 +185,10 @@ describe('booted TypeSafe evaluation', () => {
     });
     expect(alias.rounding).toEqual({ probabilityDecimals: 2, scoreDecimals: 2 });
     expect(alias.providerMetadata).toEqual({
-      typesafe: { confidence: { team: 0.72, severity: 0.64 } },
+      typesafe: {
+        confidence: { team: 0.72, severity: 0.64 },
+        legend: { severity: { 0: 'none', 1: 'minor', 2: 'major' } },
+      },
     });
     expect(alias.usage).toMatchObject({ inputTokens: 471, outputTokens: 71, totalTokens: 542 });
     expect(alias.response.modelId).toBe('jev-1.13.0');
@@ -234,7 +238,12 @@ describe('booted TypeSafe evaluation', () => {
         severity: { type: 'score', score: 1.5, probabilities: { 0: 0, 1: 0.5, 2: 0.5 } },
       },
       usage: { inputTokens: 471, outputTokens: 71 },
-      providerMetadata: { typesafe: { confidence: { team: 0.72, severity: 0.64 } } },
+      providerMetadata: {
+        typesafe: {
+          confidence: { team: 0.72, severity: 0.64 },
+          legend: { severity: { 0: 'none', 1: 'minor', 2: 'major' } },
+        },
+      },
     });
     expect(upstreamCalls).toHaveLength(1);
     expect(upstreamCalls[0].body.model).toBe('jev-latest');

@@ -430,6 +430,7 @@ const severityScore = result.answers.severity.score
 - A boolean probability is an estimate, not an automatic decision.
 - TypeSafe rounds probabilities and scores to two decimal places, and `result.rounding` records that precision.
 - When provided, confidence for choice and score questions is at `result.providerMetadata?.typesafe?.confidence`. It is separate from their answer probabilities.
+- When provided, a score question's label for each score value is at `result.providerMetadata?.typesafe?.legend`, keyed by question name.
 - Evaluation uses the AI SDK's experimental API, which may change in patch releases.
 
 `typesafe-ai/jev` is FrogBot's shorthand for upstream `jev-latest`; `typesafe-ai/jev-latest` also works. Local router slugs can target either model, while HTTP requests use provider-prefixed IDs.
@@ -440,8 +441,11 @@ const severityScore = result.answers.severity.score
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `string \| JSONObject \| JSONValue[]` | Required | The shared state every question is asked about. An array is one state, not a batch. |
+| `state` | `string \| JSONObject \| DecisionStatePart[]` | Required | The shared state every question is asked about. An array is one state made of parts (`{ type: 'text', text }`, `{ type: 'file', data, mediaType }` or `{ type: 'json', value }`), not a batch. Wrap a JSON array in a `json` part; any other array throws a `TypeError`. |
 | `questions` | `Record<string, EvaluationQuestion>` | Required | Named questions. Each key becomes a key of `result.answers`. See [Question options](#question-options). |
+| `maxOutputTokens` | `number` | Provider default | Maximum output tokens, for models that support it. An integer of at least `1`. |
+| `reasoning` | `'provider-default' \| 'none' \| 'minimal' \| 'low' \| 'medium' \| 'high' \| 'xhigh' \| 'max'` | Provider default | Reasoning effort, for models that support it. |
+| `experimental_download` | `DownloadFunction` | — | Downloads URL-backed file parts in `state`; required when a file part has a URL. Use `createDownload({ fetch })` with a DNS-protected transport for untrusted URLs. |
 | `maxRetries` | `number` | `2` | Retries for transient provider failures. |
 | `abortSignal` | `AbortSignal` | — | Cancels the call. |
 | `headers` | `Record<string, string>` | — | Extra HTTP headers sent to the provider. |
@@ -455,9 +459,9 @@ const severityScore = result.answers.severity.score
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `type` | `'boolean' \| 'choice' \| 'score'` | Required | `boolean` answers with a `probability`, `choice` with one of the `criteria` keys, and `score` with an index into the `criteria` levels. |
-| `instructions` | `string \| JSONObject \| JSONValue[]` | Required | The question to answer about the state. |
-| `criteria` | `Record<string, string \| JSONObject \| JSONValue[] \| null>` for `choice`; `(string \| JSONObject \| JSONValue[] \| null)[]` for `score`; `{ true?, false? }` for `boolean` | Required for `choice` and `score` | `choice`: a non-empty map of option names to descriptions. `score`: at least two ordered levels, indexed from `0`. `boolean`: optional descriptions of what `true` and `false` mean. `null` means no description. |
+| `type` | `'boolean' \| 'choice' \| 'score' \| 'box'` | Required | `boolean` answers with a `probability`, `choice` with one of the `criteria` keys, `score` with an index into the `criteria` levels, and `box` with the `box` bounds (`top`, `bottom`, `left`, `right`, each from `0` to `1`, measured from the image's top-left corner) of what it finds in an image in the state. |
+| `instructions` | `string \| JSONObject \| JSONValue[] \| null` | Required unless the provider accepts questions whose `criteria` define the judgment | The question to answer about the state. A `boolean` question without `instructions` needs at least one non-null `criteria` description. |
+| `criteria` | `Record<string, string \| JSONObject \| JSONValue[] \| null>` for `choice`; `(string \| JSONObject \| JSONValue[] \| null)[]` for `score`; `{ true?, false? }` for `boolean` | Required for `choice` and `score`; `box` takes none | `choice`: a non-empty map of option names to descriptions. `score`: at least one ordered level, indexed from `0`; providers may require more. `boolean`: optional descriptions of what `true` and `false` mean. `null` means no description. |
 
 ---
 
@@ -613,7 +617,7 @@ ai: {
 
 | Argument | Type | Description |
 | --- | --- | --- |
-| `spanType` | `'operation' \| 'step' \| 'languageModel' \| 'tool' \| 'embedding' \| 'reranking' \| 'experimental_evaluation'` | The kind of span being created. |
+| `spanType` | `'operation' \| 'step' \| 'languageModel' \| 'tool' \| 'embedding' \| 'reranking' \| 'experimental_decision' \| 'experimental_extraction'` | The kind of span being created. |
 | `operationId` | `string` | AI SDK operation name, such as `ai.generateText`. |
 | `callId` | `string` | ID of the AI SDK call the span belongs to. |
 | `runtimeContext` | `Record<string, unknown> \| undefined` | The call's runtime context. Agent runs set `{ agent: { slug, runId, chatId? } }`. |
