@@ -25,7 +25,7 @@ const workspaceFlag: VerbFlag = {
   help: 'The workspace. Needed when you are in more than one.',
 };
 
-const ownerNeeded = 'owner access to the workspace';
+const adminNeeded = 'Admin access to the workspace';
 
 function checkRole(role: string, program: string): (typeof roles)[number] {
   if (role === 'owner') {
@@ -113,7 +113,7 @@ export const members: Noun = {
           method: 'POST',
           body: { workspace: workspace.id, email, role },
           what: `Couldn't add ${email} to ${workspace.slug}`,
-          needs: ownerNeeded,
+          needs: adminNeeded,
         });
 
         done(input.io, shown(doc), [
@@ -138,7 +138,7 @@ export const members: Noun = {
             method: 'PATCH',
             body: { role },
             what: `Couldn't change ${email}'s role`,
-            needs: ownerNeeded,
+            needs: adminNeeded,
           },
         );
 
@@ -158,7 +158,7 @@ export const members: Noun = {
         await dojoJSON(input.dojo(), `/api/members/${segment(member.id)}`, {
           method: 'DELETE',
           what: `Couldn't remove ${email}`,
-          needs: ownerNeeded,
+          needs: adminNeeded,
         });
 
         done(input.io, { removed: shown(member) }, [

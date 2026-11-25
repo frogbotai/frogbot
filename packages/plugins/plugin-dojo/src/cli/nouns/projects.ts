@@ -186,7 +186,9 @@ export const projects: Noun = {
       run: async (input) => {
         const project = await findProject(input);
         const purging = input.values['purge-trash'] === true;
-        const trashed = purging ? await trashedApps(input.dojo(), 'project', project.id) : [];
+        const trashed = purging
+          ? await trashedApps(input.dojo(), 'project', project.id, project.name)
+          : [];
 
         await input.confirm(
           `Delete the project ${project.name} (${project.id}) for good?${purgeNotice(trashed)}`,

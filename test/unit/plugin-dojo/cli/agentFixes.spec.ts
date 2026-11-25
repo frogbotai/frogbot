@@ -14,8 +14,8 @@ type Reply = { status?: number; body: unknown };
 const workspace = { id: 1, name: 'Trend Capital', slug: 'trend-capital' };
 const project = { id: 'p1', name: 'Deals', workspace: 1, isDefault: false };
 const trashed = [
-  { id: 8, name: 'Old CRM ', slug: 'old-crm', workspace: 1 },
-  { id: 9, name: 'Leads', slug: 'leads', workspace: 1 },
+  { id: 8, name: 'Old CRM ', slug: 'old-crm', workspace: 1, deletedAt: '2026-11-20T00:00:00Z' },
+  { id: 9, name: 'Leads', slug: 'leads', workspace: 1, deletedAt: '2026-11-21T00:00:00Z' },
 ];
 
 async function setup(replies: Record<string, Reply> = {}) {
@@ -106,7 +106,6 @@ describe('--purge-trash', () => {
 
     expect(new URLSearchParams(listed?.search).get('trash')).toBe('true');
     expect(listed?.search).toContain('where[workspace][equals]=1');
-    expect(listed?.search).toContain('where[deletedAt][exists]=true');
   });
 
   it('lists the apps it will purge when it asks, and purges nothing on no', async () => {
@@ -147,6 +146,48 @@ describe('--purge-trash', () => {
     ]);
     expect(dojo.requests.find(({ path }) => path === '/api/apps')?.search).toContain(
       'where[project][equals]=p1',
+    );
+  });
+
+  it('deletes nothing for good while apps outside Trash still block the delete', async () => {
+    const { dojo, run } = await setup({
+      'GET /api/projects': { body: { docs: [project] } },
+      'GET /api/apps': {
+        body: { docs: [...trashed, { id: 10, name: 'Live', slug: 'live', workspace: 1 }] },
+      },
+    });
+
+    const result = await run(['projects', 'delete', 'Deals', '--purge-trash', '--yes', '--json']);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n')).error).toBe(
+      'Deals still holds 1 app outside Trash (live), so nothing was deleted. Move each with apps move or delete it with apps delete, then rerun with --purge-trash.',
+    );
+    expect(changes(dojo)).toEqual([]);
+  });
+
+  it('names the apps already gone when the purge fails partway', async () => {
+    const { run } = await setup({
+      ...trashList,
+      'POST /api/apps/8/delete-permanently': { body: { deleted: true } },
+      'POST /api/apps/9/delete-permanently': {
+        status: 500,
+        body: { errors: [{ message: 'boom' }] },
+      },
+    });
+
+    const result = await run([
+      'workspaces',
+      'delete',
+      'trend-capital',
+      '--purge-trash',
+      '--yes',
+      '--json',
+    ]);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n')).error).toBe(
+      "Dojo couldn't delete leads for good: boom Already deleted for good: old-crm. Rerun to carry on.",
     );
   });
 

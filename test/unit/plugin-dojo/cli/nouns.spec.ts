@@ -691,7 +691,7 @@ describe('frogbot dojo <noun> <verb>', () => {
 
     expect(await runDojo(['projects', 'delete', 'Deals', '--yes'], result.io)).toBe(1);
     expect(result.stderr()).toEqual([
-      "[frogbot] Dojo couldn't delete Deals: Move or delete its apps first, Trash included. Rerun with --purge-trash to delete its apps in Trash for good first.",
+      "[frogbot] Dojo couldn't delete Deals: Move or delete its apps first, Trash included. Rerun with --purge-trash to delete its apps in Trash for good first; apps outside Trash need apps move or apps delete.",
     ]);
   });
 

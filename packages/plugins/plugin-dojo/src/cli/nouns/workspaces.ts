@@ -70,7 +70,9 @@ export const workspaces: Noun = {
       run: async ({ io, dojo, confirm, values, positionals: [slug = ''] }) => {
         const workspace = await findWorkspace({ dojo: dojo(), io, slug });
         const purging = values['purge-trash'] === true;
-        const trashed = purging ? await trashedApps(dojo(), 'workspace', workspace.id) : [];
+        const trashed = purging
+          ? await trashedApps(dojo(), 'workspace', workspace.id, workspace.slug)
+          : [];
 
         await confirm(
           `Delete ${workspace.name} (${workspace.slug}) for good? Its projects, members, API keys and plan go with it.${purgeNotice(trashed)}`,
