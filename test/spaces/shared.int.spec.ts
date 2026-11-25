@@ -138,4 +138,53 @@ describe('a shared Space collection of your own', () => {
       'space_file_read',
     );
   });
+
+  it('does not let a read-only member move files out of a shared Space', async () => {
+    const annEmail = 'ann-files@frogbot.local';
+    const benEmail = 'ben-files@frogbot.local';
+    const ann = await harness.createUser(annEmail);
+    const ben = await harness.createUser(benEmail);
+
+    const project = await frogbot.create({
+      collection: 'projects',
+      data: { name: 'Shared', ownerEmail: annEmail, readers: `${annEmail} ${benEmail}` },
+      user: ann,
+      overrideAccess: false,
+    });
+
+    const benProject = await frogbot.create({
+      collection: 'projects',
+      data: { name: 'Ben only', ownerEmail: benEmail, readers: benEmail },
+      user: ben,
+      overrideAccess: false,
+    });
+
+    const data = Buffer.from('Shared file.');
+    const file = await frogbot.create({
+      collection: 'frogbot-space-files',
+      data: { space: project.id },
+      file: { data, mimetype: 'text/markdown', name: 'shared.md', size: data.byteLength },
+      user: ann,
+      overrideAccess: false,
+    });
+
+    await frogbot
+      .update({
+        collection: 'frogbot-space-files',
+        where: { space: { equals: project.id } },
+        data: { space: benProject.id },
+        user: ben,
+        overrideAccess: false,
+      })
+      .catch(() => undefined);
+
+    const stored = await frogbot.findByID({
+      collection: 'frogbot-space-files',
+      id: file.id,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(stored.space).toEqual(project.id);
+  });
 });
