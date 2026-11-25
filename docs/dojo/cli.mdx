@@ -24,7 +24,7 @@ npx frogbot dojo rollback                    # back to the previous live version
 npx frogbot dojo env set STRIPE_SECRET_KEY=sk_live_...
 ```
 
-`frogbot deploy` writes the app's id to `.frogbot/app.json`, which is how the others find it. Name an app to act on another one: `npx frogbot dojo status deals`. Every command below that takes `<app>` also leaves it out in that folder.
+`frogbot deploy` writes the app's id to `.frogbot/app.json`, which is how the others find it. Name an app to act on another one: `npx frogbot dojo status deals`. Most commands below that take `<app>` also leave it out in that folder; `apps pull` and `sharing leave` always need it.
 
 ## Commands
 
