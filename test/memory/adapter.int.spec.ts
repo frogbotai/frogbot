@@ -33,8 +33,9 @@ describe('testMemoryAdapter(databaseMemory())', () => {
     const run = testMemoryAdapter(adapter, {
       req: await frogbot.createRequest(),
       errors: {
-        limit: (target) => adapter.save({ ...target, text: overBudget, pinned: true }),
-        invalid: (target) => duplicateKey(adapter, target),
+        'memory.pinned-budget': (target) =>
+          adapter.save({ ...target, text: overBudget, pinned: true }),
+        'memory.duplicate': (target) => duplicateKey(adapter, target),
       },
     });
 
@@ -64,7 +65,7 @@ describe.skipIf(database === 'mongodb')(
       const run = testMemoryAdapter(adapter, {
         req: await frogbot.createRequest(),
         errors: {
-          unavailable: (target) => {
+          'memory.unavailable': (target) => {
             model.respond({
               error: { status: 400, body: { error: { message: 'provider down' } } },
             });

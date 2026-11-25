@@ -1,12 +1,12 @@
 import { setTimeout } from 'node:timers/promises';
 
-import { KVLockContentionError } from '../../kv/errors.js';
+import { frogbotError } from '../../errors/catalog.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { ConnectionID, ConnectionStore, ConnectionStoredValue } from '../store.js';
 import type { ConnectionHolder } from '../types.js';
-import { OAuthError } from './error.js';
 import { oauthAuth, oauthTokenMetadata, parseOAuthTokens, refreshOAuthTokens } from './tokens.js';
 
 export async function refreshOAuthConnection({
@@ -67,13 +67,13 @@ export async function refreshOAuthConnection({
             });
 
             if (metadata.expiresAt && Date.parse(metadata.expiresAt) <= Date.now()) {
-              throw new OAuthError('refresh');
+              throw frogbotError('oauth.refresh');
             }
           } catch (cause) {
             const { current, same } = await unchanged();
             if (!same) return current;
             await locked.upsert({ ...row, status: 'error', reconnect: row.id });
-            throw new OAuthError('refresh', { cause });
+            throw frogbotError('oauth.refresh', { cause });
           }
 
           const { current, same } = await unchanged();
@@ -90,7 +90,7 @@ export async function refreshOAuthConnection({
         },
       });
     } catch (error) {
-      if (!(error instanceof KVLockContentionError) || Date.now() >= deadline) throw error;
+      if (!isFrogBotError(error, 'kv.lock-held') || Date.now() >= deadline) throw error;
       await setTimeout(50);
     }
   }

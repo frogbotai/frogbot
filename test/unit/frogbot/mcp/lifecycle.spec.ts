@@ -23,7 +23,16 @@ const mocked = vi.hoisted(() => {
 });
 
 vi.mock('payload', () => ({
-  APIError: class APIError extends Error {},
+  APIError: class APIError extends Error {
+    constructor(
+      message: string,
+      readonly status = 500,
+      readonly data: unknown = null,
+      readonly isPublic = false,
+    ) {
+      super(message);
+    }
+  },
   getPayload: vi.fn(() => mocked.payload),
   createPayloadRequest: vi.fn(({ req }) => ({ ...req, payload: mocked.payload })),
   handleEndpoints: vi.fn(),

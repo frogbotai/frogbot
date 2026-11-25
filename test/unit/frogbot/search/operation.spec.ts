@@ -4,10 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { SearchAdapter } from '../../../../packages/frogbot/src/database/types.js';
 import {
-  SearchCapabilityError,
-  SearchFilterUnsupportedError,
-  SearchReadinessError,
-  SearchValidationError,
+  searchFilterUnsupported,
+  searchInvalid,
+  searchNotReady,
+  searchUnavailable,
 } from '../../../../packages/frogbot/src/search/errors.js';
 import { searchOperation } from '../../../../packages/frogbot/src/search/operation.js';
 import { resolveSearchPredicate } from '../../../../packages/frogbot/src/search/predicates.js';
@@ -47,7 +47,7 @@ describe('search operation boundaries', () => {
         index: name,
         query: { text: 'hello' },
       }),
-    ).rejects.toThrow(SearchValidationError);
+    ).rejects.toMatchObject({ code: 'search.invalid' });
   });
 
   it('requires request identity and a positive limit before adapter execution', async () => {
@@ -363,7 +363,7 @@ describe('search hydration', () => {
         query: { text: 'hello' },
         req,
       }),
-    ).rejects.toThrow(SearchReadinessError);
+    ).rejects.toMatchObject({ code: 'search.not-ready' });
 
     expect(find).not.toHaveBeenCalled();
   });
@@ -578,7 +578,7 @@ describe('hybrid components', () => {
         query: hybrid,
         req,
       }),
-    ).rejects.toThrow(SearchReadinessError);
+    ).rejects.toMatchObject({ code: 'search.not-ready' });
 
     expect(find).not.toHaveBeenCalled();
   });
@@ -586,54 +586,63 @@ describe('hybrid components', () => {
 
 describe('search errors', () => {
   it.each([
-    [new SearchValidationError('invalid'), 400],
-    [new SearchFilterUnsupportedError('filter'), 400],
-    [new SearchReadinessError('not ready'), 503],
-    [new SearchCapabilityError('articles', 'content', 'vector', 'not-implemented', 'none'), 501],
+    [searchInvalid('invalid'), 400],
+    [searchFilterUnsupported('filter'), 400],
+    [searchNotReady('not ready'), 503],
+    [
+      searchUnavailable({
+        collection: 'articles',
+        index: 'content',
+        mode: 'vector',
+        reason: 'not-implemented',
+        detail: 'none',
+      }),
+      501,
+    ],
   ])('maps %s to HTTP status %i as a public API error', (error, status) => {
     expect(error).toBeInstanceOf(APIError);
     expect(error.status).toBe(status);
     expect(error.isPublic).toBe(true);
-    expect(error.name).toBe(error.constructor.name);
+    expect(error.name).toBe('FrogBotError');
   });
 
   it.each([
     [
       'an unconfigured index',
-      SearchValidationError,
+      'search.invalid',
       {},
       { index: 'absent' },
       "Search index 'absent' in collection 'articles' is not configured.",
     ],
     [
       'a vector of the wrong length',
-      SearchValidationError,
+      'search.invalid',
       {},
       { query: { vector: [1, 2] } },
       "Search index 'content' in collection 'articles' requires a vector of 3 finite numbers.",
     ],
     [
       'an all-locales request',
-      SearchFilterUnsupportedError,
+      'search.filter-unsupported',
       {},
       { locale: 'all' },
       "Search index 'content' in collection 'articles' requires one locale per ranked result.",
     ],
     [
       'a filter on a field the index does not store',
-      SearchFilterUnsupportedError,
+      'search.filter-unsupported',
       {},
       { where: { unknownField: { equals: 1 } } },
       "Search index 'content' in collection 'articles' cannot filter path 'unknownField'.",
     ],
     [
       'a malformed adapter result',
-      SearchReadinessError,
+      'search.not-ready',
       { rows: [{ id: 1, score: NaN }] },
       {},
       "Search index 'content' in collection 'articles' returned an invalid ranked result.",
     ],
-  ])('names the collection and index for %s', async (_, ErrorClass, fixture, options, message) => {
+  ])('names the collection and index for %s', async (_, code, fixture, options, message) => {
     const { frogbot, payload, req } = searchFixture(fixture);
 
     const searching = searchOperation(frogbot, payload, {
@@ -644,7 +653,7 @@ describe('search errors', () => {
       ...options,
     });
 
-    await expect(searching).rejects.toThrow(ErrorClass);
+    await expect(searching).rejects.toMatchObject({ code });
     await expect(searching).rejects.toThrow(message);
   });
 
@@ -664,7 +673,10 @@ describe('search errors', () => {
         query: { text: 'hello' },
         req,
       }),
-    ).rejects.toThrow("Search index 'content' in collection 'articles' (lexical): engine-gap");
+    ).rejects.toMatchObject({
+      code: 'search.engine-gap',
+      message: "Search index 'content' in collection 'articles' (lexical): No text engine",
+    });
   });
 });
 
@@ -678,7 +690,12 @@ describe('search capability and schema lifecycle', () => {
         index,
         mode: 'vector',
       }),
-    ).toThrow(/content.*articles.*vector.*not-implemented/);
+    ).toThrow(
+      expect.objectContaining({
+        code: 'search.not-implemented',
+        data: { collection: 'articles', index: 'content', mode: 'vector' },
+      }),
+    );
   });
 
   it('preserves an adapter-reported engine gap instead of calling it not implemented', () => {
@@ -698,7 +715,12 @@ describe('search capability and schema lifecycle', () => {
         index,
         mode: 'vector',
       }),
-    ).toThrow(/engine-gap.*No vector engine/);
+    ).toThrow(
+      expect.objectContaining({
+        code: 'search.engine-gap',
+        message: expect.stringContaining('No vector engine'),
+      }),
+    );
   });
 
   it('checks capabilities and hands descriptors to the schema build at database init without wrapping connect', () => {
@@ -741,7 +763,10 @@ describe('search capability and schema lifecycle', () => {
     });
 
     expect(() => wrapped.init({ payload: {} as Payload })).toThrow(
-      /content.*articles.*lexical.*not-implemented/,
+      expect.objectContaining({
+        code: 'search.not-implemented',
+        data: expect.objectContaining({ mode: 'lexical' }),
+      }),
     );
   });
 

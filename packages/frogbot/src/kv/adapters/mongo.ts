@@ -1,6 +1,7 @@
 import type { BaseDatabaseAdapter, KVStoreValue, PayloadRequest } from 'payload';
 
-import { KVUnsupportedError } from '../errors.js';
+import { type FrogBotError } from '../../errors/FrogBotError.js';
+import { kvUnsupported } from '../errors.js';
 import type { KVDatabaseAdapter, KVLock } from '../types.js';
 import { kvAtomic } from '../types.js';
 import { validateKVTTL } from '../validateTTL.js';
@@ -174,11 +175,8 @@ function timestampField(timestamps: MongoTimestamps | undefined, field: 'created
   return option === false ? undefined : typeof option === 'string' ? option : field;
 }
 
-function unsupported(reason: string): KVUnsupportedError {
-  const error = new KVUnsupportedError();
-  error.message = reason;
-
-  return error;
+function unsupported(reason: string): FrogBotError {
+  return kvUnsupported(reason);
 }
 
 function isMongoKVModel(value: unknown): value is MongoKVModel {

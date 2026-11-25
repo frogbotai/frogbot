@@ -1,5 +1,5 @@
 import type { Endpoint } from '../endpoints/types.js';
-import { SearchValidationError } from './errors.js';
+import { searchInvalid } from './errors.js';
 import type { SearchManyOptions, SearchOptions } from './types.js';
 
 type SearchBody = Omit<SearchOptions, 'collection' | 'overrideAccess' | 'req'>;
@@ -37,16 +37,16 @@ async function readBody<T>(
   try {
     body = await json?.();
   } catch {
-    throw new SearchValidationError('Search requires a JSON request body.');
+    throw searchInvalid('Search requires a JSON request body.');
   }
 
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-    throw new SearchValidationError('Search requires a JSON object request body.');
+    throw searchInvalid('Search requires a JSON object request body.');
   }
 
   for (const key of Object.keys(body)) {
     if (!keys.has(key)) {
-      throw new SearchValidationError(`Search does not support the '${key}' option.`);
+      throw searchInvalid(`Search does not support the '${key}' option.`);
     }
   }
 

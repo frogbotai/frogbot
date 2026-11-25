@@ -7,7 +7,7 @@ keywords: [aggregate, group by, totals, sum, average, count, reports, dashboards
 
 `frogbot.aggregate()` totals the documents of one collection per group: deal value per stage, tickets per status and assignee, or story points per sprint. Grouping and totals run in the database, so no document is loaded into memory. It runs the collection's read access the same way `find` does, so a total never includes a document the caller can't read.
 
-The [Postgres, Vercel Postgres](/database/postgres), [SQLite, Cloudflare D1](/database/sqlite), and [MongoDB](/database/mongodb) adapters implement aggregate, and every option on this page behaves the same way on each. Any other adapter fails the call with `AggregateCapabilityError` (`501`).
+The [Postgres, Vercel Postgres](/database/postgres), [SQLite, Cloudflare D1](/database/sqlite), and [MongoDB](/database/mongodb) adapters implement aggregate, and every option on this page behaves the same way on each. Any other adapter fails the call with `aggregate.unsupported` (`501`).
 
 ## Query
 
@@ -75,7 +75,7 @@ A value name can't equal a `groupBy` path or start with `-`. The result types ke
 | `overrideAccess` | `boolean` | `false` | Skip access control. Without it, `req` is required. |
 | `req` | `FrogBotRequest` | — | The request to run as. Required unless `overrideAccess: true`. |
 
-Any other option fails with `AggregateValidationError`.
+Any other option fails with `aggregate.invalid`.
 
 ## Group by
 
@@ -93,7 +93,7 @@ groupBy: ['stage', { field: 'closedAt', by: 'quarter' }]
 // → { group: { stage: 'won', closedAt: '2026-01-01T00:00:00.000Z' }, values: { ... } }
 ```
 
-You can group by text, select, radio, email, number, checkbox, date, and single-collection relationship and upload fields. Polymorphic relationships, JSON, rich text, and blocks fail with `AggregateValidationError`.
+You can group by text, select, radio, email, number, checkbox, date, and single-collection relationship and upload fields. Polymorphic relationships, JSON, rich text, and blocks fail with `aggregate.invalid`.
 
 Each group's `group` object is keyed by the `groupBy` path, or the date field's name for a date bucket.
 
@@ -136,7 +136,7 @@ const { groups } = await frogbot.aggregate({
 The result always has that one row.
 
 - **No match.** When nothing matches, counts and sums are `0` and the rest are `null`. The same applies when the caller can't read the collection and `disableErrors` is `true`.
-- **No sorting or paging.** Without `groupBy`, `sort`, `limit`, and `page` fail with `AggregateValidationError`, because there is nothing to sort or page.
+- **No sorting or paging.** Without `groupBy`, `sort`, `limit`, and `page` fail with `aggregate.invalid`, because there is nothing to sort or page.
 
 ## Results and paging
 
@@ -219,12 +219,12 @@ From a frontend, the [SDK](/rest-api/overview#frogbot-rest-api-sdk) has a typed 
 
 | Error | Status | Meaning |
 | --- | --- | --- |
-| `AggregateValidationError` | `400` | An unknown option or field, a field of the wrong type, a value name that clashes, an unknown `by`, `locale: 'all'`, or a missing `req`. |
-| `QueryError` | `400` | A `where` or `groupBy` path the caller can't query. |
-| `Forbidden` | `403` | The caller can't read the collection, a field is `hidden`, or `groupBy` names a field with its own `access.read` without `overrideAccess: true`. |
-| `AggregateCapabilityError` | `501` | The database adapter has no aggregate implementation. |
+| `aggregate.invalid` | `400` | An unknown option or field, a field of the wrong type, a value name that clashes, an unknown `by`, `locale: 'all'`, or a missing `req`. |
+| `request.invalid-query` | `400` | A `where` or `groupBy` path the caller can't query. |
+| `auth.forbidden` | `403` | The caller can't read the collection, a field is `hidden`, or `groupBy` names a field with its own `access.read` without `overrideAccess: true`. |
+| `aggregate.unsupported` | `501` | The database adapter has no aggregate implementation. |
 
-Both aggregate errors are exported from `frogbot`. The REST endpoint returns the same statuses.
+The REST endpoint returns the same codes and statuses in its error body.
 
 ## Adapter integration
 

@@ -1,10 +1,11 @@
 import type { ResolvedAgentSelection } from '../../agents/service.js';
-import { AgentServiceError, assertAgentSelection } from '../../agents/service.js';
+import { assertAgentSelection } from '../../agents/service.js';
 import type { AgentInstance, AgentModelId, AgentSelection } from '../../agents/types.js';
 import type { SanitizedAIConfig } from '../../ai/types.js';
 import type { DocID } from '../../collections/config/types.js';
+import { frogbotError } from '../../errors/catalog.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import { TurnError } from './errors.js';
 import type { TurnMessageDocument } from './messages.js';
 import { messagesConfig } from './messages.js';
 
@@ -63,8 +64,8 @@ export async function assertStoredSelection({
   try {
     return await assertAgentSelection({ agent, config, selection, req });
   } catch (error) {
-    if (error instanceof AgentServiceError) {
-      throw new TurnError('selection-unavailable', error.message);
+    if (isFrogBotError(error) && error.code.startsWith('agent.')) {
+      throw frogbotError('turn.selection-unavailable', error.message);
     }
 
     throw error;

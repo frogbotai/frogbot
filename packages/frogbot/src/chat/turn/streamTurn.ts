@@ -3,15 +3,14 @@ import { consumeStream, createUIMessageStream, generateId, toUIMessageStream } f
 
 import { withAgentAccessChecked } from '../../agents/service.js';
 import type { AgentInstance, AgentSelection, AgentStreamResult } from '../../agents/types.js';
-import { aiErrorMessage } from '../../ai/errorMessage.js';
+import { aiErrorText } from '../../ai/aiError.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { toCompactedModelMessages } from '../compaction/history.js';
 import { createCompactionParts } from '../compaction/stream.js';
-import { CompactionError } from '../compaction/summarize.js';
 import { createMessageUsage, persistAssistantMessage } from '../messagePersistence.js';
 import { toolErrorText } from '../toolErrorText.js';
-import { TurnError } from './errors.js';
 import {
   findMessage,
   hasPendingParts,
@@ -167,10 +166,8 @@ export async function streamTurn({
   const errorText =
     onError ??
     ((error: unknown) =>
-      aiErrorMessage({ error, model: mainModel, config: req.frogbot.config.ai }) ??
-      (error instanceof TurnError || error instanceof CompactionError
-        ? error.message
-        : TURN_ERROR_MESSAGE));
+      aiErrorText({ error, model: mainModel, config: req.frogbot.config.ai }) ??
+      (isFrogBotError(error) && error.code !== 'internal' ? error.message : TURN_ERROR_MESSAGE));
 
   const stream = createUIMessageStream({
     originalMessages: uiMessages,

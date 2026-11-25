@@ -19,6 +19,7 @@ import { unwrapSessionPayload } from '../auth/operation.js';
 import type { AuthEmail, AuthStrategy } from '../auth/types.js';
 import type { CollectionAdminConfig } from '../collections/config/types.js';
 import type { Endpoint, Handler } from '../endpoints/types.js';
+import { problemAfterError } from '../errors/afterError.js';
 import type { FrogBot } from '../frogbot.js';
 import { seedFrogBotCache } from '../getFrogBot.js';
 import { assertNotStopping, isStopping } from '../jobs/stop.js';
@@ -80,12 +81,15 @@ export function wrapRootHooks(
   hooks: FrogBotConfig['hooks'],
   attachFrogBot: AttachFrogBot,
 ): PayloadConfig['hooks'] {
-  if (!hooks?.afterError) return hooks as PayloadConfig['hooks'];
-
   return {
-    afterError: hooks.afterError.map(
-      (hook) => async (args) => hook({ ...args, req: await attachFrogBot(args.req) }),
-    ),
+    afterError: [
+      problemAfterError,
+      ...(hooks?.afterError ?? []).map(
+        (hook): NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number] =>
+          async (args) =>
+            hook({ ...args, req: await attachFrogBot(args.req) }),
+      ),
+    ],
   };
 }
 

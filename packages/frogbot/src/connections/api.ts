@@ -1,6 +1,8 @@
 import { createHmac, randomBytes } from 'node:crypto';
 
 import { getPayloadConfig } from '../config/getPayloadConfig.js';
+import { frogbotError, type FrogBotErrorCode } from '../errors/catalog.js';
+import { type FrogBotError, isFrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBot } from '../frogbot.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance, PieceJSON } from '../pieces/types.js';
@@ -36,23 +38,14 @@ export type ConnectionResolveArgs = {
   connection?: ConnectionID;
   /**
    * The app slot to read, by its `app` name in `connections`. The request's user is not used, and
-   * an unlinked slot throws `ConnectionError('missing')`.
+   * an unlinked slot throws `connection.not-linked`.
    */
   as?: string;
 };
 
-export class ConnectionError extends Error {
-  constructor(
-    message: string,
-    public readonly code:
-      'missing' | 'revoked' | 'expired' | 'error' | 'scopes' | 'ambiguous' | 'forbidden',
-    public readonly missingScopes?: string[],
-    public readonly piece?: string,
-    options?: ErrorOptions,
-  ) {
-    super(message, options);
-    this.name = 'ConnectionError';
-  }
+/** Whether `error` is a failure to resolve a linked account: a `connection.*` code. */
+export function isConnectionError(error: unknown): error is FrogBotError {
+  return isFrogBotError(error) && error.code.startsWith('connection.');
 }
 
 function canonicalJSON(value: PieceJSON): string {
@@ -160,7 +153,7 @@ export class Connections {
     let id: string | undefined;
     const reconnect = 'Reconnect it in Settings → Linked accounts.';
     const fail = (
-      code: ConnectionError['code'],
+      code: FrogBotErrorCode,
       message: string,
       { next, cause }: { next?: string; cause?: unknown } = {},
     ): never => {
@@ -170,13 +163,12 @@ export class Connections {
         frogbot.logger.warn({ err: cause, piece: slug }, `[frogbot] ${text}`);
       }
 
-      throw new ConnectionError(
-        `${text}.${next ? ` ${next}` : ''}`,
-        code,
-        undefined,
-        slug,
-        cause === undefined ? undefined : { cause },
-      );
+      throw frogbotError(code, {
+        detail: `${text}.`,
+        ...(next ? { hint: next } : {}),
+        data: { piece: slug },
+        cause,
+      });
     };
 
     const configured = connectionEntry(config, { app: as, piece: slug });
@@ -189,15 +181,13 @@ export class Connections {
     if (!entry && connection === undefined) {
       if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
 
-      throw new ConnectionError(
-        `No \`connections\` entry declares '${slug}': add it to the root \`connections\` config (\`secret: true\` or \`oauth\`).`,
-        'missing',
-        undefined,
-        slug,
-      );
+      throw frogbotError('connection.not-configured', {
+        detail: `No \`connections\` entry declares '${slug}'.`,
+        data: { piece: slug },
+      });
     }
 
-    const notLinked = `${as === undefined ? 'is not linked' : `app '${as}' is not linked`}. Link it in Settings → Linked accounts`;
+    const notLinked = as === undefined ? 'is not linked' : `app '${as}' is not linked`;
     let row;
     try {
       const store = await this.store;
@@ -208,35 +198,31 @@ export class Connections {
           : rows.find((row) => String(row.id) === String(connection));
 
       if (connection !== undefined && !picked) {
-        throw new ConnectionError(
-          `Connection ${JSON.stringify(String(connection))} is not one of your '${slug}' accounts.`,
-          'forbidden',
-          undefined,
-          slug,
-        );
+        throw frogbotError('connection.forbidden', {
+          detail: `Connection ${JSON.stringify(String(connection))} is not one of your '${slug}' accounts.`,
+          data: { piece: slug },
+        });
       }
 
       if (!picked && rows.length) {
-        throw new ConnectionError(
-          `Connection for '${slug}' has several accounts and no default. Choose a default account in Settings → Linked accounts.`,
-          'ambiguous',
-          undefined,
-          slug,
-        );
+        throw frogbotError('connection.ambiguous', {
+          detail: `Connection for '${slug}' has several accounts and no default.`,
+          data: { piece: slug },
+        });
       }
 
       if (picked) id = rowKey(holder!, picked.id);
       row = picked && (await store.get({ ...holder!, piece: slug, id: picked.id }));
     } catch (error) {
-      if (error instanceof ConnectionError) throw error;
+      if (isConnectionError(error)) throw error;
 
-      return fail('error', 'could not be read', {
+      return fail('connection.unreadable', 'could not be read', {
         cause: error,
         next: 'Check the server log; if the credential key changed, reconnect it in Settings → Linked accounts.',
       });
     }
 
-    if (!row || !entry) return fail('missing', notLinked);
+    if (!row || !entry) return fail('connection.not-linked', notLinked);
 
     if (
       row.status === 'active' &&
@@ -254,25 +240,36 @@ export class Connections {
           req,
         });
       } catch (error) {
-        return fail('error', 'could not be refreshed', { cause: error, next: reconnect });
+        return fail('connection.unreadable', 'could not be refreshed', {
+          cause: error,
+          next: reconnect,
+        });
       }
 
-      if (!row) return fail('missing', notLinked);
+      if (!row) return fail('connection.not-linked', notLinked);
     }
 
-    if (row.status === 'revoked') return fail('revoked', 'is revoked', { next: reconnect });
-    if (row.status !== 'active') return fail('error', 'is in an error state', { next: reconnect });
+    if (row.status === 'revoked') {
+      return fail('connection.revoked', 'is revoked', { next: reconnect });
+    }
+
+    if (row.status !== 'active') {
+      return fail('connection.unreadable', 'is in an error state', { next: reconnect });
+    }
+
     if (row.expiresAt) {
       const expiresAt = Date.parse(row.expiresAt);
       if (!Number.isFinite(expiresAt)) {
-        return fail('error', 'has an invalid expiry', { next: reconnect });
+        return fail('connection.unreadable', 'has an invalid expiry', { next: reconnect });
       }
 
-      if (expiresAt <= Date.now()) return fail('expired', 'is expired', { next: reconnect });
+      if (expiresAt <= Date.now()) {
+        return fail('connection.expired', 'is expired', { next: reconnect });
+      }
     }
 
     if ((row.method !== 'secret' && row.method !== 'oauth') || !entry[row.method]) {
-      return fail('error', 'uses an unavailable method', {
+      return fail('connection.unreadable', 'uses an unavailable method', {
         next:
           row.method === 'secret' || row.method === 'oauth'
             ? `Enable \`${row.method}\` on its \`connections\` entry, or reconnect it in Settings → Linked accounts.`
@@ -287,12 +284,10 @@ export class Connections {
     );
 
     if (missingScopes.length) {
-      throw new ConnectionError(
-        `Connection for '${slug}' is missing required scopes.`,
-        'scopes',
-        missingScopes,
-        slug,
-      );
+      throw frogbotError('connection.missing-scopes', {
+        detail: `Connection for '${slug}' is missing required scopes.`,
+        data: { piece: slug, missingScopes },
+      });
     }
 
     let auth: unknown;
@@ -302,7 +297,7 @@ export class Connections {
           ? oauthAuth({ piece, tokens: parseOAuthTokens(row.credential) })
           : runtime.definition.auth.parse(row.credential);
     } catch {
-      return fail('error', 'has invalid credentials', { next: reconnect });
+      return fail('connection.unreadable', 'has invalid credentials', { next: reconnect });
     }
 
     const fingerprint = createHmac('sha256', identitySecret)
@@ -446,9 +441,9 @@ export class Connections {
         await this.resolve({ piece, req });
       } catch (error) {
         if (
-          !(error instanceof ConnectionError) ||
-          error.code === 'ambiguous' ||
-          error.code === 'forbidden'
+          !isConnectionError(error) ||
+          error.code === 'connection.ambiguous' ||
+          error.code === 'connection.forbidden'
         ) {
           throw error;
         }

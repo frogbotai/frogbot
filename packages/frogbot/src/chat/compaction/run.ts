@@ -2,10 +2,12 @@ import type { LanguageModelMiddleware, ModelMessage, ToolSet, UIMessage } from '
 import { generateId } from 'ai';
 import { convertToLanguageModelPrompt, createDefaultDownloadFunction } from 'ai/internal';
 
-import { aiErrorMessage } from '../../ai/errorMessage.js';
+import { aiErrorText } from '../../ai/aiError.js';
 import { resolveModelInputs } from '../../ai/modelInputs.js';
 import type { SanitizedAIConfig } from '../../ai/types.js';
 import type { DocID } from '../../collections/config/types.js';
+import { frogbotError } from '../../errors/catalog.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { toAgentModelMessages } from '../../uploads/toAgentModelMessages.js';
 import { toModelInput } from '../../uploads/toModelInput.js';
@@ -19,7 +21,7 @@ import { isOverflowError } from './overflow.js';
 import type { CompactedHistory } from './split.js';
 import { lastIndex, splitHistory } from './split.js';
 import type { CompactionEvent } from './stream.js';
-import { CompactionError, summarize } from './summarize.js';
+import { summarize } from './summarize.js';
 import { contextWindow } from './window.js';
 
 /** What a chat run needs to compact: the chat's stored messages and where to send parts. */
@@ -203,16 +205,15 @@ export async function compact(
       throw error;
     }
 
-    const failure =
-      error instanceof CompactionError
-        ? error
-        : new CompactionError(
-            `Compaction failed. ${
-              aiErrorMessage({ error, model: run.model, config: run.config }) ??
-              'The summary request did not complete.'
-            }`,
-            { cause: error },
-          );
+    const failure = isFrogBotError(error, 'turn.compaction-failed')
+      ? error
+      : frogbotError('turn.compaction-failed', {
+          detail: `Compaction failed. ${
+            aiErrorText({ error, model: run.model, config: run.config }) ??
+            'The summary request did not complete.'
+          }`,
+          cause: error,
+        });
 
     emit({ status: 'failed', reason, error: failure.message });
 

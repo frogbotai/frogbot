@@ -101,8 +101,8 @@ describe('Google identity', () => {
       'gmail-missing-permission',
       {
         error: expect.objectContaining({
-          code: 'scopes',
-          missingScopes: [gmailScopes['gmail.send']],
+          code: 'connection.missing-scopes',
+          data: expect.objectContaining({ missingScopes: [gmailScopes['gmail.send']] }),
         }),
       },
     ],

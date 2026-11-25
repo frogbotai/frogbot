@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import { z } from 'zod';
 
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
+import { routed } from '../__helpers/shared/routed.js';
 
 export const MODEL = 'openai/gpt-4o-mini';
 
@@ -193,13 +194,15 @@ export async function bootLinked(overrides: Partial<FrogBotConfig>) {
   };
 
   const link = (req: FrogBotRequest, body: unknown) =>
-    endpoint.handler({
-      frogbot,
-      payload,
-      user: req.user,
-      routeParams: { piece: 'openai' },
-      json: () => Promise.resolve(body),
-    } as unknown as Parameters<typeof endpoint.handler>[0]);
+    routed(() =>
+      endpoint.handler({
+        frogbot,
+        payload,
+        user: req.user,
+        routeParams: { piece: 'openai' },
+        json: () => Promise.resolve(body),
+      } as unknown as Parameters<typeof endpoint.handler>[0]),
+    );
 
   const turn = (req: FrogBotRequest, prompt: string) =>
     frogbot.agents[AGENT_SLUG].aiAgent.generate({

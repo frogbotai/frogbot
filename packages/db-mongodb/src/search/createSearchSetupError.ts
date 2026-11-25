@@ -1,4 +1,5 @@
-import { SearchCapabilityError } from 'frogbot/search';
+import type { FrogBotError } from 'frogbot';
+import { searchUnavailable } from 'frogbot/search';
 
 import type { SearchIndex } from './types.js';
 
@@ -24,18 +25,18 @@ export function createSearchSetupError({
 }: {
   error: unknown;
   searchIndex: SearchIndex;
-}): SearchCapabilityError {
+}): FrogBotError {
   const code = getErrorCode(error);
   const message = getErrorMessage(error);
 
   if (typeof code === 'number' && missingPrerequisiteCodes.has(code)) {
-    return new SearchCapabilityError(
-      searchIndex.collection,
-      searchIndex.index,
-      searchIndex.mode,
-      'missing-prerequisite',
-      `search-infrastructure: MongoDB search requires Atlas or a deployment running mongot. ${message}`,
-    );
+    return searchUnavailable({
+      collection: searchIndex.collection,
+      index: searchIndex.index,
+      mode: searchIndex.mode,
+      reason: 'missing-prerequisite',
+      detail: `search-infrastructure: MongoDB search requires Atlas or a deployment running mongot. ${message}`,
+    });
   }
 
   const permissionDenied =
@@ -43,20 +44,20 @@ export function createSearchSetupError({
     (code === atlasErrorCode && permissionDeniedMessage.test(message));
 
   if (permissionDenied) {
-    return new SearchCapabilityError(
-      searchIndex.collection,
-      searchIndex.index,
-      searchIndex.mode,
-      'permission-denied',
-      `The database user cannot manage search index '${searchIndex.name}'. ${message}`,
-    );
+    return searchUnavailable({
+      collection: searchIndex.collection,
+      index: searchIndex.index,
+      mode: searchIndex.mode,
+      reason: 'permission-denied',
+      detail: `The database user cannot manage search index '${searchIndex.name}'. ${message}`,
+    });
   }
 
-  return new SearchCapabilityError(
-    searchIndex.collection,
-    searchIndex.index,
-    searchIndex.mode,
-    'setup-failed',
-    `Search index '${searchIndex.name}' could not be reconciled. ${message}`,
-  );
+  return searchUnavailable({
+    collection: searchIndex.collection,
+    index: searchIndex.index,
+    mode: searchIndex.mode,
+    reason: 'setup-failed',
+    detail: `Search index '${searchIndex.name}' could not be reconciled. ${message}`,
+  });
 }

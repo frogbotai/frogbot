@@ -6,7 +6,6 @@ import {
   buildSearchEndpoints,
   buildSearchManyEndpoint,
 } from '../../../../packages/frogbot/src/search/endpoints.js';
-import { SearchValidationError } from '../../../../packages/frogbot/src/search/errors.js';
 import {
   searchManyOperation,
   searchOperation,
@@ -112,7 +111,7 @@ describe('collection search REST endpoint', () => {
       });
 
       await expect(endpoint.handler(req)).rejects.toMatchObject({
-        name: 'SearchValidationError',
+        code: 'search.invalid',
         status: 400,
       });
 
@@ -127,7 +126,7 @@ describe('collection search REST endpoint', () => {
   ])('POST /api/articles/search rejects %s as a 400 validation error', async (_label, body) => {
     const { endpoint, req } = restFixture(body);
 
-    await expect(endpoint.handler(req)).rejects.toBeInstanceOf(SearchValidationError);
+    await expect(endpoint.handler(req)).rejects.toMatchObject({ code: 'search.invalid' });
   });
 
   it('POST /api/articles/search surfaces invalid query input with its API status', async () => {
@@ -225,7 +224,7 @@ describe('cross-collection search REST endpoint', () => {
     });
 
     await expect(endpoint.handler(req)).rejects.toMatchObject({
-      name: 'SearchValidationError',
+      code: 'search.invalid',
       status: 400,
       message: `Search does not support the '${key}' option.`,
     });
@@ -246,7 +245,7 @@ describe('cross-collection search REST endpoint', () => {
       const { endpoint, find, req, search } = restManyFixture(body);
 
       await expect(endpoint.handler(req)).rejects.toMatchObject({
-        name: 'SearchValidationError',
+        code: 'search.invalid',
         status: 400,
       });
 
@@ -262,7 +261,7 @@ describe('cross-collection search REST endpoint', () => {
   ])('POST /api/frogbot/search rejects %s as a 400 validation error', async (_label, body) => {
     const { endpoint, req } = restManyFixture(body);
 
-    await expect(endpoint.handler(req)).rejects.toBeInstanceOf(SearchValidationError);
+    await expect(endpoint.handler(req)).rejects.toMatchObject({ code: 'search.invalid' });
   });
 
   it('registers the endpoint only when some collection has a search index', async () => {

@@ -92,8 +92,8 @@ describe('D1 search capabilities', () => {
       });
 
     expect(search('vector')).toThrow(
-      expect.objectContaining({ name: 'SearchCapabilityError', reason: 'engine-gap', status: 501 }),
+      expect.objectContaining({ code: 'search.engine-gap', status: 501 }),
     );
-    expect(search('hybrid')).toThrow(/content.*articles.*\(hybrid\): engine-gap: Cloudflare D1/);
+    expect(search('hybrid')).toThrow(/content.*articles.*\(hybrid\): Cloudflare D1/);
   });
 });

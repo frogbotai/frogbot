@@ -2,20 +2,14 @@ import { createHash } from 'node:crypto';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { frogbotError } from '../../../packages/frogbot/src/errors/catalog.js';
 import { buildResumeEndpoints } from '../../../packages/frogbot/src/jobs/endpoints/resume.js';
 import type { Waitpoint } from '../../../packages/frogbot/src/jobs/waitpoints/types.js';
+import { routed } from '../../__helpers/shared/routed.js';
 
 const operations = vi.hoisted(() => ({
   findWaitpoint: vi.fn(),
   resumeWaitpoint: vi.fn(),
-  WaitpointResumeError: class extends Error {
-    constructor(
-      public status: 404 | 409 | 410,
-      public code: string,
-    ) {
-      super('Private storage details');
-    }
-  },
 }));
 
 vi.mock('../../../packages/frogbot/src/jobs/waitpoints/operations.js', () => operations);
@@ -71,7 +65,7 @@ function handle(req: ReturnType<typeof request>) {
 
   if (!endpoint) throw new Error('Missing test endpoint');
 
-  return endpoint.handler(req as never);
+  return routed(() => endpoint.handler(req as never));
 }
 
 function expectPrivate(response: Response) {
@@ -290,17 +284,27 @@ describe('resume submission', () => {
   });
 
   it.each([
-    { contentType: undefined, body: '{}', status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' },
-    { contentType: 'text/plain', body: '{}', status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' },
-    { contentType: 'multipart/form-data', body: '', status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' },
-    { contentType: 'application/json', body: '', status: 400, code: 'INVALID_JSON' },
-    { contentType: 'application/json', body: '{', status: 400, code: 'INVALID_JSON' },
-    { contentType: 'application/json', body: 'undefined', status: 400, code: 'INVALID_JSON' },
+    { contentType: undefined, body: '{}', status: 415, code: 'request.unsupported-media-type' },
+    { contentType: 'text/plain', body: '{}', status: 415, code: 'request.unsupported-media-type' },
+    {
+      contentType: 'multipart/form-data',
+      body: '',
+      status: 415,
+      code: 'request.unsupported-media-type',
+    },
+    { contentType: 'application/json', body: '', status: 400, code: 'request.invalid-json' },
+    { contentType: 'application/json', body: '{', status: 400, code: 'request.invalid-json' },
+    {
+      contentType: 'application/json',
+      body: 'undefined',
+      status: 400,
+      code: 'request.invalid-json',
+    },
   ])('rejects malformed input: $contentType $body', async ({ contentType, body, status, code }) => {
     const response = await handle(request({ method: 'POST', contentType, body }));
 
     expect(response.status).toBe(status);
-    expect(await response.json()).toMatchObject({ error: { code } });
+    expect(await response.json()).toMatchObject({ code });
 
     expectPrivate(response);
 
@@ -324,21 +328,23 @@ describe('resume submission', () => {
   it.each([
     {
       status: 404 as const,
-      code: 'WAITPOINT_NOT_FOUND',
+      code: 'job.waitpoint-not-found' as const,
       message: 'This resume link is not available.',
     },
     {
       status: 409 as const,
-      code: 'WAITPOINT_CONSUMED',
+      code: 'job.waitpoint-consumed' as const,
       message: 'This resume link has already been used.',
     },
-    { status: 410 as const, code: 'WAITPOINT_EXPIRED', message: 'This resume link has expired.' },
+    {
+      status: 410 as const,
+      code: 'job.waitpoint-expired' as const,
+      message: 'This resume link has expired.',
+    },
   ])(
     'maps the canonical $status error without exposing internal details',
     async ({ status, code, message }) => {
-      operations.resumeWaitpoint.mockRejectedValue(
-        new operations.WaitpointResumeError(status, code),
-      );
+      operations.resumeWaitpoint.mockRejectedValue(frogbotError(code));
 
       const json = await handle(
         request({ method: 'POST', contentType: 'application/json', body: '{}' }),
@@ -349,7 +355,7 @@ describe('resume submission', () => {
       );
 
       expect(json.status).toBe(status);
-      expect(await json.json()).toEqual({ error: { code, message } });
+      expect(await json.json()).toMatchObject({ code, status });
 
       expectPrivate(json);
 
@@ -371,13 +377,12 @@ describe('resume submission', () => {
       request({ method: 'POST', contentType: 'application/json', body: '{}' }),
     );
 
+    const text = await response.text();
+
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'FrogBot could not process this request. Please try again later.',
-      },
-    });
+    expect(JSON.parse(text)).toMatchObject({ code: 'internal', detail: 'Something went wrong.' });
+    expect(text).not.toContain(token);
+    expect(text).not.toMatch(/Database|waitpoint error|operation failure/);
 
     expectPrivate(response);
   });
@@ -390,7 +395,7 @@ describe('resume submission', () => {
     const response = await handle(req);
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toMatchObject({ error: { code: 'INTERNAL_ERROR' } });
+    expect(await response.json()).toMatchObject({ code: 'internal' });
 
     expectPrivate(response);
 

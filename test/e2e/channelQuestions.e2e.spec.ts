@@ -1365,7 +1365,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       for (const refused of [send, settle, dismiss]) {
         expect(refused.status).toBe(409);
         expect(refused.body).toMatchObject({
-          code: 'channel-chat',
+          code: 'turn.channel-chat',
           error:
             'This conversation happens in Slack. Continue it there, or branch it into a new chat.',
         });

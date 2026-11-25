@@ -5,8 +5,8 @@ import { convertToModelMessages } from 'ai';
 import type { UploadConfig } from 'payload';
 import { getFileByPath } from 'payload';
 
-import { AgentServiceError } from '../agents/service.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
+import { frogbotError } from '../errors/catalog.js';
 import { mcpReplayTools } from '../mcp/tools.js';
 import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -201,7 +201,7 @@ async function assetsCollection(req: FrogBotRequest): Promise<AssetsCollection> 
   const chat = req.frogbot.config.chat;
 
   if (!chat.enabled) {
-    throw new AgentServiceError('Chat attachments require chat persistence', 400);
+    throw frogbotError('chat.attachments-off');
   }
 
   const config = await req.frogbot.config._internal.payloadConfig;
@@ -239,17 +239,16 @@ async function findAsset({
     const denied = getStatus(error) === 403;
 
     return {
-      error: new AgentServiceError(
-        denied ? `Access denied for file '${part.id}'` : `File '${part.id}' not found`,
-        denied ? 403 : 404,
-      ),
+      error: denied
+        ? frogbotError('chat.file-forbidden', `Access denied for file '${part.id}'.`)
+        : frogbotError('chat.file-not-found', `File '${part.id}' not found.`),
     };
   }
 
   const { filename, mimeType } = doc;
 
   if (!filename || !mimeType) {
-    return { error: new AgentServiceError(`File '${part.id}' is unavailable`, 404) };
+    return { error: frogbotError('chat.file-unavailable', `File '${part.id}' is unavailable.`) };
   }
 
   if (chatId !== undefined && !doc.chat) await linkAsset({ req, collection, id: doc.id, chatId });
@@ -467,7 +466,7 @@ async function responseBytes({
   const redirected = response.status >= 300 && response.status < 400 && location;
   const file = redirected ? await fetch(location) : response;
 
-  if (!file.ok) throw new AgentServiceError(`File '${filename}' is unavailable`, 404);
+  if (!file.ok) throw frogbotError('chat.file-unavailable', `File '${filename}' is unavailable.`);
 
   return new Uint8Array(await file.arrayBuffer());
 }
@@ -490,7 +489,7 @@ async function localFile({
     if (file?.data) return file.data;
   }
 
-  throw new AgentServiceError(`File '${filename}' is unavailable`, 404);
+  throw frogbotError('chat.file-unavailable', `File '${filename}' is unavailable.`);
 }
 
 function isFileReference(part: unknown): part is FileReferencePart {

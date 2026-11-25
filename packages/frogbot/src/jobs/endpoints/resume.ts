@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 
-import { APIError } from 'payload';
-
 import type { Endpoint } from '../../endpoints/types.js';
+import { frogbotError, type FrogBotErrorCode } from '../../errors/catalog.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import { toPayloadRequest } from '../../seams/request.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import { findWaitpoint, resumeWaitpoint, WaitpointResumeError } from '../waitpoints/operations.js';
+import { findWaitpoint, resumeWaitpoint } from '../waitpoints/operations.js';
 
 const styles = `body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; }
 main { max-width: 32rem; margin: 4rem auto; }
@@ -71,22 +71,31 @@ ${confirm ? '<form method="post"><button type="submit">Resume workflow</button><
   );
 }
 
+const statuses: Partial<Record<FrogBotErrorCode, keyof typeof errors>> = {
+  'job.waitpoint-not-found': 404,
+  'job.waitpoint-consumed': 409,
+  'job.waitpoint-expired': 410,
+  'request.invalid': 400,
+  'request.invalid-json': 400,
+  'request.unsupported-media-type': 415,
+};
+
 function failure({
-  status,
   code,
+  detail,
   html,
   head = false,
 }: {
-  status: keyof typeof errors;
-  code: string;
+  code: FrogBotErrorCode;
+  detail?: string;
   html: boolean;
   head?: boolean;
 }): Response {
-  const { title, message } = errors[status];
+  if (!html) throw frogbotError(code, { detail, headers });
 
-  if (html) return page({ title, message, status, head });
+  const { title, message } = errors[statuses[code] ?? 500];
 
-  return Response.json({ error: { code, message } }, { status, headers });
+  return page({ title, message, status: statuses[code] ?? 500, head });
 }
 
 async function confirmation(req: FrogBotRequest): Promise<Response> {
@@ -94,32 +103,32 @@ async function confirmation(req: FrogBotRequest): Promise<Response> {
   const token = req.routeParams?.token;
 
   if (typeof token !== 'string' || !token) {
-    return failure({ status: 404, code: 'WAITPOINT_NOT_FOUND', html: true, head });
+    return failure({ code: 'job.waitpoint-not-found', html: true, head });
   }
 
   try {
     const waitpoint = await findWaitpoint({ req: toPayloadRequest(req), token });
 
     if (!waitpoint || waitpoint.kind !== 'resumable') {
-      return failure({ status: 404, code: 'WAITPOINT_NOT_FOUND', html: true, head });
+      return failure({ code: 'job.waitpoint-not-found', html: true, head });
     }
 
     if (waitpoint.status === 'resumed') {
-      return failure({ status: 409, code: 'WAITPOINT_CONSUMED', html: true, head });
+      return failure({ code: 'job.waitpoint-consumed', html: true, head });
     }
 
     if (waitpoint.status === 'expired') {
-      return failure({ status: 410, code: 'WAITPOINT_EXPIRED', html: true, head });
+      return failure({ code: 'job.waitpoint-expired', html: true, head });
     }
 
     const expiresAt = Date.parse(waitpoint.expiresAt ?? '');
 
     if (!Number.isFinite(expiresAt)) {
-      return failure({ status: 500, code: 'INTERNAL_ERROR', html: true, head });
+      return failure({ code: 'internal', html: true, head });
     }
 
     if (expiresAt <= Date.now()) {
-      return failure({ status: 410, code: 'WAITPOINT_EXPIRED', html: true, head });
+      return failure({ code: 'job.waitpoint-expired', html: true, head });
     }
 
     return page({
@@ -129,7 +138,7 @@ async function confirmation(req: FrogBotRequest): Promise<Response> {
       head,
     });
   } catch {
-    return failure({ status: 500, code: 'INTERNAL_ERROR', html: true, head });
+    return failure({ code: 'internal', html: true, head });
   }
 }
 
@@ -139,11 +148,11 @@ async function resume(req: FrogBotRequest): Promise<Response> {
   const token = req.routeParams?.token;
 
   if (typeof token !== 'string' || !token) {
-    return failure({ status: 404, code: 'WAITPOINT_NOT_FOUND', html: form });
+    return failure({ code: 'job.waitpoint-not-found', html: form });
   }
 
   if (!form && contentType !== 'application/json') {
-    return failure({ status: 415, code: 'UNSUPPORTED_MEDIA_TYPE', html: false });
+    return failure({ code: 'request.unsupported-media-type', html: false });
   }
 
   try {
@@ -153,7 +162,11 @@ async function resume(req: FrogBotRequest): Promise<Response> {
       const fields = new URLSearchParams(await req.text!());
 
       if (fields.size) {
-        return failure({ status: 400, code: 'INVALID_FORM', html: true });
+        return failure({
+          code: 'request.invalid',
+          detail: 'The confirmation form takes no fields.',
+          html: true,
+        });
       }
 
       data = {};
@@ -163,7 +176,7 @@ async function resume(req: FrogBotRequest): Promise<Response> {
       try {
         data = JSON.parse(body);
       } catch {
-        return failure({ status: 400, code: 'INVALID_JSON', html: false });
+        return failure({ code: 'request.invalid-json', html: false });
       }
     }
 
@@ -178,15 +191,13 @@ async function resume(req: FrogBotRequest): Promise<Response> {
 
     return Response.json({ ok: true }, { headers });
   } catch (error) {
-    if (error instanceof WaitpointResumeError) {
-      return failure({ status: error.status, code: error.code, html: form });
-    }
+    const known = isFrogBotError(error) && error.code !== 'internal';
 
-    if (error instanceof APIError && error.status === 400) {
-      return failure({ status: 400, code: 'INVALID_DATA', html: form });
-    }
-
-    return failure({ status: 500, code: 'INTERNAL_ERROR', html: form });
+    return failure({
+      code: known ? (error.code as FrogBotErrorCode) : 'internal',
+      detail: known ? error.message : undefined,
+      html: form,
+    });
   }
 }
 

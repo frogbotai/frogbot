@@ -60,7 +60,7 @@ The factory supplies required `key` (unique text) and `data` (JSON) fields, plus
 
 MongoDB requires a transaction-capable replica set, automatically generated ObjectId IDs, and a unique, non-partial `key` index with simple collation. These requirements apply to all operations through FrogBot's database KV adapter, including ordinary reads and writes. Custom model defaults must produce valid documents; custom IDs and custom timestamp `currentTime` functions are unsupported. Timestamp field names must not overlap `_id`, `key`, `data`, or `expiresAt`.
 
-Explicit third-party KV factories retain their ordinary storage behavior. FrogBot does not probe or automatically upgrade them, even if they use a database collection. TTL writes, `setIfAbsent`, and locks require an adapter that explicitly implements `KVAtomicAdapter` with `[kvAtomic]: true`; otherwise they reject with `KVUnsupportedError`. These exports are available from `frogbot/kv`.
+Explicit third-party KV factories retain their ordinary storage behavior. FrogBot does not probe or automatically upgrade them, even if they use a database collection. TTL writes, `setIfAbsent`, and locks require an adapter that explicitly implements `KVAtomicAdapter` with `[kvAtomic]: true`; otherwise they reject with `kv.unsupported`. These exports are available from `frogbot/kv`.
 
 ## Storage API
 
@@ -112,10 +112,10 @@ const report = await frogbot.kv.lock('lock:report:weekly', 30_000, async ({ sign
 });
 ```
 
-- Contention rejects immediately with `KVLockContentionError`; the callback does not run and acquisition is not retried.
+- Contention rejects immediately with `kv.lock-held`; the callback does not run and acquisition is not retried.
 - Renewal runs serially, scheduled roughly every `ttl / 3` after acquisition or the previous renewal completes. The TTL is a renewable lease duration, not a total callback timeout.
 - A local monotonic watchdog starts the first deadline **before acquisition**. Each successful renewal sets the next deadline to **renewal request start + TTL**, not response time. Acquisition and renewal latency consume lease time; renewal must succeed before the current deadline. A late response cannot revive a lost scope.
-- A long or hung acquisition, renewal, or release cannot keep the scope waiting past its last confirmed deadline. Deadline or ownership loss aborts `signal` and rejects with `KVLeaseLostError`; renewal backend failures also abort and reject. Multiple observed failures can be reported as an `AggregateError`.
+- A long or hung acquisition, renewal, or release cannot keep the scope waiting past its last confirmed deadline. Deadline or ownership loss aborts `signal` and rejects with `kv.lease-lost`; renewal backend failures also abort and reject. Multiple observed failures can be reported as an `AggregateError`.
 - Pass `signal` to cancellable work and check it before effects. Ownership tokens protect lock operations; they do **not fence external effects**. A callback that ignores cancellation can continue after the scope rejects, and an event-loop stall delays local abort delivery.
 
 ## Expiration cleanup

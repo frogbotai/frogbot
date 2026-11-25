@@ -1,14 +1,14 @@
 import type { Config } from 'payload';
 
 import type { AggregateAdapter } from '../database/types.js';
-import { AggregateCapabilityError } from './errors.js';
+import { aggregateUnsupported } from './errors.js';
 
 const aggregateAdapters = new WeakMap<object, AggregateAdapter>();
 
 export function getAggregateAdapter(db: object, collection: string): AggregateAdapter {
   const adapter = aggregateAdapters.get(db);
 
-  if (!adapter) throw new AggregateCapabilityError(collection);
+  if (!adapter) throw aggregateUnsupported(collection);
 
   return adapter;
 }

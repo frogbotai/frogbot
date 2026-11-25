@@ -1,4 +1,4 @@
-import { KVLeaseLostError, KVLockContentionError } from './errors.js';
+import { kvLeaseLost, kvLockHeld } from './errors.js';
 import type { KV, KVLock, KVLockCallback } from './types.js';
 import { validateKVTTL } from './validateTTL.js';
 
@@ -47,7 +47,7 @@ export async function runKVLock<T>({
 
   const checkDeadline = () => {
     if (!controller.signal.aborted && performance.now() >= deadline) {
-      failLease(new KVLeaseLostError(key));
+      failLease(kvLeaseLost(key));
     }
 
     return !controller.signal.aborted;
@@ -67,7 +67,7 @@ export async function runKVLock<T>({
     release ??= (async () => {
       try {
         const released = await kv.releaseLock(acquired);
-        if (checkDeadline() && !released) failLease(new KVLeaseLostError(key));
+        if (checkDeadline() && !released) failLease(kvLeaseLost(key));
       } catch (error) {
         recordError(error);
         checkDeadline();
@@ -95,7 +95,7 @@ export async function runKVLock<T>({
       const extended = await kv.extendLock(lock, ttl);
       if (!checkDeadline()) return;
       if (!extended) {
-        failLease(new KVLeaseLostError(key));
+        failLease(kvLeaseLost(key));
 
         return;
       }
@@ -123,7 +123,7 @@ export async function runKVLock<T>({
         }
 
         if (!lock) {
-          recordError(new KVLockContentionError(key));
+          recordError(kvLockHeld(key));
 
           return false;
         }

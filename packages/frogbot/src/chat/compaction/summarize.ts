@@ -1,6 +1,7 @@
 import type { ModelMessage, ToolResultPart } from 'ai';
 
 import type { ModelId } from '../../ai/types.js';
+import { frogbotError } from '../../errors/catalog.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { estimateTokens } from './estimate.js';
 import {
@@ -12,15 +13,6 @@ import {
 } from './prompt.js';
 
 export const SUMMARY_SHORTENED = '[Summary shortened]';
-
-export class CompactionError extends Error {
-  readonly status = 502;
-
-  constructor(message: string, options?: { cause?: unknown }) {
-    super(message, options);
-    this.name = 'CompactionError';
-  }
-}
 
 export type Summary = { text: string; tokens: { input: number; output: number } };
 
@@ -68,10 +60,12 @@ export async function summarize({
     input += reply.usage.inputTokens ?? 0;
   }
 
-  if (!reply.text) throw new CompactionError('The model returned an empty summary.');
+  if (!reply.text) {
+    throw frogbotError('turn.compaction-failed', 'The model returned an empty summary.');
+  }
 
   if (!fillsTemplate(reply.text)) {
-    throw new CompactionError('The model did not fill in the summary template.');
+    throw frogbotError('turn.compaction-failed', 'The model did not fill in the summary template.');
   }
 
   const length = reply.usage.outputTokens ?? Math.ceil(reply.text.length / 4);

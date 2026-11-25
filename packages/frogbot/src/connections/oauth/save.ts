@@ -1,9 +1,9 @@
+import { frogbotError } from '../../errors/catalog.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { ConnectionID } from '../store.js';
 import type { ConnectionHolder } from '../types.js';
-import { OAuthError } from './error.js';
 import { oauthScopes } from './scopes.js';
 import {
   lookupOAuthAccount,
@@ -19,7 +19,7 @@ import {
  * no `account`, the recipe's `account()` looks it up. For a user, the same provider account
  * updates its row and a new one adds a row; an app slot keeps one row, which the save replaces.
  * With `reconnect`, only that row is updated, and a different provider account throws
- * `OAuthError('account')` without writing.
+ * `oauth.account` without writing.
  */
 export async function saveOAuthConnection({
   req,
@@ -45,7 +45,7 @@ export async function saveOAuthConnection({
       disableErrors: true,
     });
 
-    if (!user) throw new OAuthError('state');
+    if (!user) throw frogbotError('oauth.state');
   }
 
   const credential = parseOAuthTokens(tokens);
@@ -64,9 +64,9 @@ export async function saveOAuthConnection({
     try {
       linked = parseOAuthAccount(account);
     } catch (cause) {
-      throw new OAuthError('account', {
+      throw frogbotError('oauth.account', {
         cause,
-        message: 'The sign-in returned an account with no id or label.',
+        detail: 'The sign-in returned an account with no id or label.',
       });
     }
   } else {

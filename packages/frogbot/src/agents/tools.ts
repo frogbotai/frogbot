@@ -2,6 +2,7 @@ import type { JSONValue, ModelMessage, Tool, ToolSet } from 'ai';
 import { tool as aiTool } from 'ai';
 import { z } from 'zod';
 
+import { ToolFailure } from '../chat/toolErrorText.js';
 import type { AnyTool, ToolCtx, ToolOutputLimits } from '../tools/types.js';
 import { isClientTool } from '../tools/types.js';
 
@@ -50,8 +51,15 @@ export function toAISDKTools(
             description: t.description,
             inputSchema: t.inputSchema,
             contextSchema: z.custom<ToolCtx>(),
-            execute: (input, { context, messages }) =>
-              skip?.(messages) ? SKIPPED_FOR_CLIENT_INPUT : t.execute(input, context),
+            execute: async (input, { context, messages }) => {
+              if (skip?.(messages)) return SKIPPED_FOR_CLIENT_INPUT;
+
+              try {
+                return await t.execute(input, context);
+              } catch (error) {
+                throw new ToolFailure(error);
+              }
+            },
             ...(t.maxOutput !== false && {
               toModelOutput: ({ output }) => capToolOutput(output, t.maxOutput || {}),
             }),

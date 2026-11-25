@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
 import type { PendingCall } from '../../../../packages/frogbot/src/chat/turn/types.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import { question, type QuestionInput } from '../../../../packages/frogbot/src/tools/question.js';
 import { FrogBotTeamsAdapter } from '../../../../packages/pieces/piece-microsoft-teams/src/adapter.js';
 import { teamsQuestions } from '../../../../packages/pieces/piece-microsoft-teams/src/questions/index.js';
@@ -379,7 +379,7 @@ describe('Teams native questions through the channel host', () => {
     const fixture = await askedFixture();
     const { cardId } = fixture;
 
-    settleClientToolCall.mockRejectedValueOnce(new TurnError('not-awaiting', 'Not waiting.'));
+    settleClientToolCall.mockRejectedValueOnce(frogbotError('turn.not-awaiting', 'Not waiting.'));
 
     await click(fixture, {
       card: cardId,

@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 
-import { type FrogBotRequest, KVLockContentionError } from 'frogbot';
+import { type FrogBotRequest, isFrogBotError } from 'frogbot';
 
 import { TEN_MINUTES } from './context.js';
 
@@ -32,7 +32,7 @@ export async function withCodeLock<T>({
     try {
       return await req.frogbot.kv.lock(lockKey(slug, id), 30_000, fn);
     } catch (error) {
-      if (!(error instanceof KVLockContentionError) || Date.now() >= deadline) throw error;
+      if (!isFrogBotError(error, 'kv.lock-held') || Date.now() >= deadline) throw error;
 
       await setTimeout(50);
     }

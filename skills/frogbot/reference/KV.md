@@ -31,7 +31,7 @@ const claimed = await frogbot.kv.setIfAbsent('worker', 'worker-1', {
 
 TTL values are positive safe-integer milliseconds. Overwriting a key without a TTL removes its previous expiry. Expired values are absent from `get`, `has`, and `keys`; cleanup is not required for that visibility behavior.
 
-The base configured adapter supports ordinary `get`, `set`, `has`, `keys`, `delete`, and `clear`. TTL writes, `setIfAbsent`, and lock operations require an adapter marked with FrogBot's `kvAtomic` capability. Unsupported operations throw `KVUnsupportedError`. Do not assume those operations exist for an arbitrary adapter.
+The base configured adapter supports ordinary `get`, `set`, `has`, `keys`, `delete`, and `clear`. TTL writes, `setIfAbsent`, and lock operations require an adapter marked with FrogBot's `kvAtomic` capability. Unsupported operations throw `kv.unsupported`. Do not assume those operations exist for an arbitrary adapter.
 
 ## Locks
 
@@ -43,7 +43,7 @@ const result = await frogbot.kv.lock('report:123', 30_000, async ({ signal }) =>
 });
 ```
 
-`acquireLock` returns an opaque `{ key, token }` owner or `null` on contention. `extendLock` and `releaseLock` return false for expired, missing, or wrong-owner locks. `lock` manages acquisition, renewal, release, and an abort signal; it may throw `KVLockContentionError` or `KVLeaseLostError`.
+`acquireLock` returns an opaque `{ key, token }` owner or `null` on contention. `extendLock` and `releaseLock` return false for expired, missing, or wrong-owner locks. `lock` manages acquisition, renewal, release, and an abort signal; it may throw `kv.lock-held` or `kv.lease-lost`; check with `isFrogBotError(error, 'kv.lock-held')`.
 
 Ownership checks prevent a stale owner from extending or releasing a successor's lease. They do not make an arbitrary sequence of reads and writes into a transaction. Use adapter-specific database transactions when a larger operation needs transactional guarantees.
 

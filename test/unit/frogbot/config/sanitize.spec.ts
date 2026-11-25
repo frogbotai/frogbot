@@ -2367,7 +2367,7 @@ describe('frogbot sanitize', () => {
       result: { errors: [] },
     };
 
-    const hookResponse = await payloadConfig.hooks.afterError?.[0]?.(args);
+    const hookResponse = await payloadConfig.hooks.afterError?.[1]?.(args);
 
     expect(afterError).toHaveBeenCalledWith({
       ...args,

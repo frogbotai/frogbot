@@ -76,7 +76,7 @@ Send `POST` to the generated URL with `Content-Type: application/json`. The **en
 
 JSON success returns HTTP `200` with `{ "ok": true }`, including early acceptance. It does not include a job ID. Form success returns an HTML confirmation page. Nonempty forms are rejected with `400`; other content types are rejected with `415`.
 
-JSON errors use `{ error: { code, message } }`: malformed JSON returns `400` (`INVALID_JSON`), invalid values or reserved keys return `400` (`INVALID_DATA`), unknown tokens `404` (`WAITPOINT_NOT_FOUND`), consumed tokens `409` (`WAITPOINT_CONSUMED`), expired tokens `410` (`WAITPOINT_EXPIRED`), and unsupported content types `415` (`UNSUPPORTED_MEDIA_TYPE`). Internal failures return `500` (`INTERNAL_ERROR`); a dispatch failure can occur after the response was already accepted.
+JSON errors use FrogBot's error body, with `code` and `detail`: malformed JSON returns `400` (`request.invalid-json`), invalid values or reserved keys return `400` (`request.invalid`), unknown tokens `404` (`job.waitpoint-not-found`), consumed tokens `409` (`job.waitpoint-consumed`), expired tokens `410` (`job.waitpoint-expired`), and unsupported content types `415` (`request.unsupported-media-type`). Internal failures return `500` (`internal`); a dispatch failure can occur after the response was already accepted.
 
 ## Dispatch and recovery limits
 
@@ -84,7 +84,7 @@ FrogBot atomically consumes each token once. Ordinary concurrent resume attempts
 
 Dispatch wakes the original job instead of enqueueing another one. Recovery never recreates a missing or finished job. If a woken run crashes, lease recovery reruns that same job; external side effects still need at-least-once protection.
 
-`cancel` and `cancelByID` end paused workflows, and `concurrency.supersedes` deletes older paused jobs with the same key. These operations free the `jobId` and end the wait; deleting a paused job also closes its wait. Its resume link then returns `409` (`WAITPOINT_CONSUMED`): “This FrogBot waitpoint cannot be resumed.”
+`cancel` and `cancelByID` end paused workflows, and `concurrency.supersedes` deletes older paused jobs with the same key. These operations free the `jobId` and end the wait; deleting a paused job also closes its wait. Its resume link then returns `409` (`job.waitpoint-consumed`).
 
 Failed dispatches remain retryable by the scheduled sweep, even if local resume rejected or HTTP returned `500` after token consumption. Resubmitting a consumed token returns a conflict; keep the [scheduler and recovery worker](/jobs-queue/workers#workers-for-durable-waits) running to retry dispatch.
 

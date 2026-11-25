@@ -1,10 +1,11 @@
 import { listLinkedModels, seedLinkedModels } from '../ai/providerModels.js';
 import type { Endpoint } from '../endpoints/types.js';
-import { KVLockContentionError } from '../kv/errors.js';
+import { frogbotError } from '../errors/catalog.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import type { PieceJSON } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { describeCredentialIssues, errorResponse } from './errors.js';
+import { describeCredentialIssues } from './errors.js';
 import { connectionEntry } from './store.js';
 import type { SanitizedConnectionsConfig } from './types.js';
 
@@ -17,38 +18,25 @@ export function buildSecretEndpoints({
 }): Endpoint[] {
   if (!connections.enabled) return [];
   const access = (req: FrogBotRequest) => {
-    if (!req.user) {
-      return errorResponse({
-        status: 401,
-        message: 'Authentication required',
-        code: 'unauthorized',
-      });
-    }
+    if (!req.user) throw frogbotError('auth.unauthenticated');
 
     if (req.user.collection !== userSlug) {
-      return errorResponse({ status: 403, message: 'Access denied', code: 'forbidden' });
+      throw frogbotError('auth.forbidden', 'Access denied.');
     }
   };
 
-  const notFound = () =>
-    errorResponse({ status: 404, message: 'Connection not found', code: 'not_found' });
+  const notFound = () => frogbotError('connection.not-found');
 
   const failure = (req: FrogBotRequest, error: unknown, piece?: string) => {
-    if (error instanceof KVLockContentionError) {
-      return errorResponse({
-        status: 409,
-        message: 'Connection is busy. Try again.',
-        code: 'busy',
-      });
+    if (isFrogBotError(error, 'kv.lock-held')) {
+      return frogbotError('connection.busy', { cause: error });
     }
+
+    if (isFrogBotError(error)) return error;
 
     req.frogbot.logger.warn({ err: error, piece }, '[frogbot] Connection operation failed');
 
-    return errorResponse({
-      status: 500,
-      message: "Couldn't save the connection. Check the server log.",
-      code: 'internal',
-    });
+    return frogbotError('connection.save-failed', { cause: error });
   };
 
   const param = (req: FrogBotRequest, name: string) => {
@@ -60,33 +48,24 @@ export function buildSecretEndpoints({
   const save =
     (slot: boolean): Endpoint['handler'] =>
     async (req) => {
-      const denied = access(req);
-      if (denied) return denied;
+      access(req);
       const app = slot ? param(req, 'app') : undefined;
       const slug = param(req, 'piece');
       const entry =
         (slot && !app) || !slug ? undefined : connectionEntry(connections, { app, piece: slug });
 
-      if (!entry?.secret) return notFound();
+      if (!entry?.secret) throw notFound();
 
       const { auth: schema, label, provider } = pieceInstanceDefinition(entry.piece);
       let input: unknown;
       try {
         input = await req.json!();
       } catch {
-        return errorResponse({
-          status: 400,
-          message: "The body isn't valid JSON.",
-          code: 'invalid_json',
-        });
+        throw frogbotError('request.invalid-json');
       }
 
       if (!schema) {
-        return errorResponse({
-          status: 400,
-          message: `${label} takes no key.`,
-          code: 'no_credentials',
-        });
+        throw frogbotError('connection.no-credentials', `${label} takes no key.`);
       }
 
       let parsed;
@@ -101,10 +80,9 @@ export function buildSecretEndpoints({
           ? describeCredentialIssues({ issues: parsed.error.issues, input, schema })
           : { message: 'Invalid credentials: the key failed validation.', fields: [] };
 
-        return errorResponse({
-          status: 400,
-          message,
-          code: 'invalid_credentials',
+        throw frogbotError('connection.invalid-credentials', {
+          detail: message,
+          fields: fields.map((path) => ({ path, message: 'is invalid' })),
           data: { fields },
         });
       }
@@ -118,17 +96,9 @@ export function buildSecretEndpoints({
       } catch (error) {
         const status = (error as { status?: unknown } | undefined)?.status;
 
-        return status === 401 || status === 403
-          ? errorResponse({
-              status: 422,
-              message: `${label} didn't accept this key.`,
-              code: 'rejected',
-            })
-          : errorResponse({
-              status: 502,
-              message: `Couldn't reach ${label} to check this key. Try again.`,
-              code: 'unreachable',
-            });
+        throw status === 401 || status === 403
+          ? frogbotError('connection.key-rejected', `${label} didn't accept this key.`)
+          : frogbotError('connection.unreachable', `Couldn't reach ${label} to check this key.`);
       }
 
       try {
@@ -147,7 +117,7 @@ export function buildSecretEndpoints({
 
         return Response.json(metadata);
       } catch (error) {
-        return failure(req, error, entry.piece.piece);
+        throw failure(req, error, entry.piece.piece);
       }
     };
 
@@ -157,21 +127,20 @@ export function buildSecretEndpoints({
       method: 'delete',
       path: '/:id',
       handler: async (req) => {
-        const denied = access(req);
-        if (denied) return denied;
+        access(req);
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return notFound();
+          throw notFound();
         }
 
         try {
           if (!(await req.frogbot.connections.delete({ req, id }))) {
-            return notFound();
+            throw notFound();
           }
 
           return new Response(null, { status: 204 });
         } catch (error) {
-          return failure(req, error);
+          throw failure(req, error);
         }
       },
     },
@@ -180,19 +149,18 @@ export function buildSecretEndpoints({
       method: 'delete',
       path: '/app/:app/:piece',
       handler: async (req) => {
-        const denied = access(req);
-        if (denied) return denied;
+        access(req);
         const app = param(req, 'app');
         const piece = param(req, 'piece');
 
         try {
           if (!app || !piece || !(await req.frogbot.connections.deleteSlot({ req, app, piece }))) {
-            return notFound();
+            throw notFound();
           }
 
           return new Response(null, { status: 204 });
         } catch (error) {
-          return failure(req, error);
+          throw failure(req, error);
         }
       },
     },
@@ -200,8 +168,7 @@ export function buildSecretEndpoints({
       method: 'post',
       path: '/:id/default',
       handler: async (req) => {
-        const denied = access(req);
-        if (denied) return denied;
+        access(req);
         const id = req.routeParams?.id;
         try {
           const row =
@@ -209,9 +176,11 @@ export function buildSecretEndpoints({
               ? await req.frogbot.connections.setDefault({ req, id })
               : undefined;
 
-          return row ? Response.json(row) : notFound();
+          if (!row) throw notFound();
+
+          return Response.json(row);
         } catch (error) {
-          return failure(req, error);
+          throw failure(req, error);
         }
       },
     },

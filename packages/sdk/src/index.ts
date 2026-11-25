@@ -1,3 +1,4 @@
+import type { Problem, ProblemEntry } from '@frogbotai/protocol';
 import type { ApplyDisableErrors, PaginatedDocs, SelectType, TypeWithVersion } from 'frogbot';
 
 import {
@@ -177,31 +178,83 @@ export type AISpeechRequest = {
   response_format?: 'mp3' | 'opus' | 'aac' | 'flac' | 'wav' | 'pcm' | null;
 };
 
-export type FrogBotErrorDetail = {
-  message: string;
-  [key: string]: unknown;
-};
+/** One entry of a failed response's `errors`, in Payload's shape. */
+export type FrogBotErrorDetail = ProblemEntry;
 
+export type { Problem, ProblemField } from '@frogbotai/protocol';
+
+/**
+ * A failed FrogBot request. Reads the `Problem` body every FrogBot error sends; the gateway's
+ * OpenAI-style `{ error }` body still gives `message` and `code`.
+ */
 export class FrogBotSDKError extends Error {
+  /** Stable error code, like `memory.scope-full`. Look it up at https://docs.frogbot.ai/errors. */
+  code: string;
+  /** The next step to take, when the server gave one. */
+  hint?: string;
+  /** Whether the same request can succeed if sent again. */
+  retryable: boolean;
+  /** The `X-Request-Id` to quote when asking for help. */
+  requestId?: string;
+  /** The full problem body, when the server sent one. */
+  problem?: Problem;
   errors: FrogBotErrorDetail[];
   response: Response;
   status: number;
 
-  constructor({
-    errors,
-    message,
-    response,
-  }: {
-    errors: FrogBotErrorDetail[];
-    message: string;
-    response: Response;
-  }) {
+  constructor({ body, response }: { body: unknown; response: Response }) {
+    const problem = isProblem(body) ? body : undefined;
+    const envelope = !problem ? readEnvelope(body) : undefined;
+    const message =
+      problem?.detail ?? envelope?.message ?? (response.statusText || `HTTP ${response.status}`);
+
     super(message);
     this.name = 'FrogBotSDKError';
-    this.errors = errors;
+    this.code = problem?.code ?? envelope?.code ?? `http.${response.status}`;
+    this.hint = problem?.hint;
+    this.retryable = problem?.retryable ?? (response.status === 429 || response.status >= 502);
+    this.requestId = problem?.requestId ?? response.headers.get('x-request-id') ?? undefined;
+    this.problem = problem;
+    this.errors = problem?.errors ?? envelope?.errors ?? [{ message }];
     this.response = response;
     this.status = response.status;
   }
+}
+
+function isProblem(body: unknown): body is Problem {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    typeof (body as Problem).code === 'string' &&
+    typeof (body as Problem).detail === 'string' &&
+    Array.isArray((body as Problem).errors)
+  );
+}
+
+function readEnvelope(
+  body: unknown,
+): { message?: string; code?: string; errors?: FrogBotErrorDetail[] } | undefined {
+  if (typeof body !== 'object' || body === null) return undefined;
+
+  const { error, errors, message } = body as {
+    error?: { message?: unknown; code?: unknown } | string;
+    errors?: unknown;
+    message?: unknown;
+  };
+
+  const list = Array.isArray(errors) ? (errors as FrogBotErrorDetail[]) : undefined;
+  const nested = typeof error === 'object' && error !== null ? error : undefined;
+  const text =
+    (typeof nested?.message === 'string' ? nested.message : undefined) ??
+    (typeof error === 'string' ? error : undefined) ??
+    list?.[0]?.message ??
+    (typeof message === 'string' ? message : undefined);
+
+  return {
+    message: text,
+    code: typeof nested?.code === 'string' ? nested.code : undefined,
+    errors: list,
+  };
 }
 
 export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
@@ -272,24 +325,15 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
     const response = await this.fetch(`${this.baseURL}${normalizedPath}`, init);
 
     if (!response.ok) {
-      let data: { error?: { message?: string }; errors?: FrogBotErrorDetail[]; message?: string } =
-        {};
+      let body: unknown;
 
       try {
-        data = await response.clone().json();
+        body = await response.clone().json();
       } catch {
-        data = {};
+        body = undefined;
       }
 
-      const errors = data.errors ?? [
-        { message: data.error?.message ?? data.message ?? response.statusText },
-      ];
-
-      throw new FrogBotSDKError({
-        errors,
-        message: errors[0]?.message ?? response.statusText,
-        response,
-      });
+      throw new FrogBotSDKError({ body, response });
     }
 
     return response;

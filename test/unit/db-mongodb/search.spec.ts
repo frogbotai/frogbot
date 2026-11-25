@@ -160,7 +160,7 @@ describe('parseSearchFilter', () => {
     { name: 'a top-level operator', query: { $where: 'true' } },
   ])('rejects $name', ({ query }) => {
     expect(() => parse(query)).toThrow(
-      expect.objectContaining({ name: 'SearchFilterUnsupportedError', status: 400 }),
+      expect.objectContaining({ code: 'search.filter-unsupported', status: 400 }),
     );
   });
 });
@@ -340,8 +340,8 @@ describe('createSearchSetupError', () => {
       searchIndex,
     });
 
-    expect(error).toMatchObject({ reason, status: 501 });
-    expect(error.message).toContain(`content' in collection 'posts' (vector): ${reason}`);
+    expect(error).toMatchObject({ code: `search.${reason}`, status: 501 });
+    expect(error.message).toContain(`content' in collection 'posts' (vector): `);
   });
 });
 

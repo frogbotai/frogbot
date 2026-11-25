@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 
 import type { SearchReadiness } from '../../../database/types.js';
-import { SearchReadinessError } from '../../errors.js';
+import { searchNotReady } from '../../errors.js';
 import { assertSQLiteSearchAdapter, getSearchDatabase } from './guards.js';
 import { buildSearchObjects } from './schema/buildSearchObjects.js';
 import { getSearchTargets } from './schema/getSearchSchema.js';
@@ -26,7 +26,7 @@ export const readiness: SearchReadiness = async ({ collection, db, index, mode }
   const built = new Map(rows.map((row) => [row.name, row.sql]));
 
   if (objects.some(({ name, sql: text }) => built.get(name) !== text)) {
-    throw new SearchReadinessError(
+    throw searchNotReady(
       `Search index '${index.name}' in collection '${collection}' is not built for the current configuration. Run your migrations.`,
     );
   }

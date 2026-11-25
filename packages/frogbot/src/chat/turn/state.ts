@@ -2,10 +2,10 @@ import { randomUUID } from 'node:crypto';
 
 import type { DocID } from '../../collections/config/types.js';
 import { compareAndSet } from '../../database/compareAndSet.js';
+import { frogbotError } from '../../errors/catalog.js';
 import type { Where } from '../../types/payload.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { CHAT_TURNS_SLUG } from '../collections/turns.js';
-import { TurnError } from './errors.js';
 import { findTurnMessage, hasPendingCalls } from './messages.js';
 import type { TurnClaim, TurnState } from './types.js';
 
@@ -134,7 +134,7 @@ export function holdTurn({ req, claim }: { req: FrogBotRequest; claim: TurnClaim
       .then(
         (renewed) => {
           if (!renewed) {
-            controller.abort(new TurnError('turn-in-progress', 'The turn lease was lost.'));
+            controller.abort(frogbotError('turn.in-progress', 'The turn lease was lost.'));
           }
         },
         (error: unknown) => {

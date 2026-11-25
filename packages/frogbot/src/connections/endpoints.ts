@@ -1,15 +1,16 @@
 import { continueLook, continuePage } from '../auth/signIn/continuePage.js';
 import type { Endpoint } from '../endpoints/types.js';
+import { frogbotError, type FrogBotErrorCode } from '../errors/catalog.js';
+import { isFrogBotError, withHeaders } from '../errors/FrogBotError.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import { isPieceSignIn } from '../pieces/oauth.js';
 import type { PieceInstance } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { errorResponse } from './errors.js';
 import {
   consumeOAuthState,
   createOAuthState,
   exchangeOAuthCode,
-  OAuthError,
+  isOAuthError,
 } from './oauth/index.js';
 import { saveOAuthConnection } from './oauth/save.js';
 import { safeReturnTo } from './oauth/state.js';
@@ -30,7 +31,7 @@ async function routeURLs({
   try {
     server = new URL(config.serverURL || new URL(req.url!).origin);
   } catch (cause) {
-    throw new OAuthError('configuration', { cause });
+    throw frogbotError('oauth.configuration', { cause });
   }
 
   if (
@@ -40,16 +41,16 @@ async function routeURLs({
     server.search ||
     server.hash
   ) {
-    throw new OAuthError('configuration');
+    throw frogbotError('oauth.configuration');
   }
 
   const path = (prefix: string, suffix: string) => {
     if (prefix && (!prefix.startsWith('/') || /[\\\p{Cc}?#]/u.test(prefix))) {
-      throw new OAuthError('configuration');
+      throw frogbotError('oauth.configuration');
     }
 
     const value = `${prefix.replace(/\/+$/, '')}/${suffix}`;
-    if (value.startsWith('//')) throw new OAuthError('configuration');
+    if (value.startsWith('//')) throw frogbotError('oauth.configuration');
 
     return value;
   };
@@ -86,10 +87,7 @@ export function buildConnectionOAuthEndpoints({
     return entry?.oauth && entry.piece.piece === slug ? entry : undefined;
   };
 
-  const failure = (status: number, headers: Headers, message: string, code: string) =>
-    errorResponse({ status, message, code, headers });
-
-  const notFound = (headers: Headers) => failure(404, headers, 'Connection not found', 'not_found');
+  const notFound = (headers: Headers) => frogbotError('connection.not-found', { headers });
 
   const oauthFailure = ({
     req,
@@ -109,27 +107,31 @@ export function buildConnectionOAuthEndpoints({
       '[frogbot] Connection OAuth failed',
     );
 
-    if (!(error instanceof OAuthError)) {
-      return failure(500, headers, "Couldn't link the account. Check the server log.", 'internal');
+    if (!isOAuthError(error)) {
+      return isFrogBotError(error)
+        ? withHeaders(error, headers)
+        : frogbotError('connection.save-failed', {
+            detail: "Couldn't link the account.",
+            headers,
+            cause: error,
+          });
     }
 
     const { label } = pieceInstanceDefinition(piece);
     const data = provider && /^[a-z_]+$/.test(provider) ? { provider } : undefined;
-    const messages: Partial<Record<OAuthError['code'], string>> = {
-      state: 'This sign-in expired or was already used. Start again.',
-      configuration: "This connection's OAuth setup is incomplete. Check the server log.",
-      tokens:
+    const details: Partial<Record<string, string>> = {
+      'oauth.configuration': "This connection's OAuth setup is incomplete.",
+      'oauth.tokens':
         data?.provider === 'access_denied'
           ? `The sign-in was cancelled or denied at ${label}.`
-          : `Couldn't finish signing in to ${label}. Try again.`,
+          : `Couldn't finish signing in to ${label}.`,
     };
 
-    return errorResponse({
-      status: error.code === 'configuration' ? 500 : 400,
-      message: messages[error.code] ?? error.message,
-      code: error.code,
-      data,
+    return frogbotError(error.code as FrogBotErrorCode, {
+      detail: details[error.code] ?? error.message,
+      ...(data ? { data } : {}),
       headers,
+      cause: error,
     });
   };
 
@@ -139,20 +141,20 @@ export function buildConnectionOAuthEndpoints({
       const headers = new Headers({ 'cache-control': 'no-store' });
       const app = slot ? param(req, 'app') : undefined;
       const entry = slot && !app ? undefined : oauthEntry(app, param(req, 'piece'));
-      if (!entry) return notFound(headers);
-      if (!req.user) return failure(401, headers, 'Authentication required', 'unauthorized');
+      if (!entry) throw notFound(headers);
+      if (!req.user) throw frogbotError('auth.unauthenticated', { headers });
       if (req.user.collection !== userSlug) {
-        return failure(403, headers, 'Access denied', 'forbidden');
+        throw frogbotError('auth.forbidden', { detail: 'Access denied.', headers });
       }
 
       try {
         const urls = await routeURLs({ req, slug: connections.slug!, piece: entry.piece.piece });
         const params = new URL(req.url!).searchParams;
-        if (params.getAll('returnTo').length > 1) throw new OAuthError('state');
+        if (params.getAll('returnTo').length > 1) throw frogbotError('oauth.state');
         const returnTo = params.get('returnTo') ?? urls.returnTo;
         const recipe = pieceInstanceDefinition(entry.piece).oauth;
-        if (params.getAll('reconnect').length > 1) throw new OAuthError('state');
-        if (app !== undefined && params.has('reconnect')) throw new OAuthError('state');
+        if (params.getAll('reconnect').length > 1) throw frogbotError('oauth.state');
+        if (app !== undefined && params.has('reconnect')) throw frogbotError('oauth.state');
         let reconnect: number | string | undefined;
         if (params.has('reconnect')) {
           const id = params.get('reconnect');
@@ -160,7 +162,7 @@ export function buildConnectionOAuthEndpoints({
             (row) => String(row.id) === id && row.piece === entry.piece.piece,
           );
 
-          if (!row) return notFound(headers);
+          if (!row) throw notFound(headers);
           reconnect = row.id;
         }
 
@@ -183,7 +185,7 @@ export function buildConnectionOAuthEndpoints({
                 saveOAuthConnection({ req, piece, holder, tokens, account, reconnect }),
             });
           } catch (cause) {
-            throw cause instanceof OAuthError ? cause : new OAuthError('configuration', { cause });
+            throw isOAuthError(cause) ? cause : frogbotError('oauth.configuration', { cause });
           }
 
           headers.set('location', location);
@@ -210,7 +212,7 @@ export function buildConnectionOAuthEndpoints({
 
         return new Response(null, { status: 302, headers });
       } catch (error) {
-        return oauthFailure({ req, error, piece: entry.piece, headers });
+        throw oauthFailure({ req, error, piece: entry.piece, headers });
       }
     };
 
@@ -230,7 +232,7 @@ export function buildConnectionOAuthEndpoints({
             : [];
         });
 
-        if (!candidates.length) return notFound(headers);
+        if (!candidates.length) throw notFound(headers);
 
         const params = new URL(req.url!).searchParams;
         let piece = candidates[0].entry.piece;
@@ -242,7 +244,7 @@ export function buildConnectionOAuthEndpoints({
             piece: slug!,
           });
 
-          if (params.getAll('state').length !== 1) throw new OAuthError('state');
+          if (params.getAll('state').length !== 1) throw frogbotError('oauth.state');
 
           let consumed;
 
@@ -267,18 +269,18 @@ export function buildConnectionOAuthEndpoints({
 
               break;
             } catch (error) {
-              if (!(error instanceof OAuthError)) throw error;
+              if (!isOAuthError(error)) throw error;
             }
           }
 
-          if (!consumed) throw new OAuthError('state');
+          if (!consumed) throw frogbotError('oauth.state');
           const { app, entry, intent, clearCookie } = consumed;
           piece = entry.piece;
 
           headers.set('set-cookie', clearCookie);
 
           if (params.has('error') || params.getAll('code').length !== 1) {
-            throw new OAuthError('tokens');
+            throw frogbotError('oauth.tokens');
           }
 
           const owner = intent.owner!;
@@ -290,7 +292,7 @@ export function buildConnectionOAuthEndpoints({
             disableErrors: true,
           });
 
-          if (!user) throw new OAuthError('state');
+          if (!user) throw frogbotError('oauth.state');
 
           const tokens = await exchangeOAuthCode({
             piece: entry.piece,
@@ -321,7 +323,7 @@ export function buildConnectionOAuthEndpoints({
             headers,
           });
         } catch (error) {
-          return oauthFailure({
+          throw oauthFailure({
             req,
             error,
             piece,

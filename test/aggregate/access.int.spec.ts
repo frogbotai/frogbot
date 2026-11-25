@@ -57,7 +57,7 @@ describe(`aggregate access [${adapterLabel}]`, () => {
 
   it('requires req unless overrideAccess: true', async () => {
     await expect(byStage({})).rejects.toMatchObject({
-      name: 'AggregateValidationError',
+      code: 'aggregate.invalid',
       status: 400,
     });
   });

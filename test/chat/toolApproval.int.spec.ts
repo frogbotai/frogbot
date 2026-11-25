@@ -229,7 +229,7 @@ describe('chat tool approval', () => {
     const again = await settle(paused.body.chatId, { toolCallId: 'call-close', approved: false });
 
     expect(again.status).toBe(409);
-    expect(again.body.code).toBe('already-settled');
+    expect(again.body.code).toBe('turn.already-settled');
     expect(model.requests).toHaveLength(requests);
     expect(approvedCalls).toHaveLength(1);
   });
@@ -254,8 +254,8 @@ describe('chat tool approval', () => {
       approved: true,
     });
 
-    expect([output.status, output.body.code]).toEqual([400, 'invalid-output']);
-    expect([approval.status, approval.body.code]).toEqual([400, 'invalid-output']);
+    expect([output.status, output.body.code]).toEqual([400, 'turn.invalid-output']);
+    expect([approval.status, approval.body.code]).toEqual([400, 'turn.invalid-output']);
     await expect(turnState(paused.body.chatId)).resolves.toBe('awaiting');
   });
 
@@ -296,7 +296,7 @@ describe('chat tool approval', () => {
     const again = await resume(tampered);
 
     expect(again.status).toBe(409);
-    await expect(again.json()).resolves.toMatchObject({ code: 'already-settled' });
+    await expect(again.json()).resolves.toMatchObject({ code: 'turn.already-settled' });
     expect(approvedCalls).toHaveLength(1);
   });
 
@@ -418,8 +418,8 @@ describe('chat tool approval', () => {
       headers,
     );
 
-    expect([approve.status, approve.body.code]).toEqual([403, 'forbidden']);
-    expect([deny.status, deny.body.code]).toEqual([403, 'forbidden']);
+    expect([approve.status, approve.body.code]).toEqual([403, 'turn.forbidden']);
+    expect([deny.status, deny.body.code]).toEqual([403, 'turn.forbidden']);
     expect(approvedCalls).toEqual([]);
     await expect(turnState(paused.body.chatId)).resolves.toBe('awaiting');
 
@@ -527,8 +527,8 @@ describe('chat tool approval', () => {
       headers,
     );
 
-    expect([resume.status, resume.body.code]).toEqual([403, 'forbidden']);
-    expect([dismiss.status, dismiss.body.code]).toEqual([403, 'forbidden']);
+    expect([resume.status, resume.body.code]).toEqual([403, 'turn.forbidden']);
+    expect([dismiss.status, dismiss.body.code]).toEqual([403, 'turn.forbidden']);
     expect(approvedCalls).toEqual([]);
     await expect(turnState(paused.body.chatId)).resolves.toBe('awaiting');
   });

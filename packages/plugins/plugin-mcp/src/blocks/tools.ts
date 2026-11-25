@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import type { Tool, ToolCtx } from 'frogbot';
+import { frogbotError } from 'frogbot';
 import type { AnyTool } from 'frogbot/internal';
 import { getPayloadConfig, isInternalCollection } from 'frogbot/internal';
 import type { Field } from 'payload';
@@ -26,6 +27,7 @@ import {
   save,
   takenIds,
 } from './edit.js';
+import { blockError } from './errors.js';
 import { blockInputs, hasBlocks } from './schema.js';
 import type { BlockData, BlockList } from './tree.js';
 import {
@@ -153,7 +155,9 @@ function buildBlockTools(options: BlockToolsOptions, choices: readonly string[])
       edit(input, ctx, async ({ lists, loaded }) => {
         const { block } = input;
 
-        if (typeof block.blockType !== 'string') throw new Error('block needs a blockType.');
+        if (typeof block.blockType !== 'string') {
+          throw blockError('mcp.block-invalid', 'block needs a blockType.');
+        }
 
         const row: BlockData = {
           ...block,
@@ -182,7 +186,8 @@ function buildBlockTools(options: BlockToolsOptions, choices: readonly string[])
     execute: (input, ctx) =>
       edit(input, ctx, async ({ lists, loaded }) => {
         if ('id' in input.data || 'blockType' in input.data) {
-          throw new Error(
+          throw blockError(
+            'mcp.block-invalid',
             "data can't change a block's id or blockType. Insert a new block and remove this one.",
           );
         }
@@ -222,11 +227,11 @@ function buildBlockTools(options: BlockToolsOptions, choices: readonly string[])
         const anchorPath = anchor === undefined ? into : findBlock(lists, anchor).list.path;
 
         if (anchor !== undefined && String(anchor) === String(row.id)) {
-          throw new Error("A block can't move next to itself.");
+          throw blockError('mcp.block-invalid', "A block can't move next to itself.");
         }
 
         if (`${anchorPath}.`.startsWith(inside)) {
-          throw new Error("A block can't move inside itself.");
+          throw blockError('mcp.block-invalid', "A block can't move inside itself.");
         }
 
         const field = input.field === undefined ? undefined : await resolve(loaded, input.field);
@@ -288,7 +293,7 @@ async function runTool({
 
     return await handle({ lists: loaded.lists, loaded });
   } catch (error) {
-    throw new Error(errorText(error), { cause: error });
+    throw validationProblem(error);
   }
 }
 
@@ -314,7 +319,10 @@ async function load({
     hasBlocksField(collection.flattenedFields);
 
   if (!collection || !editable) {
-    throw new Error(`The block tools can't edit the collection '${input.collection}'.`);
+    throw blockError(
+      'mcp.block-invalid',
+      `The block tools can't edit the collection '${input.collection}'.`,
+    );
   }
 
   const args = {
@@ -380,14 +388,15 @@ function toID(id: number | string, type: string): number | string {
   return type === 'number' && typeof id === 'string' && /^\d+$/.test(id) ? Number(id) : id;
 }
 
-function errorText(error: unknown): string {
-  if (error instanceof ValidationError) {
-    const issues = error.data.errors.map(({ message, path }) =>
-      path ? `${path}: ${message}` : message,
-    );
+function validationProblem(error: unknown): unknown {
+  if (!(error instanceof ValidationError)) return error;
 
-    return `Validation failed:\n${issues.join('\n')}\nUse getCollectionSchema for the block's fields.`;
-  }
+  const fields = error.data.errors.map(({ message, path }) => ({ path, message }));
 
-  return error instanceof Error ? error.message : String(error);
+  return frogbotError('request.invalid', {
+    detail: `The block failed validation: ${fields.map(({ path, message }) => `${path}: ${message}`).join('; ')}`,
+    fields,
+    hint: "Use getCollectionSchema for the block's fields.",
+    cause: error,
+  });
 }

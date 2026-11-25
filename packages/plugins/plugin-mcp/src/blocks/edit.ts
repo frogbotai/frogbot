@@ -1,7 +1,8 @@
-import type { ToolCtx } from 'frogbot';
+import type { FrogBotError, ToolCtx } from 'frogbot';
 import { toPayloadRequest } from 'frogbot/internal';
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 
+import { blockError } from './errors.js';
 import type { BlockData, BlockList, BlockSpot, BoundField, FieldLink } from './tree.js';
 import {
   blockSpots,
@@ -63,7 +64,9 @@ export function takenIds(loaded: Loaded, except = new Set<string>()): Set<string
 
 export function claimIds(ids: string[], taken: Set<string>): void {
   for (const id of ids) {
-    if (taken.has(id)) throw new Error(`A block with the id '${id}' already exists.`);
+    if (taken.has(id)) {
+      throw blockError('mcp.block-invalid', `A block with the id '${id}' already exists.`);
+    }
 
     taken.add(id);
   }
@@ -85,7 +88,8 @@ export function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): 
   ];
 
   if (lost.length) {
-    throw new Error(
+    throw blockError(
+      'mcp.block-invalid',
       `Moving this block to another blocks field would lose ${lost.join(' and ')}. Move it within its field instead.`,
     );
   }
@@ -135,8 +139,8 @@ export async function may(
   return true;
 }
 
-export function notSaved(path: string): Error {
-  return new Error(`The change to ${path} didn't save. Call listBlocks to see the document now.`);
+export function notSaved(path: string): FrogBotError {
+  return blockError('mcp.block-not-saved', `The change to ${path} didn't save.`);
 }
 
 export function blockListsOf(loaded: Loaded, doc: Record<string, unknown>): BlockList[] {
@@ -172,7 +176,7 @@ export async function persist(loaded: Loaded, lists: BlockList[]) {
 
   for (const list of new Set(lists)) {
     if (!(await may(loaded, list.chain, 'update', data))) {
-      throw new Error(`You can't edit the blocks in ${list.path}.`);
+      throw blockError('mcp.block-forbidden', `You can't edit the blocks in ${list.path}.`);
     }
   }
 
@@ -205,10 +209,12 @@ export async function place(
 ): Promise<BlockSpot> {
   const given = [input.field, input.before, input.after].filter((value) => value !== undefined);
 
-  if (given.length !== 1) throw new Error('Pass exactly one of field, before or after.');
+  if (given.length !== 1) {
+    throw blockError('mcp.block-invalid', 'Pass exactly one of field, before or after.');
+  }
 
   if (input.index !== undefined && input.field === undefined) {
-    throw new Error('index goes with field.');
+    throw blockError('mcp.block-invalid', 'index goes with field.');
   }
 
   const anchor = input.before ?? input.after;
@@ -219,13 +225,15 @@ export async function place(
     const index = input.index ?? list.rows.length;
 
     if (input.index !== undefined && !(await may(loaded, list.chain, 'read'))) {
-      throw new Error(
+      throw blockError(
+        'mcp.block-invalid',
         `You can't read ${list.path}, so you can't pick an index in it. Leave index out to add at the end.`,
       );
     }
 
     if (index > list.rows.length) {
-      throw new Error(
+      throw blockError(
+        'mcp.block-invalid',
         `index ${index} is past the end of ${list.path}, which has ${list.rows.length} blocks.`,
       );
     }
@@ -240,7 +248,8 @@ export async function place(
   const accepted = fieldBlocks(spot.list.field, loaded.config).map(({ slug }) => slug);
 
   if (!accepted.includes(row.blockType)) {
-    throw new Error(
+    throw blockError(
+      'mcp.block-invalid',
       `${spot.list.path} doesn't accept '${row.blockType}' blocks. It accepts: ${accepted.join(', ')}.`,
     );
   }
@@ -254,7 +263,10 @@ export async function resolve(loaded: Loaded, path: string): Promise<BlockList> 
   const list = resolveBlockList(loaded.doc, loaded.collection.flattenedFields, path, loaded.config);
 
   if (!(await may(loaded, list.chain.slice(0, -1), 'read'))) {
-    throw new Error(`'${path}' is not a blocks field. Call listBlocks to see the fields' paths.`);
+    throw blockError(
+      'mcp.block-invalid',
+      `'${path}' is not a blocks field. Call listBlocks to see the fields' paths.`,
+    );
   }
 
   return list;

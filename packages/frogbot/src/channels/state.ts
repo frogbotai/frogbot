@@ -3,7 +3,7 @@ import { setTimeout } from 'node:timers/promises';
 import type { QueueEntry, StateAdapter } from 'chat';
 import type { KVStoreValue } from 'payload';
 
-import { KVLockContentionError } from '../kv/errors.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import type { KV } from '../kv/types.js';
 
 const LIST_LOCK_TTL = 30_000;
@@ -43,7 +43,7 @@ export function createChannelStateAdapter({
           return next;
         });
       } catch (error) {
-        if (!(error instanceof KVLockContentionError)) throw error;
+        if (!isFrogBotError(error, 'kv.lock-held')) throw error;
 
         await setTimeout(100);
       }

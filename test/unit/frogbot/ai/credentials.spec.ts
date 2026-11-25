@@ -4,7 +4,10 @@ import { z } from 'zod';
 
 import { createAIGateway } from '../../../../packages/frogbot/src/ai/init.js';
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
-import { ConnectionError } from '../../../../packages/frogbot/src/connections/api.js';
+import {
+  frogbotError,
+  type FrogBotErrorCode,
+} from '../../../../packages/frogbot/src/errors/catalog.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceInstance } from '../../../../packages/frogbot/src/pieces/types.js';
 
@@ -67,8 +70,8 @@ function request(resolve: () => Promise<{ auth: unknown; key: object }>) {
 
 const linked = (apiKey: string) => request(() => Promise.resolve({ auth: { apiKey }, key: {} }));
 
-const failing = (code: ConnectionError['code']) =>
-  request(() => Promise.reject(new ConnectionError('Connection failed.', code)));
+const failing = (code: Extract<FrogBotErrorCode, `connection.${string}`>) =>
+  request(() => Promise.reject(frogbotError(code, 'Connection failed.')));
 
 async function run({ apiKey, req }: { apiKey?: string; req?: object }) {
   const gateway = createAIGateway(aiConfig(createKeyed(), apiKey));
@@ -118,7 +121,7 @@ describe('linked provider credential', () => {
   });
 
   it('uses the app key for a user with no linked account', async () => {
-    await run({ apiKey: 'sk-app', req: failing('missing') });
+    await run({ apiKey: 'sk-app', req: failing('connection.not-linked') });
 
     expect(authorizations).toEqual(['Bearer sk-app']);
   });
@@ -132,7 +135,7 @@ describe('linked provider credential', () => {
   });
 
   it('fails with the setup error and no request when there is no linked account or app key', async () => {
-    for (const req of [undefined, failing('missing')]) {
+    for (const req of [undefined, failing('connection.not-linked')]) {
       await expect(run({ req })).resolves.toMatchObject({
         status: 401,
         message: "OpenAI isn't set up. Add your OpenAI key in Settings → Linked accounts.",
@@ -142,15 +145,21 @@ describe('linked provider credential', () => {
     expect(authorizations).toEqual([]);
   });
 
-  it("passes the connection's own message and never falls back to the app key for an unusable account", async () => {
-    for (const code of ['revoked', 'expired', 'error'] as const) {
+  it("passes the connection's own message and hint, and never falls back to the app key for an unusable account", async () => {
+    for (const code of [
+      'connection.revoked',
+      'connection.expired',
+      'connection.unreadable',
+    ] as const) {
       await expect(run({ apiKey: 'sk-app', req: failing(code) })).resolves.toMatchObject({
         status: 401,
-        message: 'Connection failed.',
+        message: `Connection failed. ${frogbotError(code).hint}`,
       });
     }
 
-    await expect(run({ apiKey: 'sk-app', req: failing('scopes') })).resolves.toMatchObject({
+    await expect(
+      run({ apiKey: 'sk-app', req: failing('connection.missing-scopes') }),
+    ).resolves.toMatchObject({
       status: 401,
       message: 'Reconnect OpenAI in Settings → Linked accounts.',
     });
@@ -158,7 +167,9 @@ describe('linked provider credential', () => {
   });
 
   it('asks for a default account when several are linked and none is the default', async () => {
-    await expect(run({ apiKey: 'sk-app', req: failing('ambiguous') })).resolves.toMatchObject({
+    await expect(
+      run({ apiKey: 'sk-app', req: failing('connection.ambiguous') }),
+    ).resolves.toMatchObject({
       status: 401,
       message: 'Choose a default OpenAI account in Settings → Linked accounts.',
     });
@@ -167,7 +178,7 @@ describe('linked provider credential', () => {
   });
 
   it('rethrows a forbidden pinned account instead of asking to reconnect', async () => {
-    const error = await run({ apiKey: 'sk-app', req: failing('forbidden') });
+    const error = await run({ apiKey: 'sk-app', req: failing('connection.forbidden') });
 
     expect(JSON.stringify(error)).not.toContain('Reconnect');
     expect(String((error as Error).message)).toContain('Connection failed.');
@@ -223,7 +234,7 @@ describe('linked provider credential', () => {
       }).catch(() => undefined);
 
     await call(linked('sk-user'));
-    await call(failing('missing'));
+    await call(failing('connection.not-linked'));
 
     expect(headers).toEqual(['sk-user', null]);
   });

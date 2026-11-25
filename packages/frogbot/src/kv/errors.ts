@@ -1,20 +1,14 @@
-export class KVUnsupportedError extends Error {
-  constructor() {
-    super('This KV adapter does not support atomic coordination or expiration');
-    this.name = 'KVUnsupportedError';
-  }
+import { frogbotError } from '../errors/catalog.js';
+import type { FrogBotError } from '../errors/FrogBotError.js';
+
+export function kvUnsupported(detail?: string): FrogBotError {
+  return frogbotError('kv.unsupported', detail);
 }
 
-export class KVLockContentionError extends Error {
-  constructor(key: string) {
-    super(`KV lock is already held: ${key}`);
-    this.name = 'KVLockContentionError';
-  }
+export function kvLockHeld(key: string): FrogBotError {
+  return frogbotError('kv.lock-held', { detail: `KV lock is already held: ${key}`, data: { key } });
 }
 
-export class KVLeaseLostError extends Error {
-  constructor(key: string) {
-    super(`KV lock lease was lost: ${key}`);
-    this.name = 'KVLeaseLostError';
-  }
+export function kvLeaseLost(key: string): FrogBotError {
+  return frogbotError('kv.lease-lost', { detail: `KV lock lease was lost: ${key}`, data: { key } });
 }

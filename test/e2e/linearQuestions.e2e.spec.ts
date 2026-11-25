@@ -463,7 +463,7 @@ describe.skipIf(!RUN_E2E)(
 
       expect(login.status).toBe(200);
       expect(settle.status).toBe(409);
-      expect(await settle.json()).toMatchObject({ code: 'channel-chat' });
+      expect(await settle.json()).toMatchObject({ code: 'turn.channel-chat' });
       expect(await settlements(session)).toEqual([]);
 
       model.respond({ text: 'Small it is.' });

@@ -24,13 +24,19 @@ describe('SQLite search setup', () => {
   it('rejects the dot product metric as an engine gap', async () => {
     await expect(
       init({ inner: { vector: { field: 'embedding', metric: 'dotProduct' } } }),
-    ).rejects.toThrow(/inner.*search-setup.*vector.*engine-gap.*inner product/);
+    ).rejects.toMatchObject({
+      code: 'search.engine-gap',
+      message: expect.stringMatching(/inner.*search-setup.*vector.*inner product/),
+    });
   });
 
   it('rejects lexical languages without an FTS5 tokenizer', async () => {
     await expect(
       init({ french: { lexical: { fields: ['title'], language: 'french' } } }),
-    ).rejects.toThrow(/french.*search-setup.*lexical.*engine-gap.*tokenizer/);
+    ).rejects.toMatchObject({
+      code: 'search.engine-gap',
+      message: expect.stringMatching(/french.*search-setup.*lexical.*tokenizer/),
+    });
   });
 
   it('rejects indexes whose database objects collide', async () => {

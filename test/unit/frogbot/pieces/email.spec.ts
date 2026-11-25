@@ -2,7 +2,7 @@ import type { Payload, SendEmailOptions } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { ConnectionError, Connections } from '../../../../packages/frogbot/src/connections/api.js';
+import { Connections } from '../../../../packages/frogbot/src/connections/api.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
@@ -232,14 +232,13 @@ describe('piece email adapter', () => {
     await expect(adapter.sendEmail(message)).resolves.toEqual({ id: 'sent' });
   });
 
-  it('propagates a named ConnectionError when factory credentials are absent', async () => {
+  it('propagates a connection error when factory credentials are absent', async () => {
     const { piece, client, send } = fixture({ auth: false });
     const adapter = pieceEmailAdapter(piece)(runtime());
 
-    await expect(adapter.sendEmail(message)).rejects.toBeInstanceOf(ConnectionError);
     await expect(adapter.sendEmail(message)).rejects.toMatchObject({
-      code: 'missing',
-      piece: 'mailer',
+      code: 'connection.not-configured',
+      data: { piece: 'mailer' },
     });
     expect(client).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();

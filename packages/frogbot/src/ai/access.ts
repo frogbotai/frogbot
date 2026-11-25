@@ -1,3 +1,4 @@
+import { frogbotError } from '../errors/catalog.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { AIAccessConfig, AIMethod, SanitizedAIConfig } from './types.js';
 
@@ -14,7 +15,7 @@ export async function enforceAIAccess(args: EnforceAccessArgs): Promise<void> {
   const category = methodToCategory(method);
   const baseFn = config.access[category];
   if (baseFn && !(await baseFn({ req, model }))) {
-    throw new AIAccessError(`Access denied for AI ${category}`);
+    throw frogbotError('ai.access-denied', `Access denied for AI ${category}.`);
   }
 }
 
@@ -63,13 +64,5 @@ export function methodToCategory(method: AIMethod): keyof AIAccessConfig {
       return 'rerank';
     case 'evaluate':
       return 'evaluate';
-  }
-}
-
-export class AIAccessError extends Error {
-  status = 403;
-  constructor(message: string) {
-    super(message);
-    this.name = 'AIAccessError';
   }
 }

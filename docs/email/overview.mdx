@@ -44,7 +44,7 @@ export default buildConfig({
 
 Resend has no OAuth recipe, so the factory does not accept `oauth`. See [factory options](/pieces/overview#factory-options).
 
-FrogBot uses the factory credentials for application email, including password resets and verification messages. It creates a request without a signed-in user for each send, so user connections do not supply email credentials. Missing factory credentials raise a `ConnectionError` naming the piece when you send.
+FrogBot uses the factory credentials for application email, including password resets and verification messages. It creates a request without a signed-in user for each send, so user connections do not supply email credentials. Missing factory credentials raise `connection.not-configured`, with the piece in `data.piece`, when you send.
 
 ### Promised configuration
 

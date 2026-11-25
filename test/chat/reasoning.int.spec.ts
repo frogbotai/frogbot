@@ -35,7 +35,7 @@ const questionInput = {
 type AgentJSON = {
   status?: string;
   chatId: number | string;
-  error?: string;
+  detail?: string;
   code?: string;
 };
 
@@ -242,7 +242,7 @@ describe('chat reasoning selection', () => {
     const sse = await post({ prompt: 'Start.', ...testCase.body }, { accept: 'text/event-stream' });
 
     expect([json.status, sse.status]).toEqual([400, 400]);
-    expect([json.body.error, sse.body.error]).toEqual([testCase.error, testCase.error]);
+    expect([json.body.detail, sse.body.detail]).toEqual([testCase.error, testCase.error]);
     expect(await rowCounts()).toEqual({ chats: 0, messages: 0 });
     expect(model.requests).toEqual([]);
   });
@@ -268,11 +268,11 @@ describe('chat reasoning selection', () => {
   it('a model the agent does not allow returns 403 even with a valid key', async () => {
     const response = await post({ prompt: 'Start.', model: 'test/other', reasoning: 'high' });
 
-    expect(response).toEqual({
+    expect(response).toMatchObject({
       status: 403,
       body: {
-        code: 'model-not-allowed',
-        error:
+        code: 'agent.model-not-allowed',
+        detail:
           "Model 'test/other' is not allowed for agent 'questioner'. Allowed: 'test/gpt-4.1-mini', 'test/thinker', 'test/writer', 'test/reasoner', 'test/text-only', 'test/media'",
       },
     });

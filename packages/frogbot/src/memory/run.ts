@@ -1,9 +1,10 @@
 import { Forbidden } from 'payload';
 
+import { frogbotError } from '../errors/catalog.js';
+import type { FrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBot } from '../frogbot.js';
 import type { MemoryOperationKind } from './access.js';
 import { checkMemoryAccess } from './access.js';
-import { MemoryAdapterError } from './errors.js';
 import { resolveMemoryScope } from './scopes.js';
 import type { MemoryAdapter, MemoryCallArgs, MemoryTarget } from './types.js';
 
@@ -11,8 +12,8 @@ const MAX_KEY_LENGTH = 200;
 
 export const MAX_TEXT_LENGTH = 4_000;
 
-export function invalid(message: string): MemoryAdapterError {
-  return new MemoryAdapterError('invalid', message);
+export function invalid(message: string): FrogBotError {
+  return frogbotError('memory.invalid', message);
 }
 
 export function requireText(value: unknown, name: string): string {

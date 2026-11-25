@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
+import { frogbotError } from '../../errors/catalog.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import { urlRecipe } from '../../pieces/oauth.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import { OAuthError } from './error.js';
 
 const tokenSchema = z
   .object({
@@ -29,14 +29,14 @@ export function parseOAuthTokens(value: unknown): OAuthTokens {
   try {
     const tokens = tokenSchema.parse(value);
     if (Object.hasOwn(tokens, 'error') || Object.hasOwn(tokens, 'error_description')) {
-      throw new OAuthError('tokens');
+      throw frogbotError('oauth.tokens');
     }
 
     oauthTokenMetadata({ tokens });
 
     return tokens;
   } catch {
-    throw new OAuthError('tokens');
+    throw frogbotError('oauth.tokens');
   }
 }
 
@@ -57,7 +57,7 @@ export function oauthTokenMetadata({
     expiry !== undefined &&
     (!Number.isFinite(expiry) || !Number.isFinite(new Date(expiry).getTime()))
   ) {
-    throw new OAuthError('tokens');
+    throw frogbotError('oauth.tokens');
   }
 
   return {
@@ -104,7 +104,7 @@ async function timed<T>(
 
     return await Promise.race([
       new Promise<never>((_, reject) => {
-        abort = () => reject(new OAuthError('tokens'));
+        abort = () => reject(frogbotError('oauth.tokens'));
         combined.addEventListener('abort', abort, { once: true });
       }),
       fn(combined),
@@ -126,7 +126,7 @@ async function requestTokens({
 }): Promise<OAuthTokens> {
   const recipe = urlRecipe(pieceInstanceRuntime(piece).definition);
   const app = piece.oauth;
-  if (!recipe || !app) throw new OAuthError('configuration');
+  if (!recipe || !app) throw frogbotError('oauth.configuration');
 
   const headers = new Headers({
     'content-type': 'application/x-www-form-urlencoded',
@@ -161,15 +161,15 @@ async function requestTokens({
       });
 
       if (!response.ok) {
-        throw new OAuthError('tokens', {
-          message: `The token endpoint answered ${response.status}.`,
+        throw frogbotError('oauth.tokens', {
+          detail: `The token endpoint answered ${response.status}.`,
         });
       }
 
       return parseOAuthTokens(await response.json());
     }, signal);
   } catch (cause) {
-    throw new OAuthError('tokens', { cause });
+    throw frogbotError('oauth.tokens', { cause });
   }
 }
 
@@ -191,7 +191,7 @@ export async function exchangeOAuthCode({
     (verifier !== undefined && !/^[A-Za-z0-9._~-]{43,128}$/.test(verifier)) ||
     (urlRecipe(pieceInstanceRuntime(piece).definition)?.pkce && !verifier)
   ) {
-    throw new OAuthError('tokens');
+    throw frogbotError('oauth.tokens');
   }
 
   return requestTokens({
@@ -214,7 +214,7 @@ export function oauthAuth({
   tokens: OAuthTokens;
 }): unknown {
   const { definition } = pieceInstanceRuntime(piece);
-  if (!definition.oauth || !definition.auth) throw new OAuthError('configuration');
+  if (!definition.oauth || !definition.auth) throw frogbotError('oauth.configuration');
   const schema = definition.oauth.auth ?? definition.auth;
 
   try {
@@ -224,7 +224,7 @@ export function oauthAuth({
         : { accessToken: tokens.access_token },
     );
   } catch {
-    throw new OAuthError('tokens');
+    throw frogbotError('oauth.tokens');
   }
 }
 
@@ -255,7 +255,7 @@ export async function lookupOAuthAccount({
   const auth = oauthAuth({ piece, tokens: validatedTokens });
   const account = urlRecipe(definition)?.account;
   if (!account) return;
-  if (!definition.auth) throw new OAuthError('configuration');
+  if (!definition.auth) throw frogbotError('oauth.configuration');
 
   try {
     return await timed(
@@ -271,9 +271,9 @@ export async function lookupOAuthAccount({
       req.signal,
     );
   } catch (cause) {
-    throw new OAuthError('account', {
+    throw frogbotError('oauth.account', {
       cause,
-      message: `Couldn't read the signed-in account from ${definition.label}.`,
+      detail: `Couldn't read the signed-in account from ${definition.label}.`,
     });
   }
 }
@@ -290,7 +290,7 @@ export async function refreshOAuthTokens({
   signal?: AbortSignal;
 }): Promise<OAuthTokens> {
   const recipe = pieceInstanceRuntime(piece).definition.oauth;
-  if (!recipe) throw new OAuthError('configuration');
+  if (!recipe) throw frogbotError('oauth.configuration');
 
   let next: OAuthTokens;
   if (recipe.refresh) {
@@ -303,7 +303,7 @@ export async function refreshOAuthTokens({
     );
   } else {
     if (!tokens.refresh_token) {
-      throw new OAuthError('refresh', { message: 'No refresh token is stored.' });
+      throw frogbotError('oauth.refresh', { detail: 'No refresh token is stored.' });
     }
 
     next = await requestTokens({

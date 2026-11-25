@@ -512,7 +512,7 @@ describe('agent generate turns', () => {
     });
 
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       status: 409,
       message: "Model 'openai/gpt-4o' is not allowed for this user. Allowed: 'openai/gpt-4.1'",
     });
@@ -543,7 +543,7 @@ describe('agent generate turns', () => {
     });
 
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       status: 409,
       message:
         "Model 'openai/gpt-4.1' is not allowed for agent 'support'. Allowed: 'openai/gpt-4o'",
@@ -602,11 +602,11 @@ describe('agent generate turns', () => {
     );
 
     await expect(agent.stream({ prompt: 'Hello', req, ...opts })).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       message,
     });
     await expect(agent.generate({ prompt: 'Hello', req, ...opts })).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       message,
     });
 
@@ -1238,7 +1238,7 @@ describe('agent run access', () => {
 
     await expect(run(entry, { overrideAccess: false })).rejects.toMatchObject({
       status: 500,
-      code: 'access-error',
+      code: 'agent.access-error',
     });
     expect(agentState.prepared).toBeUndefined();
   });

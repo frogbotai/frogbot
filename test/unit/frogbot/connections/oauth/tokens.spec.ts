@@ -120,7 +120,7 @@ describe('OAuth token and account transport', () => {
           callbackUrl: 'https://app.test/callback',
           verifier,
         }),
-      ).rejects.toMatchObject({ code: 'tokens' });
+      ).rejects.toMatchObject({ code: 'oauth.tokens' });
       expect(fetch).not.toHaveBeenCalled();
     },
   );
@@ -145,7 +145,9 @@ describe('OAuth token and account transport', () => {
     { access_token: 'token', error_description: 'secret-error' },
     { access_token: 'token', vendor: { fn() {} } },
   ])('rejects malformed token response %j with a redacted error', (value) => {
-    expect(() => parseOAuthTokens(value)).toThrow('OAuth tokens validation failed.');
+    expect(() => parseOAuthTokens(value)).toThrow(
+      expect.objectContaining({ code: 'oauth.tokens' }),
+    );
   });
 
   it.each(['http', 'json', 'oauth', 'network'])('redacts %s exchange errors', async (kind) => {
@@ -173,7 +175,7 @@ describe('OAuth token and account transport', () => {
         callbackUrl: 'https://app.test/callback',
         verifier: 'v'.repeat(43),
       }),
-    ).rejects.toThrow('OAuth tokens validation failed.');
+    ).rejects.toThrow(expect.objectContaining({ code: 'oauth.tokens' }));
   });
 
   it('times out an unresponsive transport and aborts the request', async () => {
@@ -200,7 +202,7 @@ describe('OAuth token and account transport', () => {
     const outcome = pending.catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(15_000);
 
-    expect(await outcome).toMatchObject({ code: 'tokens' });
+    expect(await outcome).toMatchObject({ code: 'oauth.tokens' });
     expect(signal.aborted).toBe(true);
   });
 
@@ -310,7 +312,7 @@ describe('OAuth token and account transport', () => {
       await cancel[cancellation]();
 
       expect(await outcome).toMatchObject({
-        code: operation === 'account' ? 'account' : 'tokens',
+        code: operation === 'account' ? 'oauth.account' : 'oauth.tokens',
       });
       expect(await fetchOutcome).toMatchObject({ name: 'AbortError' });
       expect(received.signal.aborted).toBe(true);
@@ -375,7 +377,7 @@ describe('OAuth token and account transport', () => {
     await expect(
       lookupOAuthAccount({ ...invalid, tokens: { access_token: 'fresh' } }),
     ).rejects.toMatchObject({
-      code: 'account',
+      code: 'oauth.account',
       message: "Couldn't read the signed-in account from Example.",
       cause: expect.anything(),
     });
@@ -387,7 +389,7 @@ describe('OAuth token and account transport', () => {
 
     await expect(
       lookupOAuthAccount({ ...auth, tokens: { access_token: 'fresh' } }),
-    ).rejects.toMatchObject({ code: 'tokens' });
+    ).rejects.toMatchObject({ code: 'oauth.tokens' });
   });
 
   it('parses OAuth auth with oauth.auth when the recipe sets one', () => {
@@ -411,7 +413,7 @@ describe('OAuth token and account transport', () => {
     });
 
     expect(() => oauthAuth({ piece: strict.piece, tokens: { access_token: 'fresh' } })).toThrow(
-      'OAuth tokens validation failed.',
+      expect.objectContaining({ code: 'oauth.tokens' }),
     );
   });
 

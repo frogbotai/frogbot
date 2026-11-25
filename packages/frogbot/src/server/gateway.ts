@@ -6,7 +6,7 @@ import {
   toStatusErrorResponse,
 } from '@frogbotai/gateway/errors';
 
-import { AIAccessError, canUseAIModel, enforceAIAccess } from '../ai/access.js';
+import { canUseAIModel, enforceAIAccess } from '../ai/access.js';
 import { methodForModel } from '../ai/catalog.js';
 import type { AIMethod } from '../ai/types.js';
 import type { FrogBot } from '../frogbot.js';
@@ -52,10 +52,6 @@ function accessErrorResponse(format: ErrorFormat, error: unknown): Response | un
       format === 'anthropic' ? toAnthropicErrorResponse(error) : toOpenAIErrorResponse(error);
 
     return Response.json(body, { status });
-  }
-
-  if (error instanceof AIAccessError) {
-    return errorResponse(format, { status: error.status, message: error.message });
   }
 
   if (

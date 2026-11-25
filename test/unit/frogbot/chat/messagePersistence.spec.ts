@@ -146,7 +146,7 @@ describe('assistant message persistence', () => {
     });
 
     await expect(persistAssistantMessage({ req, chatId: 'chat-1', message })).rejects.toMatchObject(
-      { code: 'write-conflict', status: 409 },
+      { code: 'turn.write-conflict', status: 409 },
     );
     expect(update).not.toHaveBeenCalled();
   });

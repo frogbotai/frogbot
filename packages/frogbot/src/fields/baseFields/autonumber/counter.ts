@@ -8,8 +8,8 @@ import {
 
 import type { DocID } from '../../../collections/config/types.js';
 import type { AutonumberEntry, AutonumberKeyEntry } from '../../../config/sanitized.js';
+import { isFrogBotError } from '../../../errors/FrogBotError.js';
 import type { FrogBot } from '../../../frogbot.js';
-import { KVLockContentionError } from '../../../kv/errors.js';
 import type { KV } from '../../../kv/types.js';
 import { AUTONUMBER_KEYS_SLUG, AUTONUMBERS_SLUG } from './collection.js';
 
@@ -309,7 +309,7 @@ export async function ensureScopeAutonumber({
       await db.create({ collection: AUTONUMBERS_SLUG, data: { key, value } });
     });
   } catch (error) {
-    if (!(error instanceof KVLockContentionError)) throw error;
+    if (!isFrogBotError(error, 'kv.lock-held')) throw error;
 
     await waitForAutonumber({ ...entry, db, key, req });
   }
@@ -520,7 +520,7 @@ export async function ensureAutonumbers(frogbot: FrogBot): Promise<void> {
 
       await ensureAutonumber({ ...target, db: frogbot.db, kv: frogbot.kv });
     } catch (error) {
-      if (error instanceof KVLockContentionError) continue;
+      if (isFrogBotError(error, 'kv.lock-held')) continue;
 
       frogbot.logger.warn(
         `[frogbot] Autonumber numbering failed for '${key}': ${error instanceof Error ? error.message : String(error)}`,

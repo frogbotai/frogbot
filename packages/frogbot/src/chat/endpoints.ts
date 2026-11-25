@@ -1,6 +1,6 @@
-import { errorResponse } from '../agents/responses.js';
 import type { DocID } from '../collections/config/types.js';
 import type { Endpoint } from '../endpoints/types.js';
+import { frogbotError } from '../errors/catalog.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { branchChat } from './branchChat.js';
 import { compactChat } from './compaction/compactChat.js';
@@ -12,7 +12,7 @@ export function buildChatEndpoints(): Endpoint[] {
       path: '/frogbot/chat/branch',
       method: 'post',
       handler: async (req: FrogBotRequest) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (!req.user) throw frogbotError('auth.unauthenticated');
         const body = (await req.json?.().catch(() => null)) as {
           chatId?: DocID;
           messageId?: DocID;
@@ -23,7 +23,13 @@ export function buildChatEndpoints(): Endpoint[] {
           !['string', 'number'].includes(typeof body.chatId) ||
           !['string', 'number'].includes(typeof body.messageId)
         ) {
-          return Response.json({ error: 'chatId and messageId are required' }, { status: 400 });
+          throw frogbotError('request.invalid', {
+            detail: '`chatId` and `messageId` are required.',
+            fields: [
+              { path: 'chatId', message: 'is required' },
+              { path: 'messageId', message: 'is required' },
+            ],
+          });
         }
 
         return Response.json(
@@ -35,27 +41,23 @@ export function buildChatEndpoints(): Endpoint[] {
       path: '/frogbot/chat/compact',
       method: 'post',
       handler: async (req: FrogBotRequest) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (!req.user) throw frogbotError('auth.unauthenticated');
         const body = (await req.json?.().catch(() => null)) as { chatId?: DocID } | null;
         if (body === null || !['string', 'number'].includes(typeof body.chatId)) {
-          return Response.json({ error: 'chatId is required' }, { status: 400 });
+          throw chatIdRequired();
         }
 
-        try {
-          return Response.json(await compactChat({ req, chatId: body.chatId! }));
-        } catch (error) {
-          return errorResponse(error);
-        }
+        return Response.json(await compactChat({ req, chatId: body.chatId! }));
       },
     },
     {
       path: '/frogbot/chat/suggest-title',
       method: 'post',
       handler: async (req: FrogBotRequest) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (!req.user) throw frogbotError('auth.unauthenticated');
         const body = (await req.json?.().catch(() => null)) as { chatId?: DocID } | null;
         if (body === null || !['string', 'number'].includes(typeof body.chatId)) {
-          return Response.json({ error: 'chatId is required' }, { status: 400 });
+          throw chatIdRequired();
         }
 
         const suggestion = await suggestChatTitleForChat({ req, chatId: body.chatId! });
@@ -64,4 +66,11 @@ export function buildChatEndpoints(): Endpoint[] {
       },
     },
   ];
+}
+
+function chatIdRequired() {
+  return frogbotError('request.invalid', {
+    detail: '`chatId` is required.',
+    fields: [{ path: 'chatId', message: 'is required' }],
+  });
 }

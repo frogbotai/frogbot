@@ -3,12 +3,12 @@ import { getToolName, isToolUIPart } from 'ai';
 
 import type { DocID } from '../../collections/config/types.js';
 import { updateIfVersion } from '../../database/compareAndSet.js';
+import { frogbotError } from '../../errors/catalog.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { StoredMessageUsage } from '../collections/messages.js';
 import { mergeUsage, MESSAGE_USAGE_CONTEXT_KEY } from '../collections/messages.js';
 import { messagesToUIMessages, type PersistedMessage } from '../messagesToUIMessages.js';
 import { validateChatMessages } from '../validateMessages.js';
-import { TurnError } from './errors.js';
 import type { ClientToolSettlement, MessageDelivery, PendingCall, TurnActor } from './types.js';
 
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
@@ -227,8 +227,8 @@ export async function persistTurnMessage({
     if (written) return;
   }
 
-  throw new TurnError(
-    'write-conflict',
+  throw frogbotError(
+    'turn.write-conflict',
     `Message '${message.id}' changed during every write attempt.`,
   );
 }

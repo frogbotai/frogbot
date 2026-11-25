@@ -532,7 +532,7 @@ describe('chat turns: recovery, access, and forged input', () => {
     await expect(
       runQueuedTurn({ frogbot: booted.frogbot, chatId: body.chatId }),
     ).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       message:
         "Reasoning option 'max' is not available for model 'test/thinker'. Allowed: 'low', 'high'",
     });

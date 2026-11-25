@@ -379,7 +379,7 @@ describe('SQLite searchMany', () => {
     },
   ])('searchMany rejects $name with SearchValidationError', async ({ message, options }) => {
     await expect(booted.frogbot.searchMany(options)).rejects.toMatchObject({
-      name: 'SearchValidationError',
+      code: 'search.invalid',
       status: 400,
       message,
     });

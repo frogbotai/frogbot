@@ -65,7 +65,7 @@ export default buildConfig({
 
 The database user also needs permission to list, create, and update search indexes on the collections you search.
 
-When the adapter connects, it creates and updates the search indexes. If that fails, it closes the connection and stops setup with `SearchCapabilityError`. The message names the collection, index, mode, and reason:
+When the adapter connects, it creates and updates the search indexes. If that fails, it closes the connection and stops setup with a `search.<reason>` error. The message names the collection, index and mode:
 
 | Reason                 | Cause                                                                                          |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
@@ -106,7 +106,7 @@ Setup fails with `setup-failed` in two cases:
 
 Search configuration is read once at startup. Restart the app, including the development server, after you change a collection's `search` indexes.
 
-MongoDB builds search indexes asynchronously, so a new or rebuilt index is not usable right away. Every search checks the indexes it needs first. A missing index, or one that is not queryable yet, returns `SearchReadinessError` (HTTP `503`) rather than an empty result. Ordinary reads and writes are never blocked while an index builds.
+MongoDB builds search indexes asynchronously, so a new or rebuilt index is not usable right away. Every search checks the indexes it needs first. A missing index, or one that is not queryable yet, returns `search.not-ready` (HTTP `503`) rather than an empty result. Ordinary reads and writes are never blocked while an index builds.
 
 ### Filters
 
@@ -120,7 +120,7 @@ Use `filters.fields` or `filters.exclude` on the index to narrow the list. Text 
 
 Your `where` filter, collection read access, trash visibility, and draft status run inside the `$search` or `$vectorSearch` stage, before the result limit, so hidden documents never take up result slots.
 
-- Filters on unmapped paths, or operators such as `like` and `contains`, fail with `SearchFilterUnsupportedError`.
+- Filters on unmapped paths, or operators such as `like` and `contains`, fail with `search.filter-unsupported`.
 - Exact-match tokens are case-sensitive, and very long text values may not be indexed as tokens. Filter on short, exact values.
 
 ### Ranking

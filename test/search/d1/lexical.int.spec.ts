@@ -320,6 +320,6 @@ describe('D1 lexical search', () => {
         query: { text: 'keyword', vector: Array.from({ length: 1536 }, () => 0.1) },
         overrideAccess: true,
       }),
-    ).rejects.toMatchObject({ name: 'SearchValidationError', status: 400 });
+    ).rejects.toMatchObject({ code: 'search.invalid', status: 400 });
   });
 });

@@ -1,6 +1,5 @@
 import type { Endpoint } from '../endpoints/types.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { isMemoryAdapterError, type MemoryErrorCode } from './errors.js';
 import { invalid } from './run.js';
 import type { FrogBotMemory, MemoryCallArgs } from './types.js';
 
@@ -11,13 +10,6 @@ type MemoryOperation = (args: {
   input: MemoryInput;
   call: MemoryCallArgs;
 }) => Promise<unknown>;
-
-const statuses: Record<MemoryErrorCode, number> = {
-  invalid: 400,
-  limit: 409,
-  'not-found': 404,
-  unavailable: 503,
-};
 
 const memoryPath = '/frogbot/memory';
 
@@ -71,32 +63,23 @@ function endpoint({
     method,
     path: `${memoryPath}${path}`,
     handler: async (req) => {
-      try {
-        const { agent, scope, ...input } = await read(req);
-        const id = req.routeParams?.id;
+      const { agent, scope, ...input } = await read(req);
+      const id = req.routeParams?.id;
 
-        const call = {
-          scope,
-          ...(agent !== undefined ? { agent } : {}),
-          req,
-          overrideAccess: false,
-        } as MemoryCallArgs;
+      const call = {
+        scope,
+        ...(agent !== undefined ? { agent } : {}),
+        req,
+        overrideAccess: false,
+      } as MemoryCallArgs;
 
-        return Response.json(
-          await run({
-            memory: req.frogbot.memory,
-            input: id === undefined ? input : { ...input, id },
-            call,
-          }),
-        );
-      } catch (error) {
-        if (!isMemoryAdapterError(error)) throw error;
-
-        return Response.json(
-          { errors: [{ message: error.message }] },
-          { status: statuses[error.code] },
-        );
-      }
+      return Response.json(
+        await run({
+          memory: req.frogbot.memory,
+          input: id === undefined ? input : { ...input, id },
+          call,
+        }),
+      );
     },
   };
 }

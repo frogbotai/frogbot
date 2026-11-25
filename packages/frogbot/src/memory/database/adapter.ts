@@ -2,8 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 
 import type { ModelId } from '../../ai/types.js';
 import { pagedDelete } from '../../collections/bulkDelete.js';
+import { frogbotError } from '../../errors/catalog.js';
 import { memoryTokens, PINNED_TOKEN_BUDGET } from '../budget.js';
-import { MemoryAdapterError } from '../errors.js';
 import type {
   Memory,
   MemoryAdapter,
@@ -146,11 +146,10 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
 
       return embedding;
     } catch (error) {
-      throw new MemoryAdapterError(
-        'unavailable',
-        `Embedding model '${embeddingModel}' failed: ${error instanceof Error ? error.message : String(error)}`,
-        { cause: error },
-      );
+      throw frogbotError('memory.unavailable', {
+        detail: `Embedding model '${embeddingModel}' failed: ${error instanceof Error ? error.message : String(error)}`,
+        cause: error,
+      });
     }
   }
 
@@ -173,10 +172,10 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
     const total = docs.reduce((sum, doc) => sum + memoryTokens(doc.text), memoryTokens(text));
 
     if (total > PINNED_TOKEN_BUDGET) {
-      throw new MemoryAdapterError(
-        'limit',
-        `Pinned memories in scope '${target.scope}' would use about ${total} tokens; the budget is ${PINNED_TOKEN_BUDGET}.`,
-      );
+      throw frogbotError('memory.pinned-budget', {
+        detail: `Pinned memories in scope '${target.scope}' would use about ${total} tokens; the budget is ${PINNED_TOKEN_BUDGET}.`,
+        data: { scope: target.scope, tokens: total, budget: PINNED_TOKEN_BUDGET },
+      });
     }
   }
 
@@ -191,10 +190,10 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
     });
 
     if (totalDocs >= maxPerScope) {
-      throw new MemoryAdapterError(
-        'limit',
-        `Scope '${target.scope}' already holds ${maxPerScope} memories.`,
-      );
+      throw frogbotError('memory.scope-full', {
+        detail: `Scope '${target.scope}' already holds ${maxPerScope} memories.`,
+        data: { scope: target.scope, max: maxPerScope },
+      });
     }
   }
 
@@ -246,8 +245,8 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
       const taken = await findMemory(target, { slot: { equals: slot } });
 
       if (taken && String(taken.id) !== String(doc.id)) {
-        throw new MemoryAdapterError(
-          'invalid',
+        throw frogbotError(
+          'memory.duplicate',
           keyAfter
             ? `Another memory in scope '${target.scope}' already has key '${keyAfter}'.`
             : `Another memory in scope '${target.scope}' already says this.`,

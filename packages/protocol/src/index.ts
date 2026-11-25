@@ -9,3 +9,4 @@ export type { ModelModality } from './ai.js';
 export type { ChannelThreadReference } from './channels.js';
 export type { ChatManifest, TurnErrorCode, TurnState } from './chat.js';
 export type { OptionColor } from './fields.js';
+export type { Problem, ProblemEntry, ProblemField } from './problem.js';

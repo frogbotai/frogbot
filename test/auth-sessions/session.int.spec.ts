@@ -892,7 +892,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
     expect(existing.status).toBe(401);
     expect(missing.status).toBe(existing.status);
-    expect(await missing.json()).toEqual(await existing.json());
+    expect({ ...(await missing.json()), requestId: undefined }).toEqual({
+      ...(await existing.json()),
+      requestId: undefined,
+    });
     expect(existing.headers.get('set-cookie')).toBeNull();
     expect((await readUser())?.loginAttempts).toBe(1);
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
@@ -1410,12 +1413,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
           token: `reset-${sequence}`,
           password: 'replacement-password',
         }),
-      expect.objectContaining({ status: 500 }),
+      expect.objectContaining({ status: 409 }),
     ],
     [
       'refresh',
       () => authRequest('members/refresh-token'),
-      expect.objectContaining({ status: 500 }),
+      expect.objectContaining({ status: 409 }),
     ],
   ])(
     'rolls back actual delayed %s write application after lease expiry without restoring logout',

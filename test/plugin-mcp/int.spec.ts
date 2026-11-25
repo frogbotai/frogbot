@@ -99,6 +99,7 @@ function responseHeaders(headers: Headers) {
   const comparable = new Headers(headers);
 
   comparable.delete('date');
+  comparable.delete('x-request-id');
 
   return Object.fromEntries(comparable);
 }
@@ -293,7 +294,9 @@ describe('MCP plugin integration', () => {
 
     expect(toolText(response.body)).toEqual({
       isError: true,
-      text: '[frogbot] Todo tools require chat persistence and a current chat.',
+      text: expect.stringMatching(
+        /^request\.rejected: Todo tools need chat persistence and a current chat\.\n\{/,
+      ),
     });
   });
 
@@ -673,7 +676,10 @@ describe('MCP plugin integration', () => {
 
     expect(unauthorized.status).toBe(401);
     expect(response.status).toBe(unauthorized.status);
-    expect(response.body).toEqual(unauthorized.body);
+    expect(response.body).toEqual({
+      ...(unauthorized.body as object),
+      requestId: expect.stringMatching(/^req_/),
+    });
     expect(responseHeaders(response.headers)).toEqual(responseHeaders(unauthorized.headers));
     expect(JSON.stringify(response.body)).not.toContain(strategyFailureMessage);
     expect(JSON.stringify(responseHeaders(response.headers))).not.toContain(strategyFailureMessage);

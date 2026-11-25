@@ -17,7 +17,7 @@ import type { PayloadRequest } from 'payload';
 
 import { assertPostgresAdapter } from '../../../database/guards.js';
 import type { AdapterSearch } from '../../../database/types.js';
-import { SearchReadinessError } from '../../errors.js';
+import { searchNotReady } from '../../errors.js';
 import type { SearchComponentRanking, SearchIndexDescriptor, SearchRanking } from '../../types.js';
 import { buildSearchQuery, type SearchQueryParts } from '../buildSearchQuery.js';
 import { maxHNSWDimensions } from './buildSchema.js';
@@ -250,7 +250,7 @@ export const search: AdapterSearch = async ({
     };
   } catch (error) {
     if (readinessCodes.has(getErrorCode(error) ?? '')) {
-      throw new SearchReadinessError(
+      throw searchNotReady(
         `Search index '${index.name}' in collection '${collection}' is not ready. Run migrations to create its columns and indexes.`,
       );
     }

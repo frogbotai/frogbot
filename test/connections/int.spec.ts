@@ -13,7 +13,6 @@ import {
 } from '../../packages/frogbot/src/connections/store.js';
 import type { ConnectionEntry } from '../../packages/frogbot/src/connections/types.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
-import { KVLockContentionError } from '../../packages/frogbot/src/kv/errors.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceOAuthRecipe } from '../../packages/frogbot/src/pieces/types.js';
 import { continuedTo } from '../__helpers/shared/continuedTo.js';
@@ -409,8 +408,10 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
             method: 'secret',
             credential: 'replacement',
           }),
-        ).rejects.toBeInstanceOf(KVLockContentionError);
-        await expect(second.delete({ owner, piece })).rejects.toBeInstanceOf(KVLockContentionError);
+        ).rejects.toMatchObject({ code: 'kv.lock-held' });
+        await expect(second.delete({ owner, piece })).rejects.toMatchObject({
+          code: 'kv.lock-held',
+        });
 
         await second.upsert({ owner: other, piece, method: 'secret', credential: 'independent' });
         await locked.upsert({ method: 'oauth', credential: { accessToken: 'refreshed' } });
@@ -427,7 +428,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
   });
 
   const notLinked = (resolution: Promise<unknown>) =>
-    expect(resolution).rejects.toMatchObject({ code: 'missing' });
+    expect(resolution).rejects.toMatchObject({ code: 'connection.not-linked' });
 
   it.each(['case-c', 'case-ac', 'case-bc', 'case-abc'])(
     'links %s through real HTTP, PKCE, fresh account validation and encrypted storage',
@@ -642,7 +643,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       const text = await response.text();
 
       expect(JSON.parse(text)).toMatchObject({
-        errors: [{ data: { code: code === 'bad-account' ? 'account' : 'tokens' } }],
+        code: code === 'bad-account' ? 'oauth.account' : 'oauth.tokens',
       });
       expect(text).not.toContain('private');
       expect(await store.get({ owner, piece })).toMatchObject({

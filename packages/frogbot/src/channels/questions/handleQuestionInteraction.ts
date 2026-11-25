@@ -3,10 +3,10 @@ import { NotFound } from 'payload';
 
 import { canUseAgent, isAgentAccessDenial } from '../../agents/service.js';
 import { actorFromRequest } from '../../chat/turn/actor.js';
-import { TurnError } from '../../chat/turn/errors.js';
 import type { ToolPart } from '../../chat/turn/messages.js';
 import { settleClientToolCall } from '../../chat/turn/settle.js';
 import type { TurnActor } from '../../chat/turn/types.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import type { FrogBot } from '../../frogbot.js';
 import type { QuestionOutput } from '../../tools/question.js';
 import { createChannelThreadAccess } from '../conversation.js';
@@ -432,13 +432,17 @@ function settleFailure(
 
   if (isAgentAccessDenial(error)) return { kind: 'denied' };
 
-  if (!(error instanceof TurnError)) throw error;
+  if (!isFrogBotError(error)) throw error;
 
-  if (error.code === 'forbidden' || error.code === 'channel-chat') return { kind: 'denied' };
+  if (error.code === 'turn.forbidden' || error.code === 'turn.channel-chat') {
+    return { kind: 'denied' };
+  }
 
-  if (error.code === 'call-not-found' || error.code === 'not-awaiting') return { kind: 'stale' };
+  if (error.code === 'turn.call-not-found' || error.code === 'turn.not-awaiting') {
+    return { kind: 'stale' };
+  }
 
-  if (error.code === 'invalid-output') return { kind: 'rejected', reason: error.message };
+  if (error.code === 'turn.invalid-output') return { kind: 'rejected', reason: error.message };
 
   throw error;
 }

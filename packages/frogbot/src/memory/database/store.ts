@@ -1,7 +1,7 @@
 import type { Payload, PayloadRequest, Where } from 'payload';
 
+import { frogbotError } from '../../errors/catalog.js';
 import { toPayloadRequest } from '../../seams/request.js';
-import { MemoryAdapterError } from '../errors.js';
 import type { Memory, MemoryTarget } from '../types.js';
 import { MEMORIES_SLUG } from './collection.js';
 
@@ -126,8 +126,8 @@ export async function findOwnedMemory(target: MemoryTarget, id: string): Promise
     : undefined;
 
   if (!doc) {
-    throw new MemoryAdapterError(
-      'not-found',
+    throw frogbotError(
+      'memory.not-found',
       `Memory '${id}' was not found in scope '${target.scope}'.`,
     );
   }

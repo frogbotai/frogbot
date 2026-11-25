@@ -6,7 +6,7 @@ export function turnErrorCode(error: unknown): TurnErrorCode | undefined {
 }
 
 export function toChatError(error: Error): Error {
-  const message = readErrorBody(error)?.error;
+  const message = readErrorBody(error)?.detail;
 
   return typeof message === 'string' && message ? new Error(message, { cause: error }) : error;
 }
@@ -15,7 +15,7 @@ function readErrorBody(error: unknown) {
   if (!APICallError.isInstance(error) || !error.responseBody) return undefined;
 
   try {
-    return JSON.parse(error.responseBody) as { code?: TurnErrorCode; error?: unknown };
+    return JSON.parse(error.responseBody) as { code?: TurnErrorCode; detail?: unknown };
   } catch {
     return undefined;
   }

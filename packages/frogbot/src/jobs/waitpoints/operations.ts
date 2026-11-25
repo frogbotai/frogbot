@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { Job, PayloadRequest, Where } from 'payload';
 
 import { compareAndSet } from '../../database/compareAndSet.js';
+import { frogbotError } from '../../errors/catalog.js';
 import { runnableNow, unleased } from '../run.js';
 import { updateWaitpoint } from './atomic.js';
 import { WAITPOINTS_SLUG } from './collection.js';
@@ -12,27 +13,6 @@ import type { Waitpoint, WaitpointReplay } from './types.js';
 const DISPATCH_LEASE_DURATION = 60_000;
 
 type WaitpointHolder = Job & { waitpoint?: WaitpointReplay | null };
-
-export class WaitpointResumeError extends Error {
-  readonly status: 404 | 409 | 410;
-  readonly code: string;
-
-  constructor({
-    status,
-    code,
-    message,
-  }: {
-    status: 404 | 409 | 410;
-    code: string;
-    message: string;
-  }) {
-    super(message);
-
-    this.name = 'WaitpointResumeError';
-    this.status = status;
-    this.code = code;
-  }
-}
 
 export async function findWaitpoint({
   req,
@@ -310,21 +290,13 @@ export async function resumeWaitpoint({
   const waitpoint = await findWaitpoint({ req, token });
 
   if (!waitpoint) {
-    throw new WaitpointResumeError({
-      status: 404,
-      code: 'WAITPOINT_NOT_FOUND',
-      message: 'This FrogBot waitpoint was not found.',
-    });
+    throw frogbotError('job.waitpoint-not-found');
   }
 
   const holder = await findHolder({ req, waitpoint });
 
   if (!isLiveHolder(holder, waitpoint)) {
-    throw new WaitpointResumeError({
-      status: 409,
-      code: 'WAITPOINT_CONSUMED',
-      message: 'This FrogBot waitpoint cannot be resumed.',
-    });
+    throw frogbotError('job.waitpoint-consumed');
   }
 
   const now = new Date().toISOString();
@@ -347,13 +319,7 @@ export async function resumeWaitpoint({
       current?.status === 'expired' ||
       (current?.status === 'pending' && !!current.expiresAt && current.expiresAt <= now);
 
-    throw new WaitpointResumeError({
-      status: expired ? 410 : 409,
-      code: expired ? 'WAITPOINT_EXPIRED' : 'WAITPOINT_CONSUMED',
-      message: expired
-        ? 'This FrogBot waitpoint has expired.'
-        : 'This FrogBot waitpoint cannot be resumed.',
-    });
+    throw frogbotError(expired ? 'job.waitpoint-expired' : 'job.waitpoint-consumed');
   }
 
   if (waitpoint.ready) {

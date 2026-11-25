@@ -1,12 +1,7 @@
 import type { KVAdapter, KVStoreValue } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  createKV,
-  kvAtomic,
-  KVLockContentionError,
-  KVUnsupportedError,
-} from '../../../../packages/frogbot/src/exports/kv.js';
+import { createKV, kvAtomic } from '../../../../packages/frogbot/src/exports/kv.js';
 import type { KV, KVAtomicAdapter, KVLock } from '../../../../packages/frogbot/src/kv/types.js';
 
 class LegacyAdapter implements KVAdapter {
@@ -117,7 +112,7 @@ describe('createKV', () => {
       vi.spyOn(adapter, method as keyof KVAdapter),
     );
 
-    await expect(run(createKV({ adapter }))).rejects.toBeInstanceOf(KVUnsupportedError);
+    await expect(run(createKV({ adapter }))).rejects.toMatchObject({ code: 'kv.unsupported' });
     expect([...adapter.values]).toEqual([[lock.key, lock.token]]);
 
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
@@ -132,8 +127,12 @@ describe('createKV', () => {
       const setIfAbsent = vi.spyOn(adapter, 'setIfAbsent');
       const kv = createKV({ adapter });
 
-      await expect(kv.set('key', 'value', { ttl: 1 })).rejects.toBeInstanceOf(KVUnsupportedError);
-      await expect(kv.setIfAbsent('key', 'value')).rejects.toBeInstanceOf(KVUnsupportedError);
+      await expect(kv.set('key', 'value', { ttl: 1 })).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
+      await expect(kv.setIfAbsent('key', 'value')).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
       expect(set).not.toHaveBeenCalled();
       expect(setIfAbsent).not.toHaveBeenCalled();
       expect(kvAtomic).toBe(Symbol.for('frogbot.kv.atomic'));
@@ -206,7 +205,7 @@ describe('createKV', () => {
     const callback = vi.fn();
 
     await expect(kv.acquireLock(lock.key, 1000)).resolves.toBeNull();
-    await expect(kv.lock(lock.key, 1000, callback)).rejects.toBeInstanceOf(KVLockContentionError);
+    await expect(kv.lock(lock.key, 1000, callback)).rejects.toMatchObject({ code: 'kv.lock-held' });
     expect(callback).not.toHaveBeenCalled();
     expect(adapter.values.get(lock.key)).toBe(lock.token);
   });

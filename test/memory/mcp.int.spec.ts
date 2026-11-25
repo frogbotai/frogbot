@@ -119,7 +119,7 @@ describe('memory tools outside an agent run, with an app agent slugged like the 
     ).rejects.toThrow();
     await expect(
       memoryTool('memory_save')({ text: 'Agent fact.', scope: 'agent' }, ctx),
-    ).resolves.toMatch(/^Memory invalid/);
+    ).rejects.toMatchObject({ code: 'memory.invalid-scope' });
 
     const { docs } = await frogbot.memory.list({ scope: 'team' });
 

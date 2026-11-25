@@ -74,7 +74,7 @@ describe('D1 searchMany', () => {
         overrideAccess: true,
       }),
     ).rejects.toMatchObject({
-      name: 'SearchValidationError',
+      code: 'search.invalid',
       status: 400,
       message: `Search index 'content' in collection '${articlesSlug}' does not configure vector search.`,
     });

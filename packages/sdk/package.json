@@ -26,6 +26,7 @@
   ],
   "sideEffects": false,
   "dependencies": {
+    "@frogbotai/protocol": "workspace:*",
     "qs-esm": "8.0.1"
   },
   "peerDependencies": {

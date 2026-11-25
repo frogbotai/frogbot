@@ -481,7 +481,7 @@ describe('QuestionToolRender in Chat', () => {
       ];
 
       return Response.json(
-        { error: 'This call has already been answered.', code: 'already-settled' },
+        { error: 'This call has already been answered.', code: 'turn.already-settled' },
         { status: 409 },
       );
     });

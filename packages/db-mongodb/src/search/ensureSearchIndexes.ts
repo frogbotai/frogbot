@@ -1,5 +1,5 @@
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
-import { SearchCapabilityError } from 'frogbot/search';
+import { isSearchUnavailable, searchUnavailable } from 'frogbot/search';
 
 import { createSearchSetupError } from './createSearchSetupError.js';
 import type { SearchIndexInfo } from './findSearchIndex.js';
@@ -73,13 +73,13 @@ async function ensureSearchIndex({
   }
 
   if (existing.type !== searchIndex.type) {
-    throw new SearchCapabilityError(
-      searchIndex.collection,
-      searchIndex.index,
-      searchIndex.mode,
-      'setup-failed',
-      `Search index '${searchIndex.name}' already exists with type '${existing.type}'.`,
-    );
+    throw searchUnavailable({
+      collection: searchIndex.collection,
+      index: searchIndex.index,
+      mode: searchIndex.mode,
+      reason: 'setup-failed',
+      detail: `Search index '${searchIndex.name}' already exists with type '${existing.type}'.`,
+    });
   }
 
   const current = isSearchIndexDefinitionEqual({
@@ -88,13 +88,13 @@ async function ensureSearchIndex({
   });
 
   if (current && existing.status === 'FAILED') {
-    throw new SearchCapabilityError(
-      searchIndex.collection,
-      searchIndex.index,
-      searchIndex.mode,
-      'setup-failed',
-      `Search index '${searchIndex.name}' failed to build. Drop it after fixing the cause so it is recreated.`,
-    );
+    throw searchUnavailable({
+      collection: searchIndex.collection,
+      index: searchIndex.index,
+      mode: searchIndex.mode,
+      reason: 'setup-failed',
+      detail: `Search index '${searchIndex.name}' failed to build. Drop it after fixing the cause so it is recreated.`,
+    });
   }
 
   if (current) return;
@@ -117,7 +117,7 @@ export async function ensureSearchIndexes({
     try {
       await ensureSearchIndex({ adapter, dropped, searchIndex });
     } catch (error) {
-      if (error instanceof SearchCapabilityError) throw error;
+      if (isSearchUnavailable(error)) throw error;
 
       throw createSearchSetupError({ error, searchIndex });
     }

@@ -24,14 +24,16 @@ describe('memory custom scopes', () => {
 
     await expect(
       frogbot.memory.save({ ...acme, text: 'Acme contract renews in March' }),
-    ).rejects.toMatchObject({ code: 'invalid' });
-    await expect(frogbot.memory.list(globex)).rejects.toMatchObject({ code: 'invalid' });
+    ).rejects.toMatchObject({ code: 'memory.invalid-scope' });
+    await expect(frogbot.memory.list(globex)).rejects.toMatchObject({
+      code: 'memory.invalid-scope',
+    });
   });
 
   it('rejects a scope value that is not a finite number', async () => {
     await expect(
       frogbot.memory.list({ scope: 'client', chat: { client: Number.NaN } }),
-    ).rejects.toMatchObject({ code: 'invalid' });
+    ).rejects.toMatchObject({ code: 'memory.invalid-scope' });
   });
 
   it('keeps one scope per value, number or string', async () => {

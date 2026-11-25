@@ -152,7 +152,7 @@ describe.skipIf(skipSearch)('MongoDB lexical search', () => {
 
   it('rejects filters on fields the index cannot map', async () => {
     await expect(search({ where: { tags: { equals: 'a' } } })).rejects.toMatchObject({
-      name: 'SearchFilterUnsupportedError',
+      code: 'search.filter-unsupported',
       status: 400,
     });
   });
@@ -198,7 +198,7 @@ describe.skipIf(skipSearch)('MongoDB lexical search', () => {
       (indexes) => indexes.length === 0,
     );
 
-    await expect(search()).rejects.toMatchObject({ name: 'SearchReadinessError', status: 503 });
+    await expect(search()).rejects.toMatchObject({ code: 'search.not-ready', status: 503 });
 
     await ensureSearchIndexes({ adapter: db });
 

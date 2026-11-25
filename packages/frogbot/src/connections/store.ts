@@ -1,7 +1,7 @@
+import { frogbotError } from '../errors/catalog.js';
 import type { FrogBot } from '../frogbot.js';
 import type { PieceJSON, PieceOAuthAccount } from '../pieces/types.js';
 import { CredentialCryptoError } from './encryption.js';
-import { OAuthError } from './oauth/error.js';
 import type {
   ConnectionHolder,
   SanitizedConnectionEntry,
@@ -48,7 +48,7 @@ export type ConnectionStoreWrite = {
   status?: ConnectionRow['status'];
   /**
    * Saves onto this row only. The write must carry the row's provider account, or it throws
-   * `OAuthError('account')` and writes nothing.
+   * `oauth.account` and writes nothing.
    */
   reconnect?: ConnectionID;
 };
@@ -421,8 +421,8 @@ export class ConnectionStore {
                   : current[0];
 
             if (reconnect !== undefined && (!row || accountKey(row) !== accountId)) {
-              throw new OAuthError('account', {
-                message: "Sign in with the same account you're renewing.",
+              throw frogbotError('oauth.account', {
+                detail: "Sign in with the same account you're renewing.",
               });
             }
 

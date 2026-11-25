@@ -380,7 +380,7 @@ describe('Telegram questions with SQLite persistence', { timeout: 30_000 }, () =
         outcome: { dismissed: true },
       }),
     ).rejects.toMatchObject({
-      code: 'channel-chat',
+      code: 'turn.channel-chat',
       status: 409,
       message:
         'This conversation happens in Telegram. Continue it there, or branch it into a new chat.',

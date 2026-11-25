@@ -157,6 +157,8 @@ export function buildPayloadConfig({
     ...payloadKeys
   } = config;
 
+  const loggingLevels = { FrogBotError: false as const, ...payloadKeys.loggingLevels };
+
   const out: PayloadConfig = {
     ...toPayloadConfig(payloadKeys),
     ...(config.blocks
@@ -177,6 +179,7 @@ export function buildPayloadConfig({
       : {}),
     collections,
     hooks: wrapRootHooks(config.hooks, attachFrogBot),
+    loggingLevels,
     ...(config.jobs ? { jobs: wrapJobs(toPayloadJobs(config.jobs), attachFrogBot) } : {}),
     ...(config.localization !== undefined
       ? { localization: wrapLocalization(config.localization, attachFrogBot) }

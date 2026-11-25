@@ -9,6 +9,7 @@ import type { TurnRunnerArgs } from '../chat/turn/queue.js';
 import { registerTurnRunner, runQueuedTurn } from '../chat/turn/queue.js';
 import { streamTurn } from '../chat/turn/streamTurn.js';
 import type { DocID } from '../collections/config/types.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBot } from '../frogbot.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance } from '../pieces/types.js';
@@ -271,7 +272,7 @@ export class ChannelHost {
 
       return true;
     } catch (error) {
-      if (!work && error instanceof Error && error.name === 'KVLockContentionError') return false;
+      if (!work && isFrogBotError(error, 'kv.lock-held')) return false;
 
       const aborted = signal?.aborted || this.gatewayController.signal.aborted;
       const abortError =

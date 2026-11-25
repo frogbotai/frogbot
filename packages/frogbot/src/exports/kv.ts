@@ -1,6 +1,5 @@
 export type { DatabaseKVAdapterOptions } from '../kv/adapters/DatabaseKVAdapter.js';
 export { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
-export { KVLeaseLostError, KVLockContentionError, KVUnsupportedError } from '../kv/errors.js';
 export { createKV } from '../kv/index.js';
 export type {
   KV,

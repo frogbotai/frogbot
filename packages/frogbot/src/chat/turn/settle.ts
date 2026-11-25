@@ -4,6 +4,7 @@ import { generateId, getToolName } from 'ai';
 import { assertAgentAccess, getAgent } from '../../agents/service.js';
 import type { DocID } from '../../collections/config/types.js';
 import { updateIfVersion } from '../../database/compareAndSet.js';
+import { frogbotError } from '../../errors/catalog.js';
 import { canUseTool } from '../../tools/access.js';
 import type { ClientTool } from '../../tools/types.js';
 import { isClientTool } from '../../tools/types.js';
@@ -13,7 +14,6 @@ import type { ChannelChatAccess } from '../channelAccess.js';
 import type { ChatDocument } from '../findChat.js';
 import { findChat } from '../findChat.js';
 import { actorFromRequest } from './actor.js';
-import { TurnError } from './errors.js';
 import type { ToolPart, TurnMessageDocument } from './messages.js';
 import { findTurnMessage, getPendingCalls, isToolPart, messagesConfig } from './messages.js';
 import { promoteQueuedMessage } from './queue.js';
@@ -115,7 +115,7 @@ export async function settleCall({
     );
 
     if (!message || !part) {
-      throw new TurnError('call-not-found', `Tool call '${toolCallId}' was not found.`);
+      throw frogbotError('turn.call-not-found', `Tool call '${toolCallId}' was not found.`);
     }
 
     const pending = getPendingCalls({ message, chatId, agentSlug });
@@ -123,7 +123,7 @@ export async function settleCall({
 
     if (!call) return { status: 'already-settled', part, allSettled: pending.length === 0 };
 
-    if (!awaiting) throw new TurnError('not-awaiting', 'This chat is not awaiting input.');
+    if (!awaiting) throw frogbotError('turn.not-awaiting', 'This chat is not awaiting input.');
 
     const tool = (agent.config.tools ?? []).find(
       (candidate): candidate is ClientTool =>
@@ -131,7 +131,7 @@ export async function settleCall({
     );
 
     if (tool?.client.access && !(await tool.client.access({ req, call }))) {
-      throw new TurnError('forbidden', 'You cannot settle this call.');
+      throw frogbotError('turn.forbidden', 'You cannot settle this call.');
     }
 
     if (part.state === 'approval-requested') {
@@ -148,7 +148,7 @@ export async function settleCall({
           logger: req.frogbot.logger,
         }))
       ) {
-        throw new TurnError('forbidden', 'You cannot answer this approval.');
+        throw frogbotError('turn.forbidden', 'You cannot answer this approval.');
       }
     }
 
@@ -194,7 +194,10 @@ export async function settleCall({
     return { status: 'settled', part: settledPart, allSettled };
   }
 
-  throw new TurnError('write-conflict', `Tool call '${toolCallId}' changed during every attempt.`);
+  throw frogbotError(
+    'turn.write-conflict',
+    `Tool call '${toolCallId}' changed during every attempt.`,
+  );
 }
 
 async function findSettlementMessage({
@@ -228,7 +231,7 @@ async function settledPartFor({
 
   if (part.state === 'approval-requested') {
     if (outcome.approved === undefined) {
-      throw new TurnError('invalid-output', `Tool '${getToolName(part)}' needs an approval.`);
+      throw frogbotError('turn.invalid-output', `Tool '${getToolName(part)}' needs an approval.`);
     }
 
     const reason = outcome.reason?.trim();
@@ -246,7 +249,10 @@ async function settledPartFor({
   }
 
   if (outcome.approved !== undefined) {
-    throw new TurnError('invalid-output', `Tool '${getToolName(part)}' is not awaiting approval.`);
+    throw frogbotError(
+      'turn.invalid-output',
+      `Tool '${getToolName(part)}' is not awaiting approval.`,
+    );
   }
 
   return {
@@ -276,18 +282,18 @@ async function validateOutput({
   output: unknown;
 }): Promise<unknown> {
   if (!tool) {
-    throw new TurnError('invalid-output', `Tool '${getToolName(part)}' cannot be answered.`);
+    throw frogbotError('turn.invalid-output', `Tool '${getToolName(part)}' cannot be answered.`);
   }
 
   const parsed = await tool.outputSchema.safeParseAsync(output);
 
   if (!parsed.success) {
-    throw new TurnError('invalid-output', `Invalid output for '${tool.slug}'.`);
+    throw frogbotError('turn.invalid-output', `Invalid output for '${tool.slug}'.`);
   }
 
   const valid = tool.client.validate?.({ input: part.input, output: parsed.data }) ?? true;
 
-  if (valid !== true) throw new TurnError('invalid-output', valid);
+  if (valid !== true) throw frogbotError('turn.invalid-output', valid);
 
   return parsed.data;
 }

@@ -31,7 +31,16 @@ vi.mock('payload', () => {
   let mockPayload = createMockPayload();
 
   return {
-    APIError: class APIError extends Error {},
+    APIError: class APIError extends Error {
+      constructor(
+        message: string,
+        readonly status = 500,
+        readonly data: unknown = null,
+        readonly isPublic = false,
+      ) {
+        super(message);
+      }
+    },
     getPayload: vi.fn(() => mockPayload),
     createPayloadRequest: vi.fn(({ req }) => ({ ...req, payload: mockPayload })),
     handleEndpoints: vi.fn(() => new Response('ok')),
@@ -734,9 +743,9 @@ describe('FrogBot class', () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({
         error: {
-          message: 'Access denied for AI generate',
+          message: 'Access denied for AI generate.',
           type: 'permission_error',
-          code: 'permission_denied',
+          code: 'ai.access-denied',
           param: null,
         },
       });

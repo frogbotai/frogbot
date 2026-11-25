@@ -1,5 +1,5 @@
+import { frogbotError } from '../errors/catalog.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { MemoryAdapterError } from './errors.js';
 import type { MemoryOptions, MemoryScopeArgs } from './types.js';
 
 export const builtInScopes = ['me', 'agent', 'team'] as const;
@@ -13,7 +13,7 @@ function userScope(req: FrogBotRequest): string {
   const user = req.user as { collection?: unknown; id?: unknown } | null;
 
   if (!user || user.id === undefined || typeof user.collection !== 'string') {
-    throw new MemoryAdapterError('invalid', "The 'me' memory scope needs a signed-in user.");
+    throw frogbotError('memory.invalid-scope', "The 'me' memory scope needs a signed-in user.");
   }
 
   return `me:${user.collection}:${String(user.id)}`;
@@ -29,7 +29,7 @@ export async function resolveMemoryScope({
 
   if (scope === 'agent') {
     if (!args.agent) {
-      throw new MemoryAdapterError('invalid', "The 'agent' memory scope needs an agent.");
+      throw frogbotError('memory.invalid-scope', "The 'agent' memory scope needs an agent.");
     }
 
     return `agent:${args.agent.slug}`;
@@ -40,8 +40,8 @@ export async function resolveMemoryScope({
   if (!resolve) {
     if (scope === 'team') return 'team';
 
-    throw new MemoryAdapterError(
-      'invalid',
+    throw frogbotError(
+      'memory.invalid-scope',
       `Memory scope '${scope}' is not declared. Use one of: ${memoryScopeWords(options).join(', ')}.`,
     );
   }
@@ -49,15 +49,15 @@ export async function resolveMemoryScope({
   const value = await resolve(args);
 
   if (value === undefined || value === null || value === '') {
-    throw new MemoryAdapterError(
-      'invalid',
+    throw frogbotError(
+      'memory.invalid-scope',
       `Memory scope '${scope}' is not available for this request.`,
     );
   }
 
   if (typeof value !== 'string' && !(typeof value === 'number' && Number.isFinite(value))) {
-    throw new MemoryAdapterError(
-      'invalid',
+    throw frogbotError(
+      'memory.invalid-scope',
       `Memory scope '${scope}' must resolve to a string or a finite number, such as an ID.`,
     );
   }

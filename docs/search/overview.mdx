@@ -25,8 +25,8 @@ Collection search ranks the records of one collection by text relevance, vector 
 
 Every option on this page works the same way on Postgres, SQLite, and MongoDB. Each adapter page lists engine-specific details, such as the metrics and languages it supports.
 
-- **Cloudflare D1** has no native vector search. An index with `vector` fails setup with `SearchCapabilityError` and reason `engine-gap`.
-- **Any other adapter** fails database initialization with `SearchCapabilityError` and reason `not-implemented` when a collection configures a search index. Leave `search` off those collections and use [vector fields](/fields/vector) for storage only.
+- **Cloudflare D1** has no native vector search. An index with `vector` fails setup with `search.engine-gap`.
+- **Any other adapter** fails database initialization with `search.not-implemented` when a collection configures a search index. Leave `search` off those collections and use [vector fields](/fields/vector) for storage only.
 
 ## Configure indexes
 
@@ -155,7 +155,7 @@ export async function searchArticles(req: FrogBotRequest, vector: number[]) {
 | `overrideAccess` | `boolean` | `false` | Set `true` to skip collection and field read access. Required when `req` is omitted. |
 | `req` | `FrogBotRequest` | Required unless `overrideAccess: true` | Request whose user's access is enforced. |
 
-FrogBot validates the query before it runs. Each of these fails with `SearchValidationError`:
+FrogBot validates the query before it runs. Each of these fails with `search.invalid`:
 
 - The `index` is not configured on the collection, or it lacks the component that the mode needs.
 - `query` has neither `text` nor `vector`, or `query.text` is empty.
@@ -167,7 +167,7 @@ Which filters and modes can run also depends on the adapter and the selected ind
 ### Access
 
 <Warning>
-Search enforces access by default. `overrideAccess` defaults to `false`, and a call without `req` fails with `SearchValidationError`. Pass the request when you act for a user. Set `overrideAccess: true` only for trusted server work, such as a script or a job.
+Search enforces access by default. `overrideAccess` defaults to `false`, and a call without `req` fails with `search.invalid`. Pass the request when you act for a user. Set `overrideAccess: true` only for trusted server work, such as a script or a job.
 </Warning>
 
 ```ts
@@ -202,7 +202,7 @@ A query runs in two steps:
 Two consequences follow:
 
 - **`hits` can be shorter than `limit`.** A ranked document that the read does not return is left out, for example because it was deleted or is no longer readable.
-- **A field with its own read access can't be ranked or filtered.** While access is enforced, field-level read access on a ranked or filtered field stops the query with `SearchFilterUnsupportedError`, because scores computed over a hidden value would reveal it.
+- **A field with its own read access can't be ranked or filtered.** While access is enforced, field-level read access on a ranked or filtered field stops the query with `search.filter-unsupported`, because scores computed over a hidden value would reveal it.
 
 ### Results
 
@@ -407,7 +407,7 @@ Each entry in `collections` accepts:
 | `candidates` | `number` | The index's `defaultCandidates`, then `100` | See [Candidates](#candidates). Must be a positive integer. |
 | `depth` | `number` | `0` | Relationship depth for each `doc`. Must be a non-negative integer. |
 
-Any other key on an entry, such as its own `query` or `limit`, fails with `SearchValidationError`.
+Any other key on an entry, such as its own `query` or `limit`, fails with `search.invalid`.
 
 ### Search many results
 
@@ -426,7 +426,7 @@ Each item is typed by its collection. In the example above, `articles.hits[0].do
 
 The call succeeds or fails as a whole.
 
-**Before any query runs,** FrogBot checks the list and every entry. Each of these fails with `SearchValidationError`:
+**Before any query runs,** FrogBot checks the list and every entry. Each of these fails with `search.invalid`:
 
 - The list is empty.
 - An entry isn't an object, or it lacks `collection` or `index`.
@@ -436,7 +436,7 @@ The call succeeds or fails as a whole.
 - A vector has the wrong length.
 - An option is invalid.
 
-`locale: 'all'` fails with `SearchFilterUnsupportedError`, also with status `400`.
+`locale: 'all'` fails with `search.filter-unsupported`, also with status `400`.
 
 **FrogBot then searches the collections one after another,** in list order, on the same request, so the call also works inside a database transaction.
 
@@ -628,26 +628,26 @@ query {
 
 ### Setup checks
 
-FrogBot checks every configured index when the database initializes, including when you create or run migrations. A compatible index passes silently. An incompatible index stops setup with `SearchCapabilityError`:
+FrogBot checks every configured index when the database initializes, including when you create or run migrations. A compatible index passes silently. An incompatible index stops setup with a `search.*` error whose code names the reason:
 
-| Cause | `reason` |
+| Cause | Code |
 | --- | --- |
-| The adapter has no search. Any configured index fails, and the error names the collection, index, and mode. | `not-implemented` |
-| The engine cannot run an option. See the [D1 limits](/database/sqlite#d1-collection-search). | `engine-gap` |
-| A database prerequisite is missing. See the [Postgres](/database/postgres#prerequisites) and [SQLite](/database/sqlite#prerequisites) prerequisites. | `missing-prerequisite` |
+| The adapter has no search. Any configured index fails, and the error names the collection, index, and mode. | `search.not-implemented` |
+| The engine cannot run an option. See the [D1 limits](/database/sqlite#d1-collection-search). | `search.engine-gap` |
+| A database prerequisite is missing. See the [Postgres](/database/postgres#prerequisites) and [SQLite](/database/sqlite#prerequisites) prerequisites. | `search.missing-prerequisite` |
 
-The `reason` can also be `permission-denied` or `setup-failed`. See the [database status](/database/overview#collection-search-status) for adapter support.
+The code can also be `search.permission-denied` or `search.setup-failed`. See the [database status](/database/overview#collection-search-status) for adapter support.
 
 ### Errors
 
-FrogBot exports four error classes. REST and GraphQL report them with these HTTP statuses:
+Search failures are `FrogBotError`s with these codes. REST and GraphQL report them with these HTTP statuses:
 
-| Error | Status | Meaning |
+| Code | Status | Meaning |
 | --- | --- | --- |
-| `SearchValidationError` | `400` | The index, query, or an option is invalid. |
-| `SearchFilterUnsupportedError` | `400` | A filter, locale, or field visibility rule cannot be searched. |
-| `SearchCapabilityError` | `501` | The database adapter cannot run the requested mode. It carries the `reason`. |
-| `SearchReadinessError` | `503` | The native index is not ready, or it returned an invalid ranked result. |
+| `search.invalid` | `400` | The index, query, or an option is invalid. |
+| `search.filter-unsupported` | `400` | A filter, locale, or field visibility rule cannot be searched. |
+| `search.engine-gap`, `search.not-implemented`, `search.missing-prerequisite`, `search.permission-denied`, `search.setup-failed` | `501` | The database adapter cannot run the requested mode. `data` names the `collection`, `index` and `mode`. |
+| `search.not-ready` | `503` | The native index is not ready, or it returned an invalid ranked result. |
 
 A caller without collection read access receives `403`.
 

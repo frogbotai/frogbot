@@ -163,14 +163,16 @@ describe('lazy connection refresh', () => {
       const encrypted = fixture.row()!.credential;
 
       await expect(fixture.api.resolve(fixture)).rejects.toMatchObject({
-        name: 'ConnectionError',
-        code: 'error',
+        name: 'FrogBotError',
+        code: 'connection.unreadable',
       });
       expect(fixture.row()?.status).toBe('error');
       expect(await fixture.encryption.decrypt(fixture.row()!.credential)).toBe(
         await fixture.encryption.decrypt(encrypted),
       );
-      await expect(fixture.api.resolve(fixture)).rejects.toMatchObject({ code: 'error' });
+      await expect(fixture.api.resolve(fixture)).rejects.toMatchObject({
+        code: 'connection.unreadable',
+      });
       expect(refresh).toHaveBeenCalledTimes(failure === 'missing-refresh' ? 0 : 1);
     },
   );
@@ -186,7 +188,10 @@ describe('lazy connection refresh', () => {
 
     await expect(
       fixture.api.resolve({ ...fixture, scopes: ['read', 'write', 'write'] }),
-    ).rejects.toMatchObject({ code: 'scopes', missingScopes: ['read', 'write'] });
+    ).rejects.toMatchObject({
+      code: 'connection.missing-scopes',
+      data: { missingScopes: ['read', 'write'] },
+    });
     expect(fixture.row()?.status).toBe('active');
     expect(fixture.row()?.scopes).toEqual([]);
   });
@@ -255,7 +260,7 @@ describe('lazy connection refresh', () => {
       settleRefresh(gate, scenario);
 
       expect(await outcome).toMatchObject(
-        scenario.startsWith('delete') ? { code: 'missing' } : { token: 'relinked' },
+        scenario.startsWith('delete') ? { code: 'connection.not-linked' } : { token: 'relinked' },
       );
       expect(fixture.frogbot.update).not.toHaveBeenCalled();
       expect(fixture.frogbot.create).not.toHaveBeenCalled();
@@ -284,7 +289,7 @@ describe('lazy connection refresh', () => {
     await entered.promise;
     await vi.advanceTimersByTimeAsync(10_000);
 
-    expect(await outcome).toMatchObject({ code: 'error' });
+    expect(await outcome).toMatchObject({ code: 'connection.unreadable' });
 
     gate.resolve({ access_token: 'late', expires_in: 3600 });
     await vi.advanceTimersByTimeAsync(1);
@@ -315,7 +320,7 @@ describe('lazy connection refresh', () => {
     await entered.promise;
     await vi.advanceTimersByTimeAsync(15_000);
 
-    expect(await outcome).toMatchObject({ code: 'error' });
+    expect(await outcome).toMatchObject({ code: 'connection.unreadable' });
     expect(fixture.adapter.extendLock).toHaveBeenCalledOnce();
     expect(fixture.row()?.status).toBe('error');
 

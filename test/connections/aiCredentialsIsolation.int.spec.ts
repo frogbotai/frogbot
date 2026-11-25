@@ -3,6 +3,7 @@ import { toPayloadRequest } from 'frogbot/internal';
 import { getFrogBotPayload } from 'frogbot/test';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { routed } from '../__helpers/shared/routed.js';
 import {
   bootLinked,
   keysFor,
@@ -203,13 +204,10 @@ describe(`Linked OpenAI keys stay with their user [${process.env.FROGBOT_DATABAS
     const response = await booted.link(gina, { apiKey: 'sk-gina' });
 
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({
-      errors: [
-        {
-          message: "Couldn't reach OpenAI to check this key. Try again.",
-          data: { code: 'unreachable' },
-        },
-      ],
+    expect(await response.json()).toMatchObject({
+      code: 'connection.unreachable',
+      detail: "Couldn't reach OpenAI to check this key.",
+      retryable: true,
     });
 
     const rows = await booted.frogbot.find({
@@ -231,17 +229,21 @@ describe(`Linked OpenAI keys stay with their user [${process.env.FROGBOT_DATABAS
       Response.json({ error: { message: 'Incorrect API key.' } }, { status: 401 }),
     );
 
-    const response = await endpoint.handler({
-      ...toPayloadRequest(alice),
-      payload,
-      routeParams: { slug: 'support' },
-      headers: new Headers({ 'content-type': 'application/json' }),
-      json: () => Promise.resolve({ prompt: 'alice-rejected' }),
-    });
+    const response = await routed(() =>
+      endpoint.handler({
+        ...toPayloadRequest(alice),
+        payload,
+        routeParams: { slug: 'support' },
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve({ prompt: 'alice-rejected' }),
+      }),
+    );
 
     expect(keysFor('alice-rejected')).toEqual(['Bearer sk-alice']);
-    expect(await response.json()).toEqual({
-      error: 'OpenAI rejected your API key. Update it in Settings → Linked accounts.',
+    expect(await response.json()).toMatchObject({
+      code: 'ai.key-rejected',
+      detail: 'OpenAI rejected your API key.',
+      hint: 'Update it in Settings → Linked accounts.',
     });
   });
 

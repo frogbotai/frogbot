@@ -2,6 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import type { Endpoint, Handler } from '../../endpoints/types.js';
+import { problemResponse } from '../../errors/afterError.js';
+import { frogbotError } from '../../errors/catalog.js';
 import { toPayloadRequest } from '../../seams/request.js';
 import type { PayloadRequest } from '../../types/payload.js';
 import type { RootAdminMetaConfig } from '../types.js';
@@ -30,13 +32,13 @@ const appIconHandler: Handler = async (req) => {
   const size = APP_ICON_SIZES.find((value) => String(value) === req.routeParams?.size);
 
   if (size === undefined) {
-    return Response.json({ error: 'Not Found' }, { status: 404 });
+    throw frogbotError('doc.not-found', `No app icon at size ${String(req.routeParams?.size)}.`);
   }
 
   const icon = await readAppIcon(toPayloadRequest(req), size);
 
   if (!icon) {
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+    throw frogbotError('internal');
   }
 
   return new Response(new Uint8Array(icon), {
@@ -70,7 +72,12 @@ const appManifestHandler: Handler = (req) => {
 const withoutBody =
   (handler: Handler): Handler =>
   async (req) => {
-    const response = await handler(req);
+    let response: Response;
+    try {
+      response = await handler(req);
+    } catch (error) {
+      response = problemResponse(error, { req });
+    }
 
     return new Response(null, { headers: response.headers, status: response.status });
   };

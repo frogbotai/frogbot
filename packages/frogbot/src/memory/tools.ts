@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 import type { ToolApproval, ToolApprovalOption, ToolApprovalResult } from '../tools/approval.js';
 import type { AnyTool, ToolCtx } from '../tools/types.js';
-import { isMemoryAdapterError } from './errors.js';
 import { type MemoryRun, memoryRun } from './run-context.js';
 import type { Memory, MemoryCallArgs } from './types.js';
 
@@ -45,16 +44,10 @@ function line({ id, key, pinned, scope, text }: Memory): string {
 async function call<T>(
   ctx: ToolCtx,
   run: (args: { memory: MemoryRun; base: Omit<MemoryCallArgs, 'scope'> }) => Promise<T>,
-): Promise<T | string> {
-  try {
-    const memory = await memoryRun(ctx);
+): Promise<T> {
+  const memory = await memoryRun(ctx);
 
-    return await run({ memory, base: memory.callArgs });
-  } catch (error) {
-    if (isMemoryAdapterError(error)) return `Memory ${error.code}: ${error.message}`;
-
-    throw error;
-  }
+  return run({ memory, base: memory.callArgs });
 }
 
 /**

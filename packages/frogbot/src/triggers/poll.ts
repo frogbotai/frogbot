@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import type { JobsConfig, TaskConfig } from 'payload';
 
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBot } from '../frogbot.js';
 import { getFrogBotInstance } from '../instanceRegistry.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
@@ -156,7 +157,7 @@ async function poll(frogbot: FrogBot, { agentSlug, instanceSlug, triggerSlug }: 
     await write({ status: 'error' }).catch(() => undefined);
 
     frogbot.logger.warn(
-      `[frogbot] Poll of trigger '${instanceSlug}/${triggerSlug}' for agent '${agentSlug}' failed: ${error instanceof Error ? error.message : String(error)}`,
+      `[frogbot] Poll of trigger '${instanceSlug}/${triggerSlug}' for agent '${agentSlug}' failed: ${isFrogBotError(error) ? `${error.message} ${error.hint}` : error instanceof Error ? error.message : String(error)}`,
     );
   }
 }

@@ -135,9 +135,9 @@ describe('SQLite vector search', () => {
 
   it('rejects malformed and mismatched query vectors', async () => {
     await expect(search([1, Number.NaN, 0])).rejects.toMatchObject({
-      name: 'SearchValidationError',
+      code: 'search.invalid',
     });
-    await expect(search([1, 0])).rejects.toMatchObject({ name: 'SearchValidationError' });
+    await expect(search([1, 0])).rejects.toMatchObject({ code: 'search.invalid' });
   });
 
   it('applies where, draft and trash visibility before ranking', async () => {

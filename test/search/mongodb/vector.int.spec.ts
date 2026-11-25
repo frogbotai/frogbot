@@ -241,7 +241,7 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
 
     await expect(
       search({ index: 'nested', vector: [0, 1, 0], where: { featured: { equals: true } } }),
-    ).rejects.toMatchObject({ name: 'SearchFilterUnsupportedError' });
+    ).rejects.toMatchObject({ code: 'search.filter-unsupported' });
   });
 
   it('ranks the requested locale', async () => {
@@ -329,7 +329,7 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
 
     await expect(
       search({ collection: postsSlug, vector: [1, 0, 0], draft: true, overrideAccess: true }),
-    ).rejects.toMatchObject({ name: 'SearchReadinessError', status: 503 });
+    ).rejects.toMatchObject({ code: 'search.not-ready', status: 503 });
 
     await ensureSearchIndexes({ adapter: db });
 

@@ -140,9 +140,11 @@ describe('MCP block tools', () => {
 
     const { result } = parse<ToolCallBody>(response.body);
 
+    const text = result.content.map(({ text }) => text).join('');
+
     return {
       isError: result.isError === true,
-      text: result.content.map(({ text }) => text).join(''),
+      text: result.isError === true ? text.split('\n')[0] : text,
       data: result.structuredContent ?? {},
     };
   }
@@ -345,7 +347,7 @@ describe('MCP block tools', () => {
     const before = await draftPage();
     const result = await call('insertBlock', onPage(args));
 
-    expect(result).toMatchObject({ isError: true, text: message });
+    expect(result).toMatchObject({ isError: true, text: `mcp.block-invalid: ${message}` });
     expect((await draftPage()).layout).toEqual(before.layout);
   });
 
@@ -401,7 +403,7 @@ describe('MCP block tools', () => {
 
     expect(result).toMatchObject({
       isError: true,
-      text: "data can't change a block's id or blockType. Insert a new block and remove this one.",
+      text: "mcp.block-invalid: data can't change a block's id or blockType. Insert a new block and remove this one.",
     });
   });
 
@@ -462,7 +464,10 @@ describe('MCP block tools', () => {
   ])('moveBlock refuses to move a block %s', async (_name, args, message) => {
     const before = await draftPage();
 
-    expect(await call('moveBlock', onPage(args))).toMatchObject({ isError: true, text: message });
+    expect(await call('moveBlock', onPage(args))).toMatchObject({
+      isError: true,
+      text: `mcp.block-invalid: ${message}`,
+    });
     expect((await draftPage()).layout).toEqual(before.layout);
   });
 
@@ -509,7 +514,7 @@ describe('MCP block tools', () => {
     expect((await call('listBlocks', target)).isError).toBe(false);
     expect(await call('removeBlock', { ...target, blockId: 'l1' })).toMatchObject({
       isError: true,
-      text: 'You are not allowed to perform this action.',
+      text: 'auth.forbidden: You are not allowed to perform this action.',
     });
 
     const stored = await booted.frogbot.findByID({
@@ -643,7 +648,7 @@ describe('MCP block tools', () => {
 
       expect(result).toMatchObject({
         isError: true,
-        text: "A block with the id 'h2' already exists.",
+        text: "mcp.block-invalid: A block with the id 'h2' already exists.",
       });
       expect((await draftPage()).layout).toEqual(before.layout);
     });

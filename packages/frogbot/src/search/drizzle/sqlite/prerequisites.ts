@@ -1,4 +1,4 @@
-import { SearchCapabilityError } from '../../errors.js';
+import { searchUnavailable } from '../../errors.js';
 import type { SearchCollection } from '../../types.js';
 import { adapterCapabilities } from './capabilities.js';
 import type { SQLiteSearchAdapter } from './types.js';
@@ -92,13 +92,13 @@ export async function assertSearchPrerequisites({
         if (!index[mode] || capability === 'supported') continue;
 
         if (capability.unsupported === 'missing-prerequisite') {
-          throw new SearchCapabilityError(
-            slug,
-            index.name,
+          throw searchUnavailable({
+            collection: slug,
+            index: index.name,
             mode,
-            capability.unsupported,
-            capability.detail,
-          );
+            reason: capability.unsupported,
+            detail: capability.detail,
+          });
         }
       }
     }

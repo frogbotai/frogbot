@@ -78,7 +78,7 @@ Each mode needs a feature from the connected database. The adapter checks the co
 | Vector  | LibSQL vector functions (`vector32`, `vector_distance_cos`, `vector_distance_l2`, `vector_top_k`) |
 | Hybrid  | Both                                                                                   |
 
-The local LibSQL client bundled with the adapter includes both. A remote LibSQL server must provide them too. If a configured index needs a feature the connection lacks, startup fails with `SearchCapabilityError` and reason `missing-prerequisite`, naming the collection, index, and mode.
+The local LibSQL client bundled with the adapter includes both. A remote LibSQL server must provide them too. If a configured index needs a feature the connection lacks, startup fails with `search.missing-prerequisite`, naming the collection, index, and mode.
 
 Two index options fail at startup with reason `engine-gap`:
 
@@ -121,7 +121,7 @@ Changing a field list, metric, dimensions, or `approximate` produces a rebuild. 
 ### Limits
 
 - Localized fields are ranked on the requested locale's stored value. Fallback-locale values are not ranked.
-- If a search runs before its search objects match the configuration, for example before you run migrations, it fails with `SearchReadinessError`.
+- If a search runs before its search objects match the configuration, for example before you run migrations, it fails with `search.not-ready`.
 - The adapter removes objects with the `frogbot_search_` prefix that no longer match your configuration. Do not create your own tables, indexes, or triggers with this prefix.
 
 ## Options
@@ -471,7 +471,7 @@ export default buildConfig({
 })
 ```
 
-Cloudflare D1 has no native vector search, so vector and hybrid search are not available. An index that declares `vector` fails startup with `SearchCapabilityError` and reason `engine-gap`, naming the collection and index, before any table is created. Vector fields still store and return supplied vectors without a search index; each vector is one JSON value, so its dimensions are not limited by D1's bound-parameter count.
+Cloudflare D1 has no native vector search, so vector and hybrid search are not available. An index that declares `vector` fails startup with `search.engine-gap`, naming the collection and index, before any table is created. Vector fields still store and return supplied vectors without a search index; each vector is one JSON value, so its dimensions are not limited by D1's bound-parameter count.
 
 A `lexical.language` other than `english` or `simple` also fails with reason `engine-gap`. FTS5 is built into D1, so there is no prerequisite to install.
 

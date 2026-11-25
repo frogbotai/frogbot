@@ -7,7 +7,7 @@ import type {
   SearchMode,
   SearchRanking,
 } from 'frogbot/search';
-import { SearchReadinessError } from 'frogbot/search';
+import { searchNotReady } from 'frogbot/search';
 
 import { getSearchIndexes } from './getSearchIndexes.js';
 import { getSearchModel } from './getSearchModel.js';
@@ -132,7 +132,7 @@ export const search: AdapterSearch = async ({
   );
 
   if (!searchIndexes.length) {
-    throw new SearchReadinessError(
+    throw searchNotReady(
       `Search index '${index.name}' is not set up for collection '${collection}'. Restart to apply search configuration changes.`,
     );
   }

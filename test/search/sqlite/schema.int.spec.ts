@@ -107,7 +107,7 @@ describe('SQLite search schema push', () => {
         query: { text: 'anything' },
         overrideAccess: true,
       }),
-    ).rejects.toMatchObject({ name: 'SearchReadinessError', status: 503 });
+    ).rejects.toMatchObject({ code: 'search.not-ready', status: 503 });
 
     const vector = await booted.frogbot.search({
       collection: articlesSlug,

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { frogbotError } from '../errors/catalog.js';
 import type { Tool, ToolCtx } from './types.js';
 
 export const TodoItem = z.object({
@@ -15,7 +16,10 @@ const readTodosInput = z.object({});
 function chat(ctx: ToolCtx): { id: number | string; slug: string } {
   const chat = ctx.req.frogbot.config.chat;
   if (!chat.enabled || ctx.agent.chatId === undefined) {
-    throw new Error('[frogbot] Todo tools require chat persistence and a current chat.');
+    throw frogbotError('request.rejected', {
+      detail: 'Todo tools need chat persistence and a current chat.',
+      hint: 'Call them during an agent chat turn, with chat enabled.',
+    });
   }
 
   return { id: ctx.agent.chatId, slug: chat.chatsSlug };

@@ -1,10 +1,10 @@
 import { NotFound } from 'payload';
 
 import type { DocID } from '../../collections/config/types.js';
+import { frogbotError } from '../../errors/catalog.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { resolveChannelLabel } from '../channelLabel.js';
 import type { ChatDocument } from '../findChat.js';
-import { TurnError } from '../turn/errors.js';
 
 export type WritableChat = Pick<ChatDocument, 'user' | 'channel' | 'channelKey' | 'channelThread'>;
 
@@ -32,8 +32,8 @@ export function assertCanWriteChat({ req, chat }: CanWriteChatProps): void {
 
   const label = resolveChannelLabel({ req, chat }) ?? 'a channel';
 
-  throw new TurnError(
-    'channel-chat',
+  throw frogbotError(
+    'turn.channel-chat',
     `This conversation happens in ${label}. Continue it there, or branch it into a new chat.`,
   );
 }

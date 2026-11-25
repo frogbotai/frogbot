@@ -80,7 +80,10 @@ describe('chat compaction with auto off', () => {
 
     const tooLong = await post(`/agents/${agentSlug}`, { prompt: 'And in winter?', chatId });
 
-    expect(tooLong.body).toEqual({ error: 'This chat is too long for test/small-window.' });
+    expect(tooLong.body).toMatchObject({
+      code: 'ai.context-overflow',
+      detail: 'This chat is too long for test/small-window.',
+    });
     expect(model.summaryRequests).toHaveLength(0);
   });
 

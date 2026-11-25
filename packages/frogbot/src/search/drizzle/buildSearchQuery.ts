@@ -13,7 +13,7 @@ import {
   type Where,
 } from 'payload';
 
-import { SearchReadinessError } from '../errors.js';
+import { searchNotReady } from '../errors.js';
 import { getSearchTableName } from './getSearchTableName.js';
 
 export type SearchQueryParts = {
@@ -49,7 +49,7 @@ export function buildSearchQuery({
   const table = tableName ? adapter.tables[tableName] : undefined;
 
   if (!tableName || !table) {
-    throw new SearchReadinessError(`Collection '${slug}' has no searchable table.`);
+    throw searchNotReady(`Collection '${slug}' has no searchable table.`);
   }
 
   const fields = versions
@@ -80,7 +80,7 @@ export function buildSearchQuery({
     });
 
     if (orderBy.length < 2) {
-      throw new SearchReadinessError(`Search field '${path}' has no column in '${slug}'.`);
+      throw searchNotReady(`Search field '${path}' has no column in '${slug}'.`);
     }
 
     return orderBy[0].column;

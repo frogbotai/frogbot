@@ -56,9 +56,9 @@ import { useReadAloud } from './use-read-aloud.js';
 const TURN_SYNC_ATTEMPTS = 120;
 const TURN_SYNC_INTERVAL = 1_000;
 const SILENT_TURN_ERRORS = new Set<TurnErrorCode>([
-  'already-settled',
-  'not-awaiting',
-  'channel-chat',
+  'turn.already-settled',
+  'turn.not-awaiting',
+  'turn.channel-chat',
 ]);
 
 type ChatActions = {

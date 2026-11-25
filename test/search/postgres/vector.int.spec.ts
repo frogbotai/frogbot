@@ -255,7 +255,7 @@ describePostgres(`postgres vector search [${driver}]`, () => {
   it('rejects vectors with the wrong length or non-finite values', async () => {
     for (const vector of [[], [1, 2], [1, 2, Number.NaN], [1, 2, Number.POSITIVE_INFINITY]]) {
       await expect(search('content', { query: { vector } })).rejects.toMatchObject({
-        name: 'SearchValidationError',
+        code: 'search.invalid',
         status: 400,
       });
     }

@@ -1,9 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  KVLeaseLostError,
-  KVLockContentionError,
-} from '../../../../packages/frogbot/src/kv/errors.js';
 import { createKV } from '../../../../packages/frogbot/src/kv/index.js';
 import { kvAtomic } from '../../../../packages/frogbot/src/kv/types.js';
 import { dispatchTriggerEvents } from '../../../../packages/frogbot/src/triggers/dispatch.js';
@@ -159,7 +155,7 @@ describe('dispatchTriggerEvents', () => {
       const firstResult = first.catch((error: unknown) => error);
       await started.promise;
 
-      await expect(dispatch(frogbot)).rejects.toBeInstanceOf(KVLockContentionError);
+      await expect(dispatch(frogbot)).rejects.toMatchObject({ code: 'kv.lock-held' });
       expect(frogbot.queue).toHaveBeenCalledTimes(1);
 
       settle(queued);
@@ -194,7 +190,7 @@ describe('dispatchTriggerEvents', () => {
     await vi.advanceTimersByTimeAsync(ttl + 1);
 
     expect(frogbot.adapter.extendLock).toHaveBeenCalled();
-    await expect(dispatch(frogbot)).rejects.toBeInstanceOf(KVLockContentionError);
+    await expect(dispatch(frogbot)).rejects.toMatchObject({ code: 'kv.lock-held' });
 
     queued.resolve();
     await first;
@@ -224,7 +220,7 @@ describe('dispatchTriggerEvents', () => {
     await frogbot.adapter.set(key, 'successor', { ttl: options!.ttl });
     await vi.advanceTimersByTimeAsync(options!.ttl / 3 + 1);
 
-    expect(await rejected).toBeInstanceOf(KVLeaseLostError);
+    expect(await rejected).toMatchObject({ code: 'kv.lease-lost' });
 
     queued.resolve();
     await vi.advanceTimersByTimeAsync(0);

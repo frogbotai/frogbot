@@ -52,7 +52,9 @@ describe('todo tools', () => {
     const { write_todos } = await loadTools();
     const { ctx, update } = makeCtx(undefined);
 
-    await expect(write_todos.execute({ todos: [] }, ctx as never)).rejects.toThrow(/^\[frogbot\]/);
+    await expect(write_todos.execute({ todos: [] }, ctx as never)).rejects.toMatchObject({
+      code: 'request.rejected',
+    });
     expect(update).not.toHaveBeenCalled();
   });
 

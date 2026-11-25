@@ -95,7 +95,7 @@ Each time the adapter connects, including when you run `migrate`, it checks `pg_
 
 pgvector is not a trusted extension. The connecting role must be a superuser, or you must create the extension ahead of time with a role that can. On a managed host, enable pgvector the way your host documents when the application role cannot create it.
 
-If the extension cannot be used, the adapter stops setup with `SearchCapabilityError`. The message names the first vector index, the reason, and the PostgreSQL SQLSTATE:
+If the extension cannot be used, the adapter stops setup with a `search.<reason>` error. The message names the first vector index and the PostgreSQL SQLSTATE:
 
 | Reason                 | Cause                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------ |
@@ -140,7 +140,7 @@ Hybrid search takes up to the [resolved candidate count](/search/overview#candid
 ### Limits
 
 - Localized fields are ranked on the requested locale's stored value. Fallback-locale values are not ranked.
-- If a search runs before its columns or indexes exist, for example before you run migrations, it fails with `SearchReadinessError`.
+- If a search runs before its columns or indexes exist, for example before you run migrations, it fails with `search.not-ready`.
 
 ## Options
 

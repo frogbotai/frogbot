@@ -333,12 +333,12 @@ describe('toAgentModelMessages', () => {
   it('rejects file references when chat persistence is disabled', async () => {
     await expect(
       load(request({ chat: { enabled: false } }), [user(reference('a'))]),
-    ).rejects.toMatchObject({ status: 400, message: 'Chat attachments require chat persistence' });
+    ).rejects.toMatchObject({ status: 400, code: 'chat.attachments-off' });
   });
 
   it.each([
-    [403, 403, "Access denied for file 'a'"],
-    [404, 404, "File 'a' not found"],
+    [403, 403, "Access denied for file 'a'."],
+    [404, 404, "File 'a' not found."],
   ])('rejects inaccessible records when sending (%i)', async (sourceStatus, status, message) => {
     const findByID = vi
       .fn()

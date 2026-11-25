@@ -115,8 +115,9 @@ describe(`AI calls on linked OpenAI accounts, with an app key [${process.env.FRO
     const response = await booted.link(erin, { apiKey: 'sk-rejected' });
 
     expect(response.status).toBe(422);
-    expect(await response.json()).toEqual({
-      errors: [{ message: "OpenAI didn't accept this key.", data: { code: 'rejected' } }],
+    expect(await response.json()).toMatchObject({
+      code: 'connection.key-rejected',
+      detail: "OpenAI didn't accept this key.",
     });
     expect(modelListings()).toHaveLength(1);
 
