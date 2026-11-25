@@ -193,3 +193,54 @@ describe('Space access', () => {
     expect(annSees.docs).toHaveLength(1);
   });
 });
+
+describe('space memories when the app sets memory.access', () => {
+  const signedIn = ({ req }: { req: { user?: unknown } }) => Boolean(req.user);
+  const harness = createMemoryHarness({
+    memory: () => databaseMemory({ access: { read: signedIn, write: signedIn } }),
+    agents: [{ slug: 'helper', model: chatModel, instructions: 'Help.' }] as never,
+  });
+
+  let frogbot: FrogBotInstance;
+
+  beforeAll(async () => {
+    frogbot = await harness.boot();
+  });
+
+  afterAll(() => harness.close());
+
+  it("still needs the Space's own access, so a broad rule never opens every Space", async () => {
+    const ann = await harness.createUser('ann-access@frogbot.local');
+    const ben = await harness.createUser('ben-access@frogbot.local');
+    const space = await frogbot.create({
+      collection: 'spaces',
+      data: { title: 'Private' },
+      user: ann,
+      overrideAccess: false,
+    });
+
+    await frogbot.memory.save({
+      scope: 'space',
+      space: space.id,
+      text: 'Ann only.',
+      user: ann,
+      overrideAccess: false,
+    });
+
+    await expect(
+      frogbot.memory.list({ scope: 'space', space: space.id, user: ann, overrideAccess: false }),
+    ).resolves.toMatchObject({ docs: [{ text: 'Ann only.' }] });
+    await expect(
+      frogbot.memory.list({ scope: 'space', space: space.id, user: ben, overrideAccess: false }),
+    ).rejects.toMatchObject({ name: 'Forbidden' });
+    await expect(
+      frogbot.memory.save({
+        scope: 'space',
+        space: space.id,
+        text: 'Planted.',
+        user: ben,
+        overrideAccess: false,
+      }),
+    ).rejects.toMatchObject({ name: 'Forbidden' });
+  });
+});

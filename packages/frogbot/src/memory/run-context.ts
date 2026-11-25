@@ -28,7 +28,7 @@ export type MemoryRun = {
   resolved: () => Promise<MemoryResolvedScope[]>;
   /** `me` for a signed-in person, otherwise `agent`. */
   defaultScope: () => string;
-  /** In a `memory: true` agent's run, whether `memory.access.write` lets the chat's person change a shared scope. Always `true` elsewhere. */
+  /** In a `memory: true` agent's run, whether the chat's person may change a shared scope: `space` needs update access to the Space, and `memory.access.write` applies when set. Always `true` elsewhere. */
   mayWrite: (scope: string) => Promise<boolean>;
 };
 
@@ -106,9 +106,13 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
 
       const scopeId = await resolveMemoryScope({ options: memory, scope, req, agent, chat });
 
-      if (!write) {
-        return canAccessSpace({ req, id: scopeId.slice('space:'.length), kind: 'update' });
+      if (scope === 'space') {
+        const id = scopeId.slice('space:'.length);
+
+        if (!(await canAccessSpace({ req, id, kind: 'update' }))) return false;
       }
+
+      if (!write) return true;
 
       return (await write({ req, scope, scopeId })) === true;
     },
