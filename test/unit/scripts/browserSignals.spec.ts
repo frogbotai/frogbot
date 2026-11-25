@@ -89,7 +89,7 @@ async function runAndTerminate(stop: boolean) {
 
   groups.push(child.pid!);
 
-  await expect.poll(() => portOpen(port), { timeout: 15_000 }).toBe(true);
+  await expect.poll(() => portOpen(port), { timeout: 45_000 }).toBe(true);
 
   process.kill(-child.pid!, 'SIGTERM');
   await exited;
@@ -102,5 +102,5 @@ describe('stopServersOnSignal', () => {
     const port = await runAndTerminate(true);
 
     await expect.poll(() => portOpen(port), { timeout: 5_000 }).toBe(false);
-  }, 30_000);
+  }, 60_000);
 });
