@@ -17,6 +17,8 @@ export const testUserPassword = 'test-password-123';
 export const afterMeResponseHeader = 'x-test-after-me-response';
 export const afterMeResponse = { user: null, exp: 177 };
 export const afterErrorStatusHeader = 'x-test-after-error-status';
+export const afterErrorResponseHeader = 'x-test-after-error-response';
+export const afterErrorResponse = { reason: 'app-owned' };
 export const beforeOperationTitleHeader = 'x-test-before-operation-title';
 export const authRequestIdentityHeader = 'x-test-auth-request-identity';
 

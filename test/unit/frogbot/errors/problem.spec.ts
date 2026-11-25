@@ -1,4 +1,4 @@
-import { CallCredentialError } from '@frogbotai/gateway/errors';
+import { CallCredentialError, GatewayError } from '@frogbotai/gateway/errors';
 import { APIError, FileRetrievalError, Forbidden, NotFound, ValidationError } from 'payload';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,7 +10,9 @@ import {
   defineErrors,
   isFrogBotError,
 } from '../../../../packages/frogbot/src/errors/FrogBotError.js';
+import { gatewayFrogBotError } from '../../../../packages/frogbot/src/errors/gateway.js';
 import { toProblem } from '../../../../packages/frogbot/src/errors/toProblem.js';
+import { kvLeaseLost, kvLockHeld } from '../../../../packages/frogbot/src/kv/errors.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { routed } from '../../../__helpers/shared/routed.js';
 import { definition, setup } from '../connections/oauth/fixtures.js';
@@ -205,6 +207,62 @@ describe('toProblem codes', () => {
       retryAfter: 30,
       data: { limit: 5 },
       requestId: 'req_1',
+    });
+  });
+});
+
+describe('review fix list for PR #704', () => {
+  it('leaves GraphQL errors to Payload: no Problem headers, no internal log', async () => {
+    const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn() };
+    const req = { headers: new Headers(), payload: { config: { debug: false }, logger } } as {
+      responseHeaders?: Headers;
+    };
+
+    const result = await problemAfterError({
+      error: new Error('Cannot query field "nope"'),
+      graphqlResult: { message: 'Cannot query field "nope"' },
+      req,
+    } as never);
+
+    expect(result).toBeUndefined();
+    expect(req.responseHeaders?.get('content-type') ?? null).toBeNull();
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it('drops the data of a hidden APIError from errors[]', () => {
+    const problem = toProblem(new APIError('private', 409, { ownerKey: 'secret-owner' }, false));
+
+    expect(JSON.stringify(problem)).not.toContain('secret-owner');
+  });
+
+  it('hides a 500 gateway error as internal', () => {
+    const error = new GatewayError({
+      code: 'config_invalid',
+      status: 500,
+      message: 'OPENAI_BASE_URL=http://10.0.0.5:8080 is invalid',
+    });
+
+    expect(gatewayFrogBotError(error).code).toBe('internal');
+    expect(toProblem(error)).toMatchObject({ code: 'internal', status: 500 });
+    expect(JSON.stringify(toProblem(error))).not.toContain('10.0.0.5');
+  });
+
+  it('keeps KV lock keys out of the response', () => {
+    for (const error of [kvLockHeld('auth:user:42'), kvLeaseLost('auth:user:42')]) {
+      const problem = toProblem(error);
+
+      expect(problem.status).toBe(409);
+      expect(problem.retryable).toBe(true);
+      expect(JSON.stringify(problem)).not.toContain('user:42');
+    }
+  });
+
+  it('keeps the message of an APIError marked public at 5xx', () => {
+    expect(
+      toProblem(new APIError('Upstream search index is rebuilding.', 503, null, true)),
+    ).toMatchObject({
+      status: 503,
+      detail: 'Upstream search index is rebuilding.',
     });
   });
 });
