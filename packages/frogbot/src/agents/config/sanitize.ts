@@ -9,6 +9,7 @@ import { isPieceInstance, pieceInstanceRuntime } from '../../pieces/definePiece.
 import { pieceCapabilities, type PieceInstance } from '../../pieces/types.js';
 import { sanitizeSkills } from '../../skills/config/sanitize.js';
 import { buildSkillTools } from '../../skills/tools.js';
+import { assertNoSpaceToolSlugs } from '../../spaces/tools.js';
 import { sanitizeToolList } from '../../tools/config/sanitize.js';
 import type { AnyTool } from '../../tools/types.js';
 import { isRecord } from '../../utilities/isRecord.js';
@@ -263,6 +264,8 @@ export function sanitizeAgents({
       slug: agent.slug,
       tools: agentTools,
     });
+
+    assertNoSpaceToolSlugs(agentTools);
 
     if (agent.triggers !== undefined) {
       if (!Array.isArray(agent.triggers)) {

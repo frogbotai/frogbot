@@ -1,5 +1,7 @@
 import { Forbidden } from 'payload';
 
+import { canAccessSpace } from '../spaces/access.js';
+import { runChat, runSpace } from '../spaces/run.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { checkMemoryAccess } from './access.js';
 import { isMemoryAdapterError } from './errors.js';
@@ -26,7 +28,7 @@ export type MemoryRun = {
   resolved: () => Promise<MemoryResolvedScope[]>;
   /** `me` for a signed-in person, otherwise `agent`. */
   defaultScope: () => string;
-  /** In a `memory: true` agent's run, whether `memory.access.write` lets the chat's person change a shared scope. Always `true` elsewhere. */
+  /** In a `memory: true` agent's run, whether the chat's person may change a shared scope: `space` needs update access to the Space, and `memory.access.write` applies when set. Always `true` elsewhere. */
   mayWrite: (scope: string) => Promise<boolean>;
 };
 
@@ -40,26 +42,6 @@ export function markMemoryAgentRun<T extends MemoryRunSource['agent']>(agent: T)
   return agent;
 }
 
-async function loadChat({
-  agent,
-  req,
-}: MemoryRunSource): Promise<Record<string, unknown> | undefined> {
-  const { frogbot } = req;
-  const chat = frogbot.config.chat;
-
-  if (agent.chatId === undefined || !chat.enabled || !frogbot.config.memory?.scopes) {
-    return undefined;
-  }
-
-  return frogbot.findByID({
-    collection: chat.chatsSlug,
-    id: agent.chatId,
-    depth: 0,
-    req,
-    overrideAccess: true,
-  });
-}
-
 async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
   const { req } = source;
   const memory = req.frogbot.config.memory;
@@ -71,7 +53,9 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
   }
 
   const own = agentRuns.has(source.agent);
-  const chat = await loadChat(source);
+  const stored = await runChat({ req, chatId: source.agent.chatId });
+  const space = await runSpace({ req, chatId: source.agent.chatId });
+  const chat = stored?.space && !space ? { ...stored, space: null } : stored;
   const agent = own ? { slug: source.agent.slug } : undefined;
   const overrideAccess = own || source.overrideAccess !== false;
 
@@ -114,11 +98,23 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
     available: async () => (await (resolved ??= resolveAll())).map(({ scope }) => scope),
     defaultScope: () => (req.user ? 'me' : 'agent'),
     mayWrite: async (scope) => {
-      if (!own || scope === 'me' || !memory.access?.write) return true;
+      if (!own || scope === 'me') return true;
+
+      const write = memory.access?.write;
+
+      if (!write && scope !== 'space') return true;
 
       const scopeId = await resolveMemoryScope({ options: memory, scope, req, agent, chat });
 
-      return (await memory.access.write({ req, scope, scopeId })) === true;
+      if (scope === 'space') {
+        const id = scopeId.slice('space:'.length);
+
+        if (!(await canAccessSpace({ req, id, kind: 'update' }))) return false;
+      }
+
+      if (!write) return true;
+
+      return (await write({ req, scope, scopeId })) === true;
     },
   };
 }

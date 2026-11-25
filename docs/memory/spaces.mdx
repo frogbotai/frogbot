@@ -1,0 +1,92 @@
+---
+title: Spaces
+description: Give a group of chats shared instructions, files and memories, like a project in Claude or ChatGPT.
+keywords: [spaces, projects, instructions, files, memory, agents, chats]
+---
+
+A Space is a home for one topic, such as "Q3 launch" or a client. Its chats share its instructions, its files and its memories, so the value adds up as people work in it. Agents stay defined in code; any agent can work in any Space.
+
+Spaces are on whenever chat is: an app with agents gets a `spaces` collection and a `space` field on its chats.
+
+| Piece | Where it lives | What the agent sees |
+| --- | --- | --- |
+| Instructions | The Space's `instructions` field | Added to the system prompt after the agent's own instructions |
+| Files | The `frogbot-space-files` upload collection, on your storage adapter | The file names in the prompt, and the `space_file_read` tool to read one |
+| Memories | The `space` [memory scope](/memory/overview#scopes) | Pinned and recalled memories, like any other scope |
+
+## Put a chat in a Space
+
+Set `space` on the chat, when you create it or later. Moving a chat to another Space is fine: its next reply uses the new Space.
+
+```ts
+const space = await frogbot.create({
+  collection: 'spaces',
+  data: { title: 'Q3 launch', instructions: 'Launch is on 9 July. Keep answers short.' },
+  user: req.user,
+  overrideAccess: false,
+})
+
+const chat = await frogbot.create({
+  collection: 'chats',
+  data: { agent: 'assistant', space: space.id },
+  user: req.user,
+  overrideAccess: false,
+})
+```
+
+Over REST it's the same two calls: `POST /api/spaces`, then `POST /api/chats` with `space`. A person can only put a chat in a Space they can read.
+
+## Add files
+
+Upload to `frogbot-space-files` with the Space's ID. FrogBot keeps the file's text for the agent, so text, Markdown, CSV, JSON, code, Word and Excel files work; other files are refused with a message that says so.
+
+```ts
+await frogbot.create({
+  collection: 'frogbot-space-files',
+  data: { space: space.id },
+  filePath: './pricing.xlsx',
+  user: req.user,
+  overrideAccess: false,
+})
+```
+
+A Space's files are listed on its edit page in the admin. Whoever can update the Space can add and remove its files; whoever can read it can read them.
+
+## What the agent gets
+
+In a chat with a Space, the system prompt is, in order:
+
+1. The agent's `instructions`.
+2. The Space: its title, its instructions and up to 100 file names.
+3. Pinned memories, when the agent has `memory: true`.
+
+The agent reads a file when it needs one with `space_file_read({ filename })`, so large files never fill every prompt. The tool appears only in chats whose Space has files, and `space_file_read` is a reserved tool slug. Agents with `memory: true` can save to the `space` scope, which every chat in the Space then shares.
+
+A Space with no instructions and no files adds only `space` to the memory scopes the agent can save to, so its first memory has somewhere to go. When the person in the chat can no longer read the Space, the chat runs as if it had none: no instructions, files or `space` memories.
+
+Instructions can hold about 2,000 tokens, since they sit in every prompt. Put longer material in a file.
+
+## Use your own collection
+
+Mark one of your collections `space: true` to make its documents the Spaces, such as clients, deals or projects. FrogBot adds `instructions` and `files` to it, points the chats' `space` field at it, and keeps your fields, access and admin settings.
+
+```ts
+{
+  slug: 'clients',
+  space: true,
+  admin: { useAsTitle: 'name' },
+  fields: [{ name: 'name', type: 'text', required: true }],
+}
+```
+
+Now every client has instructions, files and memories, and a chat about a client sees all three. The prompt uses the collection's `useAsTitle` field as the Space's title. `files` is a reserved field name on a Space collection.
+
+## Access
+
+The default `spaces` collection belongs to its creator: anyone signed in can create one, and only its owner can read, update or delete it. Replace that with the collection's own `access`, as for any collection, to share Spaces with a team. Files and `space` memories follow the Space's access, so one rule covers all three.
+
+Anyone who can edit a shared Space can steer the chats in it, because its instructions and files reach the agent. Give update access only to people you trust with that.
+
+## Delete a Space
+
+Deleting a Space deletes its files and forgets its memories. Its chats stay, with no Space.

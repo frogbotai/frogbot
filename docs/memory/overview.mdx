@@ -1,7 +1,7 @@
 ---
 title: Memory
 sidebarTitle: Overview
-description: Keep facts that people and agents save, by person, agent, team or your own scope.
+description: Keep facts that people and agents save, by person, agent, team, Space or your own scope.
 keywords: [memory, memories, agents, scopes, adapters, remember]
 ---
 
@@ -28,6 +28,7 @@ Every memory belongs to one scope. You name a scope with a word, and FrogBot wor
 | `me` | The signed-in person, keyed by their user ID, never their email | A signed-in user |
 | `agent` | One agent in this app | An agent slug |
 | `team` | Everyone in the app | Nothing |
+| `space` | One [Space](/memory/spaces) and every chat in it | A chat in a Space, or a `space` ID |
 | Your own word | Whatever your scope function returns | Your function to return a value |
 
 Declare your own words, or replace `team`, with `scopes`. A function gets `{ req, agent, chat }` and returns the value that tells one scope from another:
@@ -75,6 +76,7 @@ Every method also takes `scope`, and these to say who the call runs as:
 | --- | --- | --- | --- |
 | `scope` | `string` | — | The scope word. |
 | `agent` | `string` | — | The agent slug the `agent` scope and scope functions see. |
+| `space` | `number \| string` | — | The Space the `space` scope reaches. Defaults to the chat's Space. |
 | `chat` | `Record<string, unknown>` | — | The chat document scope functions see. |
 | `req` | `Partial<FrogBotRequest>` | — | The request to run in, for its user and transaction. |
 | `user` | `TypedUser` | — | The user the `me` scope belongs to. Replaces the request's user. |
@@ -87,6 +89,7 @@ A memory is `{ id, scope, key?, text, pinned, createdAt, updatedAt }`, where `sc
 FrogBot ships no access rules for shared memories. When a call sets `overrideAccess: false`:
 
 - `me` always works for the signed-in person, and only reaches their own memories. With nobody signed in, it fails with `Forbidden`.
+- `space` follows the Space's own access: whoever can read the Space can `search`, `list` and `get` its memories, and whoever can update it can `save`, `update` and `forget` them. An `access` function, when you set one, must also allow the call, so a broad rule never opens every Space.
 - `agent`, `team` and your own words need the `access` function for the kind of call: `read` for `search`, `list` and `get`, `write` for `save`, `update` and `forget`. Without one, the call fails with `Forbidden`.
 
 ```ts

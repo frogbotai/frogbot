@@ -11,7 +11,14 @@ describe('ManifestResponse', () => {
       };
       chat:
         | { enabled: false }
-        | { enabled: true; chatsSlug: string; messagesSlug: string; assetsSlug: string };
+        | {
+            enabled: true;
+            chatsSlug: string;
+            messagesSlug: string;
+            assetsSlug: string;
+            spacesSlug: string;
+            spaceFilesSlug: string;
+          };
       files?: { slug: string };
       agents: { slug: string; profile?: AgentProfile }[];
     }>();

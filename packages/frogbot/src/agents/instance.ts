@@ -36,6 +36,9 @@ import { resolveMCPTools } from '../mcp/tools.js';
 import { startAfterTurn } from '../memory/agent.js';
 import { pinnedMemoryPrompt, recallMemories, withRecalled } from '../memory/prompt.js';
 import { markMemoryAgentRun } from '../memory/run-context.js';
+import { renderSpacePrompt } from '../spaces/prompt.js';
+import { runSpace } from '../spaces/run.js';
+import { spaceFileReadTool } from '../spaces/tools.js';
 import { canUseTool, NO_TOOL_ACCESS } from '../tools/access.js';
 import type { ToolApprovalOption } from '../tools/approval.js';
 import { resolveToolApproval, toApprovalStatus } from '../tools/approval.js';
@@ -81,6 +84,7 @@ type AgentRun = {
   models: string[];
   hashes: AttachmentHashes;
   mcpTools: ToolSet;
+  spaceTools: ToolSet;
   mcpApprovals: ReadonlyMap<string, ToolApprovalOption>;
   autoApprove: boolean;
   denied: ReadonlySet<string>;
@@ -148,9 +152,12 @@ export function createAgentInstance(
       const chatId = options.chatId;
       const run = runs.get(options)!;
 
-      const mcpToolNames = Object.keys(run.mcpTools);
+      const runToolNames = [...Object.keys(run.mcpTools), ...Object.keys(run.spaceTools)];
       const memory = agentConfig.memory ? { req, agent: ctx.agent } : undefined;
-      const base = await resolveAgentInstructions(agentConfig, req);
+      const space = await runSpace({ req, chatId });
+      const spacePrompt = space ? renderSpacePrompt(space) : '';
+      const agentInstructions = await resolveAgentInstructions(agentConfig, req);
+      const base = spacePrompt ? `${agentInstructions}\n\n${spacePrompt}` : agentInstructions;
       const instructions = memory ? `${base}\n\n${await pinnedMemoryPrompt(memory)}` : base;
 
       return {
@@ -158,8 +165,15 @@ export function createAgentInstance(
         instructions,
         model: run.op.chatModel(run.selection.model),
         runtimeContext: { agent: ctx.agent },
-        ...(mcpToolNames.length === 0 ? {} : { tools: { ...tools, ...run.mcpTools } }),
-        toolsContext: toAISDKToolsContext(agentConfig.tools, ctx),
+        ...(runToolNames.length === 0
+          ? {}
+          : { tools: { ...tools, ...run.mcpTools, ...run.spaceTools } }),
+        toolsContext: {
+          ...toAISDKToolsContext(agentConfig.tools, ctx),
+          ...(Object.keys(run.spaceTools).length === 0
+            ? {}
+            : toAISDKToolsContext([spaceFileReadTool], ctx)),
+        },
         ...(clientTools.length === 0 && run.denied.size === 0
           ? {}
           : {
@@ -169,7 +183,7 @@ export function createAgentInstance(
                     isClientTool(tool) ? kinds.has(tool.client.kind) : !run.denied.has(tool.slug),
                   )
                   .map(({ slug }) => slug),
-                ...mcpToolNames,
+                ...runToolNames,
               ],
             }),
         toolApproval: async ({ toolCall, messages }) => {
@@ -358,7 +372,7 @@ export function createAgentInstance(
     const runId = options.runId ?? generateId();
     const preparedOptions = { ...options, req, overrideAccess, runId };
     const agent = { slug: agentConfig.slug, runId, chatId: options.chatId };
-    const [mcp, denied] = await Promise.all([
+    const [mcp, denied, space] = await Promise.all([
       mcpServers.length === 0
         ? { tools: {}, approvals: new Map<string, ToolApprovalOption>() }
         : resolveMCPTools({
@@ -370,6 +384,7 @@ export function createAgentInstance(
             logger: frogbot.logger,
           }),
       overrideAccess ? new Set<string>() : deniedTools({ req, agent }),
+      runSpace({ req, chatId: options.chatId }),
     ]);
 
     const op = gateway.operation({
@@ -394,6 +409,7 @@ export function createAgentInstance(
       models: [],
       hashes: new Map(),
       mcpTools: mcp.tools,
+      spaceTools: (space?.files.length ?? 0) > 0 ? toAISDKTools([spaceFileReadTool]) : {},
       mcpApprovals: mcp.approvals,
       autoApprove,
       denied,

@@ -73,6 +73,8 @@ function makeReq({
     chatsSlug: 'chats',
     messagesSlug: 'messages',
     assetsSlug: 'frogbot-chat-assets',
+    spacesSlug: 'spaces',
+    spaceFilesSlug: 'frogbot-space-files',
   },
   create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   db = {},

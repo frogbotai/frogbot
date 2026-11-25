@@ -5666,6 +5666,8 @@ describe('frogbot sanitize', () => {
         chatsSlug: 'chats',
         messagesSlug: 'messages',
         assetsSlug: 'frogbot-chat-assets',
+        spacesSlug: 'spaces',
+        spaceFilesSlug: 'frogbot-space-files',
       });
     });
 
@@ -5685,6 +5687,8 @@ describe('frogbot sanitize', () => {
         chatsSlug: 'conversations',
         messagesSlug: 'turns',
         assetsSlug: 'frogbot-chat-assets',
+        spacesSlug: 'spaces',
+        spaceFilesSlug: 'frogbot-space-files',
       });
     });
 
@@ -5733,6 +5737,8 @@ describe('frogbot sanitize', () => {
         'users',
         'chats',
         'messages',
+        'spaces',
+        'frogbot-space-files',
         'frogbot-chat-assets',
         'frogbot-chat-turns',
         'usage-logs',
@@ -5746,6 +5752,8 @@ describe('frogbot sanitize', () => {
         'users',
         'chats',
         'messages',
+        'spaces',
+        'frogbot-space-files',
         'frogbot-chat-assets',
         'frogbot-chat-turns',
         'usage-logs',

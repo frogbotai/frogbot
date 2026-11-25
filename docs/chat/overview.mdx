@@ -13,11 +13,11 @@ Agent calls use `/api/agents/<slug>`. To call the embedded AI gateway directly, 
 
 ## Use the default collections
 
-FrogBot injects both collections when agents are configured and no collection claims either role.
+FrogBot injects both collections when agents are configured and no collection claims either role. It also adds [Spaces](/memory/spaces): a `spaces` collection and a `frogbot-space-files` upload collection.
 
 | Collection | Stored fields |
 | --- | --- |
-| `chats` | `title`, `user`, `agent`, `lastMessageAt`, [`autoApprove`](/chat/tool-approval#auto-approve), and for a chat started in a channel, `channel`, `externalId`, `channelKey`, and `channelThread` |
+| `chats` | `title`, `user`, `agent`, [`space`](/memory/spaces), `lastMessageAt`, [`autoApprove`](/chat/tool-approval#auto-approve), and for a chat started in a channel, `channel`, `externalId`, `channelKey`, and `channelThread` |
 | `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `model`, `reasoning`, `author`, `settlements`, `version` |
 
 - **Soft deletion.** Chat and message collections use soft deletion. Moving a chat to the trash keeps its messages. Deleting a chat permanently also deletes all of its messages, trashed ones included, whatever the messages collection's `delete` access says.
@@ -460,7 +460,7 @@ export const Turns: CollectionConfig = {
 
 Your field definitions win when they are compatible with the base schema. FrogBot appends missing base fields and combines hooks. It rejects incompatible field types and protects these fields:
 
-- `chats.user`, `chats.channel`, `chats.externalId`, `chats.channelKey`, `chats.channelThread`, and `chats.channelLabel`
+- `chats.user`, `chats.space`, `chats.channel`, `chats.externalId`, `chats.channelKey`, `chats.channelThread`, and `chats.channelLabel`
 - `messages.id`
 - `messages.chat`
 - `messages.parts`

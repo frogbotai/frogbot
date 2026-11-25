@@ -73,7 +73,7 @@
               {
                 "group": "Memory",
                 "expanded": false,
-                "pages": ["memory/overview"]
+                "pages": ["memory/overview", "memory/spaces"]
               },
               {
                 "group": "Access Control",

@@ -49,9 +49,11 @@ async function databaseAdapter(name: string, sqlitePath: string): Promise<FrogBo
 /** Boots one FrogBot with the given memory adapter, and any agents, on the database `FROGBOT_DATABASE` names. */
 export function createMemoryHarness({
   agents,
+  collections = [],
   memory,
 }: {
   agents?: FrogBotConfig['agents'];
+  collections?: FrogBotConfig['collections'];
   memory: () => MemoryAdapter;
 }) {
   const name = `memory_${randomUUID().replaceAll('-', '')}`;
@@ -62,7 +64,7 @@ export function createMemoryHarness({
     const config = await buildTestConfig({
       db: await databaseAdapter(name, sqlitePath),
       admin: { importMap: { autoGenerate: false } },
-      collections: [{ slug: usersSlug, auth: true, fields: [] }],
+      collections: [{ slug: usersSlug, auth: true, fields: [] }, ...collections],
       ai: {
         providers: {
           test: {

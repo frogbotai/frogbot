@@ -125,7 +125,7 @@ export async function resolveMemoryTarget({
     scope,
     req,
     agent: findAgent(frogbot, args.agent),
-    chat: args.chat,
+    chat: args.space === undefined ? args.chat : { ...args.chat, space: args.space },
   });
 
   const target: MemoryTarget = { req, namespace: adapter.namespace ?? '', scope, scopeId };

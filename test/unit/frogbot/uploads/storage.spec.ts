@@ -5,6 +5,7 @@ import type { CollectionConfig } from '../../../../packages/frogbot/src/collecti
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
+import { SPACE_FILES_SLUG } from '../../../../packages/frogbot/src/spaces/collections.js';
 import { azureStorage } from '../../../../packages/storage-azure/src/index.js';
 import { gcsStorage } from '../../../../packages/storage-gcs/src/index.js';
 import { r2Storage } from '../../../../packages/storage-r2/src/index.js';
@@ -117,7 +118,12 @@ describe('storage adapters', () => {
   it('leave a built-in collection on local disk when it is set to false', async () => {
     const { upload, clientUploadSlugs } = await build({
       collections: [Users, Files, Chats],
-      storage: [s3({ clientUploads: true, collections: { [chatAssetsSlug]: false } })],
+      storage: [
+        s3({
+          clientUploads: true,
+          collections: { [chatAssetsSlug]: false, [SPACE_FILES_SLUG]: false },
+        }),
+      ],
     });
 
     expect(upload('files')).toMatchObject({ adapter: 's3' });
@@ -142,6 +148,7 @@ describe('storage adapters', () => {
 
     expect(upload('files')).toMatchObject({ adapter: 's3' });
     expect(upload(chatAssetsSlug)).toMatchObject({ adapter: 's3' });
+    expect(upload(SPACE_FILES_SLUG)).toMatchObject({ adapter: 's3' });
     expect(upload('media')).toMatchObject({ adapter: 'gcs' });
   });
 
@@ -155,14 +162,14 @@ describe('storage adapters', () => {
     expect(upload(chatAssetsSlug)).toMatchObject({ adapter: 's3' });
   });
 
-  it('cover only chat assets when nothing is marked file: true', async () => {
+  it('cover only chat assets and Space files when nothing is marked file: true', async () => {
     const { payloadConfig, clientUploadSlugs } = await build({
       collections: [Users, Chats],
       storage: [s3({ clientUploads: true })],
     });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain('files');
-    expect(clientUploadSlugs).toEqual([chatAssetsSlug]);
+    expect([...clientUploadSlugs].sort()).toEqual([chatAssetsSlug, SPACE_FILES_SLUG].sort());
   });
 
   it('build without built-in upload collections when chat is off and nothing is marked file: true', async () => {

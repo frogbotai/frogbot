@@ -2,6 +2,7 @@ import { cascadeDelete } from '../collections/config/cascadeDelete.js';
 import { resolveMarkedCollection } from '../collections/config/resolveMarkedCollection.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogBotConfig } from '../config/types.js';
+import { resolveSpaceCollections, spacesSlugFor } from '../spaces/resolveSpaceCollections.js';
 import { CHAT_ASSETS_SLUG, defaultChatAssetsCollection } from './collections/assets.js';
 import { defaultChatsCollection } from './collections/chats.js';
 import { defaultMessagesCollection } from './collections/messages.js';
@@ -55,15 +56,17 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
   }
 
   const userSlug = resolveUserSlug(config);
+  const spacesSlug = spacesSlugFor(config.collections);
   const withChats = resolveMarkedCollection({
     collectionLabel: 'chat',
     collections: config.collections,
     existing: chatCollection,
     marker: 'chat',
     feature: 'chat persistence',
-    defaultCollection: defaultChatsCollection({ slug: chatsSlug, userSlug }),
+    defaultCollection: defaultChatsCollection({ slug: chatsSlug, userSlug, spacesSlug }),
     reservedFields: [
       'user',
+      'space',
       'channel',
       'externalId',
       'channelKey',
@@ -97,14 +100,28 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
     ],
   });
 
+  const withSpaces = resolveSpaceCollections({ collections: withMessages, chatsSlug, userSlug });
+
   const collections = [
-    ...withMessages,
+    ...withSpaces.collections,
     defaultChatAssetsCollection({ chatsSlug, userSlug }),
     defaultChatTurnsCollection(),
   ];
 
   return {
     collections,
-    chat: { enabled: true, chatsSlug, messagesSlug, assetsSlug: CHAT_ASSETS_SLUG },
+    chat: {
+      enabled: true,
+      chatsSlug,
+      messagesSlug,
+      assetsSlug: CHAT_ASSETS_SLUG,
+      spacesSlug: withSpaces.spaces.slug,
+      spaceFilesSlug: withSpaces.spaces.filesSlug,
+    },
   };
+}
+
+/** The upload collections chat adds, which the app's first storage adapter stores. */
+export function chatUploadSlugs(chat: SanitizedChatConfig): string[] {
+  return chat.enabled ? [chat.assetsSlug, chat.spaceFilesSlug] : [];
 }

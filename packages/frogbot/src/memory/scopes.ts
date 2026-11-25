@@ -1,8 +1,9 @@
+import { spaceIDOf } from '../spaces/run.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { MemoryAdapterError } from './errors.js';
 import type { MemoryOptions, MemoryScopeArgs } from './types.js';
 
-export const builtInScopes = ['me', 'agent', 'team'] as const;
+export const builtInScopes = ['me', 'agent', 'team', 'space'] as const;
 
 /** Every scope word the app can use, built-in words first, then custom words in declaration order. */
 export function memoryScopeWords(options: MemoryOptions): string[] {
@@ -17,6 +18,16 @@ function userScope(req: FrogBotRequest): string {
   }
 
   return `me:${user.collection}:${String(user.id)}`;
+}
+
+function spaceScope(chat: Record<string, unknown> | undefined): string {
+  const id = spaceIDOf(chat?.space);
+
+  if (id === undefined || id === '') {
+    throw new MemoryAdapterError('invalid', "The 'space' memory scope needs a chat in a Space.");
+  }
+
+  return `space:${String(id)}`;
 }
 
 /** Resolves a scope word to its scope ID from the request, agent and chat. Never from model input. */
@@ -39,6 +50,8 @@ export async function resolveMemoryScope({
 
   if (!resolve) {
     if (scope === 'team') return 'team';
+
+    if (scope === 'space') return spaceScope(args.chat);
 
     throw new MemoryAdapterError(
       'invalid',

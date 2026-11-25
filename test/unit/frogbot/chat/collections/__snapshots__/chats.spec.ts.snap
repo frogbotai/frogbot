@@ -52,6 +52,20 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "type": "text",
     },
     {
+      "admin": {
+        "position": "sidebar",
+      },
+      "hooks": {
+        "beforeChange": [
+          [Function],
+        ],
+      },
+      "index": true,
+      "name": "space",
+      "relationTo": "spaces",
+      "type": "relationship",
+    },
+    {
       "access": {
         "create": [Function],
         "update": [Function],

@@ -5,6 +5,7 @@ import { CHAT_TURNS_SLUG } from '../../../../packages/frogbot/src/chat/collectio
 import { resolveChatCollections } from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import { SPACE_FILES_SLUG } from '../../../../packages/frogbot/src/spaces/collections.js';
 
 const agents: FrogBotConfig['agents'] = [
   { slug: 'assistant', model: 'openai/gpt-5-nano', instructions: 'Assist.' },
@@ -39,6 +40,8 @@ describe('resolveChatCollections', () => {
     expect(slugs(result.collections)).toEqual([
       'chats',
       'messages',
+      'spaces',
+      SPACE_FILES_SLUG,
       CHAT_ASSETS_SLUG,
       CHAT_TURNS_SLUG,
     ]);
@@ -47,6 +50,8 @@ describe('resolveChatCollections', () => {
       chatsSlug: 'chats',
       messagesSlug: 'messages',
       assetsSlug: CHAT_ASSETS_SLUG,
+      spacesSlug: 'spaces',
+      spaceFilesSlug: SPACE_FILES_SLUG,
     });
   });
 
@@ -57,6 +62,8 @@ describe('resolveChatCollections', () => {
       'posts',
       'chats',
       'messages',
+      'spaces',
+      SPACE_FILES_SLUG,
       CHAT_ASSETS_SLUG,
       CHAT_TURNS_SLUG,
     ]);
@@ -72,10 +79,14 @@ describe('resolveChatCollections', () => {
       chatsSlug: 'convos',
       messagesSlug: 'messages',
       assetsSlug: CHAT_ASSETS_SLUG,
+      spacesSlug: 'spaces',
+      spaceFilesSlug: SPACE_FILES_SLUG,
     });
     expect(slugs(result.collections)).toEqual([
       'convos',
       'messages',
+      'spaces',
+      SPACE_FILES_SLUG,
       CHAT_ASSETS_SLUG,
       CHAT_TURNS_SLUG,
     ]);
@@ -91,6 +102,8 @@ describe('resolveChatCollections', () => {
       chatsSlug: 'conversations',
       messagesSlug: 'messages',
       assetsSlug: CHAT_ASSETS_SLUG,
+      spacesSlug: 'spaces',
+      spaceFilesSlug: SPACE_FILES_SLUG,
     });
 
     const chats = result.collections.find((c) => c.slug === 'conversations');
@@ -100,6 +113,7 @@ describe('resolveChatCollections', () => {
       'title',
       'user',
       'agent',
+      'space',
       'channel',
       'externalId',
       'channelKey',
@@ -124,6 +138,8 @@ describe('resolveChatCollections', () => {
       chatsSlug: 'conversations',
       messagesSlug: 'turns',
       assetsSlug: CHAT_ASSETS_SLUG,
+      spacesSlug: 'spaces',
+      spaceFilesSlug: SPACE_FILES_SLUG,
     });
 
     const turns = result.collections.find((c) => c.slug === 'turns');
