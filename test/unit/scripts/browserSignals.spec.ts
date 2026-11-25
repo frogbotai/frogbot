@@ -81,15 +81,34 @@ async function runAndTerminate(stop: boolean) {
     {
       cwd: dir,
       detached: true,
-      stdio: 'ignore',
+      stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
 
-  const exited = new Promise((resolve) => child.once('exit', resolve));
+  let output = '';
+  let exitCode: null | number | string = null;
+
+  child.stdout.on('data', (chunk) => (output += chunk));
+  child.stderr.on('data', (chunk) => (output += chunk));
+
+  const exited = new Promise((resolve) =>
+    child.once('exit', (code, signal) => {
+      exitCode = code ?? signal;
+      resolve(exitCode);
+    }),
+  );
 
   groups.push(child.pid!);
 
-  await expect.poll(() => portOpen(port), { timeout: 45_000 }).toBe(true);
+  try {
+    await expect.poll(() => exitCode ?? portOpen(port), { timeout: 15_000 }).toBe(true);
+  } catch {
+    throw new Error(
+      exitCode === null
+        ? `The web server never opened port ${port} in 15s. Playwright output:\n${output}`
+        : `Playwright exited (${exitCode}) before its web server started:\n${output}`,
+    );
+  }
 
   process.kill(-child.pid!, 'SIGTERM');
   await exited;
@@ -102,5 +121,5 @@ describe('stopServersOnSignal', () => {
     const port = await runAndTerminate(true);
 
     await expect.poll(() => portOpen(port), { timeout: 5_000 }).toBe(false);
-  }, 60_000);
+  }, 30_000);
 });
