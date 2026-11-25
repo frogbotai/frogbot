@@ -94,14 +94,25 @@ export function describeDatabase(url: string | undefined, syncUrl?: string): Dat
   try {
     const { host, password, pathname, protocol, username } = new URL(url);
 
-    if (!username && !password && url.includes('@')) {
-      return describeMultiHost(scheme, url.slice(scheme.length));
-    }
+    const credentialed = username || password ? undefined : credentialedPart(url);
+
+    if (credentialed) return describeMultiHost(scheme, credentialed.slice(scheme.length));
 
     return { local: false, label: `${protocol}//${host}${pathname === '/' ? '' : pathname}` };
   } catch {
-    return describeMultiHost(scheme, url.slice(scheme.length));
+    return describeMultiHost(scheme, (credentialedPart(url) ?? url).slice(scheme.length));
   }
+}
+
+function credentialedPart(url: string): string | undefined {
+  const query = url.search(/[?#]/);
+  const at = url.indexOf('@');
+
+  if (at < 0) return undefined;
+  if (query < 0) return url;
+  if (at < query) return url.slice(0, query);
+
+  return url.slice(query, at).includes('=') ? undefined : url;
 }
 
 function describeMultiHost(scheme: string, rest: string): DatabaseLocation {

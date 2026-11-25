@@ -77,6 +77,14 @@ describe('describeDatabase', () => {
       { local: false, label: 'postgres://db.example.com/app' },
     ],
     [
+      'postgres://admin:2024/Spring@db.example.com/app?password=sec@ret',
+      { local: false, label: 'postgres://db.example.com/app' },
+    ],
+    [
+      'mongodb://app:s3cret@db1.example.com:27017,db2.example.com:27017/app?authMechanismProperties=x@y',
+      { local: false, label: 'mongodb://db1.example.com:27017/app' },
+    ],
+    [
       'postgres://db.example.com/app?sslcert=/home/a@b/c',
       { local: false, label: 'postgres://db.example.com/app' },
     ],
