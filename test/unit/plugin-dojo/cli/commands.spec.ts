@@ -165,7 +165,7 @@ describe('signing in', () => {
   });
 });
 
-const member = { id: 3, email: 'ada@example.com', role: 'member' };
+const member = { id: 3, email: 'ada@example.com', role: 'viewer' };
 const projectReplies = {
   'GET /api/projects': { docs: [{ id: 'p1', name: 'Deals', workspace: 1 }] },
 };

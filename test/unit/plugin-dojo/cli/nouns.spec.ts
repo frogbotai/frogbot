@@ -16,7 +16,7 @@ type Case = {
 };
 
 const app = { id: 7, name: 'Deals', slug: 'deals', workspace: 1, startedAt: null };
-const member = { id: 3, email: 'ada@example.com', role: 'member' };
+const member = { id: 3, email: 'ada@example.com', role: 'viewer' };
 const workspace = { id: 1, name: 'Trend Capital', slug: 'trend-capital' };
 const project = { id: 'p1', name: 'Deals', workspace: 1, isDefault: false };
 const projectList = { 'GET /api/projects': { body: { docs: [project] } } };
@@ -206,18 +206,18 @@ const cases: Case[] = [
     replies: { 'GET /api/members': { body: { docs: [member] } } },
   },
   {
-    args: ['members', 'add', 'bo@example.com', '--role', 'owner'],
+    args: ['members', 'add', 'bo@example.com', '--role', 'admin'],
     route: 'POST /api/members',
-    body: { workspace: 1, email: 'bo@example.com', role: 'owner' },
-    replies: { 'POST /api/members': { status: 201, body: { doc: { ...member, role: 'owner' } } } },
+    body: { workspace: 1, email: 'bo@example.com', role: 'admin' },
+    replies: { 'POST /api/members': { status: 201, body: { doc: { ...member, role: 'admin' } } } },
   },
   {
-    args: ['members', 'role', 'ada@example.com', 'owner'],
+    args: ['members', 'role', 'ada@example.com', 'editor'],
     route: 'PATCH /api/members/3',
-    body: { role: 'owner' },
+    body: { role: 'editor' },
     replies: {
       'GET /api/members': { body: { docs: [member] } },
-      'PATCH /api/members/3': { body: { doc: { ...member, role: 'owner' } } },
+      'PATCH /api/members/3': { body: { doc: { ...member, role: 'editor' } } },
     },
   },
   {
@@ -515,7 +515,14 @@ describe('frogbot dojo <noun> <verb>', () => {
   it.each([
     [['env', 'set', 'deals', 'NOVALUE'], 'Write each key as KEY=value; "NOVALUE" isn\'t.'],
     [['env', 'unset', 'deals', '1BAD', '--yes'], '"1BAD" isn\'t a key name'],
-    [['members', 'add', 'bo@example.com', '--role', 'admin'], 'Choose a role: owner or member.'],
+    [
+      ['members', 'add', 'bo@example.com', '--role', 'member'],
+      '"member" isn\'t a role. Choose one of: viewer, editor, admin.',
+    ],
+    [
+      ['members', 'role', 'ada@example.com', 'owner'],
+      'Nobody is added or changed to owner. The Owner hands over with frogbot dojo workspaces owner <slug> <email>.',
+    ],
     [
       ['sharing', 'invite', 'deals', 'a@b.co', '--level', 'admin'],
       'Choose a level: use, editor, owner.',
@@ -684,7 +691,7 @@ describe('frogbot dojo <noun> <verb>', () => {
 
     expect(await runDojo(['projects', 'delete', 'Deals', '--yes'], result.io)).toBe(1);
     expect(result.stderr()).toEqual([
-      "[frogbot] Dojo couldn't delete Deals: Move or delete its apps first, Trash included.",
+      "[frogbot] Dojo couldn't delete Deals: Move or delete its apps first, Trash included. Rerun with --purge-trash to delete its apps in Trash for good first.",
     ]);
   });
 

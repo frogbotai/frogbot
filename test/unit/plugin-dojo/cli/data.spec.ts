@@ -130,9 +130,9 @@ describe('frogbot deploy: bringing data', () => {
     const { dojo, run } = await setup();
     const result = await run([]);
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(2);
     expect(result.stderr()).toEqual([
-      `[frogbot] This first deploy can bring the local data (${summary}). Ask the person whether to bring it, then rerun with --data or --no-data.`,
+      `[frogbot] This first deploy can bring the local data (${summary}). Rerun with --data to bring it or --no-data to start empty.`,
     ]);
     expect(dojo.requests).toEqual([]);
   });
@@ -255,7 +255,7 @@ describe('frogbot deploy: bringing data', () => {
 
     const piped = await run([]);
 
-    expect(piped.code).toBe(1);
+    expect(piped.code).toBe(2);
     expect(piped.stderr()[0]).toContain(`can bring the local data (${summary})`);
 
     const rerun = await run(['--data']);
@@ -400,11 +400,11 @@ describe('frogbot deploy --replace-data', () => {
   const confirmText = (slug: string) =>
     `This replaces all of ${slug}'s live data with this computer's (${summary}). Anything written live since will be lost. Type ${slug} to confirm:`;
 
-  it('AC 4: without a terminal it exits 1 and sends nothing', async () => {
+  it('AC 4: without a terminal it exits 2 and sends nothing', async () => {
     const { run, after } = await started();
     const result = await run(['--replace-data']);
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(2);
     expect(result.stderr()).toContain(
       '[frogbot] Replacing live data needs a person at a terminal, or --confirm <app-slug> to answer the prompt.',
     );
@@ -419,7 +419,7 @@ describe('frogbot deploy --replace-data', () => {
 
     const result = await run(['--replace-data'], { isTTY: true, text: 'whatever' });
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(2);
     expect(result.stderr()).toContain(
       "[frogbot] Only this app's Admins can replace its live data.",
     );
@@ -447,7 +447,7 @@ describe('frogbot deploy --replace-data', () => {
     const { run, after } = await started();
     const result = await run(['--replace-data'], { isTTY: true, text: 'deals?' });
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(2);
     expect(result.stderr()[0]).toContain('nothing was replaced');
     expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
   });
@@ -478,7 +478,7 @@ describe('frogbot deploy --replace-data', () => {
       const { run, slug, after } = await started();
       const result = await run(['--replace-data', '--confirm', `${slug}-x`], options);
 
-      expect(result.code).toBe(1);
+      expect(result.code).toBe(2);
       expect(result.stderr()[0]).toBe(
         `[frogbot] --confirm is "${slug}-x", not ${slug}; nothing was replaced.`,
       );
@@ -495,7 +495,7 @@ describe('frogbot deploy --replace-data', () => {
 
     const result = await run(['--replace-data', '--confirm', slug]);
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(2);
     expect(result.stderr()).toContain(
       "[frogbot] Only this app's Admins can replace its live data.",
     );

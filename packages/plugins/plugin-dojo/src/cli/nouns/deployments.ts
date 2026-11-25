@@ -185,6 +185,14 @@ export const deployments: Noun = {
           },
         });
 
+        if (build.status === 'failed') {
+          throw new ShareError(
+            `Build failed: ${build.error || 'see the log above'}. Fix it, then frogbot deploy ships it again.`,
+            1,
+            { code: 'BUILD_FAILED', deploymentId: id },
+          );
+        }
+
         done(io, {
           id,
           status: build.status,
@@ -192,10 +200,6 @@ export const deployments: Noun = {
           url: build.url ?? null,
           lines,
         });
-
-        if (build.status === 'failed') {
-          throw new ShareError(`Build failed: ${build.error || 'see the log above'}`);
-        }
       },
     },
     rollback: {

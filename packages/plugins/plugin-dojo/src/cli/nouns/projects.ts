@@ -6,6 +6,7 @@ import { done } from '../io.js';
 import { findWorkspace } from '../workspaces.js';
 import { intoFlag, recipient, sendHandover, toFlag, withPayLink } from './handovers.js';
 import { count, relationId, whereEquals } from './resolve.js';
+import { namingPurge, purgeApps, purgeNotice, purgeTrashFlag, trashedApps } from './trash.js';
 
 type Project = {
   id: string | number;
@@ -178,22 +179,35 @@ export const projects: Noun = {
     },
     delete: {
       summary:
-        'Delete an empty project for good. Dojo refuses while it holds apps, Trash included.',
+        'Delete an empty project for good. Dojo refuses while it holds apps; --purge-trash clears those in Trash.',
       args: '<project>',
-      flags: { workspace: inFlag },
+      flags: { workspace: inFlag, 'purge-trash': purgeTrashFlag('project') },
       confirm: true,
       run: async (input) => {
         const project = await findProject(input);
+        const purging = input.values['purge-trash'] === true;
+        const trashed = purging ? await trashedApps(input.dojo(), 'project', project.id) : [];
 
-        await input.confirm(`Delete the project ${project.name} (${project.id}) for good?`);
+        await input.confirm(
+          `Delete the project ${project.name} (${project.id}) for good?${purgeNotice(trashed)}`,
+        );
 
-        await dojoJSON(input.dojo(), `/api/projects/${segment(project.id)}`, {
-          method: 'DELETE',
-          what: `Dojo couldn't delete ${project.name}`,
-          needs: adminNeeded,
-        });
+        await purgeApps(input.dojo(), trashed);
 
-        done(input.io, { deleted: shown(project) }, [
+        await namingPurge(purging, () =>
+          dojoJSON(input.dojo(), `/api/projects/${segment(project.id)}`, {
+            method: 'DELETE',
+            what: `Dojo couldn't delete ${project.name}`,
+            needs: adminNeeded,
+          }),
+        );
+
+        const purged = trashed.map(({ slug }) => slug);
+
+        done(input.io, { deleted: shown(project), purged }, [
+          ...(purged.length
+            ? [`[frogbot] Deleted for good from Trash: ${purged.join(', ')}.`]
+            : []),
           `[frogbot] Deleted the project ${project.name}.`,
         ]);
       },

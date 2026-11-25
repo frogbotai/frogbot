@@ -48,18 +48,18 @@ export async function askReplace({
   confirm?: string;
   io: DojoIO;
 }): Promise<DataInventory> {
-  if (level === 'editor') throw new ShareError(replaceMessages.editor);
+  if (level === 'editor') throw new ShareError(replaceMessages.editor, 2);
 
   if (confirm !== undefined && confirm.trim() !== slug) {
-    throw new ShareError(`--confirm is "${confirm.trim()}", not ${slug}; nothing was replaced.`);
+    throw new ShareError(`--confirm is "${confirm.trim()}", not ${slug}; nothing was replaced.`, 2);
   }
 
-  if (confirm === undefined && !io.isTTY) throw new ShareError(replaceMessages.noTerminal);
+  if (confirm === undefined && !io.isTTY) throw new ShareError(replaceMessages.noTerminal, 2);
 
   const inventory = await takeInventory({ root, config });
 
-  if (inventory === 'unsupported') throw new ShareError(replaceMessages.unsupported);
-  if (!inventory) throw new ShareError(replaceMessages.nothing);
+  if (inventory === 'unsupported') throw new ShareError(replaceMessages.unsupported, 2);
+  if (!inventory) throw new ShareError(replaceMessages.nothing, 2);
   if (confirm !== undefined) return inventory;
 
   let confirmed = false;
@@ -72,7 +72,7 @@ export async function askReplace({
     confirmed = answer.trim() === slug;
 
     if (!confirmed) {
-      throw new ShareError(`You typed "${answer.trim()}", not ${slug}; nothing was replaced.`);
+      throw new ShareError(`You typed "${answer.trim()}", not ${slug}; nothing was replaced.`, 2);
     }
 
     return inventory;
