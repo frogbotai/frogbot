@@ -53,7 +53,7 @@ export const apps: Noun = {
     },
     logs: {
       summary: "Print an app's runtime logs.",
-      args: '<app>',
+      args: '[app]',
       flags: { follow: { type: 'boolean', help: 'Keep printing new lines. Not with --json.' } },
       raw: async (args, io) => (await import('../logs.js')).runLogs(args, io),
     },
@@ -80,7 +80,7 @@ export const apps: Noun = {
     },
     get: {
       summary: "Show an app's address, whether it has started, and your access.",
-      args: '<app>',
+      args: '[app]',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
         const shownApp = { ...app, url: appAddress(app.slug) };
@@ -168,7 +168,7 @@ export const apps: Noun = {
     },
     rename: {
       summary: 'Rename an app. Its slug and address stay.',
-      args: '<app> <name>',
+      args: '[app] <name>',
       run: async ({ io, dojo, positionals: [ref = '', name = ''] }) => {
         const app = await findApp(dojo(), ref);
 
@@ -188,7 +188,7 @@ export const apps: Noun = {
     },
     delete: {
       summary: 'Move an app to Trash. Dojo deletes it for good after 30 days.',
-      args: '<app>',
+      args: '[app]',
       confirm: true,
       run: async ({ io, dojo, confirm, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
@@ -211,7 +211,7 @@ export const apps: Noun = {
     move: {
       summary:
         'Move an app to another workspace you admin, at once, or into another project of its workspace.',
-      args: '<app>',
+      args: '[app]',
       flags: {
         workspace: {
           ...intoFlag,
@@ -284,7 +284,7 @@ export const apps: Noun = {
     handover: {
       summary:
         'Hand an app to someone. Dojo emails them a link to accept it into a workspace they admin; it waits 7 days.',
-      args: '<app>',
+      args: '[app]',
       flags: { to: toFlag },
       confirm: true,
       run: async ({ io, dojo, confirm, values, positionals: [ref = ''] }) => {

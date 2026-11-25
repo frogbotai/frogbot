@@ -4,7 +4,22 @@ Docs: https://docs.frogbot.ai/plugins/dojo
 
 Shipping an app, the first time and every time after, is `npx frogbot deploy`. Everything else happens through `frogbot dojo`: keys, a custom domain, the people on an app, workspaces, deployments and rollbacks, logs, starting and stopping an app, Trash, data exports, templates, activity, Dojo API keys and billing. Deploying is in "Sharing The App" in [SKILL.md](../SKILL.md#sharing-the-app).
 
-The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists it, run `npx frogbot dojo <command>`. Anywhere else, run the same command as `npx @frogbotai/plugin-dojo <command>`, for example `npx @frogbotai/plugin-dojo apps list`. `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. `npx frogbot dojo <command> --help` prints a command's flags.
+The commands come from `dojo()` (`@frogbotai/plugin-dojo`). `npx frogbot dojo <command>` needs an app that lists it; `npx @frogbotai/plugin-dojo <command>` runs the same command in any folder, including `login` on a fresh machine. `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. In a folder you deployed, which has `.frogbot/app.json`, leave `<app>` out and the command acts on that app. `npx frogbot dojo <command> --help` prints a command's flags, and `npx frogbot dojo --help --json` lists every command, verb and flag as one JSON value.
+
+## Daily
+
+Run these in the app's folder:
+
+| Command                                 | Does                                                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `npx frogbot deploy`                    | Ships this folder, the first time and every time after.                                                 |
+| `npx frogbot dojo status`               | The address, the status (`live`, `paused`, `deploying`, `failed`, `not_deployed`), and the last deploy. |
+| `npx frogbot dojo logs [--follow]`      | The runtime log; when the last deploy failed, its build or start log instead, with the error.           |
+| `npx frogbot dojo open`                 | Prints the live address. It opens a browser only at a terminal, so it never opens one for you.          |
+| `npx frogbot dojo rollback [id]`        | Puts back the newest version that went live before the current one, or the deployment you name.         |
+| `npx frogbot dojo env set KEY=value...` | Sets keys; the app restarts once. The first argument is an app only when it has no `=`.                 |
+
+Each also takes an app's slug to act on another app: `status deals`, `logs deals`, `open deals`. `rollback` acts on the folder's app only; `deployments rollback <app> <id>` names another.
 
 ## Rules
 

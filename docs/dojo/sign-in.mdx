@@ -14,7 +14,7 @@ Open [dojo.frogbot.ai](https://dojo.frogbot.ai) and choose **Continue with Googl
 npx frogbot dojo login
 ```
 
-The CLI prints a link and a short code, and opens the link in your browser. Check that the code in the browser matches the one in your terminal, then approve it. The CLI keeps the sign-in in `auth.json` and uses it for every later command.
+That works in an app that lists the [Dojo plugin](/plugins/dojo). In any other folder, run `npx @frogbotai/plugin-dojo login`. The CLI prints a link and a short code, and opens the link in your browser. Check that the code in the browser matches the one in your terminal, then approve it. The CLI keeps the sign-in in `auth.json` and uses it for every later command.
 
 Each terminal sign-in is a [device](/dojo/api-keys#signed-in-devices) named after your computer, such as `CLI on bobs-macbook`. To sign out, run `npx frogbot dojo logout`, or revoke the device in the browser.
 

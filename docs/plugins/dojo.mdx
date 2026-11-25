@@ -36,17 +36,23 @@ export default buildConfig({
 - `frogbot deploy` ships the app in this folder to Dojo. It runs `dojo` when you name no target, and it is the one command that ships to Dojo. See [Deploy to Dojo](/getting-started/cli#deploy-to-dojo) for its flags.
 - `frogbot dojo` does everything else a person can do in Dojo from the terminal, for people and coding agents: the account, workspaces, apps, keys, domains, logs and billing.
 
-In an app that lists `dojo()`, run `frogbot dojo` as a [plugin command](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app:
+In an app that lists `dojo()`, run `frogbot dojo` as a [plugin command](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app, as `npx @frogbotai/plugin-dojo`:
 
 ```bash
 npx frogbot deploy
 npx @frogbotai/plugin-dojo apps pull deals
 ```
 
+In a folder you deployed, `.frogbot/app.json` names the app, so every command whose arguments start with `<app>` or `[app]` acts on it when you leave the app out: `frogbot dojo env set KEY=value` sets a key on this folder's app. The daily commands, `status`, `logs`, `open` and `rollback`, come first in `frogbot dojo --help`, and `frogbot dojo --help --json` lists every command, verb and flag as one JSON value.
+
 A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/<app>` to the new `.env` when the app's `package.json` depends on a Postgres adapter, and `file:./frogbot.db` otherwise. The first deploy of a Postgres app lists `.env`'s `DATABASE_URL` under "Keys to bring", masked and ticked, when it points off this machine: not `file:`, and a host other than `localhost`, `127.0.0.1` or `::1`. Untick it to leave it out. A local one, a SQLite app's, and any later deploy's are never sent. Bringing data works only for SQLite apps.
 
 | Command | Arguments | Description |
 | --- | --- | --- |
+| `status` | `[app]` | The app's address, its status (`live`, `paused`, `deploying`, `failed`, `not_deployed`) and its last deploy. |
+| `logs` | `[app]`, `--follow` | The runtime log, or the last deploy's build or start log when it failed. |
+| `open` | `[app]` | Prints the live address, and opens it when there's a terminal. |
+| `rollback` | `[id]` | Puts back the newest version that went live before the current one, or the deployment you name. Acts on this folder's app. |
 | `login` | — | Signs in with a code you confirm in the browser. The first sign-in makes your Dojo account. |
 | `logout` | — | Revokes the stored sign-in and removes it from `auth.json`. See [`dojo logout`](/getting-started/cli#dojo-logout). |
 | `whoami` | — | Shows the account, the Dojo URL and your workspaces. |

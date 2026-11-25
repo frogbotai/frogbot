@@ -1,5 +1,5 @@
 import type { Noun, RawVerb, Verb } from './command.js';
-import { parseVerbArgs, runVerb, verbHelp, verbUsage } from './command.js';
+import { parseVerbArgs, runVerb, verbFlags, verbHelp, verbUsage } from './command.js';
 import { reportStop } from './error.js';
 import type { DojoIO } from './io.js';
 import { jsonIO, processIO } from './io.js';
@@ -18,9 +18,14 @@ import { projects } from './nouns/projects.js';
 import { sharing } from './nouns/sharing.js';
 import { templates } from './nouns/templates.js';
 import { workspaces } from './nouns/workspaces.js';
+import { daily } from './short.js';
 
-/** Every Dojo command: `login`, `logout` and `whoami`, then one noun per Dojo resource. */
+/**
+ * Every Dojo command: the daily ones that act on the folder's app, `login`, `logout` and `whoami`, then one noun per
+ * Dojo resource.
+ */
 export const dojoCommands: Record<string, Verb | RawVerb | Noun> = {
+  ...daily,
   ...account,
   workspaces,
   members,
@@ -49,11 +54,17 @@ function list(entries: [string, { summary: string }][]): string[] {
 }
 
 function topHelp(program: string): string[] {
+  const entries = Object.entries(dojoCommands);
+  const dailyNames = new Set(Object.keys(daily));
+
   return [
     `Usage: ${program} <command> [--json]`,
     '',
+    "Daily, on the folder's app (.frogbot/app.json) unless you name one:",
+    ...list(entries.filter(([name]) => dailyNames.has(name))),
+    '',
     'Commands:',
-    ...list(Object.entries(dojoCommands)),
+    ...list(entries.filter(([name]) => !dailyNames.has(name))),
     '',
     `Run ${program} <command> --help for its verbs and flags. FROGBOT_DOJO_TOKEN signs in with an API key.`,
     'Without a terminal, a command that needs a sign-in exits 3 and one that needs a payment exits 4, with the link to hand on. --wait waits instead.',
@@ -71,6 +82,41 @@ function nounHelp(program: string, name: string, noun: Noun): string[] {
     '',
     `Run ${program} ${name} <verb> --help for its flags.`,
   ];
+}
+
+function verbJSON(program: string, name: string, verb: Verb | RawVerb) {
+  return {
+    name,
+    summary: verb.summary,
+    usage: verbUsage(program, name, verb),
+    flags: Object.entries(verbFlags(verb)).map(([flag, spec]) => ({
+      name: `--${flag}`,
+      type: spec.type,
+      ...(spec.value && { value: spec.value }),
+      help: spec.help,
+    })),
+  };
+}
+
+/** `--help --json`: every command, and each noun's verbs, with usage and flags, as one JSON value. */
+export function helpJSON(program: string) {
+  const dailyNames = new Set(Object.keys(daily));
+
+  return {
+    program,
+    exitCodes: { 0: 'success', 1: 'failure', 2: 'usage', 3: 'sign-in needed', 4: 'payment needed' },
+    commands: Object.entries(dojoCommands).map(([name, command]) =>
+      isNoun(command)
+        ? {
+            name,
+            summary: command.summary,
+            verbs: Object.entries(command.verbs).map(([verb, spec]) =>
+              verbJSON(program, `${name} ${verb}`, spec),
+            ),
+          }
+        : { ...verbJSON(program, name, command), ...(dailyNames.has(name) && { daily: true }) },
+    ),
+  };
 }
 
 function print(io: DojoIO, lines: string[], to: 'stdout' | 'stderr'): void {
@@ -135,7 +181,11 @@ export async function runDojo(args: string[], io: DojoIO): Promise<number> {
   if (!name) return usageError(io, 'Name a command.', topHelp(io.program), args);
 
   if (helpFlags.has(name)) {
-    print(io, topHelp(io.program), 'stdout');
+    print(
+      io,
+      flags.length ? [JSON.stringify(helpJSON(io.program), null, 2)] : topHelp(io.program),
+      'stdout',
+    );
 
     return 0;
   }

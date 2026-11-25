@@ -458,7 +458,7 @@ describe('frogbot dojo actions beyond the basics', () => {
 
   it.each([
     [['apps', 'stop', 'deals'], 'rerun with --yes'],
-    [['deployments', 'rollback', 'deals'], 'Usage: frogbot deployments rollback <app> <id>'],
+    [['deployments', 'rollback', '30'], "No app here: there's no .frogbot/app.json."],
     [
       ['billing', 'add-funds', '--amount', '12.5'],
       'Give --amount as whole dollars from 10 to 1000',

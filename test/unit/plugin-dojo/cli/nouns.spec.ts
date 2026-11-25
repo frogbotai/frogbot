@@ -520,7 +520,7 @@ describe('frogbot dojo <noun> <verb>', () => {
       ['sharing', 'invite', 'deals', 'a@b.co', '--level', 'admin'],
       'Choose a level: use, editor, owner.',
     ],
-    [['apps', 'get'], 'Usage: frogbot apps get <app> [--json]'],
+    [['apps', 'get'], 'Run this in a folder you deployed with frogbot deploy, or name the app.'],
     [['apps', 'get', 'deals', '--nope'], "Unknown option '--nope'"],
     [['apps', 'create', '2024'], '"2024" would make the slug "2024", which reads as an app id.'],
     [['apps', 'get', '..'], '".." can\'t name anything on Dojo.'],

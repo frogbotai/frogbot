@@ -93,21 +93,33 @@ describe('frogbot logs', () => {
     expect(result.stdout()).toEqual(['[frogbot] No logs yet.']);
   });
 
-  it.each([
-    [[]],
-    [['deals', 'crm']],
-    [['deals', '--tail']],
-    [['--follow']],
-    [['deals', '--follow', '--follow']],
-  ])('prints usage and exits 2 for %j', async (args) => {
-    const { dojo, run } = await setup();
+  it.each([[['deals', 'crm']], [['deals', '--tail']], [['deals', '--follow', '--follow']]])(
+    'prints usage and exits 2 for %j',
+    async (args) => {
+      const { dojo, run } = await setup();
 
-    const result = await run(args);
+      const result = await run(args);
 
-    expect(result.code).toBe(2);
-    expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot apps logs <app> [--follow]']);
-    expect(dojo.requests).toEqual([]);
-  });
+      expect(result.code).toBe(2);
+      expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot apps logs [app] [--follow]']);
+      expect(dojo.requests).toEqual([]);
+    },
+  );
+
+  it.each([[[]], [['--follow']]])(
+    'with no app named and no .frogbot/app.json, says how to get one for %j',
+    async (args) => {
+      const { dojo, run } = await setup();
+
+      const result = await run(args);
+
+      expect(result.code).toBe(2);
+      expect(result.stderr()).toEqual([
+        "[frogbot] No app here: there's no .frogbot/app.json. Run this in a folder you deployed with frogbot deploy, or name the app. Usage: frogbot apps logs [app] [--follow]",
+      ]);
+      expect(dojo.requests).toEqual([]);
+    },
+  );
 
   it('--follow polls every 2 s with the last `next` and prints only new lines', async () => {
     const { dojo, run } = await setup();
