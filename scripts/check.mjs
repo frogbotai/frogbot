@@ -38,7 +38,9 @@ const IMPORT_MAP_CONCURRENCY = 4;
 
 const FULL_ONLY = '// check: full-only';
 
-const FULL_ONLY_LINES = 5;
+const HEAVY = '// check: heavy';
+
+const MARKER_LINES = 5;
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -75,13 +77,18 @@ export function discoverChecks(dir = SCRIPTS) {
     .sort();
 }
 
-export function fullOnlyChecks(dir = SCRIPTS) {
+function markedChecks(marker, dir) {
   return discoverChecks(dir).filter((name) =>
     readFileSync(path.join(dir, `check-${name}.mjs`), 'utf8')
-      .split('\n', FULL_ONLY_LINES)
-      .some((line) => line.trim() === FULL_ONLY),
+      .split('\n', MARKER_LINES)
+      .some((line) => line.trim() === marker),
   );
 }
+
+export const fullOnlyChecks = (dir = SCRIPTS) => markedChecks(FULL_ONLY, dir);
+
+/** Checks that each need several GB of memory, so `pnpm check` runs them one at a time. */
+export const heavyChecks = (dir = SCRIPTS) => markedChecks(HEAVY, dir);
 
 export function missingImportMaps({ files, read, exists, ignored }) {
   const dirs = new Set();
@@ -548,6 +555,20 @@ async function check(log, { name, args }) {
   };
 }
 
+/**
+ * Runs `checks` in parallel, then the `heavy` ones among them one at a time.
+ * @template T
+ * @param {{ checks: string[], heavy: string[], run: (name: string) => Promise<T> }} options
+ * @returns {Promise<T[]>}
+ */
+export async function runChecks({ checks, heavy, run }) {
+  const results = await Promise.all(checks.filter((name) => !heavy.includes(name)).map(run));
+
+  for (const name of checks.filter((name) => heavy.includes(name))) results.push(await run(name));
+
+  return results;
+}
+
 async function runAll(log, { checks, full }) {
   const packages = workspacePackages(log);
   const changed = changedPackages({ files: changedFiles(log), packages });
@@ -569,7 +590,11 @@ async function runAll(log, { checks, full }) {
 
   stages.push(full ? await typecheckAll(log) : await typecheckChanged(log, changed));
 
-  const results = await Promise.all(checks.map((name) => check(log, { name, args: [] })));
+  const results = await runChecks({
+    checks,
+    heavy: heavyChecks(),
+    run: (name) => check(log, { name, args: [] }),
+  });
 
   return {
     ok: [...stages, ...results].every(({ ok }) => ok),

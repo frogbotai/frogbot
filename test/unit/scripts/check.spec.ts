@@ -11,12 +11,14 @@ import {
   discoverChecks,
   eslintLines,
   fullOnlyChecks,
+  heavyChecks,
   labelLines,
   MAX_LINES,
   missingImportMaps,
   parseArgs,
   prettierLines,
   report,
+  runChecks,
   stalePackages,
   tscLines,
 } from '../../../scripts/check.mjs';
@@ -106,6 +108,21 @@ describe('fullOnlyChecks', () => {
   it('marks generated full-only and keeps the fast checks in the default run', () => {
     expect(fullOnlyChecks()).toContain('generated');
     expect(fullOnlyChecks()).not.toContain('branding');
+  });
+
+  it('names the checks marked heavy, apart from the full-only marker', () => {
+    writeFileSync(
+      join(dir, 'check-big.mjs'),
+      '#!/usr/bin/env node\n// check: full-only\n// check: heavy\n',
+    );
+
+    writeFileSync(join(dir, 'check-slow.mjs'), '#!/usr/bin/env node\n// check: full-only\n');
+
+    expect(heavyChecks(dir)).toEqual(['big']);
+  });
+
+  it('marks test-types and typed-lint heavy so they never run side by side', () => {
+    expect(heavyChecks()).toEqual(['test-types', 'typed-lint']);
   });
 });
 
@@ -360,5 +377,33 @@ describe('report', () => {
 
     expect(output).toHaveLength(MAX_LINES + 2);
     expect(output.slice(-2)).toEqual(['… 3 more', 'full log: .idea/tmp/c.log']);
+  });
+});
+
+describe('runChecks', () => {
+  it('runs the light checks side by side, then each heavy check alone', async () => {
+    const events: string[] = [];
+    let running = 0;
+
+    const results = await runChecks({
+      checks: ['big', 'a', 'huge', 'b'],
+      heavy: ['big', 'huge'],
+      run: async (name) => {
+        events.push(`start ${name} with ${running} running`);
+        running += 1;
+        await Promise.resolve();
+        running -= 1;
+
+        return name;
+      },
+    });
+
+    expect(events).toEqual([
+      'start a with 0 running',
+      'start b with 1 running',
+      'start big with 0 running',
+      'start huge with 0 running',
+    ]);
+    expect(results).toEqual(['a', 'b', 'big', 'huge']);
   });
 });

@@ -121,7 +121,7 @@ Example: AI policy (model allowlists, monthly budgets, spend counters) goes in a
 
 ### Checks
 
-`pnpm check` runs these; each also runs alone as `pnpm check <name>`.
+`pnpm check` runs these; each also runs alone as `pnpm check <name>`. Checks marked `// check: heavy` (`test-types`, `typed-lint`) need several GB each, so it runs them one at a time after the rest.
 
 | Name                 | Fails when                                                                                                                                                                                                            |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -138,7 +138,7 @@ Example: AI policy (model allowlists, monthly budgets, spend counters) goes in a
 | `package-boundaries` | `@frogbotai/ui` imports Payload or admin code outside `src/admin`, any of it imports Next, another package imports `@payloadcms/ui`, or its manifest installs Payload or names Next                                   |
 | `generated`          | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                                                                                                    |
 | `test-types`         | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` and CI's `types` job only; `--write` lowers it)                                                                      |
-| `typed-lint`         | a changed `.ts` or `.tsx` file breaks a type-aware rule in `.oxlintrc.json` (run on oxlint), or one of its `"warn"` overrides no longer warns (`--all` lints every file)                                              |
+| `typed-lint`         | a changed `.ts` or `.tsx` file breaks a type-aware rule in `.oxlintrc.json` (run on oxlint), or one of its `"warn"` overrides no longer warns (`--all` lints every file, as CI's `types` job does)                    |
 | `dist-imports`       | a built relative import or entry point does not match a file name exactly, including case                                                                                                                             |
 | `single-frogbot`     | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                                                                                                   |
 | `peer-variants`      | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                                                                                            |

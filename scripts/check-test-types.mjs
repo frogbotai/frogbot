@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // check: full-only
+// check: heavy
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';

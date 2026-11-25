@@ -82,4 +82,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: mkdir -p .idea/tmp
       - run: pnpm -r --filter './packages/**' build
+      - run: pnpm check typed-lint --all
       - run: pnpm check test-types
