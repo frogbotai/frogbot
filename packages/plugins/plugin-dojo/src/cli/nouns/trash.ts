@@ -43,7 +43,7 @@ export async function trashedApps(
 /** `2 apps in Trash (a, b) are deleted for good first.`, for the confirmation. */
 export function purgeNotice(apps: TrashedApp[]): string {
   return apps.length
-    ? ` ${count(apps.length, 'app')} in Trash (${apps.map(({ slug }) => slug).join(', ')}) ${apps.length === 1 ? 'is' : 'are'} deleted for good first.`
+    ? ` ${count(apps.length, 'app')} in Trash (${apps.map(({ slug }) => slug).join(', ')}) ${apps.length === 1 ? 'is' : 'are'} deleted for good first, even if apps you can't see still block the delete.`
     : '';
 }
 
@@ -74,19 +74,27 @@ async function purgeOne(dojo: DojoClient, app: TrashedApp): Promise<void> {
 }
 
 /**
- * Sends a delete; when Dojo refuses it because apps remain (409) and `--purge-trash` wasn't given, the refusal names
- * the flag.
+ * Sends a delete; when Dojo refuses it because apps remain (409), the refusal names the next step. Without
+ * `--purge-trash` that is the flag. After a purge (`purged` holds the slugs, possibly none), the apps left are ones
+ * the caller can't see, so it names what was purged and who can move the rest.
  */
-export async function namingPurge<T>(purged: boolean, send: () => Promise<T>): Promise<T> {
+export async function namingPurge<T>(
+  purged: string[] | undefined,
+  send: () => Promise<T>,
+): Promise<T> {
   try {
     return await send();
   } catch (error) {
-    if (purged || !(error instanceof ShareError) || error.status !== 409) throw error;
+    if (!(error instanceof ShareError) || error.status !== 409) throw error;
 
-    throw new ShareError(
-      `${error.message} Rerun with --purge-trash to delete its apps in Trash for good first; apps outside Trash need apps move or apps delete.`,
-      error.exitCode,
-      { code: error.code, status: error.status, url: error.url },
-    );
+    const next = purged
+      ? `${purged.length ? `Already deleted for good from Trash: ${purged.join(', ')}. ` : ''}The apps left are ones you can't see: their Admins can move them with apps move or delete them with apps delete, then rerun.`
+      : 'Rerun with --purge-trash to delete its apps in Trash for good first; apps outside Trash need apps move or apps delete.';
+
+    throw new ShareError(`${error.message} ${next}`, error.exitCode, {
+      code: error.code,
+      status: error.status,
+      url: error.url,
+    });
   }
 }

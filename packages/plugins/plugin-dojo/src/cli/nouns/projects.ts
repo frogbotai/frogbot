@@ -196,7 +196,7 @@ export const projects: Noun = {
 
         await purgeApps(input.dojo(), trashed);
 
-        await namingPurge(purging, () =>
+        await namingPurge(purging ? trashed.map(({ slug: app }) => app) : undefined, () =>
           dojoJSON(input.dojo(), `/api/projects/${segment(project.id)}`, {
             method: 'DELETE',
             what: `Dojo couldn't delete ${project.name}`,

@@ -80,7 +80,7 @@ export const workspaces: Noun = {
 
         await purgeApps(dojo(), trashed);
 
-        await namingPurge(purging, () =>
+        await namingPurge(purging ? trashed.map(({ slug: app }) => app) : undefined, () =>
           dojoJSON<{ deleted: boolean }>(
             dojo(),
             `/api/workspaces/${segment(workspace.id)}/delete`,

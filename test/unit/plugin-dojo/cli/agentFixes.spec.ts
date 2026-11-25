@@ -118,7 +118,7 @@ describe('--purge-trash', () => {
 
     expect(result.code).toBe(1);
     expect(result.asked[0]).toContain(
-      '2 apps in Trash (old-crm, leads) are deleted for good first.',
+      "2 apps in Trash (old-crm, leads) are deleted for good first, even if apps you can't see still block the delete.",
     );
     expect(changes(dojo)).toEqual([]);
   });
@@ -189,6 +189,37 @@ describe('--purge-trash', () => {
     expect(JSON.parse(result.stdout().join('\n')).error).toBe(
       "Dojo couldn't delete leads for good: boom Already deleted for good: old-crm. Rerun to carry on.",
     );
+  });
+
+  it('names what it purged when apps the caller can’t see still block the delete', async () => {
+    const { dojo, run } = await setup({
+      ...trashList,
+      'POST /api/apps/8/delete-permanently': { body: { deleted: true } },
+      'POST /api/apps/9/delete-permanently': { body: { deleted: true } },
+      'POST /api/workspaces/1/delete': {
+        status: 409,
+        body: { errors: [{ message: 'This workspace still holds 3 apps, counting Trash.' }] },
+      },
+    });
+
+    const result = await run([
+      'workspaces',
+      'delete',
+      'trend-capital',
+      '--purge-trash',
+      '--yes',
+      '--json',
+    ]);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n')).error).toBe(
+      "Dojo couldn't delete trend-capital: This workspace still holds 3 apps, counting Trash. Already deleted for good from Trash: old-crm, leads. The apps left are ones you can't see: their Admins can move them with apps move or delete them with apps delete, then rerun.",
+    );
+    expect(changes(dojo).map(([route]) => route)).toEqual([
+      'POST /api/apps/8/delete-permanently',
+      'POST /api/apps/9/delete-permanently',
+      'POST /api/workspaces/1/delete',
+    ]);
   });
 
   it('names --purge-trash when Dojo refuses a workspace delete over its apps', async () => {
