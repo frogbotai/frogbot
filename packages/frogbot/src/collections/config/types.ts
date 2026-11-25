@@ -199,10 +199,14 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   /** Marks this collection as the AI usage-log collection. FrogBot merges its
    *  base usage-tracking fields in; the slug stays yours. At most one. */
   usageLog?: boolean;
+
+  /** Marks this collection as the Space collection, such as `clients` or `projects`. FrogBot
+   *  merges in `instructions` and `files`, and chats can belong to one of its documents. At most one. */
+  space?: boolean;
 };
 
 /** Collection markers. Sanitization strips these before Payload. */
-export const COLLECTION_MARKERS = ['chat', 'message', 'file', 'usageLog'] as const;
+export const COLLECTION_MARKERS = ['chat', 'message', 'file', 'usageLog', 'space'] as const;
 
 export type CollectionMarker = (typeof COLLECTION_MARKERS)[number];
 

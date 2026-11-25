@@ -19,7 +19,7 @@ import {
 } from '../channels/queueChannelTask.js';
 import { resolveChannelTask } from '../channels/task.js';
 import { buildChatEndpoints } from '../chat/endpoints.js';
-import { resolveChatCollections } from '../chat/resolveChatCollections.js';
+import { chatUploadSlugs, resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { wrapCollectionAccess } from '../collections/config/sanitize.js';
 import {
@@ -407,10 +407,7 @@ export function sanitize(
 
   const storage = resolveStorageAdapters({
     adapters: config.storage ?? [],
-    builtInSlugs: [
-      ...(files ? [files.slug] : []),
-      ...(chatResult.chat.enabled ? [chatResult.chat.assetsSlug] : []),
-    ],
+    builtInSlugs: [...(files ? [files.slug] : []), ...chatUploadSlugs(chatResult.chat)],
   });
 
   const collections = config.collections;

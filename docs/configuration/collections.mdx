@@ -59,7 +59,7 @@ Collections you configure remain ordinary FrogBot collections. Agents need chat 
 
 ### Role markers
 
-FrogBot identifies managed collections by role, not by a required slug. Mark a collection with `chat: true`, `message: true`, or `file: true`; FrogBot keeps its slug and merges in the required configuration.
+FrogBot identifies managed collections by role, not by a required slug. Mark a collection with `chat: true`, `message: true`, `file: true` or `space: true`; FrogBot keeps its slug and merges in the required configuration.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -142,6 +142,7 @@ The following options are available:
 | `message` | `boolean` | `false` | **FrogBot** — adopts this collection as the message store. At most one collection may be marked. [More details](#role-markers). |
 | `file` | `boolean` | `false` | **FrogBot** — adopts this collection as the files store. At most one collection may be marked. [More details](/upload/files). |
 | `usageLog` | `boolean` | `false` | **FrogBot** — adopts this collection as the AI usage log when `ai` is configured. At most one collection may be marked. Without a marker, FrogBot adds a `usage-logs` collection. |
+| `space` | `boolean` | `false` | **FrogBot** — adopts this collection as the Space collection, so its documents get instructions, files and memories that their chats share. At most one collection may be marked. [More details](/memory/spaces#use-your-own-collection). |
 | `admin` | `CollectionAdminConfig` | — | Admin panel options. [More details](#admin-options). |
 | `access` | `CollectionAccess` | Signed-in users only | Access control functions for each operation. [More details](/access-control/collections). |
 | `authorship` | `boolean \| { createdBy?: boolean; updatedBy?: boolean }` | `true` | Records the user who created and last updated each document in `createdBy` and `updatedBy`. `false` turns both off; an object turns each off. [More details](/fields/default-fields). |

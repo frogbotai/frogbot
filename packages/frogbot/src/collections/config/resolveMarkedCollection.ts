@@ -1,7 +1,7 @@
 import { mergeCollection } from './merge.js';
 import type { CollectionConfig } from './types.js';
 
-type CollectionMarker = 'chat' | 'message' | 'usageLog';
+type CollectionMarker = 'chat' | 'message' | 'usageLog' | 'space';
 
 type ResolveMarkedCollectionProps = {
   collectionLabel: string;

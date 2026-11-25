@@ -4,13 +4,17 @@ import type { FrogBotSDKSend } from './types.js';
 
 export type MemoryScopeOptions = {
   /**
-   * The scope word: `me`, `agent`, `team` or a custom word the app declares.
+   * The scope word: `me`, `agent`, `team`, `space` or a custom word the app declares.
    */
   scope: string;
   /**
    * The agent slug the `agent` scope and the app's scope functions see.
    */
   agent?: string;
+  /**
+   * The Space the `space` scope reaches.
+   */
+  space?: number | string;
 };
 
 export type MemorySaveOptions = MemoryScopeOptions & {
@@ -91,39 +95,45 @@ export function memoryClient(send: FrogBotSDKSend) {
     (await send(args)).json() as Promise<T>;
 
   return {
-    save: ({ agent, key, pinned, scope, text }: MemorySaveOptions, init?: RequestInit) =>
-      call<Memory>({ init, method: 'POST', path, json: { scope, agent, text, key, pinned } }),
-    search: ({ agent, limit, query, scope }: MemorySearchOptions, init?: RequestInit) =>
+    save: ({ agent, space, key, pinned, scope, text }: MemorySaveOptions, init?: RequestInit) =>
+      call<Memory>({
+        init,
+        method: 'POST',
+        path,
+        json: { scope, agent, space, text, key, pinned },
+      }),
+    search: ({ agent, space, limit, query, scope }: MemorySearchOptions, init?: RequestInit) =>
       call<MemorySearchHit[]>({
         init,
         method: 'GET',
-        path: withQuery(`${path}/search`, { scope, agent, query, limit }),
+        path: withQuery(`${path}/search`, { scope, agent, space, query, limit }),
       }),
-    list: ({ agent, limit, page, pinned, scope }: MemoryListOptions, init?: RequestInit) =>
+    list: ({ agent, space, limit, page, pinned, scope }: MemoryListOptions, init?: RequestInit) =>
       call<MemoryList>({
         init,
         method: 'GET',
-        path: withQuery(path, { scope, agent, pinned, limit, page }),
+        path: withQuery(path, { scope, agent, space, pinned, limit, page }),
       }),
     get: async (
-      { agent, id, scope }: MemoryScopeOptions & { id: number | string },
+      { agent, space, id, scope }: MemoryScopeOptions & { id: number | string },
       init?: RequestInit,
-    ) => call<Memory>({ init, method: 'GET', path: withQuery(itemPath(id), { scope, agent }) }),
+    ) =>
+      call<Memory>({ init, method: 'GET', path: withQuery(itemPath(id), { scope, agent, space }) }),
     update: async (
-      { agent, id, key, pinned, scope, text }: MemoryUpdateOptions,
+      { agent, space, id, key, pinned, scope, text }: MemoryUpdateOptions,
       init?: RequestInit,
     ) =>
       call<Memory>({
         init,
         method: 'PATCH',
         path: itemPath(id),
-        json: { scope, agent, text, key, pinned },
+        json: { scope, agent, space, text, key, pinned },
       }),
-    forget: async ({ agent, id, scope }: MemoryForgetOptions, init?: RequestInit) =>
+    forget: async ({ agent, space, id, scope }: MemoryForgetOptions, init?: RequestInit) =>
       call<{ deleted: number }>({
         init,
         method: 'DELETE',
-        path: withQuery(id === undefined ? path : itemPath(id), { scope, agent }),
+        path: withQuery(id === undefined ? path : itemPath(id), { scope, agent, space }),
       }),
   };
 }

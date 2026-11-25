@@ -21,7 +21,7 @@ const statuses: Record<MemoryErrorCode, number> = {
 
 const memoryPath = '/frogbot/memory';
 
-const scopeKeys = ['scope', 'agent'];
+const scopeKeys = ['scope', 'agent', 'space'];
 
 const writeKeys = [...scopeKeys, 'text', 'key', 'pinned'];
 
@@ -72,12 +72,13 @@ function endpoint({
     path: `${memoryPath}${path}`,
     handler: async (req) => {
       try {
-        const { agent, scope, ...input } = await read(req);
+        const { agent, scope, space, ...input } = await read(req);
         const id = req.routeParams?.id;
 
         const call = {
           scope,
           ...(agent !== undefined ? { agent } : {}),
+          ...(space !== undefined ? { space } : {}),
           req,
           overrideAccess: false,
         } as MemoryCallArgs;

@@ -1,5 +1,7 @@
 import { Forbidden } from 'payload';
 
+import { canAccessSpace } from '../spaces/access.js';
+import { runChat } from '../spaces/run.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { checkMemoryAccess } from './access.js';
 import { isMemoryAdapterError } from './errors.js';
@@ -40,26 +42,6 @@ export function markMemoryAgentRun<T extends MemoryRunSource['agent']>(agent: T)
   return agent;
 }
 
-async function loadChat({
-  agent,
-  req,
-}: MemoryRunSource): Promise<Record<string, unknown> | undefined> {
-  const { frogbot } = req;
-  const chat = frogbot.config.chat;
-
-  if (agent.chatId === undefined || !chat.enabled || !frogbot.config.memory?.scopes) {
-    return undefined;
-  }
-
-  return frogbot.findByID({
-    collection: chat.chatsSlug,
-    id: agent.chatId,
-    depth: 0,
-    req,
-    overrideAccess: true,
-  });
-}
-
 async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
   const { req } = source;
   const memory = req.frogbot.config.memory;
@@ -71,7 +53,7 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
   }
 
   const own = agentRuns.has(source.agent);
-  const chat = await loadChat(source);
+  const chat = await runChat({ req, chatId: source.agent.chatId });
   const agent = own ? { slug: source.agent.slug } : undefined;
   const overrideAccess = own || source.overrideAccess !== false;
 
@@ -114,11 +96,19 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
     available: async () => (await (resolved ??= resolveAll())).map(({ scope }) => scope),
     defaultScope: () => (req.user ? 'me' : 'agent'),
     mayWrite: async (scope) => {
-      if (!own || scope === 'me' || !memory.access?.write) return true;
+      if (!own || scope === 'me') return true;
+
+      const write = memory.access?.write;
+
+      if (!write && scope !== 'space') return true;
 
       const scopeId = await resolveMemoryScope({ options: memory, scope, req, agent, chat });
 
-      return (await memory.access.write({ req, scope, scopeId })) === true;
+      if (!write) {
+        return canAccessSpace({ req, id: scopeId.slice('space:'.length), kind: 'update' });
+      }
+
+      return (await write({ req, scope, scopeId })) === true;
     },
   };
 }

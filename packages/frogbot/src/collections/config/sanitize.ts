@@ -181,6 +181,7 @@ export function sanitizeCollection(
     file: _file,
     message: _message,
     usageLog: _usageLog,
+    space: _space,
     search: _searchConfig,
     ...collection
   } = c;

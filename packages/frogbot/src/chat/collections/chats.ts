@@ -1,11 +1,13 @@
 import type { Access, CollectionAccess } from '../../collections/config/types.js';
 import type { CollectionConfig } from '../../collections/config/types.js';
+import { spaceField } from '../../spaces/chatField.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { resolveChannelLabel } from '../channelLabel.js';
 
 export type DefaultChatsCollectionProps = {
   slug: string;
   userSlug: string;
+  spacesSlug: string;
   access?: CollectionAccess;
 };
 
@@ -24,6 +26,7 @@ const readOnly = { create: () => false, update: () => false };
 export function defaultChatsCollection({
   slug,
   userSlug,
+  spacesSlug,
   access,
 }: DefaultChatsCollectionProps): CollectionConfig {
   return {
@@ -61,6 +64,7 @@ export function defaultChatsCollection({
         },
       },
       { name: 'agent', type: 'text', index: true },
+      spaceField(spacesSlug),
       {
         name: 'channel',
         type: 'text',

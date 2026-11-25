@@ -57,13 +57,14 @@ async function readableChats({
   return read({ req: toPayloadRequest(req), slug: chatsSlug });
 }
 
-async function uploadBytes({ data, tempFilePath }: UploadedFile): Promise<Uint8Array> {
+export async function uploadBytes({ data, tempFilePath }: UploadedFile): Promise<Uint8Array> {
   if (data?.byteLength || !tempFilePath) return data ?? new Uint8Array();
 
   return readFile(tempFilePath);
 }
 
-async function uploadText({
+/** The text of an uploaded Word or Excel file, or `null` for any other file. Refuses an unreadable one. */
+export async function uploadText({
   req,
   collection,
 }: {

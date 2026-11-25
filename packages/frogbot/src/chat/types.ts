@@ -2,7 +2,14 @@ import type { AgentProfile } from '../agents/types.js';
 
 export type SanitizedChatConfig =
   | { enabled: false }
-  | { enabled: true; chatsSlug: string; messagesSlug: string; assetsSlug: string };
+  | {
+      enabled: true;
+      chatsSlug: string;
+      messagesSlug: string;
+      assetsSlug: string;
+      spacesSlug: string;
+      spaceFilesSlug: string;
+    };
 
 export type ManifestResponse = {
   ai: {

@@ -123,10 +123,12 @@ export type MemoryAdapter = MemoryOptions & {
 
 /** Who a `frogbot.memory` call runs as, and which scope it reaches. */
 export type MemoryCallArgs = {
-  /** A scope word: `me`, `agent`, `team` or a custom word. */
+  /** A scope word: `me`, `agent`, `team`, `space` or a custom word. */
   scope: string;
   /** The agent slug the `agent` scope and scope functions see. */
   agent?: string;
+  /** The Space ID the `space` scope reaches. Defaults to the chat's Space. */
+  space?: number | string;
   /** The chat document scope functions see. */
   chat?: Record<string, unknown>;
   req?: Partial<FrogBotRequest>;

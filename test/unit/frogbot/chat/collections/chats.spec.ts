@@ -6,7 +6,11 @@ import type { FieldHook } from '../../../../../packages/frogbot/src/fields/confi
 import { definePiece } from '../../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 
-const collection = defaultChatsCollection({ slug: 'chats', userSlug: 'users' });
+const collection = defaultChatsCollection({
+  slug: 'chats',
+  userSlug: 'users',
+  spacesSlug: 'spaces',
+});
 
 function reqWithUser(id?: string) {
   return (id ? { user: { id } } : {}) as FrogBotRequest;
@@ -18,7 +22,11 @@ describe('defaultChatsCollection', () => {
   });
 
   it('binds the provided slug and user relation', () => {
-    const renamed = defaultChatsCollection({ slug: 'conversations', userSlug: 'members' });
+    const renamed = defaultChatsCollection({
+      slug: 'conversations',
+      userSlug: 'members',
+      spacesSlug: 'spaces',
+    });
 
     expect(renamed.slug).toBe('conversations');
 
@@ -34,6 +42,7 @@ describe('defaultChatsCollection', () => {
       'title',
       'user',
       'agent',
+      'space',
       'channel',
       'externalId',
       'channelKey',
@@ -154,6 +163,7 @@ describe('defaultChatsCollection', () => {
       const configured = defaultChatsCollection({
         slug: 'chats',
         userSlug: 'users',
+        spacesSlug: 'spaces',
         access: { read },
       });
 

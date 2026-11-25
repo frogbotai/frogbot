@@ -136,7 +136,11 @@ describe('defaultMessagesCollection', () => {
   });
 
   it('uses a message icon that differs from the Chats icon', () => {
-    const chats = defaultChatsCollection({ slug: 'chats', userSlug: 'users' });
+    const chats = defaultChatsCollection({
+      slug: 'chats',
+      userSlug: 'users',
+      spacesSlug: 'spaces',
+    });
 
     expect(collection.admin?.icon).toBe('message-square-text');
     expect(collection.admin?.icon).not.toBe(chats.admin?.icon);
