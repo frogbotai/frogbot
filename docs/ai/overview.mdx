@@ -430,6 +430,7 @@ const severityScore = result.answers.severity.score
 - A boolean probability is an estimate, not an automatic decision.
 - TypeSafe rounds probabilities and scores to two decimal places, and `result.rounding` records that precision.
 - When provided, confidence for choice and score questions is at `result.providerMetadata?.typesafe?.confidence`. It is separate from their answer probabilities.
+- When provided, a score question's label for each score value is at `result.providerMetadata?.typesafe?.legend`, keyed by question name.
 - Evaluation uses the AI SDK's experimental API, which may change in patch releases.
 
 `typesafe-ai/jev` is FrogBot's shorthand for upstream `jev-latest`; `typesafe-ai/jev-latest` also works. Local router slugs can target either model, while HTTP requests use provider-prefixed IDs.
