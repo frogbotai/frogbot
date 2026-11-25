@@ -20,6 +20,7 @@ function runtime(payload = {} as Payload) {
   frogbot.connections = new Connections(frogbot, {
     enabled: false,
     entries: {},
+    apps: {},
     encryption: createCredentialEncryption({ secret: 'email-test-secret' }),
   });
 

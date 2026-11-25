@@ -12,6 +12,7 @@ import type {
   OAuthTokens,
   PieceOAuthRecipe,
   PieceOAuthSave,
+  PieceRunArgs,
 } from '../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
@@ -49,8 +50,9 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
       actions: [
         {
           slug: 'whoami',
+          description: 'Returns the API key of the linked mailbox.',
           input: z.object({}),
-          run: ({ client, req }) => {
+          run: ({ client, req }: PieceRunArgs<object, object, MailAuth>) => {
             requests.push(req);
 
             return Promise.resolve(client.apiKey);

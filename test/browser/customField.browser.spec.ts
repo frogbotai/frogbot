@@ -73,7 +73,9 @@ test('renders built-in and component nav item icons', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('lists ungrouped collections directly under one Collections heading', async ({ page }) => {
+test('lists ungrouped collections under one Collections heading, with internal ones in System', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
@@ -84,14 +86,11 @@ test('lists ungrouped collections directly under one Collections heading', async
   const collections = page.locator('#frogbot-nav-section-collections');
 
   await expect(shell.getByText('Collections', { exact: true })).toHaveCount(1);
-  await expect(collections.locator('.fb-nav-section__scroll > .fb-nav-item')).toHaveText([
-    'Users',
-    'API Keys',
-    'Audit Logs',
-  ]);
+  await expect(collections.locator('.fb-nav-section__scroll > .fb-nav-item')).toHaveText(['Users']);
   await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveText([
     'Content',
     'Panel lab',
+    'System',
   ]);
   await expect(collections.locator('.frogbot-collections-section__group .fb-nav-item')).toHaveText([
     'Posts',
@@ -102,6 +101,8 @@ test('lists ungrouped collections directly under one Collections heading', async
     'Tickets',
     'Scraps',
     'Todos',
+    'API Keys',
+    'Audit Logs',
   ]);
 });
 
@@ -129,16 +130,14 @@ test('lists ungrouped collection cards directly under the Collections settings p
   ]);
 });
 
-test('renders the API Keys collection with the key icon directly under Collections', async ({
-  page,
-}) => {
+test('renders the API Keys collection with the key icon in the System group', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
   await expandSidebar(page);
 
   const apiKeys = page
-    .locator('#frogbot-nav-section-collections .fb-nav-section__scroll > .fb-nav-item')
+    .locator('#frogbot-nav-section-collections .frogbot-collections-section__group .fb-nav-item')
     .filter({ hasText: 'API Keys' });
 
   await expect(apiKeys.locator('svg.lucide-key-round-icon')).toBeVisible();

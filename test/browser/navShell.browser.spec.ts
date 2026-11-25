@@ -133,7 +133,7 @@ test.describe('nav shell on desktop', () => {
     await expect(page.locator('.collections__group #card-files')).toHaveCount(1);
   });
 
-  test('default sidebar shows only the Collections section, with Chats and its icon', async ({
+  test('default sidebar shows only the Collections section, with Chats and its icon in System', async ({
     page,
   }) => {
     await loadWithSidebarOpen(page);
@@ -143,7 +143,14 @@ test.describe('nav shell on desktop', () => {
 
     await expect(chats).toHaveAttribute('href', '/collections/chats');
     await expect(chats.locator('svg')).toHaveCount(1);
-    await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveCount(0);
+    await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveText([
+      'System',
+    ]);
+    await expect(
+      collections
+        .locator('.frogbot-collections-section__group')
+        .getByRole('link', { name: 'Chats' }),
+    ).toHaveCount(1);
     await expect(shell(page).getByText('Collections', { exact: true })).toHaveCount(1);
     await expect(shell(page).getByRole('button', { name: 'New Chat' })).toHaveCount(0);
     await expect(page.locator('#frogbot-nav-section-recents')).toHaveCount(0);

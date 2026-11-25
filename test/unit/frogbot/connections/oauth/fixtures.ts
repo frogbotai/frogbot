@@ -109,6 +109,8 @@ export async function connectionSetup(pieceDefinition: OAuthPieceDefinition = de
         vendor: { tenant: 'one' },
       }),
     ),
+    accountId: '',
+    isDefault: true,
     scopes: ['read'],
     expiresAt: '2000-01-01T00:00:00Z',
     createdAt: '',

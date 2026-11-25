@@ -8,6 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
+import type { Deal } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -199,7 +200,7 @@ describe('notifications plugin', () => {
       overrideAccess: true,
     });
 
-    const user = { ...ana, collection: 'users' };
+    const user = { ...ana, collection: 'users' as const };
     const req = await booted.frogbot.createRequest({ user });
     const id = (await booted.payload.db.beginTransaction()) as number | string;
 
@@ -349,7 +350,7 @@ describe('notifications plugin', () => {
     const one = await deal();
     const two = await deal();
     const req = await anaReq();
-    const save = (record: Doc, who: string) =>
+    const save = (record: Pick<Deal, 'id'>, who: string) =>
       booted.frogbot.create({
         collection: 'comments',
         data: {

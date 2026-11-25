@@ -130,7 +130,7 @@ describePostgres(`postgres vector search [${driver}]`, () => {
 
       expect(result.hits.every(({ doc }) => doc.tenant === 'a')).toBe(true);
 
-      const expected = new Set(
+      const expected = new Set<number | string>(
         corpus
           .filter(({ tenant }) => tenant === 'a')
           .map(({ id, embedding }) => ({ id, score: cosineSimilarity(embedding, vector) }))

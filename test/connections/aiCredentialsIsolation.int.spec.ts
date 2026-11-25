@@ -1,4 +1,5 @@
 import { createGatewayHandler, type FrogBotRequest } from 'frogbot';
+import { toPayloadRequest } from 'frogbot/internal';
 import { getFrogBotPayload } from 'frogbot/test';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -231,7 +232,7 @@ describe(`Linked OpenAI keys stay with their user [${process.env.FROGBOT_DATABAS
     );
 
     const response = await endpoint.handler({
-      ...alice,
+      ...toPayloadRequest(alice),
       payload,
       routeParams: { slug: 'support' },
       headers: new Headers({ 'content-type': 'application/json' }),

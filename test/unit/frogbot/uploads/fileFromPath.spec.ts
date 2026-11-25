@@ -26,8 +26,10 @@ describe('withFileFromPath', () => {
     const result = await withFileFromPath({ collection: 'files', filePath });
 
     expect(result).not.toHaveProperty('filePath');
-    expect(result).toMatchObject({ collection: 'files', file: { name, mimetype } });
-    expect((result as { file: { data: Buffer } }).file.data.toString()).toBe('ribbit');
+    expect(result).toMatchObject({
+      collection: 'files',
+      file: { name, mimetype, data: Buffer.from('ribbit') },
+    });
   });
 
   it('keeps the MIME type Payload detects from the content', async () => {
@@ -40,7 +42,7 @@ describe('withFileFromPath', () => {
   it('leaves options without a filePath, or with a file, as they are', async () => {
     const file = { data: Buffer.from('x'), mimetype: 'text/plain', name: 'x.txt', size: 1 };
     const withFile = { file, filePath: '/nowhere.txt' };
-    const plain = { collection: 'files' };
+    const plain: { collection: string; filePath?: string } = { collection: 'files' };
 
     expect(await withFileFromPath(withFile)).toBe(withFile);
     expect(await withFileFromPath(plain)).toBe(plain);

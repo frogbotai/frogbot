@@ -203,8 +203,7 @@ describe('lazy connection refresh', () => {
 
     vi.spyOn(store, 'withLock').mockImplementationOnce(async (args) => {
       await withLock({
-        owner: args.owner,
-        piece: args.piece,
+        ...args,
         fn: (locked) =>
           locked.upsert({
             method: 'oauth',

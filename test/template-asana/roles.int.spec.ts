@@ -15,7 +15,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type Doc = { id: number | string; [key: string]: unknown };
 
-type User = Doc & { collection: 'users'; roles: string[] };
+type User = Doc & { collection: 'users'; roles: string[]; name?: string | null };
 
 describe('asana template roles', () => {
   let booted: BootedFrogBot;
@@ -44,9 +44,9 @@ describe('asana template roles', () => {
       create: (collection: CollectionSlug, data: Record<string, unknown>) =>
         (frogbot.create as (args: object) => Promise<Doc>)({ collection, data, ...options }),
       update: (collection: CollectionSlug, id: Doc['id'], data: Record<string, unknown>) =>
-        frogbot.update({ collection, id, data, ...options } as never) as Promise<Doc>,
+        (frogbot.update as (args: object) => Promise<Doc>)({ collection, id, data, ...options }),
       delete: (collection: CollectionSlug, id: Doc['id']) =>
-        frogbot.delete({ collection, id, ...options } as never) as Promise<Doc>,
+        (frogbot.delete as (args: object) => Promise<Doc>)({ collection, id, ...options }),
       count: async (collection: CollectionSlug) =>
         (await frogbot.count({ collection, ...options })).totalDocs,
     };
