@@ -1,0 +1,90 @@
+# @frogbotai/plugin-tenancy
+
+Tenants and their members for a FrogBot application: teams, workspaces or organizations that people are invited to by email, each with a role.
+
+```ts
+import { tenancyPlugin } from '@frogbotai/plugin-tenancy';
+import { buildConfig } from 'frogbot';
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: databaseAdapter,
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  plugins: [tenancyPlugin({ personalTenant: true })],
+});
+```
+
+The plugin adds two collections after the auth collection:
+
+- `tenants`, with a `name`, a unique `slug` made from the name (`acme-co`, then `acme-co-2`), and a `members` join. Whoever creates a tenant becomes its owner. Members read it, admins and the owner rename it, and nobody deletes it.
+- `members`, one row per person in a tenant: `tenant`, `email`, `user` and `role` (`owner`, `admin`, `editor` or `viewer`, `viewer` by default). An email is unique within a tenant and stored in lower case. Members read their tenants' rows, admins and the owner add, change and remove them, and anyone but the owner may remove their own row to leave.
+
+Each tenant has exactly one owner, who passes every admin check. Nobody becomes the owner by an invite, a new row or a role change (400). Anyone else who changes or removes the owner's row is refused (403). The owner demoting or removing themselves gets 409, and so does a super user or the local API with access overridden, one row or in bulk, even when two people try at once: "The Owner stays in the team until they hand it over to another member." `handOverTenant(req, { tenant, to, by })` is the one way to move it: under the tenant's lock, in one transaction, the member `to` (who has signed in) becomes the owner and the owner an admin. `by: 'owner'` lets only the signed-in owner do it; `by: 'superUser'` is for a caller you checked, such as staff replacing an owner who is gone. An app that deletes a whole tenant sets `req.context[deletingTenant]` so its owner row can go too. A member who removes their own row while nobody else in the tenant has signed in is refused (409), so no tenant is left with nobody to run it; the local API with access overridden is not checked.
+
+People are invited before they have an account. A new row links to the account with that email, and each sign-in claims the rows still waiting for the user's email. The plugin sends no email itself: tell the person from the members collection's `afterChange` hook, through `members: { hooks: { afterChange: [...] } }`. With `personalTenant`, a sign-in that finds the user owning none of their own makes one for them, which they own: "Colby's team" for `teams`. By default "their own" is any tenant they are a member of; `own(user)` narrows it, such as `{ personalOf: { equals: user.id } }`.
+
+The owner checks lock the tenant and check again after the write, so they need transactions: use a database adapter with transactions on (`transactionOptions: {}` for SQLite).
+
+## Options
+
+| Option           | Default     | Description                                                                                                                                                                                                                                    |
+| ---------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `authCollection` | `'users'`   | The auth collection members link to. It must exist with auth enabled.                                                                                                                                                                          |
+| `tenantsSlug`    | `'tenants'` | The tenants collection's slug.                                                                                                                                                                                                                 |
+| `membersSlug`    | `'members'` | The members collection's slug.                                                                                                                                                                                                                 |
+| `tenantField`    | `'tenant'`  | The members collection's relationship to its tenant.                                                                                                                                                                                           |
+| `tenants`        |             | Merged into the tenants collection: fields are added (or replace the plugin's by name), hooks run after the plugin's, access replaces it per operation.                                                                                        |
+| `members`        |             | Merged into the members collection the same way.                                                                                                                                                                                               |
+| `isSuperUser`    |             | `(req) => boolean`: users who read and manage every tenant and member, such as staff. Tenants still can't be deleted.                                                                                                                          |
+| `requestTenant`  |             | `(req) => id \| undefined`: the one tenant a request is limited to, such as an API key made for it. `myTenants` and the helpers built on it see only that tenant.                                                                              |
+| `handover`       |             | How the owner hands a tenant over, such as `'POST /api/workspaces/:id/owner'`: named in every refusal to make someone the owner.                                                                                                               |
+| `personalTenant` | off         | `true`, or `{ name, skip, data, own }`: `name(user)` names the new tenant, `skip(user)` gives some users, such as service accounts, none, `data(user)` adds fields to it, and `own(user)` is the `Where` on tenants that finds the user's own. |
+
+```ts
+tenancyPlugin({
+  tenantsSlug: 'teams',
+  membersSlug: 'team-members',
+  tenantField: 'team',
+  tenants: {
+    admin: { group: 'Teams' },
+    fields: [{ name: 'plan', type: 'select', options: ['free', 'pro'] }],
+    hooks: { beforeChange: [syncPlan] },
+  },
+  members: { hooks: { afterDelete: [removeTheirShares] } },
+  isSuperUser: (req) => req.user?.email === 'support@example.com',
+  personalTenant: { skip: (user) => user.kind === 'service' },
+});
+```
+
+## Access helpers
+
+The plugin scopes only its own collections. Your collections opt in with the helpers:
+
+```ts
+import { inTenants, myTenants, tenantRole } from '@frogbotai/plugin-tenancy';
+
+const apps: CollectionConfig = {
+  slug: 'apps',
+  access: {
+    read: inTenants('team'),
+    update: inTenants('team', { role: 'admin' }),
+    create: async ({ req, data }) =>
+      (await myTenants(req)).editable.some((id) => String(id) === String(data?.team)),
+  },
+  fields: [{ name: 'team', type: 'relationship', relationTo: 'teams', required: true }],
+};
+```
+
+| Helper                           | Returns                                                                                                                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `myTenants(req)`                 | `{ all, editable, admin, owner }`: the IDs of the tenants the signed-in user is in, edits, admins (owners included) and owns. Read once per request. |
+| `tenantRole(req, tenant)`        | The user's role in the tenant, given its ID or the document, or `null`.                                                                              |
+| `adminsTenant(req, tenant)`      | Whether the user is an admin or the owner of the tenant.                                                                                             |
+| `ownsTenant(req, tenant)`        | Whether the user owns the tenant.                                                                                                                    |
+| `roleAtLeast(role, least)`       | Whether `role` is `least` or above it: `roleAtLeast('owner', 'admin')` is `true`.                                                                    |
+| `handOverTenant(req, options)`   | Moves ownership to another member, as above. Answers `{ done: true, from, to }` or `{ done: false, status, message }`.                               |
+| `inTenants(field, { role? })`    | An access function: documents whose `field` is one of the user's tenants where they hold at least `role`.                                            |
+| `forgetTenants(req)`             | Drops the request's memberships, so the next `myTenants` reads them again. The plugin's hooks call it.                                               |
+| `personalTenantName(user, noun)` | The default personal tenant name: "Colby's team", or "My team" with no name or email.                                                                |
+
+The helpers find the plugin's slugs from the config it built, so a process runs one `tenancyPlugin`. Super users get no special treatment from the helpers.

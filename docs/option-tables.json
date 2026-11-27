@@ -1360,6 +1360,11 @@
     "type": "import('@frogbotai/plugin-two-factor').TwoFactorPluginOptions"
   },
   {
+    "page": "plugins/tenancy",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-tenancy').TenancyPluginOptions"
+  },
+  {
     "page": "plugins/audit-log",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-audit-log').AuditLogPluginOptions"
