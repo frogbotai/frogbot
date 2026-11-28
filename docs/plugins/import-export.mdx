@@ -171,7 +171,7 @@ Every failure is a [Problem](/agents/overview#invoke-over-http). Branch on `code
 | `import-export.ai-model-missing` | `404` | `suggest-columns` was called with no AI model set. |
 | `import-export.ai-suggestion-failed` | `502` | The model call failed. The server log has the model's error. |
 
-An export download answers `import-export.collection-not-exportable` (`400`) for a collection the export collection doesn't serve, and `import-export.export-not-allowed` (`403`) when the user can't read it.
+An export download answers `import-export.collection-not-exportable` (`400`) for a collection the export collection doesn't serve, `import-export.export-not-allowed` (`403`) when the user can't read it, and `auth.unauthenticated` (`401`) when no one is signed in.
 
 ### Link records from code
 

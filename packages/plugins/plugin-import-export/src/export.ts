@@ -90,7 +90,11 @@ function checkedDownload(handler: PayloadHandler, exportsSlug: string): PayloadH
       target.access.read,
     );
 
-    if (!allowed) throw importExportError('import-export.export-not-allowed');
+    if (!allowed) {
+      throw req.user
+        ? importExportError('import-export.export-not-allowed')
+        : frogbotError('auth.unauthenticated');
+    }
 
     const patched = { ...body, data: withoutStatusFilter(req, data) };
 
