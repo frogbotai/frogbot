@@ -53,7 +53,9 @@ vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
   loadConfig: mocks.loadConfig,
 }));
 
+import { exitCodeOf, failureJson } from '../../../../packages/frogbot/src/bin/json.js';
 import { migrate } from '../../../../packages/frogbot/src/bin/migrate.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 
 const COMMAND_TABLE = [
   ['migrate', 'migrate'],
@@ -113,6 +115,20 @@ describe('migrate', () => {
         message: '[frogbot] migrate:status failed: boom',
         exitCode: 1,
         code: 'MIGRATE_FAILED',
+      });
+    });
+
+    it("keeps a FrogBotError's code and catalog exit", async () => {
+      mocks.adapter.migrateStatus.mockRejectedValueOnce(
+        frogbotError('request.invalid', '`port` must be a number.'),
+      );
+
+      const thrown = await migrate(['migrate:status']).catch((error: unknown) => error);
+
+      expect(exitCodeOf(thrown)).toBe(2);
+      expect(failureJson('migrate:status', thrown).error).toMatchObject({
+        code: 'request.invalid',
+        detail: '`port` must be a number.',
       });
     });
 

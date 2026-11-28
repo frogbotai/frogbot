@@ -26,11 +26,12 @@ describe('CLI output for a FrogBotError', () => {
     expect(exitCodeOf(new CliError('nope', { exitCode: 4 }))).toBe(4);
   });
 
-  it('sends the Problem as `error` in --json output, with `message` set to the detail', () => {
+  it('sends { ok: false, error: <Problem> } in --json output, with `message` set to the detail', () => {
     const result = failureJson('migrate', frogbotError('request.invalid', 'x'));
 
     expect(result).toMatchObject({
       command: 'migrate',
+      ok: false,
       success: false,
       error: {
         code: 'request.invalid',
