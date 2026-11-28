@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import type { Problem } from '@frogbotai/protocol';
 import type { Config as PayloadConfig } from 'payload';
 
+import { frogbotError } from './catalog.js';
 import { isFrogBotError } from './FrogBotError.js';
 import { toProblem } from './toProblem.js';
 
@@ -61,6 +62,41 @@ export function problemResponse(
     status: problem.status,
     headers: problemHeaders(problem, error),
   });
+}
+
+const ROUTE_NOT_FOUND = /^Route not found "(.*)"$/;
+
+/**
+ * Payload's own 404 for a path no endpoint matches, which it answers without running `afterError`,
+ * rewritten as a `route.not-found` Problem. Every other response passes through unchanged.
+ */
+export async function withUnknownRouteProblem(
+  response: Response,
+  request: Request,
+): Promise<Response> {
+  if (response.status !== 404 || response.headers.get('content-type')?.includes('problem')) {
+    return response;
+  }
+
+  const body = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as { message?: unknown } | null;
+
+  const path = typeof body?.message === 'string' ? ROUTE_NOT_FOUND.exec(body.message)?.[1] : null;
+
+  if (!path) return response;
+
+  const problem = problemResponse(
+    frogbotError('route.not-found', `No ${request.method} route at ${path}.`),
+    { req: request },
+  );
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase().startsWith('access-control-')) problem.headers.set(key, value);
+  });
+
+  return problem;
 }
 
 /**

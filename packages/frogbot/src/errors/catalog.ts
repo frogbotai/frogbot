@@ -76,6 +76,11 @@ const authErrors = {
 } satisfies Record<string, ErrorDefinition>;
 
 const docErrors = {
+  'route.not-found': {
+    status: 404,
+    title: 'No API route matches this path.',
+    hint: 'Check the method and path against the REST API docs, such as `GET /api/<collection>`.',
+  },
   'doc.not-found': {
     status: 404,
     title: 'Not found.',

@@ -68,6 +68,7 @@ import type {
 import { resolveConfigDir } from './config/resolveConfigPath.js';
 import type { FrogBotSanitizedConfig } from './config/sanitized.js';
 import { Connections } from './connections/api.js';
+import { withUnknownRouteProblem } from './errors/afterError.js';
 import { ensureAutonumbers } from './fields/baseFields/autonumber/counter.js';
 import { ensureFrogBotInstance, registerFrogBotInstance } from './instanceRegistry.js';
 import type { Jobs } from './jobs/types.js';
@@ -218,7 +219,10 @@ export class FrogBot {
   }
 
   async handleRequest(request: Request): Promise<Response> {
-    return handleEndpoints({ config: state(this).payload.config, request });
+    return withUnknownRouteProblem(
+      await handleEndpoints({ config: state(this).payload.config, request }),
+      request,
+    );
   }
 
   async createRequest(req?: Partial<FrogBotRequest>): Promise<FrogBotRequest> {

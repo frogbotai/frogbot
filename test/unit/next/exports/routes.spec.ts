@@ -68,4 +68,36 @@ describe('@frogbotai/next routes', () => {
       expect(payloadConfig.endpoints).toEqual([]);
     },
   );
+
+  it("rewrites Payload's unknown-route 404 as a route.not-found Problem, and passes the rest through", async () => {
+    const { config } = makeConfig();
+    const notFound = Response.json(
+      { message: 'Route not found "/api/nope"' },
+      { status: 404, headers: { 'access-control-allow-origin': '*' } },
+    );
+
+    const found = Response.json({ docs: [] });
+
+    mocks.handlerBuilder.mockImplementationOnce(() => () => Promise.resolve(notFound));
+
+    const unknown = await (
+      routes.REST_GET(config) as unknown as (request: Request, args: unknown) => Promise<Response>
+    )(new Request('http://localhost/api/nope'), {});
+
+    expect(unknown.status).toBe(404);
+    expect(unknown.headers.get('content-type')).toContain('application/problem+json');
+    expect(unknown.headers.get('access-control-allow-origin')).toBe('*');
+    expect(await unknown.json()).toMatchObject({
+      code: 'route.not-found',
+      detail: 'No GET route at /api/nope.',
+    });
+
+    mocks.handlerBuilder.mockImplementationOnce(() => () => Promise.resolve(found));
+
+    const listed = await (
+      routes.REST_GET(config) as unknown as (request: Request, args: unknown) => Promise<Response>
+    )(new Request('http://localhost/api/posts'), {});
+
+    expect(listed).toBe(found);
+  });
 });
