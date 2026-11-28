@@ -1,5 +1,5 @@
 import type { FormRule, FormRuleMatch, FormRuleOperator } from '@frogbotai/ui/forms/rules';
-import type { CollectionAccess, CollectionSlug, FrogBotRequest } from 'frogbot';
+import type { CollectionAccess, CollectionSlug, FrogBotRequest, Problem } from 'frogbot';
 
 export type { FormRule, FormRuleMatch, FormRuleOperator };
 
@@ -227,10 +227,9 @@ export type FormFieldError = {
 /** An answer a confirmed submission didn't use. `reason` is for reading and may be reworded. */
 export type FormIgnoredAnswer = { field: string; reason: string };
 
+/** A confirmed submission, or the `Problem` that says why it was refused. */
 export type FormSubmitResponse =
-  | { confirmation: FormConfirmation; ignored?: FormIgnoredAnswer[] }
-  | { errors: FormFieldError[] }
-  | { error: string };
+  { confirmation: FormConfirmation; ignored?: FormIgnoredAnswer[] } | Problem;
 
 /** `req.context.form` while a submission creates its record. */
 export type FormSubmission = {

@@ -104,7 +104,10 @@ describe(`forms plugin spam protection [${adapterLabel}]`, () => {
     );
 
     expect(status).toBe(400);
-    expect(body).toEqual({ error: expect.stringContaining('verify') });
+    expect(body).toMatchObject({
+      code: 'forms.not-human',
+      detail: expect.stringContaining('verify'),
+    });
     expect(await leadCount()).toBe(0);
 
     expect(Object.fromEntries(verifications[0])).toEqual({

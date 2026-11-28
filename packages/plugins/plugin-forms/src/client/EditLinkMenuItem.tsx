@@ -126,9 +126,9 @@ export function EditLinkMenuItem({ defaultExpiry, maxExpiry }: EditLinkMenuItemP
         }),
       });
 
-      const result = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+      const result = (await response.json().catch(() => ({}))) as { url?: string; detail?: string };
 
-      if (!response.ok || !result.url) setError(result.error ?? 'The link could not be created.');
+      if (!response.ok || !result.url) setError(result.detail ?? 'The link could not be created.');
       else setUrl(result.url);
     } catch {
       setError('The link could not be created.');

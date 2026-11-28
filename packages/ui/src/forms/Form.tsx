@@ -1,4 +1,5 @@
 'use client';
+import type { Problem } from '@frogbotai/protocol';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '../components/button.js';
@@ -84,6 +85,16 @@ function isFiles(value: FormValue | undefined): value is File[] {
   return Array.isArray(value) && value.some((item) => typeof item !== 'string');
 }
 
+function problemFields(problem: Problem): FormFieldError[] {
+  return problem.errors.flatMap(
+    (entry) =>
+      entry.data?.errors?.map(({ path, message }) => ({
+        ...(path ? { field: path } : {}),
+        message,
+      })) ?? [],
+  );
+}
+
 async function post(
   url: string,
   body: unknown,
@@ -112,7 +123,13 @@ async function post(
 
   return (
     ((await response.json().catch(() => undefined)) as FormSubmitResponse | undefined) ?? {
-      error: FAILED,
+      code: 'internal',
+      title: FAILED,
+      status: response.status,
+      detail: FAILED,
+      retryable: false,
+      type: '',
+      errors: [],
     }
   );
 }
@@ -323,8 +340,10 @@ export function Form({ definition, submitUrl, onSubmitted, eventUrl, className }
 
       turnstile.reset();
 
-      if ('errors' in result) showErrors(result.errors);
-      else setFormErrors([result.error || FAILED]);
+      const fields = problemFields(result);
+
+      if (fields.length) showErrors(fields);
+      else setFormErrors([result.detail || FAILED]);
     } catch {
       turnstile.reset();
       setFormErrors([FAILED]);

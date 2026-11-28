@@ -116,7 +116,7 @@ The page and the server run the same check, `visibleQuestions` from `@frogbotai/
 
 ## Who can open a form
 
-Like any collection, `forms` is readable by anyone and writable by signed-in users unless you pass `access`, which is merged over those defaults. A visitor who can't read a form gets the same 404 as for a form that doesn't exist:
+Like any collection, `forms` is readable by anyone and writable by signed-in users unless you pass `access`, which is merged over those defaults. A visitor who can't read a form gets the same `404`, code `forms.not-found`, as for a form that doesn't exist:
 
 ```ts
 formsPlugin({
@@ -369,10 +369,24 @@ Content-Type: application/json
 - Each answer must have its question's type: a boolean for a checkbox, a number or numeric string for a number, an array of strings for a multi-select, and a string for every other question. `null` and `""` count as no answer. A wrong-typed answer to a shown question is refused with `400`, every one at once, alongside any file errors, and nothing is saved:
 
   ```json
-  { "errors": [{ "field": "age", "message": "age: expected a number or numeric string, got \"forty\".", "code": "invalid_answer" }] }
+  {
+    "code": "forms.invalid-answer",
+    "status": 400,
+    "title": "An answer has the wrong type for its question.",
+    "detail": "An answer has the wrong type for its question.",
+    "hint": "Send each answer in its question's type, as the form definition lists.",
+    "errors": [
+      {
+        "message": "An answer has the wrong type for its question.",
+        "data": { "errors": [{ "path": "age", "message": "age: expected a number or numeric string, got \"forty\"." }] }
+      }
+    ]
+  }
   ```
 
-- A form that is closed, past `closesAt` or at `maxResponses` answers `410`.
+  Every refusal is a [Problem](/agents/overview#invoke-over-http): branch on `code`, show `detail`, and find each refused answer in `errors[0].data.errors`. `<Form>` does this for you.
+
+- A form that is closed, past `closesAt` or at `maxResponses` answers `410` with code `forms.closed`.
 - On success the response is `{ "confirmation": { "type": "message", "message": "…" } }` or `{ "confirmation": { "type": "redirect", "url": "/thanks" } }`, never the record.
 - Answers that were sent but not saved are listed in `ignored`: answers to questions a rule hid, even wrong-typed ones, with the rules that hid them (files sent for a hidden question are dropped without a listing), and keys that aren't questions on the form. `field` and the shape are stable; `reason` is for reading and may be reworded. `ignored` is left out when nothing was ignored. Undeclared parameters are dropped, and a declared parameter is cut to 500 characters.
 
@@ -386,9 +400,9 @@ Content-Type: application/json
   }
   ```
 
-- When the collection refuses the record, the response is `400` with `{ "errors": [{ "field": "email", "message": "…" }] }`.
-- With files, send `multipart/form-data` as described in [How files are saved](#how-files-are-saved). Files over the app's upload limits answer `413`.
-- A missing or refused Turnstile token answers `400`, and too many submits from one address answer `429` with a `Retry-After` header. See [Spam protection](#spam-protection).
+- When the collection refuses the record, the response is `400` with code `forms.invalid` and each refused field in `errors[0].data.errors`, as `{ "path": "email", "message": "…" }`.
+- With files, send `multipart/form-data` as described in [How files are saved](#how-files-are-saved). Files over the app's upload limits answer `413` with code `forms.files-too-large`.
+- A missing or refused Turnstile token answers `400` with code `forms.not-human`, and too many submits from one address answer `429` with code `forms.rate-limited` and a `Retry-After` header. See [Spam protection](#spam-protection).
 
 Both take `?link=<token>` for an [edit link](#edit-links): the definition then carries the record's answers as `values`, and the submit updates that record. An `update` form answers `404` without a link.
 
@@ -497,7 +511,7 @@ A link works for any number of saves until it expires; set `maxSubmissions: 1` f
 - Saving keeps only the form's questions, ignores URL parameters, and updates the record with `overrideAccess: false`. Emptying an answer clears its field, and a wrong-typed answer is refused with `400` and spends no use, as on [submit](#endpoints). The response is the confirmation, with any `ignored` answers, or field errors, never the record.
 - While a link is used, each listed collection's `access.read` and `access.update` admit only the link's record. `req.context.formLink` holds `{ id, collection, record }`, so your hooks can tell link saves apart; only the plugin can set it, and a hook that writes another collection or record with the same `req` isn't admitted there.
 - `updatedBy` stays as it was, since nobody is signed in. The link's `submissions` and `lastSubmittedAt` record each save. A save the collection refuses spends no use.
-- An unknown, expired, revoked or used-up link, or another form's, shows one "This link is no longer valid" page, and the endpoints answer `410` with no detail. With `trustProxy`, each such link counts toward the visitor's [rate limit](#spam-protection).
+- An unknown, expired, revoked or used-up link, or another form's, shows one "This link is no longer valid" page, and the endpoints answer `410` with code `forms.link-invalid`, and say nothing about which case it was. With `trustProxy`, each such link counts toward the visitor's [rate limit](#spam-protection).
 - The token is random, not signed, so it never signs anyone in, and changing `FROGBOT_SECRET` doesn't break links.
 
 Saving an `update` or `both` form is refused, naming the field, when a question's `access.read` or `access.update` denies a signed-out request, or when it's a file question. Collections with drafts can't take edit links.
