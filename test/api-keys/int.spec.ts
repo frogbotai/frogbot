@@ -929,7 +929,7 @@ describe('API keys plugin integration', () => {
       password: 'frogbot-test-password',
     };
 
-    type Minted = { id: number | string; token: string; mintedBy?: unknown; error?: string };
+    type Minted = { id: number | string; token: string; mintedBy?: unknown; detail?: string };
 
     let ownerId: Account['id'];
     let session: { Authorization: string };
@@ -1418,7 +1418,12 @@ describe('API keys plugin integration', () => {
   });
 
   describe('expiring keys', () => {
-    type Minted = { id: number | string; token: string; expiresAt?: string | null; error?: string };
+    type Minted = {
+      id: number | string;
+      token: string;
+      expiresAt?: string | null;
+      detail?: string;
+    };
 
     let session: { Authorization: string };
 
