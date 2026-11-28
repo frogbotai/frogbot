@@ -78,9 +78,7 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
     }
 
     if (RESERVED_TOOL_NAMES.has(tool.slug)) {
-      throw new Error(
-        `[plugin-mcp] Tool '${tool.slug}' has the name of a built-in Payload MCP tool.`,
-      );
+      throw new Error(`[plugin-mcp] Tool '${tool.slug}' has the name of a built-in MCP tool.`);
     }
 
     assertListableSchema(tool.slug, tool.inputSchema);

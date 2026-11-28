@@ -258,9 +258,9 @@ function queueWithRequest({
         code: 'IMPORT_EXPORT_HOOKS',
         path: `plugins.importExport.${path}`,
         message: [
-          `[plugin-import-export] Expected ${count} afterChange hooks on Payload's ${kind} collection '${collection.slug}', found ${afterChange.length}.`,
+          `[plugin-import-export] Expected ${count} afterChange hooks on the ${kind} collection '${collection.slug}', found ${afterChange.length}.`,
           `Your ${option} runs after this check, so it isn't the cause: add your own hooks to the collection it returns.`,
-          `The installed @payloadcms/plugin-import-export is a different version than this plugin supports (${supportedPayloadVersion()}): install that version.`,
+          `The engine this plugin wraps, @payloadcms/plugin-import-export, is installed at a different version than it supports (${supportedPayloadVersion()}): remove any override of it and reinstall @frogbotai/plugin-import-export.`,
         ].join(' '),
       });
     }

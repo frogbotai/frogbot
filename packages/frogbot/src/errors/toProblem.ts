@@ -3,6 +3,7 @@ import type { Problem, ProblemEntry } from '@frogbotai/protocol';
 import { frogbotError } from './catalog.js';
 import { ERRORS_DOCS_URL, type FrogBotError, isFrogBotError } from './FrogBotError.js';
 import { gatewayFrogBotError, isGatewayError } from './gateway.js';
+import { toFrogBotMessage } from './upstreamMessages.js';
 
 type PayloadErrorLike = Error & {
   status?: number;
@@ -69,7 +70,9 @@ export function toFrogBotError(error: unknown, options: ToProblemOptions = {}): 
 
   if (!isPayloadError(error)) {
     return frogbotError('internal', {
-      ...(options.debug && error instanceof Error ? { detail: error.message } : {}),
+      ...(options.debug && error instanceof Error
+        ? { detail: toFrogBotMessage(error.message) }
+        : {}),
       cause: error,
     });
   }
@@ -91,11 +94,16 @@ export function toFrogBotError(error: unknown, options: ToProblemOptions = {}): 
   }
 
   if (code === 'auth.forbidden' && options.signedIn === false) {
-    return frogbotError(code, { detail: error.message, hint: SIGN_IN_HINT, status, cause: error });
+    return frogbotError(code, {
+      detail: toFrogBotMessage(error.message),
+      hint: SIGN_IN_HINT,
+      status,
+      cause: error,
+    });
   }
 
   return frogbotError(code ?? (status >= 500 ? 'internal' : 'request.rejected'), {
-    detail: error.message,
+    detail: toFrogBotMessage(error.message),
     status,
     cause: error,
   });

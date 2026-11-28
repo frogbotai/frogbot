@@ -240,9 +240,9 @@ describe('importExportPlugin', () => {
         path: `plugins.importExport.${option}`,
         message: expect.stringMatching(
           new RegExp(
-            `^\\[plugin-import-export\\] Expected ${expected} afterChange hooks on Payload's ${kind} collection '${kind}s', found 0\\. ` +
+            `^\\[plugin-import-export\\] Expected ${expected} afterChange hooks on the ${kind} collection '${kind}s', found 0\\. ` +
               `Your ${option} runs after this check, so it isn't the cause: add your own hooks to the collection it returns\\. ` +
-              `The installed @payloadcms/plugin-import-export is a different version than this plugin supports \\(.+\\): install that version\\.$`,
+              `The engine this plugin wraps, @payloadcms/plugin-import-export, is installed at a different version than it supports \\(.+\\): remove any override of it and reinstall @frogbotai/plugin-import-export\\.$`,
           ),
         ),
       });

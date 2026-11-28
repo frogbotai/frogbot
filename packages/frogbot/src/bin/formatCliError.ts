@@ -1,5 +1,7 @@
 import { inspect, types } from 'node:util';
 
+import { toFrogBotMessage } from '../errors/upstreamMessages.js';
+
 const prefix = '[frogbot]';
 const maxCauses = 5;
 const indent = '      ';
@@ -54,11 +56,11 @@ function formatCause(cause: unknown): string {
     continuation.push(`${indent}(${hidden} internal ${hidden === 1 ? 'frame' : 'frames'} hidden)`);
   }
 
-  return [`  Caused by: ${first}`, ...continuation].join('\n');
+  return [`  Caused by: ${toFrogBotMessage(first)}`, ...continuation].join('\n');
 }
 
 export function formatCliError(error: unknown, context?: string): string {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = toFrogBotMessage(error instanceof Error ? error.message : String(error));
   const detail = message.startsWith(prefix) ? message.slice(prefix.length).trimStart() : message;
   const head = context ? `${prefix} ${context}: ${detail}` : `${prefix} ${detail}`;
 

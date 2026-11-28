@@ -1,4 +1,4 @@
-import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
+import { buildConfig as payloadBuildConfig } from 'payload';
 
 import { sanitizeSettings, validateAppIcon } from '../admin/config/sanitize.js';
 import { validateAdminIcon } from '../admin/icons.js';
@@ -64,7 +64,9 @@ import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/r
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
 import { resolveStorageAdapters } from '../uploads/storage.js';
+import { assertUploadOptions } from './assertUploadOptions.js';
 import { attachFrogBotInstance } from './attachFrogBot.js';
+import { toBuildError } from './buildError.js';
 import { buildPayloadConfig } from './buildPayloadConfig.js';
 import { hideBuiltInGraphQL } from './hideBuiltInGraphQL.js';
 import { resolveFrogBotRunner } from './resolveFrogBotRunner.js';
@@ -183,6 +185,7 @@ export function sanitize(
   { mode = getValidationMode() }: { mode?: ValidationMode } = {},
 ): FrogBotSanitizedConfig {
   assertRichTextEditor(config);
+  assertUploadOptions(config);
 
   if ('globals' in config && config.globals !== undefined) {
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
@@ -221,7 +224,7 @@ export function sanitize(
     const sanitizedConfig = sanitizedConfigRef.current;
 
     if (!sanitizedConfig) {
-      throw new Error('[frogbot] Payload initialized before config sanitization completed.');
+      throw new Error('[frogbot] FrogBot started before its config finished building.');
     }
 
     return ensureFrogBotInstance(payload, () => initFrogBotFromPayload(payload, sanitizedConfig));
@@ -233,7 +236,7 @@ export function sanitize(
     const sanitizedConfig = sanitizedConfigRef.current;
 
     if (!sanitizedConfig) {
-      throw new Error('[frogbot] Payload initialized before config sanitization completed.');
+      throw new Error('[frogbot] FrogBot started before its config finished building.');
     }
 
     const frogbot = await ensureFrogBotInstance(
@@ -478,7 +481,7 @@ export function sanitize(
     onInit: async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig) {
-        throw new Error('[frogbot] Payload initialized before config sanitization completed.');
+        throw new Error('[frogbot] FrogBot started before its config finished building.');
       }
 
       const frogbot = await ensureFrogBotInstance(
@@ -534,14 +537,7 @@ export function sanitize(
       return rewriteComponentPaths(built);
     })
     .catch((error: unknown) => {
-      if (error instanceof MissingEditorProp) {
-        throw new Error(
-          '[frogbot] A nested rich text field requires an explicit Lexical editor to avoid recursive defaults. Configure editor: lexicalEditor({}) on the nested field using @frogbotai/richtext-lexical.',
-          { cause: error },
-        );
-      }
-
-      throw error;
+      throw toBuildError(error);
     });
 
   const sanitizedConfig: FrogBotSanitizedConfig = {
