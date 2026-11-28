@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { onTestFinished } from 'vitest';
+import { afterAll, onTestFinished, vi } from 'vitest';
 
 import type {
   DeployConfig,
@@ -10,6 +10,27 @@ import type {
   DeployIO,
   DeployTarget,
 } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
+
+const fixtureKeys = [
+  'API_KEY',
+  'Api_Key',
+  'DATABASE_URL',
+  'FROGBOT_SECRET',
+  'HASH',
+  'NEXT_PUBLIC_SITE',
+  'OPENAI_API_KEY',
+  'PADDED',
+  'PEM',
+  'QUOTED',
+  'TOKEN',
+  '_INTERNAL',
+];
+
+for (const key of fixtureKeys) vi.stubEnv(key, undefined);
+
+afterAll(() => {
+  vi.unstubAllEnvs();
+});
 
 export async function tempDir(): Promise<string> {
   const dir = await realpath(await mkdtemp(join(tmpdir(), 'frogbot-deploy-test-')));

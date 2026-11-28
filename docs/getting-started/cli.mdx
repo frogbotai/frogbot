@@ -30,8 +30,8 @@ Run
 ```
 
 - **One command's flags.** `frogbot <command> --help`, or `-h`, prints that command's usage and flags and exits `0`. In `frogbot run <file>`, flags after the file go to the file.
-- **Version.** `frogbot --version`, or `-v`, prints the installed version and exits `0`. It loads no config, so it works in any folder.
-- **For agents.** `frogbot help --json`, or `frogbot --help --json`, prints one object with the version, the exit codes, and every command by group with its `summary`, `usage` and `flags`. Plugin commands appear when the folder has an app.
+- **Version.** `frogbot --version`, or `-v`, prints the installed version and exits `0`. It loads no config, so it works in any folder. With `--json` it prints `{ "command": "version", "success": true, "version": "0.43.0" }`.
+- **For agents.** `frogbot help --json`, or `frogbot --help --json`, prints one object with the version, the exit codes, and every command by group with its `summary`, `usage` and `flags`. Plugin commands appear when the folder has an app. `frogbot <command> --help --json` prints one object for that command: `command`, `summary`, `usage`, `flags`, and `help`, the text `--help` prints.
 - **A broken config.** When the config fails to load, the list still prints, followed by the error, and `frogbot` exits `1`.
 
 ## JSON output
@@ -46,7 +46,7 @@ Every command that finishes takes `--json`: `status`, `up`, `down`, `check`, `de
 { "command": "up", "success": false, "error": { "code": "BUILD_FAILED", "message": "/apps/crm is already up at http://127.0.0.1:3000, but its build failed; ..." } }
 ```
 
-A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command's own code (such as `BUILD_FAILED`, `CONFIRM_REQUIRED` or `USERS_EXIST`), or `FAILED`. `deploy` keeps its own result shape (see [Deployment](/deployment/overview)). `start`, `dev`, `run` and `channels:run` run until you stop them or hand over to another program, so they refuse `--json` with exit `2`.
+A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command's own code (such as `BUILD_FAILED`, `CONFIRM_REQUIRED`, `CANCELLED` or `USERS_EXIST`), or `FAILED`. Answering "no" at a `migrate` prompt exits `1` with `CANCELLED` (on `migrate:refresh`, after the rollback has already run), so `frogbot migrate && frogbot deploy` stops there. `deploy` keeps its own result shape (see [Deployment](/deployment/overview)). `start`, `dev`, `run` and `channels:run` run until you stop them or hand over to another program, so they refuse `--json` with exit `2`.
 
 | Command | What `--json` adds beside `success` |
 | --- | --- |
@@ -464,6 +464,7 @@ frogbot up
 | The first build or start fails | Prints the error and exits `1`. The app stays up in state `build failed`, serving nothing, and builds again on your next change, including `pnpm add`. `frogbot down` stops it. |
 | The app in this folder is already up | Prints the same URL, says it is watching for changes and when the last build landed, and adds the last error when the last update or restart failed. |
 | The app in this folder is already up, but no build has worked yet (state `build failed`) | Prints that, the last error and the log file, and exits `1`, so `frogbot up && curl …` stops. |
+| The app in this folder is still starting its first build (state `starting`) | Waits for that build, then exits as a first run would: `0` once the app answers, `1` with the error and the log's last lines if it fails. So `frogbot up && curl …` works from a second terminal too. |
 
 ```bash
 frogbot up

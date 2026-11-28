@@ -239,6 +239,99 @@ describe('frogbot bin', () => {
     expect(mocks.loadConfig).not.toHaveBeenCalled();
   });
 
+  it.each(['--version', '-v'])('prints one JSON value for `%s --json`', async (flag) => {
+    process.argv = ['node', 'frogbot', flag, '--json'];
+
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(write).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toEqual({
+      command: 'version',
+      success: true,
+      version,
+    });
+  });
+
+  it('prints one JSON value for `frogbot run --help --json` without running it', async () => {
+    process.argv = ['node', 'frogbot', 'run', '--help', '--json'];
+
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(mocks.calls).toEqual(['loadEnv']);
+    expect(write).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
+      command: 'run',
+      success: true,
+      usage: 'frogbot run <file> [args...]',
+      help: expect.stringMatching(/^\[frogbot\] usage: frogbot run /),
+    });
+  });
+
+  it('keeps config-load output off stdout for `frogbot run --help --json`', async () => {
+    mocks.findConfigFile.mockReturnValue('/app/frogbot.config.ts');
+
+    mocks.loadConfig.mockImplementationOnce(() => {
+      console.log('config says hi');
+
+      return Promise.resolve({ cli: { commands: {} } });
+    });
+
+    process.argv = ['node', 'frogbot', 'run', '--help', '--json'];
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(log).not.toHaveBeenCalledWith('config says hi');
+    expect(error).toHaveBeenCalledWith('config says hi');
+    expect(write).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({ command: 'run' });
+  });
+
+  it.each([['status'], ['up', '--port', '4000'], ['migrate:fresh']])(
+    'prints one JSON value for `frogbot %s --help --json` without running it',
+    async (command, ...rest) => {
+      process.argv = ['node', 'frogbot', command, ...rest, '--help', '--json'];
+
+      const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+      vi.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`exit:${code}`);
+      });
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(mocks.calls).toEqual(['loadEnv']);
+      expect(write).toHaveBeenCalledOnce();
+      expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toEqual({
+        command,
+        success: true,
+        summary: expect.any(String),
+        usage: expect.stringContaining(`frogbot ${command}`),
+        flags: expect.arrayContaining(['--json']),
+        help: expect.stringMatching(/^\[frogbot\] usage: frogbot /),
+      });
+    },
+  );
+
   it.each([
     ['help', '--json'],
     ['--help', '--json'],
@@ -815,6 +908,34 @@ describe('frogbot bin', () => {
             flags: ['--output'],
           },
         ],
+      });
+    });
+
+    it("prints an app command's help as one JSON value for --help --json", async () => {
+      const run = vi.fn<CLICommand>();
+
+      withConfig({
+        'export:all': Object.assign(run, {
+          summary: 'Export everything',
+          usage: 'export:all [--output <file>]',
+        }),
+      });
+
+      process.argv = ['node', 'frogbot', 'export:all', '--help', '--json'];
+      captureExit();
+
+      const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(run).not.toHaveBeenCalled();
+      expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toEqual({
+        command: 'export:all',
+        success: true,
+        summary: 'Export everything',
+        usage: 'frogbot export:all [--output <file>]',
+        flags: ['--output'],
+        help: '[frogbot] usage: frogbot export:all [--output <file>]\nExport everything',
       });
     });
 

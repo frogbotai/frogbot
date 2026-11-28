@@ -192,7 +192,27 @@ describe('migrate', () => {
     });
   });
 
-  it('fails migrate:refresh when it stopped at a dev-mode row', async () => {
+  it('exits migrate:refresh 1 with CANCELLED when a "no" at a terminal stops it after the reset', async () => {
+    mocks.adapter.migrateRefresh.mockResolvedValueOnce({
+      cancelled: true,
+      migrated: [],
+      rolledBack: ['20260101_init'],
+    });
+
+    const error = await migrate(['migrate:refresh']).catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      exitCode: 1,
+      code: 'CANCELLED',
+      message: expect.stringContaining('rolled back'),
+    });
+    expect((error as Error).message).not.toContain('nothing changed');
+    expect(log).not.toHaveBeenCalledWith('[frogbot] migrate:refresh complete.');
+  });
+
+  it('stops migrate:refresh at a dev-mode row with exit 2 naming --yes when there is no terminal', async () => {
+    setTTY(undefined);
+
     mocks.adapter.migrateRefresh.mockResolvedValueOnce({
       cancelled: true,
       migrated: [],
@@ -201,7 +221,43 @@ describe('migrate', () => {
 
     await expect(migrate(['migrate:refresh'])).rejects.toMatchObject({
       exitCode: 2,
+      code: 'CONFIRM_REQUIRED',
       message: expect.stringContaining('dev-mode row'),
+    });
+  });
+
+  describe('a "no" at a terminal', () => {
+    it.each([
+      ['migrate', 'migrate'],
+      ['migrate:fresh', 'migrateFresh'],
+    ] as const)('exits `%s` 1 with CANCELLED and no complete line', async (command, method) => {
+      mocks.adapter[method].mockResolvedValueOnce({
+        cancelled: true,
+        migrated: [],
+        rolledBack: [],
+      } as never);
+
+      await expect(migrate([command])).rejects.toMatchObject({
+        exitCode: 1,
+        code: 'CANCELLED',
+        message: `[frogbot] ${command} cancelled: nothing changed.`,
+      });
+      expect(log).not.toHaveBeenCalledWith(`[frogbot] ${command} complete.`);
+    });
+
+    it('exits migrate:create 1 with CANCELLED when an empty migration is declined', async () => {
+      mocks.adapter.createMigration.mockResolvedValueOnce({ created: false });
+
+      await expect(migrate(['migrate:create', 'empty'])).rejects.toMatchObject({
+        exitCode: 1,
+        code: 'CANCELLED',
+      });
+    });
+
+    it('still completes migrate:create --skip-empty with nothing to create', async () => {
+      mocks.adapter.createMigration.mockResolvedValueOnce({ created: false });
+
+      await expect(migrate(['migrate:create', 'empty', '--skip-empty'])).resolves.toEqual({});
     });
   });
 

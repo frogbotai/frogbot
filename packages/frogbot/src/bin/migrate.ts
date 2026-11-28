@@ -63,10 +63,16 @@ const confirmNeeded = (command: string, what: string) =>
     { code: 'CONFIRM_REQUIRED', exitCode: 2 },
   );
 
+const declined = (command: string, what: string, shouldPrompt: boolean) =>
+  shouldPrompt
+    ? new CliError(`[frogbot] ${command} cancelled: nothing changed.`, { code: 'CANCELLED' })
+    : confirmNeeded(command, what);
+
 /**
  * Thin wrapper around Payload's migration commands. Uses FrogBot's own config loader (which handles
  * frogbot.config.ts under modern Node), then delegates to the active database adapter. Without a terminal
- * it never asks: a command that would stops with exit code 2 naming `--yes`.
+ * it never asks: a command that would stops with exit code 2 naming `--yes`. A "no" at a prompt exits 1
+ * with `CANCELLED`.
  */
 export async function migrate(args: string[]): Promise<Record<string, unknown>> {
   const command = args[0];
@@ -137,8 +143,8 @@ export async function migrate(args: string[]): Promise<Record<string, unknown>> 
         }
 
         result = await adapter.migrate({ shouldPrompt });
-        if (result?.cancelled && !shouldPrompt) {
-          throw confirmNeeded(command, 'apply migrations over dev-mode changes');
+        if (result?.cancelled) {
+          throw declined(command, 'apply migrations over dev-mode changes', shouldPrompt);
         }
 
         break;
@@ -158,8 +164,8 @@ export async function migrate(args: string[]): Promise<Record<string, unknown>> 
 
         if (created?.path) await rewriteMigrationFile(created.path);
 
-        if (created && !created.created && !shouldPrompt && !flags.skipEmpty) {
-          throw confirmNeeded(command, 'create an empty migration (no schema changes)');
+        if (created && !created.created && !flags.skipEmpty) {
+          throw declined(command, 'create an empty migration (no schema changes)', shouldPrompt);
         }
 
         path = created?.path;
@@ -173,13 +179,20 @@ export async function migrate(args: string[]): Promise<Record<string, unknown>> 
       case 'migrate:fresh':
         result = await adapter.migrateFresh({ forceAcceptWarning: yes, shouldPrompt });
 
-        if (result?.cancelled && !shouldPrompt) {
-          throw confirmNeeded(command, 'drop every table');
+        if (result?.cancelled) {
+          throw declined(command, 'drop every table', shouldPrompt);
         }
 
         break;
       case 'migrate:refresh': {
         result = await adapter.migrateRefresh();
+
+        if (result?.cancelled && shouldPrompt) {
+          throw new CliError(
+            `[frogbot] ${command} cancelled: every migration was rolled back and none were applied again. Run \`frogbot migrate\` to apply them.`,
+            { code: 'CANCELLED' },
+          );
+        }
 
         if (result?.cancelled) {
           throw new CliError(

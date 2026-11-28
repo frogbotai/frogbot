@@ -40,7 +40,7 @@ it('reports a switch the supervisor already has pending as already up, asking fo
     pid: process.pid,
     frogbot: '0.42.0',
     startedAt: new Date().toISOString(),
-    state: 'starting',
+    state: 'building',
     mode: 'production',
     switching: 'dev',
     log: join(dir, '.frogbot', 'service.log'),

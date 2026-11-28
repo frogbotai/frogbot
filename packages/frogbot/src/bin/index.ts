@@ -25,7 +25,7 @@ import {
 } from './json.js';
 import { loadEnv } from './loadEnv.js';
 import { migrate } from './migrate.js';
-import { overview, overviewJson, version } from './overview.js';
+import { commandHelpJson, overview, overviewJson, version } from './overview.js';
 import { piecesPort } from './piecesPort.js';
 import { runScript } from './run.js';
 import { start } from './start.js';
@@ -209,6 +209,16 @@ function unknownCommand(command: string, { config, loadError }: LoadedConfig): C
   );
 }
 
+function printHelp(
+  command: string,
+  text: string,
+  appCommands: Record<string, CLICommand>,
+  json: boolean,
+): void {
+  if (json) writeJson(commandHelpJson(command, appCommands, text));
+  else console.log(text);
+}
+
 async function stop(command: string, error: unknown, json: boolean): Promise<never> {
   if (json) writeJson(failureJson(command, error));
   else if (!(error instanceof CliError && error.reported)) console.error(formatCliError(error));
@@ -223,7 +233,12 @@ export async function bin() {
 
   const command = process.argv[2]?.toLowerCase();
   const args = process.argv.slice(3);
-  const asksJson = Boolean(command && ownArgs(command, args).includes('--json'));
+  const asksJson = Boolean(
+    command &&
+    (ownArgs(command, args).includes('--json') ||
+      (command === 'run' && asksForHelp(command, args) && args.slice(0, 2).includes('--json'))),
+  );
+
   const restoreLoad = asksJson ? logToStderr() : () => undefined;
   const loaded = await readConfig(command).finally(restoreLoad);
   const { config, loadError } = loaded;
@@ -234,7 +249,8 @@ export async function bin() {
   const handler = command && Object.hasOwn(commands, command) ? commands[command] : undefined;
 
   if (command && versionCommands.has(command)) {
-    console.log(version);
+    if (asksJson) writeJson({ command: 'version', success: true, version });
+    else console.log(version);
 
     return process.exit(0);
   }
@@ -254,16 +270,17 @@ export async function bin() {
 
   if (handler && !appCommand && asksForHelp(command, args)) {
     const { help } = handler;
+    const text = typeof help === 'string' ? help : await help(args, { config, loadError });
 
-    console.log(typeof help === 'string' ? help : await help(args, { config, loadError }));
+    printHelp(command, text, appCommands, asksJson);
 
     return process.exit(0);
   }
 
   if (appCommand?.usage && asksForHelp(command, args)) {
-    console.log(
-      `[frogbot] usage: frogbot ${appCommand.usage}${appCommand.summary ? `\n${appCommand.summary}` : ''}`,
-    );
+    const text = `[frogbot] usage: frogbot ${appCommand.usage}${appCommand.summary ? `\n${appCommand.summary}` : ''}`;
+
+    printHelp(command, text, appCommands, asksJson);
 
     return process.exit(0);
   }

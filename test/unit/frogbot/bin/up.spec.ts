@@ -1,6 +1,8 @@
 import type { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -138,6 +140,75 @@ describe('frogbot up', () => {
       });
     },
   );
+
+  describe('a second up while the first build is still starting', () => {
+    const starting = (url: string) => ({
+      id: serviceId(dir),
+      dir,
+      url,
+      port: Number(new URL(url).port),
+      pid: process.pid,
+      frogbot: '0.38.0',
+      startedAt: new Date().toISOString(),
+      state: 'starting' as const,
+      log: join(dir, '.frogbot', 'service.log'),
+      autostart: false,
+    });
+
+    let server: Server | undefined;
+
+    afterEach(() => {
+      server?.close();
+      server = undefined;
+    });
+
+    it('waits for the build, then exits 0 with the up result once it serves', async () => {
+      const answering = createServer((_request, response) => response.end('ok'));
+
+      server = answering;
+      await new Promise<void>((done) => answering.listen(0, '127.0.0.1', done));
+
+      const url = `http://127.0.0.1:${(answering.address() as AddressInfo).port}`;
+      const file = registrationFile(serviceId(dir));
+
+      writeRegistration(file, starting(url));
+      setTimeout(() => writeRegistration(file, { ...starting(url), state: 'running' }), 300);
+
+      await expect(up([], { log, spawnSupervisor: vi.fn() })).resolves.toMatchObject({
+        folder: dir,
+        url,
+        state: 'running',
+      });
+      expect(lines).toContain(`[frogbot] ${dir} is up at ${url}`);
+    });
+
+    it('waits for the build, then exits 1 with BUILD_FAILED and the log tail when it fails', async () => {
+      const file = registrationFile(serviceId(dir));
+      const registration = starting('http://127.0.0.1:3007');
+
+      mkdirSync(join(dir, '.frogbot'), { recursive: true });
+      writeFileSync(registration.log, 'Type error: nope\n');
+      writeRegistration(file, registration);
+
+      setTimeout(
+        () =>
+          writeRegistration(file, {
+            ...registration,
+            state: 'build failed',
+            lastError: 'next build failed',
+          }),
+        300,
+      );
+
+      await expect(up([], { log, spawnSupervisor: vi.fn() })).rejects.toMatchObject({
+        exitCode: 1,
+        code: 'BUILD_FAILED',
+        message: expect.stringMatching(
+          /^\[frogbot\] up failed:\nnext build failed\n\nLast lines of .*service\.log:\nType error: nope[\s\S]*still watching/,
+        ),
+      });
+    });
+  });
 
   it('succeeds for an app whose last update failed while the earlier build still serves', async () => {
     writeRegistration(registrationFile(serviceId(dir)), {
