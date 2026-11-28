@@ -13,6 +13,7 @@ pnpm frogbot generate:types
 
 - **Environment files:** Before any command runs, `frogbot` loads `.env*` files from the current directory using Next.js rules (development files unless `NODE_ENV` is `production`).
 - **Config discovery:** Commands that load your app look for `frogbot.config.{ts,js,mjs}` in the current directory, `src/`, a parent directory, or the path in `FROGBOT_CONFIG_PATH`.
+- **Errors:** a coded failure prints `[frogbot] <code>: <detail>`, then `  Fix: <hint>` and `  Docs: <link>` to the code's row in [Errors](/errors), and exits with that code's exit status.
 - **Exit codes:** `0` success, `1` failure, `2` usage error (an unknown command or flag, or a question with no terminal to answer it), `3` sign-in needed and `4` payment needed (`frogbot deploy` and `frogbot dojo`). A command never exits `0` after a failure. Command names are case-insensitive.
 
 ## Help and version

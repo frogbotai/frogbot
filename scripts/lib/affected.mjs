@@ -48,6 +48,7 @@ export const CHECK_INPUTS = {
   'docs-fences': ['docs/**'],
   'docs-links': ['docs/**', 'skills/**', 'CONTRIBUTING.md', 'CLAUDE.md'],
   'docs-references': [...DOCS_PAGES, 'templates/*/README.md', 'packages/frogbot/src/bin/**'],
+  errors: ['packages/**/src/**', 'docs/errors.mdx'],
   generated: [
     '**/importMap.js',
     '**/frogbot-types.ts',
@@ -76,6 +77,7 @@ export const CHECK_INPUTS = {
 const STRUCTURAL_CHECKS = [
   'core-boundaries',
   'dist-imports',
+  'errors',
   'package-boundaries',
   'test-types',
   'tests',

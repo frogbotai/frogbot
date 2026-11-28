@@ -46,7 +46,7 @@ const generalRoots = new Set([
   'versions',
 ]);
 
-const generalPages = new Set(['index', 'agents/overview']);
+const generalPages = new Set(['index', 'agents/overview', 'errors']);
 const owners = [
   { tab: 'General', roots: generalRoots, pages: generalPages, required: true, onlyOwn: true },
   { tab: 'Dojo', roots: new Set(['dojo']), pages: new Set() },

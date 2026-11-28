@@ -899,8 +899,6 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   });
 
   describe('who can sign up', () => {
-    const refusal = "This app doesn't let new people sign up. Ask an admin to add you.";
-
     const reset = async (collection: string, emails: string[] = []) => {
       await frogbot.db.deleteMany({ collection, where: {} });
 
@@ -924,7 +922,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
 
     const expectRefused = async (response: Response, collection: string, email: string) => {
       expect(response.status).toBe(403);
-      expect(await response.json()).toEqual({ error: refusal });
+      expect(await response.json()).toMatchObject({ code: 'oauth.sign-up', status: 403 });
       expect(sessionCookie(response)).toBeUndefined();
       expect(await count(collection, email)).toBe(0);
     };

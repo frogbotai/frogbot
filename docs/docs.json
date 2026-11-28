@@ -158,7 +158,7 @@
               {
                 "group": "REST API",
                 "expanded": false,
-                "pages": ["rest-api/overview"]
+                "pages": ["rest-api/overview", "errors"]
               },
               {
                 "group": "GraphQL",

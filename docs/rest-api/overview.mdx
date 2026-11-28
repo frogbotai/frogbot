@@ -102,7 +102,7 @@ Each endpoint object needs to have:
 Example:
 
 ```ts
-import type { CollectionConfig } from 'frogbot'
+import { frogbotError, type CollectionConfig } from 'frogbot'
 
 // a collection of 'orders' with an additional route for tracking details, reachable at /api/orders/:id/tracking
 export const Orders: CollectionConfig = {
@@ -117,9 +117,7 @@ export const Orders: CollectionConfig = {
       handler: async (req) => {
         const tracking = await getTrackingInfo(req.routeParams.id)
 
-        if (!tracking) {
-          return Response.json({ error: 'not found' }, { status: 404 })
-        }
+        if (!tracking) throw frogbotError('doc.not-found', 'No tracking for this order.')
 
         return Response.json({
           message: `Hello ${req.routeParams.name as string} @ ${req.routeParams.group as string}`,
@@ -151,9 +149,7 @@ export const Orders: CollectionConfig = {
       method: 'post',
       handler: async (req) => {
         // this is an example of an authenticated endpoint
-        if (!req.user) {
-          return Response.json({ error: 'forbidden' }, { status: 403 })
-        }
+        if (!req.user) throw frogbotError('auth.unauthenticated')
 
         // do something
 
@@ -246,6 +242,64 @@ import { headersWithCors } from 'frogbot'
   }
 }
 ```
+
+## Errors
+
+Every REST failure is a [Problem](https://www.rfc-editor.org/rfc/rfc9457) with `Content-Type: application/problem+json`. That covers collections, auth, custom endpoints, agents and plugins. The SDK, MCP tools and the CLI send the same object.
+
+```json
+{
+  "type": "https://docs.frogbot.ai/errors#request.invalid",
+  "code": "request.invalid",
+  "title": "The request is invalid.",
+  "status": 400,
+  "detail": "The following field is invalid: title",
+  "hint": "Fix the fields named in `errors`, then send the request again.",
+  "retryable": false,
+  "requestId": "req_5f2c9a1e7b3d4c60",
+  "errors": [
+    {
+      "message": "The following field is invalid: title",
+      "data": { "errors": [{ "path": "title", "message": "This field is required." }] }
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `code` | Stable. Branch on it. Every code is listed in [Errors](/errors). |
+| `detail` | What went wrong this time. Show it to a person; don't parse it. |
+| `hint` | What to do next. |
+| `retryable` | `true` when the same request can succeed if sent again. `retryAfter` gives the seconds to wait when the server knows. |
+| `type` | A link to the code's row in [Errors](/errors). |
+| `requestId` | The same as the `X-Request-Id` response header. Quote it when asking for help. |
+| `errors[0].data.errors` | The fields at fault, as `{ path, message }`, when the failure names fields. A field may add its own `code`. |
+| `data` | Extra facts some codes add, such as the `limit` a quota hit. |
+
+Responses also carry `X-Request-Id`, and `Retry-After` when `retryAfter` is set. Send your own `X-Request-Id` to have FrogBot use it. An unexpected error, such as a bug in your code, is sent as `internal` with its message hidden unless `debug` is on. The server log has it.
+
+### Throw errors from your endpoints
+
+Throw a `FrogBotError` instead of building an error body with `Response.json({ error })`. FrogBot sends it as a Problem with the right status and headers. Use a core code with `frogbotError`, or give a plugin its own codes with `defineErrors`. A plugin's codes start with its name:
+
+```ts
+import { defineErrors, frogbotError } from 'frogbot'
+
+export const ticketError = defineErrors({
+  'tickets.closed': {
+    status: 409,
+    title: 'This ticket is closed.',
+    hint: 'Reopen the ticket, then reply again.',
+  },
+})
+
+// in an endpoint handler
+if (!req.user) throw frogbotError('auth.unauthenticated')
+if (ticket.closed) throw ticketError('tickets.closed', `Ticket ${ticket.id} closed on ${ticket.closedAt}.`)
+```
+
+The second argument is the `detail`, or an object with `detail`, `hint`, `fields`, `data`, `retryAfter`, `status`, `headers` and `cause`. A `FrogBotError`'s `detail` is always sent, so keep secrets and upstream messages in `cause`, which goes to the server log only.
 
 ## Method Override for GET Requests
 
@@ -490,7 +544,7 @@ posts.hits[0]?.doc.title
 
 Each entry's `where` suggests that collection's fields, and each list's hits are typed as that collection's documents. When you loop over `results`, checking `result.collection` narrows them. FrogBot doesn't order hits from different collections against each other; see [Search several collections](/search/overview#search-several-collections).
 
-Every method takes standard `RequestInit` options, such as `headers` or `credentials`, as its last argument. Non-success responses throw `FrogBotSDKError`, with the HTTP `status` and the server's `errors`:
+Every method takes standard `RequestInit` options, such as `headers` or `credentials`, as its last argument. Non-success responses throw `FrogBotSDKError`, read from the server's [Problem](#errors): `message` is its `detail`, and it has `code`, `hint`, `retryable`, `requestId`, `status`, `errors` and the whole `problem`:
 
 ```ts
 import { FrogBotSDKError } from '@frogbotai/sdk'
@@ -498,7 +552,9 @@ import { FrogBotSDKError } from '@frogbotai/sdk'
 try {
   await sdk.create({ collection: 'posts', data: { title: '' } })
 } catch (error) {
-  if (error instanceof FrogBotSDKError) console.log(error.status, error.errors)
+  if (error instanceof FrogBotSDKError && error.code === 'request.invalid') {
+    console.log(error.message, error.hint, error.errors)
+  }
 }
 ```
 

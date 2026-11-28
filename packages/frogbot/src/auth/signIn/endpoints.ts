@@ -7,8 +7,8 @@ import {
   lookupOAuthAccount,
 } from '../../connections/oauth/index.js';
 import type { Endpoint } from '../../endpoints/types.js';
+import { problemResponse } from '../../errors/afterError.js';
 import { frogbotError } from '../../errors/catalog.js';
-import { isFrogBotError } from '../../errors/FrogBotError.js';
 import type { SignInMethod } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { finishSignIn } from './finish.js';
@@ -54,6 +54,11 @@ async function routeURLs({
   };
 }
 
+const unknownMethod = () => frogbotError('route.not-found', 'No sign-in method at this path.');
+
+const signInFailure = (error: unknown) =>
+  isOAuthError(error) ? error : frogbotError('internal', { cause: error });
+
 export function buildSignInEndpoints({
   collectionSlug,
   methods,
@@ -67,18 +72,13 @@ export function buildSignInEndpoints({
   const methodFor = (req: FrogBotRequest) =>
     methods.find(({ slug }) => slug === req.routeParams?.piece);
 
-  const failure = (status: number, headers: Headers) =>
-    Response.json(
-      {
-        error:
-          status === 404
-            ? 'Sign-in method not found'
-            : status === 403
-              ? "This app doesn't let new people sign up. Ask an admin to add you."
-              : 'Sign-in failed',
-      },
-      { status, headers },
-    );
+  const failure = (req: FrogBotRequest, error: unknown, headers: Headers) => {
+    const problem = problemResponse(error, { req });
+
+    problem.headers.forEach((value, key) => headers.set(key, value));
+
+    return new Response(problem.body, { status: problem.status, headers });
+  };
 
   return [
     {
@@ -87,7 +87,7 @@ export function buildSignInEndpoints({
       handler: async (req) => {
         const headers = new Headers({ 'cache-control': 'no-store' });
         const method = methodFor(req);
-        if (!method) return failure(404, headers);
+        if (!method) return failure(req, unknownMethod(), headers);
         try {
           const urls = await routeURLs({ req, collectionSlug, method });
           const params = new URL(req.url!).searchParams;
@@ -109,7 +109,7 @@ export function buildSignInEndpoints({
 
           return new Response(null, { status: 302, headers });
         } catch (error) {
-          return failure(isFrogBotError(error, 'oauth.state') ? 400 : 500, headers);
+          return failure(req, signInFailure(error), headers);
         }
       },
     },
@@ -119,7 +119,7 @@ export function buildSignInEndpoints({
       handler: async (req) => {
         const headers = new Headers({ 'cache-control': 'no-store' });
         const method = methodFor(req);
-        if (!method) return failure(404, headers);
+        if (!method) return failure(req, unknownMethod(), headers);
 
         try {
           const { callbackUrl, cookiePrefix } = await routeURLs({ req, collectionSlug, method });
@@ -210,10 +210,7 @@ export function buildSignInEndpoints({
             headers,
           });
         } catch (error) {
-          return failure(
-            isOAuthError(error) ? (error.code === 'oauth.sign-up' ? 403 : 400) : 500,
-            headers,
-          );
+          return failure(req, signInFailure(error), headers);
         }
       },
     },

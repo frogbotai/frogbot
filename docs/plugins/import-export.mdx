@@ -159,7 +159,7 @@ The Columns section reads the file through two endpoints on the import collectio
 - `POST /api/imports/import-columns` returns the file's `headers`, up to 3 `samples` per header, the `targets` a column can map to, and the starting `columns`.
 - `POST /api/imports/suggest-columns`, also given `columns`, returns them with the model's picks in the **Skip** columns and how many it `suggested`. It exists only when an AI model is set.
 
-Every failure is a [Problem](/agents/overview#invoke-over-http). Branch on `code` and show `detail`:
+Every failure is a [Problem](/rest-api/overview#errors). Branch on `code` and show `detail`:
 
 | Code | Status | Means |
 | --- | --- | --- |
