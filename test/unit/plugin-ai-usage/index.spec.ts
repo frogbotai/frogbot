@@ -8,6 +8,7 @@ import {
   aiUsagePlugin,
   type UsageReport,
 } from '../../../packages/plugins/plugin-ai-usage/src/index.js';
+import { routed } from '../../__helpers/shared/routed.js';
 
 function createConfig() {
   return {
@@ -102,27 +103,40 @@ describe('aiUsagePlugin', () => {
   it('rejects unauthenticated and invalid date ranges', async () => {
     const { endpoint } = await setup();
     const aggregate = vi.fn();
-    const unauthorized = await endpoint.handler(
-      request(
-        'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01',
-        aggregate,
-        null,
+    const unauthorized = await routed(() =>
+      endpoint.handler(
+        request(
+          'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01',
+          aggregate,
+          null,
+        ),
       ),
     );
 
-    const invalid = await endpoint.handler(
-      request('http://localhost/api/usage/report?groupBy=model&from=nope&to=2026-02-01', aggregate),
+    const invalid = await routed(() =>
+      endpoint.handler(
+        request(
+          'http://localhost/api/usage/report?groupBy=model&from=nope&to=2026-02-01',
+          aggregate,
+        ),
+      ),
     );
 
-    const unsupported = await endpoint.handler(
-      request(
-        'http://localhost/api/usage/report?groupBy=provider&from=2026-01-01&to=2026-02-01',
-        aggregate,
+    const unsupported = await routed(() =>
+      endpoint.handler(
+        request(
+          'http://localhost/api/usage/report?groupBy=provider&from=2026-01-01&to=2026-02-01',
+          aggregate,
+        ),
       ),
     );
 
     expect(unauthorized.status).toBe(401);
     expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toMatchObject({
+      code: 'request.invalid',
+      detail: 'from must be a date, such as 2026-11-01.',
+    });
     expect(unsupported.status).toBe(400);
     expect(aggregate).not.toHaveBeenCalled();
   });
@@ -148,9 +162,11 @@ describe('aiUsagePlugin', () => {
     const url = 'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01';
     const aggregate = vi.fn().mockResolvedValue({ groups: [] });
 
-    const forbidden = await denied
-      .endpoints!.find((item) => item.path === '/usage/report')!
-      .handler(request(url, aggregate));
+    const forbidden = await routed(() =>
+      denied
+        .endpoints!.find((item) => item.path === '/usage/report')!
+        .handler(request(url, aggregate)),
+    );
 
     expect(forbidden.status).toBe(403);
     expect(aggregate).not.toHaveBeenCalled();
@@ -169,16 +185,22 @@ describe('aiUsagePlugin', () => {
     const result = await aiUsagePlugin()(config);
     const aggregate = vi.fn();
 
-    const response = await result
-      .endpoints!.find((item) => item.path === '/usage/report')!
-      .handler(
-        request(
-          'http://localhost/api/usage/report?groupBy=apiKey&from=2026-01-01&to=2026-02-01',
-          aggregate,
+    const response = await routed(() =>
+      result
+        .endpoints!.find((item) => item.path === '/usage/report')!
+        .handler(
+          request(
+            'http://localhost/api/usage/report?groupBy=apiKey&from=2026-01-01&to=2026-02-01',
+            aggregate,
+          ),
         ),
-      );
+    );
 
     expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: 'request.invalid',
+      detail: 'groupBy must be one of: day, model, user.',
+    });
     expect(aggregate).not.toHaveBeenCalled();
   });
 
