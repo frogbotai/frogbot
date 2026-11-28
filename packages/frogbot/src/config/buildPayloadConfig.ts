@@ -386,7 +386,11 @@ export function buildPayloadConfig({
   ).i18n;
 
   const en = i18n?.translations?.en as
-    ({ general?: Record<string, unknown> } & Record<string, unknown>) | undefined;
+    | ({
+        general?: Record<string, unknown>;
+        upload?: Record<string, unknown>;
+      } & Record<string, unknown>)
+    | undefined;
 
   out.i18n = {
     ...i18n,
@@ -397,6 +401,10 @@ export function buildPayloadConfig({
         general: {
           payloadSettings: 'FrogBot Settings',
           ...en?.general,
+        },
+        upload: {
+          pasteURL: 'Paste link',
+          ...en?.upload,
         },
       },
     },
