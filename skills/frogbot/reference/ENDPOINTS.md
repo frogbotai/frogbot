@@ -74,21 +74,22 @@ This endpoint is available at `GET /api/orders/:id/tracking`.
 Use the standard Web API methods and properties for headers, URL parameters, and bodies:
 
 ```ts
-import type { Endpoint } from 'frogbot';
+import { type Endpoint, frogbotError } from 'frogbot';
 
 export const searchEndpoint: Endpoint = {
   path: '/search',
   method: 'post',
   handler: async (req) => {
-    if (!req.url || !req.json) {
-      return Response.json({ error: 'Invalid search request' }, { status: 400 });
-    }
+    if (!req.url || !req.json) throw frogbotError('request.invalid', 'Send a JSON body.');
 
     const url = new URL(req.url);
     const limit = Number(url.searchParams.get('limit') ?? 10);
 
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-      return Response.json({ error: 'Invalid search request' }, { status: 400 });
+      throw frogbotError('request.invalid', {
+        detail: '`limit` must be a whole number from 1 to 100.',
+        fields: [{ path: 'limit', message: 'Must be a whole number from 1 to 100.' }],
+      });
     }
 
     const body: unknown = await req.json();
@@ -99,7 +100,7 @@ export const searchEndpoint: Endpoint = {
       Array.isArray(body) ||
       ('query' in body && typeof body.query !== 'string')
     ) {
-      return Response.json({ error: 'Invalid search body' }, { status: 400 });
+      throw frogbotError('request.invalid', '`query` must be a string.');
     }
 
     const query = 'query' in body && typeof body.query === 'string' ? body.query : undefined;
@@ -122,18 +123,16 @@ Use `req.text()` when a webhook signature must be checked against the unparsed b
 
 ## Authentication
 
-Custom endpoints do not require authentication automatically. Check `req.user` before protected work and return an explicit status:
+Custom endpoints do not require authentication automatically. Check `req.user` before protected work and throw `auth.unauthenticated`:
 
 ```ts
-import type { Endpoint } from 'frogbot';
+import { type Endpoint, frogbotError } from 'frogbot';
 
 export const accountEndpoint: Endpoint = {
   path: '/account',
   method: 'get',
   handler: (req) => {
-    if (!req.user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!req.user) throw frogbotError('auth.unauthenticated');
 
     return Response.json({ user: req.user });
   },
@@ -141,6 +140,14 @@ export const accountEndpoint: Endpoint = {
 ```
 
 Passing `req` preserves request and transaction context. Passing `user` with `overrideAccess: false` enforces that user's collection access rules.
+
+## Errors
+
+Throw errors; never build an error body with `Response.json({ error })`. FrogBot sends every thrown `FrogBotError` as a Problem (`code`, `detail`, `hint`, `retryable`, `requestId`, field errors in `errors[0].data.errors`) with its status.
+
+- Use a core code with `frogbotError(code, detail)`: `request.invalid` (with `fields`), `auth.unauthenticated`, `auth.forbidden`, `doc.not-found`. Every code is at https://docs.frogbot.ai/errors.
+- For an app's or plugin's own failures, declare codes once with `defineErrors({ 'tickets.closed': { status, title, hint } })` and throw from the factory it returns. A plugin's codes start with its name.
+- `detail` is always sent to the caller. Put upstream messages and secrets in `cause`, which only the server log sees.
 
 ## Next.js Route
 

@@ -807,7 +807,7 @@ FrogBot loads stored history, rejects chats owned by another authenticated user,
 
 Malformed input returns `400` naming the first field that failed and why, for example `` `messages[0].parts[0].state`: expected one of 'input-streaming' | 'input-available' | …, received 'done' ``. An unknown slug returns `404`, and an aborted request returns a bodyless `499`.
 
-Errors are [Problem](https://www.rfc-editor.org/rfc/rfc9457) bodies with `Content-Type: application/problem+json`: `code` is stable, `detail` says what went wrong, and `hint` says what to do next. Branch on `code`, not on `detail`:
+Errors are [Problem](/rest-api/overview#errors) bodies: `code` is stable, `detail` says what went wrong, and `hint` says what to do next. Branch on `code`, not on `detail`. [Errors](/errors) lists every code; these are the agent endpoint's:
 
 | Code | Status | Meaning |
 | --- | --- | --- |

@@ -384,7 +384,7 @@ Content-Type: application/json
   }
   ```
 
-  Every refusal is a [Problem](/agents/overview#invoke-over-http): branch on `code`, show `detail`, and find each refused answer in `errors[0].data.errors`. A wrong-typed answer there carries `code: "forms.invalid-answer"`, so a refusal that mixes it with file errors still says which field had the wrong type. `<Form>` does this for you.
+  Every refusal is a [Problem](/rest-api/overview#errors): branch on `code`, show `detail`, and find each refused answer in `errors[0].data.errors`. A wrong-typed answer there carries `code: "forms.invalid-answer"`, so a refusal that mixes it with file errors still says which field had the wrong type. `<Form>` does this for you.
 
 - A form that is closed, past `closesAt` or at `maxResponses` answers `410` with code `forms.closed`.
 - On success the response is `{ "confirmation": { "type": "message", "message": "…" } }` or `{ "confirmation": { "type": "redirect", "url": "/thanks" } }`, never the record.

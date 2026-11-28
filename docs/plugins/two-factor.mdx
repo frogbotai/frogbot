@@ -86,7 +86,7 @@ A user who loses both their authenticator and their recovery codes needs an admi
 
 ## Endpoints
 
-All live under `/api/<collection>`. Every error is a [Problem](/agents/overview#invoke-over-http): branch on `code`, show `detail`. A refused code, here and on `/two-factor/verify` and `/two-factor/setup`, has one of these codes:
+All live under `/api/<collection>`. Every error is a [Problem](/rest-api/overview#errors): branch on `code`, show `detail`. A refused code, here and on `/two-factor/verify` and `/two-factor/setup`, has one of these codes:
 
 | `code` | Status | Means |
 | --- | --- | --- |

@@ -147,7 +147,7 @@ Outside Dojo, `dojo()` only adds the `dojo` command and the `dojo` deploy target
 - **Jobs.** Dojo wakes the app to run due jobs. Everyone else gets the app's own `jobs.access.run`.
 - **Sign-in.** The login page gets "Continue with Dojo". See [Sign in with Dojo](#sign-in-with-dojo).
 - **Badge.** Every FrogBot page gets a small "Made with FrogBot · Share your own" link in the bottom-left corner. Visitors can close it for the rest of their browser session. `dojo({ badge: false })` turns it off.
-- **Data export.** `POST /api/dojo/export` copies the database to the app's bucket when Dojo asks, for `apps export-data`. Only Dojo can call it. A refusal is a [Problem](/agents/overview#invoke-over-http) with one of these codes, plus the `error` word Dojo reads:
+- **Data export.** `POST /api/dojo/export` copies the database to the app's bucket when Dojo asks, for `apps export-data`. Only Dojo can call it. A refusal is a [Problem](/rest-api/overview#errors) with one of these codes, plus the `error` word Dojo reads:
 
 | Code | Status | `error` | Means |
 | --- | --- | --- | --- |
