@@ -38,7 +38,8 @@ export type ErrorDetails = {
 };
 
 /**
- * A known failure with a stable code. Its message is always sent, so write it for the caller. Raise one with a factory from `defineErrors`, such as
+ * A known failure with a stable code. Its message is always sent, at every status, so write it for
+ * the caller and keep upstream messages in `cause`, which only the log shows. Raise one with a factory from `defineErrors`, such as
  * `frogbotError('memory.scope-full', { detail })`; every surface turns it into a `Problem`.
  */
 export class FrogBotError<TCode extends string = string> extends APIError<Record<

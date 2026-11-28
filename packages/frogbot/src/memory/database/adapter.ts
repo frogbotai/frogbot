@@ -147,7 +147,7 @@ export function databaseMemory(options: DatabaseMemoryOptions = {}): MemoryAdapt
       return embedding;
     } catch (error) {
       throw frogbotError('memory.unavailable', {
-        detail: `Embedding model '${embeddingModel}' failed: ${error instanceof Error ? error.message : String(error)}`,
+        detail: `Embedding model '${embeddingModel}' failed. The server log has the provider's error.`,
         cause: error,
       });
     }
