@@ -180,7 +180,7 @@ type UsersContext = {
  * with a random password printed once, and refuses when the collection has any user, trashed ones included.
  * `frogbot users reset-password <email>` gives an existing user a new random password, printed once,
  * through Payload's reset-password operation with no email sent: the collection's password rules and hooks
- * run, a lockout is cleared, and other sessions end. Once it succeeds, an unverified user is marked
+ * run, a lockout is cleared, and other sessions end when the collection uses sessions. Once it succeeds, an unverified user is marked
  * verified, as `create` makes its user, so the printed password signs in. Both write to anything but a local SQLite file only with `--yes`.
  */
 export async function users(
@@ -236,7 +236,7 @@ export async function users(
     console.log(
       options.command === 'create'
         ? `Created ${options.email} in ${slug}.`
-        : `Reset the password of ${options.email} in ${slug}. Its other sessions are signed out.`,
+        : `Reset the password of ${options.email} in ${slug}. ${collection.auth.useSessions ? 'Its other sessions are signed out.' : 'Existing tokens stay valid until they expire.'}`,
     );
 
     console.log(`Password: ${password}`);
