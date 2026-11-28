@@ -343,7 +343,7 @@ describe('Chat for a channel conversation', () => {
               {
                 error:
                   'This conversation happens in Slack. Continue it there, or branch it into a new chat.',
-                code: 'channel-chat',
+                code: 'turn.channel-chat',
               },
               { status: 409 },
             )

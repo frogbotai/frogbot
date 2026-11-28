@@ -210,7 +210,10 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
   });
 
   it('throws missing with no account and lists an authorize prompt', async () => {
-    await expect(resolve()).rejects.toMatchObject({ name: 'ConnectionError', code: 'missing' });
+    await expect(resolve()).rejects.toMatchObject({
+      name: 'FrogBotError',
+      code: 'connection.not-linked',
+    });
     expect(
       await frogbot.connections.authorizations({ pieces: [mail], req: await req() }),
     ).toMatchObject([{ piece: 'mail', oauth: true, secret: true }]);
@@ -227,10 +230,13 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
       overrideAccess: true,
     });
 
-    await expect(resolve()).rejects.toMatchObject({ name: 'ConnectionError', code: 'ambiguous' });
+    await expect(resolve()).rejects.toMatchObject({
+      name: 'FrogBotError',
+      code: 'connection.ambiguous',
+    });
     await expect(
       frogbot.connections.authorizations({ pieces: [mail], req: await req() }),
-    ).rejects.toMatchObject({ code: 'ambiguous' });
+    ).rejects.toMatchObject({ code: 'connection.ambiguous' });
   });
 
   it("forbids another user's account, another piece's account and an unknown id", async () => {
@@ -239,9 +245,12 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     const otherPiece = await linked('c', { piece: 'other' });
 
     for (const id of [theirs.id, otherPiece.id, '999999', 'not-an-id']) {
-      await expect(resolve(id)).rejects.toMatchObject({ code: 'forbidden', piece: 'mail' });
+      await expect(resolve(id)).rejects.toMatchObject({
+        code: 'connection.forbidden',
+        data: { piece: 'mail' },
+      });
       await expect(mail.client({ req: await req(), connection: id })).rejects.toMatchObject({
-        code: 'forbidden',
+        code: 'connection.forbidden',
       });
     }
   });
@@ -297,10 +306,9 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     const wrong = await link('b', { reconnect: first.id });
 
     expect(wrong.status).toBe(400);
-    expect(await wrong.json()).toEqual({
-      errors: [
-        { message: "Sign in with the same account you're renewing.", data: { code: 'account' } },
-      ],
+    expect(await wrong.json()).toMatchObject({
+      code: 'oauth.account',
+      detail: "Sign in with the same account you're renewing.",
     });
     expect(await rows()).toEqual(before);
 
@@ -363,7 +371,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
 
       for (const result of results) {
         if (result.status === 'rejected') {
-          expect((result.reason as Error).name).toBe('KVLockContentionError');
+          expect(result.reason).toMatchObject({ code: 'kv.lock-held' });
         }
       }
 

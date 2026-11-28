@@ -52,12 +52,19 @@ The agent endpoints and local agent calls check this rule themselves, whatever t
 
 ```json
 {
-  "error": "This conversation happens in Slack. Continue it there, or branch it into a new chat.",
-  "code": "channel-chat"
+  "type": "https://docs.frogbot.ai/errors#turn.channel-chat",
+  "code": "turn.channel-chat",
+  "title": "This chat belongs to a channel.",
+  "status": 409,
+  "detail": "This conversation happens in Slack. Continue it there, or branch it into a new chat.",
+  "hint": "Reply in the channel the chat came from, such as Slack or Teams.",
+  "retryable": false,
+  "requestId": "req_3f9c2a71b0d4e8a6",
+  "errors": [{ "message": "This conversation happens in Slack. Continue it there, or branch it into a new chat." }]
 }
 ```
 
-Local calls such as `generate({ chatId })` reject with an error whose `code` is `channel-chat` and `status` is `409`. A web chat that belongs to another user returns `404`, as if it did not exist.
+Local calls such as `generate({ chatId })` reject with a `FrogBotError` whose `code` is `turn.channel-chat` and `status` is `409`. A web chat that belongs to another user returns `404`, as if it did not exist.
 
 `canWriteChat` from `frogbot` is the rule itself. It takes the request and the chat, and returns whether the request can write it:
 

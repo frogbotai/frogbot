@@ -1,7 +1,7 @@
 import type { DocID, FieldAccess } from '../../../collections/config/types.js';
 import type { AutonumberEntry } from '../../../config/sanitized.js';
 import { insertIfMissing } from '../../../database/insertIfMissing.js';
-import { KVLockContentionError } from '../../../kv/errors.js';
+import { isFrogBotError } from '../../../errors/FrogBotError.js';
 import type { KV } from '../../../kv/types.js';
 import { toPayloadRequest } from '../../../seams/request.js';
 import type { PayloadRequest } from '../../../types/payload.js';
@@ -93,7 +93,7 @@ async function assignNumber(
       try {
         await ensureAutonumber({ ...entry, db, kv });
       } catch (error) {
-        if (!(error instanceof KVLockContentionError)) throw error;
+        if (!isFrogBotError(error, 'kv.lock-held')) throw error;
 
         await waitForAutonumber({ ...entry, db, req });
       }

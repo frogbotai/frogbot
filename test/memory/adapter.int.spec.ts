@@ -33,8 +33,9 @@ describe('testMemoryAdapter(databaseMemory())', () => {
     const run = testMemoryAdapter(adapter, {
       req: await frogbot.createRequest(),
       errors: {
-        limit: (target) => adapter.save({ ...target, text: overBudget, pinned: true }),
-        invalid: (target) => duplicateKey(adapter, target),
+        'memory.pinned-budget': (target) =>
+          adapter.save({ ...target, text: overBudget, pinned: true }),
+        'memory.duplicate': (target) => duplicateKey(adapter, target),
       },
     });
 
@@ -64,7 +65,7 @@ describe.skipIf(database === 'mongodb')(
       const run = testMemoryAdapter(adapter, {
         req: await frogbot.createRequest(),
         errors: {
-          unavailable: (target) => {
+          'memory.unavailable': (target) => {
             model.respond({
               error: { status: 400, body: { error: { message: 'provider down' } } },
             });
@@ -75,6 +76,25 @@ describe.skipIf(database === 'mongodb')(
       });
 
       await expect(run).resolves.toBeUndefined();
+    });
+
+    it("keeps the provider's message out of the unavailable detail sent to callers", async () => {
+      const target = {
+        req: await frogbot.createRequest(),
+        namespace: 'detail-check',
+        scope: 'team',
+        scopeId: 'team',
+      } as const;
+
+      model.respond({ error: { status: 400, body: { error: { message: 'provider down' } } } });
+
+      const error = await adapter
+        .save({ ...target, text: 'Saved while the model is down' })
+        .catch((e) => e);
+
+      expect(error).toMatchObject({ code: 'memory.unavailable' });
+      expect(error.message).not.toContain('provider down');
+      expect(String(error.cause?.message ?? error.cause)).toContain('provider down');
     });
   },
 );

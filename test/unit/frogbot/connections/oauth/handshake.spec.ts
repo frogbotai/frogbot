@@ -88,7 +88,7 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
     email: stubOAuthAccount.email,
   });
   expect(provider.requests.account).toEqual([`Bearer ${stubOAuthTokens.access}`]);
-  await expect(consume()).rejects.toMatchObject({ code: 'state' });
+  await expect(consume()).rejects.toMatchObject({ code: 'oauth.state' });
   await expect(
     refreshOAuthTokens({ piece: fixture.piece, tokens, req: fixture.req }),
   ).resolves.toMatchObject({

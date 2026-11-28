@@ -2,6 +2,7 @@ import type { UIMessage } from 'ai';
 import { createUIMessageStream, createUIMessageStreamResponse, generateId } from 'ai';
 import { z } from 'zod';
 
+import { aiError } from '../ai/aiError.js';
 import type { ChatContext } from '../chat/chatContext.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { buildTurnEndpoints } from '../chat/turn/endpoints.js';
@@ -11,8 +12,9 @@ import {
   formatIssuePath,
   validateChatMessages,
 } from '../chat/validateMessages.js';
+import { frogbotError } from '../errors/catalog.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { agentResult, errorResponse } from './responses.js';
+import { agentResult } from './responses.js';
 import {
   assertAgentAccess,
   assertAgentSelection,
@@ -54,9 +56,7 @@ export function buildAgentEndpoints() {
 
           const parsed = bodySchema.safeParse(await req.json!().catch(() => undefined));
 
-          if (!parsed.success) {
-            return Response.json({ error: describeIssue(parsed.error.issues[0]) }, { status: 400 });
-          }
+          if (!parsed.success) throw invalidBody(parsed.error.issues);
 
           const { chatId, reasoning, delivery, prompt, messages, autoApprove } = parsed.data;
           const requested = parsed.data.model;
@@ -68,19 +68,13 @@ export function buildAgentEndpoints() {
               ? { messages: await validateChatMessages(messages, agent.aiAgent.tools) }
               : { prompt: prompt! };
           } catch (error) {
-            req.frogbot.logger.error(
-              { err: error, agent: slug },
-              '[frogbot] Invalid agent request messages',
-            );
-
-            return Response.json(
-              {
-                error:
-                  describeMessagesError(error, messages ?? []) ??
-                  '`messages` must be valid UI messages',
-              },
-              { status: 400 },
-            );
+            throw frogbotError('request.invalid', {
+              detail:
+                describeMessagesError(error, messages ?? []) ??
+                '`messages` must be valid UI messages.',
+              fields: [{ path: 'messages', message: 'must be valid UI messages' }],
+              cause: error,
+            });
           }
 
           const selection: AgentSelection = {
@@ -140,9 +134,8 @@ export function buildAgentEndpoints() {
           return Response.json(await agentResult({ req, agent, chatId: context.chatId, turn }));
         } catch (error) {
           if (req.signal?.aborted) return new Response(null, { status: 499 });
-          req.frogbot.logger.error({ err: error, agent: slug }, '[frogbot] Agent request failed');
 
-          return errorResponse(error, { model, config: req.frogbot.config.ai });
+          throw aiError({ error, model, config: req.frogbot.config.ai }) ?? error;
         }
       },
     },
@@ -151,15 +144,10 @@ export function buildAgentEndpoints() {
       path: '/agents/:slug/authorizations',
       method: 'get' as const,
       handler: async (req: FrogBotRequest) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
-        const slug = req.routeParams?.slug as string | undefined;
-        let agent: ReturnType<typeof getAgent>;
-        try {
-          agent = getAgent({ req, slug });
-          await assertAgentAccess({ req, agent });
-        } catch (error) {
-          return errorResponse(error);
-        }
+        if (!req.user) throw frogbotError('auth.unauthenticated');
+
+        const agent = getAgent({ req, slug: req.routeParams?.slug as string | undefined });
+        await assertAgentAccess({ req, agent });
 
         return Response.json({ authorizations: await getAgentAuthorizations({ req, agent }) });
       },
@@ -186,10 +174,18 @@ function toUIMessages(body: AgentRequestBody): UIMessage[] {
   ];
 }
 
-function describeIssue(issue: z.ZodError['issues'][number]): string {
-  const path = formatIssuePath(issue.path);
+function invalidBody(issues: z.ZodError['issues']) {
+  const fields = issues.map((issue) => ({
+    path: formatIssuePath(issue.path),
+    message: issue.message,
+  }));
 
-  return path ? `\`${path}\`: ${issue.message}` : issue.message;
+  const [first] = fields;
+
+  return frogbotError('request.invalid', {
+    detail: first.path ? `\`${first.path}\`: ${first.message}` : first.message,
+    fields: fields.filter((field) => field.path),
+  });
 }
 
 function queuedResponse({

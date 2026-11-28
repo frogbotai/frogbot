@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBot } from '../frogbot.js';
-import { KVLockContentionError } from '../kv/errors.js';
 import type { KVLockCallback } from '../kv/types.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance } from '../pieces/types.js';
@@ -166,7 +166,7 @@ export class TriggerSubscriptions {
         }
       });
     } catch (error) {
-      if (!(error instanceof KVLockContentionError)) throw error;
+      if (!isFrogBotError(error, 'kv.lock-held')) throw error;
     }
   }
 }

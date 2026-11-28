@@ -1,4 +1,5 @@
-import { SearchFilterUnsupportedError } from 'frogbot/search';
+import type { FrogBotError } from 'frogbot';
+import { searchFilterUnsupported } from 'frogbot/search';
 
 import type { SearchFieldType, SearchFilter, SearchFilterNode, SearchRange } from '../types.js';
 
@@ -51,8 +52,8 @@ function isCompatible(type: SearchFieldType, value: unknown): boolean {
   }
 }
 
-function unsupported(index: string, detail: string): SearchFilterUnsupportedError {
-  return new SearchFilterUnsupportedError(`Search index '${index}' ${detail}`);
+function unsupported(index: string, detail: string): FrogBotError {
+  return searchFilterUnsupported(`Search index '${index}' ${detail}`);
 }
 
 function dedupe(nodes: SearchFilterNode[]): SearchFilterNode[] {

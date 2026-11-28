@@ -12,7 +12,6 @@ import {
   vi,
 } from 'vitest';
 
-import { KVLeaseLostError } from '../../../packages/frogbot/src/kv/errors.js';
 import { runKVLock } from '../../../packages/frogbot/src/kv/lock.js';
 import type { KVLock } from '../../../packages/frogbot/src/kv/types.js';
 import { RedisKVAdapter, redisKVAdapter } from '../../../packages/kv-redis/src/index.js';
@@ -244,7 +243,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
       },
     });
 
-    await expect(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    await expect(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
     expect(signal.aborted).toBe(true);
     expect(await contender.get('scoped')).toBe('successor');
   });

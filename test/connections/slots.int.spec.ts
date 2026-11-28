@@ -4,7 +4,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
-import { ConnectionError } from '../../packages/frogbot/src/connections/api.js';
 import type { ConnectionRow } from '../../packages/frogbot/src/connections/store.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
@@ -245,11 +244,11 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
 
     const error = await mail.whoami({ input: {}, req, as: 'teamMailbox' }).catch((e) => e);
 
-    expect(error).toBeInstanceOf(ConnectionError);
-    expect(error).toMatchObject({ code: 'missing', piece: 'mail' });
+    expect(error).toMatchObject({ code: expect.stringMatching(/^connection\./) });
+    expect(error).toMatchObject({ code: 'connection.not-linked', data: { piece: 'mail' } });
     await expect(
       mail.whoami({ input: {}, req: await userRequest(users[1].id) }),
-    ).rejects.toMatchObject({ code: 'missing' });
+    ).rejects.toMatchObject({ code: 'connection.not-linked' });
   });
 
   it('lets the database keep one row per slot and per user, whatever writes it', async () => {
@@ -330,8 +329,8 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
       .whoami({ input: {}, req: await userRequest(users[1].id), as: 'teamMailbox' })
       .catch((e) => e);
 
-    expect(error).toBeInstanceOf(ConnectionError);
-    expect(error).toMatchObject({ code: 'missing' });
+    expect(error).toMatchObject({ code: expect.stringMatching(/^connection\./) });
+    expect(error).toMatchObject({ code: 'connection.not-linked' });
     expect(await frogbot.connections.slots({ req: await userRequest(users[1].id) })).toEqual([]);
   });
 
@@ -339,10 +338,10 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
     const req = await userRequest(users[0].id);
 
     for (const as of ['nope', 'shared']) {
-      const error = await mail.whoami({ input: {}, req, as }).catch((e) => e);
+      const error: unknown = await mail.whoami({ input: {}, req, as }).catch((e: unknown) => e);
 
-      expect(error).not.toBeInstanceOf(ConnectionError);
-      expect(error.message).toContain(`'${as}'`);
+      expect(error).not.toMatchObject({ code: expect.stringMatching(/^connection\./) });
+      expect((error as Error).message).toContain(`'${as}'`);
     }
   });
 

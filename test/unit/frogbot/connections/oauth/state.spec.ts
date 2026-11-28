@@ -63,7 +63,7 @@ describe('OAuth browser state', () => {
 
     expect(outcomes.filter(({ status }) => status === 'fulfilled')).toHaveLength(1);
     expect(outcomes.filter(({ status }) => status === 'rejected')).toHaveLength(11);
-    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
   });
 
   it('keeps space-separated scopes for recipes without a provider separator', async () => {
@@ -89,8 +89,8 @@ describe('OAuth browser state', () => {
       throw new Error('connection lost after commit');
     });
 
-    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
-    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
+    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
     expect(flow.values.get(`oauth:consumed:${flow.state}`)).toBe(true);
   });
 
@@ -100,7 +100,7 @@ describe('OAuth browser state', () => {
     const encrypted = flow.values.get(key) as string;
     flow.values.set(key, `${encrypted.slice(0, -2)}XX`);
 
-    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
     expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
   });
 
@@ -119,7 +119,7 @@ describe('OAuth browser state', () => {
             : `${original.split('=')[0]}=${'a'.repeat(43)}`,
       );
 
-      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
       expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
 
       flow.req.headers.set('cookie', original);
@@ -141,7 +141,7 @@ describe('OAuth browser state', () => {
     const flow = await begin();
     flow.req.user = { id: 'attacker', collection: 'users' };
 
-    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
     expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
   });
 
@@ -151,7 +151,7 @@ describe('OAuth browser state', () => {
 
     await expect(
       createOAuthState({ ...fixture, ...fixture.binding, returnTo: '/' }),
-    ).rejects.toMatchObject({ code: 'state' });
+    ).rejects.toMatchObject({ code: 'oauth.state' });
 
     const started = await createOAuthState({
       ...fixture,
@@ -186,7 +186,7 @@ describe('OAuth browser state', () => {
     const flow = await begin();
 
     await expect(consumeOAuthState({ ...flow.args, ...change } as never)).rejects.toMatchObject({
-      code: 'state',
+      code: 'oauth.state',
     });
     expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
   });
@@ -211,7 +211,7 @@ describe('OAuth browser state', () => {
 
       flow.values.set(key, await flow.encryption.encrypt(JSON.stringify(data)));
 
-      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
       expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
     },
   );
@@ -225,7 +225,7 @@ describe('OAuth browser state', () => {
       data.expiresAt = data.issuedAt + duration;
       flow.values.set(key, await flow.encryption.encrypt(JSON.stringify(data)));
 
-      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
       expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
     },
   );
@@ -239,7 +239,7 @@ describe('OAuth browser state', () => {
     flow.expirations.clear();
     vi.spyOn(Date, 'now').mockReturnValue(data.expiresAt);
 
-    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
   });
 
   it.each([
@@ -317,8 +317,8 @@ describe('OAuth browser state', () => {
         callbackUrl: intent.callbackUrl,
         verifier: intent.verifier,
       }),
-    ).rejects.toMatchObject({ code: 'tokens' });
-    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+    ).rejects.toMatchObject({ code: 'oauth.tokens' });
+    await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
   });
 
   it('removes injected PKCE parameters when the recipe disables PKCE', async () => {
@@ -382,7 +382,7 @@ describe('OAuth browser state', () => {
       const value = flow.setCookie.split(';')[0].split('=')[1];
       flow.req.headers.set('cookie', `__Host-frogbot-oauth-${flow.state}=${value}`);
 
-      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
       expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
     });
 
@@ -391,7 +391,7 @@ describe('OAuth browser state', () => {
       flow.req.headers.set('cookie', flow.setCookie.split(';')[0]);
 
       expect(flow.setCookie.startsWith(`__Host-frogbot-oauth-${flow.state}=`)).toBe(true);
-      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'oauth.state' });
     });
   });
 });

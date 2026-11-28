@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import {
-  KVLeaseLostError,
-  KVLockContentionError,
-} from '../../../../packages/frogbot/src/kv/errors.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 import type { KVLock, KVLockCallback } from '../../../../packages/frogbot/src/kv/types.js';
 import {
@@ -446,8 +442,8 @@ describe('trigger subscriptions', () => {
     const replica = new TriggerSubscriptions(frogbot as never);
     await replica.reconcile();
 
-    await expect(replica.enable(target)).rejects.toBeInstanceOf(KVLockContentionError);
-    await expect(replica.disable(42)).rejects.toBeInstanceOf(KVLockContentionError);
+    await expect(replica.enable(target)).rejects.toMatchObject({ code: 'kv.lock-held' });
+    await expect(replica.disable(42)).rejects.toMatchObject({ code: 'kv.lock-held' });
     expect(enable).toHaveBeenCalledTimes(1);
     expect(frogbot.delete).not.toHaveBeenCalled();
 
@@ -478,7 +474,7 @@ describe('trigger subscriptions', () => {
     const result = subscriptions.reconcile().catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(20_000);
 
-    expect(await result).toBeInstanceOf(KVLeaseLostError);
+    expect(await result).toMatchObject({ code: 'kv.lease-lost' });
 
     const disable = vi.spyOn(hooks, 'onDisable');
     await subscriptions.reconcile();
@@ -666,7 +662,7 @@ describe('trigger subscriptions', () => {
     const result = subscriptions.reconcile().catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(20_000);
 
-    expect(await result).toBeInstanceOf(KVLeaseLostError);
+    expect(await result).toMatchObject({ code: 'kv.lease-lost' });
 
     finish();
     await vi.advanceTimersByTimeAsync(0);
@@ -706,7 +702,7 @@ describe('trigger subscriptions', () => {
     const result = subscriptions.reconcile().catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(20_000);
 
-    expect(await result).toBeInstanceOf(KVLeaseLostError);
+    expect(await result).toMatchObject({ code: 'kv.lease-lost' });
 
     const writes = frogbot.update.mock.calls.length;
     frogbot.kv.acquireLock.mockResolvedValueOnce(null);

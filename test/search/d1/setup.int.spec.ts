@@ -47,11 +47,10 @@ describe('D1 search setup', () => {
     });
 
     await expect(rejected).rejects.toMatchObject({
-      name: 'SearchCapabilityError',
-      reason: 'engine-gap',
+      code: 'search.engine-gap',
       status: 501,
       message: expect.stringMatching(
-        /^\[frogbot\] Search index 'semantic' in collection 'search-rejected' \(vector\): engine-gap: Cloudflare D1 has no native vector search/,
+        /^Search index 'semantic' in collection 'search-rejected' \(vector\): Cloudflare D1 has no native vector search/,
       ),
     });
 
@@ -62,8 +61,7 @@ describe('D1 search setup', () => {
     await expect(
       boot({ content: { lexical: { fields: ['title'] }, vector: { field: 'embedding' } } }),
     ).rejects.toMatchObject({
-      name: 'SearchCapabilityError',
-      reason: 'engine-gap',
+      code: 'search.engine-gap',
       message: expect.stringContaining("'content' in collection 'search-setup' (vector)"),
     });
   });
@@ -71,13 +69,16 @@ describe('D1 search setup', () => {
   it('rejects a vector index without a database connection', async () => {
     await expect(
       boot({ semantic: { vector: { field: 'embedding' } } }, true),
-    ).rejects.toMatchObject({ name: 'SearchCapabilityError', reason: 'engine-gap' });
+    ).rejects.toMatchObject({ code: 'search.engine-gap' });
   });
 
   it('rejects lexical languages without an FTS5 tokenizer', async () => {
     await expect(
       boot({ french: { lexical: { fields: ['title'], language: 'french' } } }),
-    ).rejects.toThrow(/french.*search-setup.*lexical.*engine-gap.*tokenizer/);
+    ).rejects.toMatchObject({
+      code: 'search.engine-gap',
+      message: expect.stringMatching(/french.*search-setup.*lexical.*tokenizer/),
+    });
   });
 
   it('builds a lexical index and stores vectors without a vector index', async () => {

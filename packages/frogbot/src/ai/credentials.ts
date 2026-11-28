@@ -2,7 +2,7 @@ import type { CallCredential } from '@frogbotai/gateway';
 import { providerCredentialEnvVars, providerKeyEnvVar } from '@frogbotai/gateway';
 import { CallCredentialError } from '@frogbotai/gateway/errors';
 
-import { ConnectionError } from '../connections/api.js';
+import { isConnectionError } from '../connections/api.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import type { PieceInstance } from '../pieces/types.js';
 import type { AIOperationContext } from './hooks.js';
@@ -63,21 +63,24 @@ export function linkedCredential({
     try {
       ({ auth } = await req.frogbot.connections.resolvePieceCredential({ piece, req }));
     } catch (error) {
-      if (!(error instanceof ConnectionError)) throw error;
+      if (!isConnectionError(error)) throw error;
 
-      if (error.code === 'missing') return unlinked();
-      if (error.code === 'forbidden') throw error;
-      if (error.code === 'ambiguous') {
+      if (error.code === 'connection.not-linked' || error.code === 'connection.not-configured') {
+        return unlinked();
+      }
+
+      if (error.code === 'connection.forbidden') throw error;
+      if (error.code === 'connection.ambiguous') {
         throw new CallCredentialError(
           `Choose a default ${label} account in Settings → Linked accounts.`,
         );
       }
 
-      if (error.code === 'scopes') {
+      if (error.code === 'connection.missing-scopes') {
         throw new CallCredentialError(`Reconnect ${label} in Settings → Linked accounts.`);
       }
 
-      throw new CallCredentialError(error.message);
+      throw new CallCredentialError(`${error.message} ${error.hint}`);
     }
 
     const settings = link.credential({ auth, via });

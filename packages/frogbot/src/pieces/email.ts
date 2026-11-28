@@ -1,6 +1,6 @@
 import type { EmailAdapter as PayloadEmailAdapter } from 'payload';
 
-import { ConnectionError } from '../connections/api.js';
+import { frogbotError } from '../errors/catalog.js';
 import { getFrogBotInstance } from '../instanceRegistry.js';
 import { isPieceInstance, pieceInstanceRuntime } from './definePiece.js';
 import type { EmailPieceInstance } from './types.js';
@@ -61,12 +61,11 @@ export function pieceEmailAdapter(piece: unknown): PayloadEmailAdapter {
       }
 
       if (definition.auth && auth === undefined) {
-        throw new ConnectionError(
-          `Piece '${piece.slug}' is used as email but has no factory auth.`,
-          'missing',
-          undefined,
-          piece.piece,
-        );
+        throw frogbotError('connection.not-configured', {
+          detail: `Piece '${piece.slug}' is used as email but has no factory auth.`,
+          hint: 'Pass the piece its auth when you create it.',
+          data: { piece: piece.piece },
+        });
       }
 
       const req = await frogbot.createRequest();

@@ -1,4 +1,4 @@
-import { ConnectionError } from '../connections/api.js';
+import { isConnectionError } from '../connections/api.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import type { PieceInstance, PieceProvider, PieceProviderNotice } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -84,7 +84,7 @@ export async function linkedModels({
   try {
     credential = await req.frogbot.connections.resolvePieceCredential({ piece, req });
   } catch (error) {
-    if (error instanceof ConnectionError) return undefined;
+    if (isConnectionError(error)) return undefined;
 
     throw error;
   }
@@ -156,7 +156,7 @@ export async function linkedNotices({
     try {
       ({ auth } = await req.frogbot.connections.resolvePieceCredential({ piece, req }));
     } catch (error) {
-      if (error instanceof ConnectionError) continue;
+      if (isConnectionError(error)) continue;
 
       throw error;
     }

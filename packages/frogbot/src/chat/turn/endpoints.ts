@@ -1,18 +1,18 @@
 import type { UIMessage } from 'ai';
 import { z } from 'zod';
 
-import { agentResult, errorResponse } from '../../agents/responses.js';
+import { agentResult } from '../../agents/responses.js';
 import { assertAgentAccess, getAgent } from '../../agents/service.js';
 import type { AgentInstance } from '../../agents/types.js';
 import type { DocID } from '../../collections/config/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
+import { frogbotError } from '../../errors/catalog.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { relationID } from '../../utilities/relationID.js';
 import { findChat } from '../findChat.js';
 import { validateChatMessages } from '../validateMessages.js';
 import { actorFromRequest } from './actor.js';
 import { continueTurn } from './continueTurn.js';
-import { TurnError } from './errors.js';
 import type { TurnMessageDocument } from './messages.js';
 import { findMessage } from './messages.js';
 import { discardQueuedMessage, isSameActor, updateQueuedMessage } from './queue.js';
@@ -50,134 +50,112 @@ export function buildTurnEndpoints(): Endpoint[] {
       path: '/agents/:slug/chats/:chatId/pending',
       method: 'get',
       handler: async (req: FrogBotRequest) => {
-        try {
-          const { chatId } = await resolveChatRoute(req);
+        const { chatId } = await resolveChatRoute(req);
 
-          return Response.json({
-            chatId,
-            state: await findTurnState({ req, chatId }),
-            pending: await listPendingCalls({ req, chatId }),
-          });
-        } catch (error) {
-          return errorResponse(error);
-        }
+        return Response.json({
+          chatId,
+          state: await findTurnState({ req, chatId }),
+          pending: await listPendingCalls({ req, chatId }),
+        });
       },
     },
     {
       path: '/agents/:slug/chats/:chatId/settle',
       method: 'post',
       handler: async (req: FrogBotRequest) => {
-        try {
-          const { agent, chatId } = await resolveChatRoute(req);
-          const body = settleSchema.safeParse(await req.json?.().catch(() => null));
+        const { agent, chatId } = await resolveChatRoute(req);
+        const body = settleSchema.safeParse(await req.json?.().catch(() => null));
 
-          if (!body.success) {
-            return Response.json(
-              {
-                error:
-                  'Body must include `toolCallId` and one of `output`, `dismissed: true` or `approved`',
-              },
-              { status: 400 },
-            );
-          }
-
-          const { toolCallId, ...outcome } = body.data;
-
-          const settlement = await settleClientToolCall({ req, chatId, toolCallId, outcome });
-
-          if (settlement.status === 'already-settled') {
-            return Response.json(
-              { error: 'This call has already been settled.', code: 'already-settled', settlement },
-              { status: 409 },
-            );
-          }
-
-          if ('dismissed' in outcome) {
-            return Response.json({ status: 'dismissed', chatId, settlement });
-          }
-
-          if (settlement.part.state === 'output-denied') {
-            return Response.json({ status: 'denied', chatId, settlement });
-          }
-
-          if (!settlement.allSettled) {
-            return Response.json({
-              status: 'awaiting-input',
-              chatId,
-              settlement,
-              pending: await listPendingCalls({ req, chatId }),
-            });
-          }
-
-          const turn = await continueTurn({
-            req,
-            chatId,
-            clientTools: allClientTools(agent),
-            abortSignal: req.signal ?? undefined,
-          });
-
-          if (!('persistence' in turn)) {
-            return Response.json({ status: turn.status, chatId, settlement });
-          }
-
-          await turn.persistence;
-
-          return Response.json({
-            settlement,
-            ...(await agentResult({ req, agent, chatId, turn: { result: turn } })),
-          });
-        } catch (error) {
-          return errorResponse(error);
+        if (!body.success) {
+          throw frogbotError(
+            'request.invalid',
+            'Body must include `toolCallId` and one of `output`, `dismissed: true` or `approved`.',
+          );
         }
+
+        const { toolCallId, ...outcome } = body.data;
+
+        const settlement = await settleClientToolCall({ req, chatId, toolCallId, outcome });
+
+        if (settlement.status === 'already-settled') {
+          throw frogbotError('turn.already-settled', {
+            detail: 'This call has already been settled.',
+            data: { settlement },
+          });
+        }
+
+        if ('dismissed' in outcome) {
+          return Response.json({ status: 'dismissed', chatId, settlement });
+        }
+
+        if (settlement.part.state === 'output-denied') {
+          return Response.json({ status: 'denied', chatId, settlement });
+        }
+
+        if (!settlement.allSettled) {
+          return Response.json({
+            status: 'awaiting-input',
+            chatId,
+            settlement,
+            pending: await listPendingCalls({ req, chatId }),
+          });
+        }
+
+        const turn = await continueTurn({
+          req,
+          chatId,
+          clientTools: allClientTools(agent),
+          abortSignal: req.signal ?? undefined,
+        });
+
+        if (!('persistence' in turn)) {
+          return Response.json({ status: turn.status, chatId, settlement });
+        }
+
+        await turn.persistence;
+
+        return Response.json({
+          settlement,
+          ...(await agentResult({ req, agent, chatId, turn: { result: turn } })),
+        });
       },
     },
     {
       path: '/agents/:slug/chats/:chatId/messages/:messageId',
       method: 'patch',
       handler: async (req: FrogBotRequest) => {
-        try {
-          const { agent, chatId } = await resolveChatRoute(req);
-          const body = queuedMessageSchema.safeParse(await req.json?.().catch(() => null));
+        const { agent, chatId } = await resolveChatRoute(req);
+        const body = queuedMessageSchema.safeParse(await req.json?.().catch(() => null));
 
-          if (!body.success || (!body.data.parts && !body.data.delivery)) {
-            return Response.json(
-              { error: 'Body must include `parts` or `delivery`' },
-              { status: 400 },
-            );
-          }
-
-          const message = await findQueuedMessage({ req, chatId });
-
-          const parts = body.data.parts
-            ? await validateParts({ agent, message, parts: body.data.parts })
-            : undefined;
-
-          if (!(await updateQueuedMessage({ req, message, parts, delivery: body.data.delivery }))) {
-            throw new TurnError('not-queued', 'This message is no longer queued.');
-          }
-
-          return Response.json({ message: await findMessage({ req, id: message.id }) });
-        } catch (error) {
-          return errorResponse(error);
+        if (!body.success || (!body.data.parts && !body.data.delivery)) {
+          throw frogbotError('request.invalid', 'Body must include `parts` or `delivery`.');
         }
+
+        const message = await findQueuedMessage({ req, chatId });
+
+        const parts = body.data.parts
+          ? await validateParts({ agent, message, parts: body.data.parts })
+          : undefined;
+
+        if (!(await updateQueuedMessage({ req, message, parts, delivery: body.data.delivery }))) {
+          throw frogbotError('turn.not-queued', 'This message is no longer queued.');
+        }
+
+        return Response.json({ message: await findMessage({ req, id: message.id }) });
       },
     },
     {
       path: '/agents/:slug/chats/:chatId/messages/:messageId',
       method: 'delete',
       handler: async (req: FrogBotRequest) => {
-        try {
-          const { chatId } = await resolveChatRoute(req);
-          const message = await findQueuedMessage({ req, chatId });
+        const { chatId } = await resolveChatRoute(req);
+        const message = await findQueuedMessage({ req, chatId });
 
-          if (!(await discardQueuedMessage({ req, message }))) {
-            throw new TurnError('not-queued', 'This message is no longer queued.');
-          }
-
-          return new Response(null, { status: 204 });
-        } catch (error) {
-          return errorResponse(error);
+        if (!(await discardQueuedMessage({ req, message }))) {
+          throw frogbotError('turn.not-queued', 'This message is no longer queued.');
         }
+
+        return new Response(null, { status: 204 });
       },
     },
   ];
@@ -195,7 +173,7 @@ async function resolveChatRoute(req: FrogBotRequest): Promise<ChatRoute> {
   });
 
   if (chat.agent !== agent.slug) {
-    throw new TurnError('not-found', `Chat '${chat.id}' does not belong to this agent.`);
+    throw frogbotError('turn.not-found', `Chat '${chat.id}' does not belong to this agent.`);
   }
 
   return { agent, chatId: chat.id };
@@ -212,15 +190,15 @@ async function findQueuedMessage({
   const chat = relationID(message?.chat);
 
   if (!message || String(chat) !== String(chatId)) {
-    throw new TurnError('not-found', 'Message not found.');
+    throw frogbotError('turn.not-found', 'Message not found.');
   }
 
   if (!isSameActor(message.author, actorFromRequest(req))) {
-    throw new TurnError('forbidden', 'Only the author can change a queued message.');
+    throw frogbotError('turn.forbidden', 'Only the author can change a queued message.');
   }
 
   if (message.status !== 'queued') {
-    throw new TurnError('not-queued', 'This message is no longer queued.');
+    throw frogbotError('turn.not-queued', 'This message is no longer queued.');
   }
 
   return message;

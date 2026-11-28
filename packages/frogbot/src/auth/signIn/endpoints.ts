@@ -3,10 +3,12 @@ import {
   consumeOAuthState,
   createOAuthState,
   exchangeOAuthCode,
+  isOAuthError,
   lookupOAuthAccount,
-  OAuthError,
 } from '../../connections/oauth/index.js';
 import type { Endpoint } from '../../endpoints/types.js';
+import { frogbotError } from '../../errors/catalog.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import type { SignInMethod } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { finishSignIn } from './finish.js';
@@ -30,7 +32,7 @@ async function routeURLs({
     server.search ||
     server.hash
   ) {
-    throw new OAuthError('configuration');
+    throw frogbotError('oauth.configuration');
   }
 
   const prefix = config.routes.api.replace(/\/+$/, '');
@@ -39,7 +41,7 @@ async function routeURLs({
     prefix.startsWith('//') ||
     /[\\\p{Cc}?#]/u.test(prefix)
   ) {
-    throw new OAuthError('configuration');
+    throw frogbotError('oauth.configuration');
   }
 
   return {
@@ -89,7 +91,7 @@ export function buildSignInEndpoints({
         try {
           const urls = await routeURLs({ req, collectionSlug, method });
           const params = new URL(req.url!).searchParams;
-          if (params.getAll('returnTo').length > 1) throw new OAuthError('state');
+          if (params.getAll('returnTo').length > 1) throw frogbotError('oauth.state');
           const started = await createOAuthState({
             kv: req.frogbot.kv,
             encryption: req.frogbot.config.connections.encryption,
@@ -107,10 +109,7 @@ export function buildSignInEndpoints({
 
           return new Response(null, { status: 302, headers });
         } catch (error) {
-          return failure(
-            error instanceof OAuthError && error.code === 'state' ? 400 : 500,
-            headers,
-          );
+          return failure(isFrogBotError(error, 'oauth.state') ? 400 : 500, headers);
         }
       },
     },
@@ -125,7 +124,7 @@ export function buildSignInEndpoints({
         try {
           const { callbackUrl, cookiePrefix } = await routeURLs({ req, collectionSlug, method });
           const params = new URL(req.url!).searchParams;
-          if (params.getAll('state').length !== 1) throw new OAuthError('state');
+          if (params.getAll('state').length !== 1) throw frogbotError('oauth.state');
 
           const { intent, clearCookie } = await consumeOAuthState({
             kv: req.frogbot.kv,
@@ -142,7 +141,7 @@ export function buildSignInEndpoints({
           headers.set('set-cookie', clearCookie);
 
           if (params.has('error') || params.getAll('code').length !== 1) {
-            throw new OAuthError('tokens');
+            throw frogbotError('oauth.tokens');
           }
 
           const tokens = await exchangeOAuthCode({
@@ -212,7 +211,7 @@ export function buildSignInEndpoints({
           });
         } catch (error) {
           return failure(
-            error instanceof OAuthError ? (error.code === 'signUp' ? 403 : 400) : 500,
+            isOAuthError(error) ? (error.code === 'oauth.sign-up' ? 403 : 400) : 500,
             headers,
           );
         }

@@ -30,6 +30,7 @@ import { assertStoredSelection } from '../chat/turn/selection.js';
 import { holdTurn, releaseTurn } from '../chat/turn/state.js';
 import { streamTurn } from '../chat/turn/streamTurn.js';
 import { validateChatMessages } from '../chat/validateMessages.js';
+import { frogbotError } from '../errors/catalog.js';
 import type { FrogBot } from '../frogbot.js';
 import type { MCPConnections } from '../mcp/connections.js';
 import { resolveMCPTools } from '../mcp/tools.js';
@@ -872,9 +873,7 @@ async function toPersistentMessages(
 
   const messages = opts.messages ?? [];
   if (messages.some((message) => !('parts' in message))) {
-    throw Object.assign(new Error('Chat persistence requires UI messages'), {
-      status: 400,
-    });
+    throw frogbotError('request.invalid', 'Chat persistence requires UI messages');
   }
 
   return validateChatMessages(messages, tools);

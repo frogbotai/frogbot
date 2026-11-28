@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
+import type { MemoryErrorCode } from '../errors/catalog.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBotRequest } from '../types/request.js';
-import type { MemoryErrorCode } from './errors.js';
-import { isMemoryAdapterError } from './errors.js';
 import type { Memory, MemoryAdapter, MemoryTarget } from './types.js';
 
 export type MemoryErrorTrigger = (target: MemoryTarget) => Promise<unknown>;
@@ -10,8 +10,8 @@ export type MemoryErrorTrigger = (target: MemoryTarget) => Promise<unknown>;
 export type TestMemoryAdapterOptions = {
   /** A request from a FrogBot instance booted with this adapter. */
   req: FrogBotRequest;
-  /** Calls that must fail with each code this adapter can produce. `not-found` is always checked. */
-  errors?: Partial<Record<Exclude<MemoryErrorCode, 'not-found'>, MemoryErrorTrigger>>;
+  /** Calls that must fail with each code this adapter can produce. `memory.not-found` is always checked. */
+  errors?: Partial<Record<Exclude<MemoryErrorCode, 'memory.not-found'>, MemoryErrorTrigger>>;
 };
 
 function fail(name: string, message: string): never {
@@ -26,12 +26,12 @@ async function expectCode(name: string, code: MemoryErrorCode, run: () => Promis
   try {
     await run();
   } catch (error) {
-    if (isMemoryAdapterError(error) && error.code === code) return;
+    if (isFrogBotError(error, code)) return;
 
-    fail(name, `expected MemoryAdapterError '${code}', got ${String(error)}`);
+    fail(name, `expected FrogBotError '${code}', got ${String(error)}`);
   }
 
-  fail(name, `expected MemoryAdapterError '${code}', but the call succeeded`);
+  fail(name, `expected FrogBotError '${code}', but the call succeeded`);
 }
 
 function has(memories: readonly Memory[], id: string): boolean {
@@ -86,7 +86,7 @@ async function roundTrip(adapter: MemoryAdapter, target: MemoryTarget): Promise<
 
   check(name, deleted === 1, '`forget` with an id must report 1 deleted');
 
-  await expectCode(name, 'not-found', () => adapter.get({ ...target, id: saved.id }));
+  await expectCode(name, 'memory.not-found', () => adapter.get({ ...target, id: saved.id }));
 
   return saved.id;
 }
@@ -130,13 +130,13 @@ async function isolation(
     '`search` must not reach another scope or namespace',
   );
 
-  await expectCode(name, 'not-found', () => adapter.get({ ...target, id: memory.id }));
+  await expectCode(name, 'memory.not-found', () => adapter.get({ ...target, id: memory.id }));
 
-  await expectCode(name, 'not-found', () =>
+  await expectCode(name, 'memory.not-found', () =>
     adapter.update({ ...target, id: memory.id, text: 'Moved' }),
   );
 
-  await expectCode(name, 'not-found', () => adapter.forget({ ...target, id: memory.id }));
+  await expectCode(name, 'memory.not-found', () => adapter.forget({ ...target, id: memory.id }));
 
   await adapter.forget(target);
 
@@ -160,11 +160,13 @@ export async function testMemoryAdapter(
   try {
     const gone = await roundTrip(adapter, target);
 
-    await expectCode('not-found', 'not-found', () =>
+    await expectCode('not-found', 'memory.not-found', () =>
       adapter.update({ ...target, id: gone, text: 'Missing' }),
     );
 
-    await expectCode('not-found', 'not-found', () => adapter.forget({ ...target, id: gone }));
+    await expectCode('not-found', 'memory.not-found', () =>
+      adapter.forget({ ...target, id: gone }),
+    );
 
     await upsertByKey(adapter, target);
     await isolation(adapter, target, scope, 'scope isolation');

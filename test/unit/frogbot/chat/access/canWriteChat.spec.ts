@@ -80,7 +80,7 @@ describe('assertCanWriteChat', () => {
 
     expect(() => assertCanWriteChat({ req, chat: channelChat })).toThrow(
       expect.objectContaining({
-        code: 'channel-chat',
+        code: 'turn.channel-chat',
         status: 409,
         message:
           'This conversation happens in Slack. Continue it there, or branch it into a new chat.',

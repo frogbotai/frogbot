@@ -2,13 +2,13 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
 import { z } from 'zod';
 
+import { frogbotError } from '../../errors/catalog.js';
 import type { KV } from '../../kv/types.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import { urlRecipe } from '../../pieces/oauth.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { CredentialEncryption } from '../encryption.js';
-import { OAuthError } from './error.js';
 import { oauthScopes } from './scopes.js';
 
 const lifetime = 600_000;
@@ -60,13 +60,13 @@ export type OAuthStateStorage = {
 function callbackURL(value: string): URL {
   const url = new URL(value);
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.hash) {
-    throw new OAuthError('configuration');
+    throw frogbotError('oauth.configuration');
   }
 
   return url;
 }
 
-/** `value` as a path on `callbackUrl`'s origin; throws `OAuthError('state')` for any other origin. */
+/** `value` as a path on `callbackUrl`'s origin; throws `oauth.state` for any other origin. */
 export function safeReturnTo(value: string, callbackUrl: string): string {
   const base = callbackURL(callbackUrl);
   const url = new URL(value, base.origin);
@@ -79,7 +79,7 @@ export function safeReturnTo(value: string, callbackUrl: string): string {
     url.username ||
     url.password
   ) {
-    throw new OAuthError('state');
+    throw frogbotError('oauth.state');
   }
 
   return `${url.pathname}${url.search}${url.hash}`;
@@ -120,7 +120,7 @@ export async function createOAuthState({
   }): Promise<{ state: string; authorizationUrl: string; setCookie: string }> {
   const recipe = urlRecipe(pieceInstanceRuntime(piece).definition);
   const client = piece.oauth;
-  if (!recipe || !client) throw new OAuthError('configuration');
+  if (!recipe || !client) throw frogbotError('oauth.configuration');
 
   const callback = callbackURL(callbackUrl).href;
   const state = randomValue();
@@ -152,7 +152,7 @@ export async function createOAuthState({
     (flow === 'link' && (!data.owner || data.owner.collection !== collection)) ||
     (flow === 'login' && app !== undefined)
   ) {
-    throw new OAuthError('state');
+    throw frogbotError('oauth.state');
   }
 
   const url = callbackURL(recipe.authorizationUrl);
@@ -190,7 +190,7 @@ export async function createOAuthState({
 
   const encrypted = await encryption.encrypt(JSON.stringify(data));
   if (!(await kv.setIfAbsent(`oauth:state:${state}`, encrypted, { ttl: lifetime }))) {
-    throw new OAuthError('state');
+    throw frogbotError('oauth.state');
   }
 
   return {
@@ -219,7 +219,7 @@ export async function consumeOAuthState({
   try {
     randomSchema.parse(state);
     const encrypted = await kv.get(`oauth:state:${state}`);
-    if (typeof encrypted !== 'string') throw new OAuthError('state');
+    if (typeof encrypted !== 'string') throw frogbotError('oauth.state');
     const intent = stateSchema.parse(JSON.parse(await encryption.decrypt(encrypted)));
     const now = Date.now();
 
@@ -242,7 +242,7 @@ export async function consumeOAuthState({
       (flow === 'login' && (intent.owner || intent.reconnect !== undefined)) ||
       (flow === 'link' && (!intent.owner || intent.owner.collection !== collection))
     ) {
-      throw new OAuthError('state');
+      throw frogbotError('oauth.state');
     }
 
     if (
@@ -251,7 +251,7 @@ export async function consumeOAuthState({
       (req.user.collection !== intent.owner!.collection ||
         String(req.user.id) !== String(intent.owner!.id))
     ) {
-      throw new OAuthError('state');
+      throw frogbotError('oauth.state');
     }
 
     const name = cookieName(cookiePrefix, state, intent.callbackUrl);
@@ -260,21 +260,21 @@ export async function consumeOAuthState({
       .map((part) => part.trim())
       .filter((part) => part.startsWith(`${name}=`));
 
-    if (values.length !== 1) throw new OAuthError('state');
+    if (values.length !== 1) throw frogbotError('oauth.state');
 
     const browser = randomSchema.parse(values[0].slice(name.length + 1));
     if (!timingSafeEqual(Buffer.from(intent.browser, 'hex'), Buffer.from(digest(browser), 'hex'))) {
-      throw new OAuthError('state');
+      throw frogbotError('oauth.state');
     }
 
     if (!(await kv.setIfAbsent(`oauth:consumed:${state}`, true, { ttl: lifetime }))) {
-      throw new OAuthError('state');
+      throw frogbotError('oauth.state');
     }
 
-    if (intent.expiresAt <= Date.now()) throw new OAuthError('state');
+    if (intent.expiresAt <= Date.now()) throw frogbotError('oauth.state');
 
     return { intent, clearCookie: cookie(cookiePrefix, state, intent.callbackUrl, '', 0) };
   } catch {
-    throw new OAuthError('state');
+    throw frogbotError('oauth.state');
   }
 }

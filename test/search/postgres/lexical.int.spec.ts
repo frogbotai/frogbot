@@ -121,7 +121,7 @@ describePostgres(`postgres lexical search [${driver}]`, () => {
   it('rejects filters outside the index filter fields', async () => {
     await expect(
       search({ query: { text: 'frog' }, where: { body: { equals: 'Where they live' } } }),
-    ).rejects.toMatchObject({ name: 'SearchFilterUnsupportedError', status: 400 });
+    ).rejects.toMatchObject({ code: 'search.filter-unsupported', status: 400 });
   });
 
   it('searches the latest draft only when draft is requested', async () => {

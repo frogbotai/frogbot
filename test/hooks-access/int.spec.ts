@@ -10,6 +10,8 @@ import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import {
   accessBooleanSlug,
   accessWhereSlug,
+  afterErrorResponse,
+  afterErrorResponseHeader,
   afterErrorStatusHeader,
   afterMeResponse,
   afterMeResponseHeader,
@@ -703,7 +705,7 @@ describe('hooks-access', () => {
       const response = await booted.restClient.post(`/api/${usersSlug}/logout`);
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ errors: [{ message: 'No User' }] });
+      expect(response.body).toMatchObject({ status: 400, detail: 'No User' });
       expect(getAuthHookLog()).toEqual([{ phase: 'afterError', frogbot: 'function' }]);
     });
 
@@ -713,8 +715,20 @@ describe('hooks-access', () => {
       });
 
       expect(response.status).toBe(418);
-      expect(response.body).toEqual({ errors: [{ message: 'No User' }] });
+      expect(response.body).toMatchObject({ status: 418, detail: 'No User' });
+      expect(response.headers.get('content-type')).toContain('application/problem+json');
       expect(getAuthHookLog()).toEqual([{ phase: 'afterError', frogbot: 'function' }]);
+    });
+
+    it('keeps a collection afterError response and status, adding only the request id', async () => {
+      const response = await booted.restClient.post(`/api/${usersSlug}/logout`, undefined, {
+        headers: { [afterErrorResponseHeader]: 'true', 'x-request-id': 'req_app_owned' },
+      });
+
+      expect(response.status).toBe(451);
+      expect(response.body).toEqual(afterErrorResponse);
+      expect(response.headers.get('content-type')).not.toContain('problem');
+      expect(response.headers.get('x-request-id')).toBe('req_app_owned');
     });
 
     it('authenticated /me preserves the FrogBot and unwrapped Payload instances across both setup hooks', async () => {

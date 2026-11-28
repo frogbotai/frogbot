@@ -3,7 +3,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import type { Adapter } from 'chat';
 
 import type { DocID } from '../../collections/config/types.js';
-import { KVLockContentionError } from '../../kv/errors.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
 import type { KV } from '../../kv/types.js';
 import type { QuestionMessage, StoredQuestion } from './types.js';
 
@@ -203,7 +203,7 @@ export function createQuestionStore({
         try {
           return await kv.lock(lockKey(reference), LOCK_TTL, fn);
         } catch (error) {
-          if (!(error instanceof KVLockContentionError) || attempt === LOCK_ATTEMPTS) throw error;
+          if (!isFrogBotError(error, 'kv.lock-held') || attempt === LOCK_ATTEMPTS) throw error;
 
           await sleep(LOCK_RETRY_DELAY);
         }

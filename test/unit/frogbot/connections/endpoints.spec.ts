@@ -2,16 +2,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildConnectionOAuthEndpoints } from '../../../../packages/frogbot/src/connections/endpoints.js';
-import { OAuthError } from '../../../../packages/frogbot/src/connections/oauth/error.js';
 import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/src/connections/types.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { OAuthTokens, PieceOAuthSave } from '../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { continuedTo } from '../../../__helpers/shared/continuedTo.js';
+import { routed } from '../../../__helpers/shared/routed.js';
 import { definition, setup } from './oauth/fixtures.js';
 
-const failed = (message: string, code: string, data: Record<string, unknown> = {}) => ({
-  errors: [{ message, data: { code, ...data } }],
+const failed = (detail: string, code: string, data?: Record<string, unknown>) => ({
+  code: code === 'save-failed' ? 'connection.save-failed' : `oauth.${code}`,
+  detail,
+  ...(data ? { data } : {}),
 });
 
 function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
@@ -58,8 +61,8 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
     }) as unknown as FrogBotRequest;
 
   const start = async (query = '') => {
-    const response = await endpoints[0].handler(
-      request({ url: `https://app.test/authorize${query}` }),
+    const response = await routed(() =>
+      endpoints[0].handler(request({ url: `https://app.test/authorize${query}` })),
     );
 
     expect(response.status).toBe(302);
@@ -110,7 +113,7 @@ describe('OAuth linking endpoints', () => {
     'requires the admin owner to authorize: %j',
     async (user) => {
       const f = fixture();
-      const response = await f.endpoints[0].handler(f.request({ user }));
+      const response = await routed(() => f.endpoints[0].handler(f.request({ user })));
 
       expect(response.status).toBe(user ? 403 : 401);
       expect(f.values.size).toBe(0);
@@ -123,7 +126,7 @@ describe('OAuth linking endpoints', () => {
       const f = fixture();
 
       for (const endpoint of f.endpoints) {
-        expect((await endpoint.handler(f.request({ piece }))).status).toBe(404);
+        expect((await routed(() => endpoint.handler(f.request({ piece })))).status).toBe(404);
       }
     },
   );
@@ -134,7 +137,7 @@ describe('OAuth linking endpoints', () => {
     f.connections.entries.example.oauth = false;
 
     for (const endpoint of f.endpoints) {
-      expect((await endpoint.handler(f.request(flow))).status).toBe(404);
+      expect((await routed(() => endpoint.handler(f.request(flow)))).status).toBe(404);
     }
 
     expect(f.fetch).not.toHaveBeenCalled();
@@ -167,7 +170,7 @@ describe('OAuth linking endpoints', () => {
     const flow = await f.start();
     change(f);
 
-    expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
+    expect((await routed(() => f.endpoints[1].handler(f.request(flow)))).status).toBe(400);
     expect(f.fetch).not.toHaveBeenCalled();
     expect(f.upsert).not.toHaveBeenCalled();
   });
@@ -183,7 +186,7 @@ describe('OAuth linking endpoints', () => {
     expect(flow.response.headers.get('cache-control')).toBe('no-store');
     expect(f.upsert).not.toHaveBeenCalled();
 
-    const response = await f.endpoints[1].handler(f.request(flow));
+    const response = await routed(() => f.endpoints[1].handler(f.request(flow)));
 
     expect(await continuedTo(response)).toBe('/control/settings/connections');
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
@@ -210,7 +213,7 @@ describe('OAuth linking endpoints', () => {
     const f = fixture();
     const flow = await f.start(`?returnTo=${encodeURIComponent(returnTo)}`);
 
-    expect(await continuedTo(await f.endpoints[1].handler(f.request(flow)))).toBe(
+    expect(await continuedTo(await routed(() => f.endpoints[1].handler(f.request(flow))))).toBe(
       '/elsewhere?tab=connections#linked',
     );
   });
@@ -219,8 +222,10 @@ describe('OAuth linking endpoints', () => {
     'rejects unsafe returnTo %j before storing state',
     async (returnTo) => {
       const f = fixture();
-      const response = await f.endpoints[0].handler(
-        f.request({ url: `https://app.test/authorize?returnTo=${encodeURIComponent(returnTo)}` }),
+      const response = await routed(() =>
+        f.endpoints[0].handler(
+          f.request({ url: `https://app.test/authorize?returnTo=${encodeURIComponent(returnTo)}` }),
+        ),
       );
 
       expect(response.status).toBe(400);
@@ -236,14 +241,17 @@ describe('OAuth linking endpoints', () => {
   ])('names a setup error and logs it for unsafe serverURL %s', async (serverURL) => {
     const f = fixture();
     f.config.serverURL = serverURL;
-    const response = await f.endpoints[0].handler(f.request());
+    const response = await routed(() => f.endpoints[0].handler(f.request()));
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual(
-      failed("This connection's OAuth setup is incomplete. Check the server log.", 'configuration'),
+    expect(await response.json()).toMatchObject(
+      failed("This connection's OAuth setup is incomplete.", 'configuration'),
     );
     expect(f.warn).toHaveBeenCalledWith(
-      { err: expect.any(OAuthError), piece: 'example' },
+      {
+        err: expect.objectContaining({ code: expect.stringMatching(/^oauth\./) }),
+        piece: 'example',
+      },
       '[frogbot] Connection OAuth failed',
     );
     expect(f.values.size).toBe(0);
@@ -258,7 +266,7 @@ describe('OAuth linking endpoints', () => {
       'https://app.test/connections/example/callback',
     );
 
-    const response = await f.endpoints[1].handler(f.request(flow));
+    const response = await routed(() => f.endpoints[1].handler(f.request(flow)));
 
     expect(await continuedTo(response)).toBe('/settings/connections');
   });
@@ -267,8 +275,10 @@ describe('OAuth linking endpoints', () => {
     const f = fixture();
     const flow = await f.start();
 
-    expect((await f.endpoints[1].handler(f.request({ ...flow, user: null }))).status).toBe(200);
-    expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
+    expect(
+      (await routed(() => f.endpoints[1].handler(f.request({ ...flow, user: null })))).status,
+    ).toBe(200);
+    expect((await routed(() => f.endpoints[1].handler(f.request(flow)))).status).toBe(400);
     expect(f.fetch).toHaveBeenCalledTimes(1);
     expect(f.findByID).toHaveBeenCalledWith({
       collection: 'users',
@@ -306,7 +316,7 @@ describe('OAuth linking endpoints', () => {
     const flow = await f.start();
 
     f.fetch.mockImplementationOnce(async () => {
-      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
+      expect((await routed(() => f.endpoints[1].handler(f.request(flow)))).status).toBe(400);
       expect(f.upsert).not.toHaveBeenCalled();
 
       return Response.json({ access_token: 'fresh-token' });
@@ -346,13 +356,13 @@ describe('OAuth linking endpoints', () => {
       const req = f.request(flow);
       change(req);
 
-      expect((await f.endpoints[1].handler(req)).status).toBe(400);
+      expect((await routed(() => f.endpoints[1].handler(req))).status).toBe(400);
       expect(f.fetch).not.toHaveBeenCalled();
-      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(200);
+      expect((await routed(() => f.endpoints[1].handler(f.request(flow)))).status).toBe(200);
     },
   );
 
-  const exchangeFailed = "Couldn't finish signing in to Example. Try again.";
+  const exchangeFailed = "Couldn't finish signing in to Example.";
 
   it.each<{
     kind: string;
@@ -405,7 +415,7 @@ describe('OAuth linking endpoints', () => {
       kind: 'deleted-owner',
       status: 400,
       upserts: 0,
-      body: failed('This sign-in expired or was already used. Start again.', 'state'),
+      body: failed('This sign-in expired or was already used.', 'state'),
       fail: (f) => f.findByID.mockResolvedValue(null),
     },
     {
@@ -422,14 +432,14 @@ describe('OAuth linking endpoints', () => {
       body: failed("Sign in with the same account you're renewing.", 'account'),
       fail: (f) =>
         f.upsert.mockRejectedValue(
-          new OAuthError('account', { message: "Sign in with the same account you're renewing." }),
+          frogbotError('oauth.account', "Sign in with the same account you're renewing."),
         ),
     },
     {
       kind: 'storage',
       status: 500,
       upserts: 1,
-      body: failed("Couldn't link the account. Check the server log.", 'internal'),
+      body: failed("Couldn't link the account.", 'save-failed'),
       fail: (f) => f.upsert.mockRejectedValue(new Error('private-refresh-token')),
     },
   ])(
@@ -439,13 +449,17 @@ describe('OAuth linking endpoints', () => {
       const flow = await f.start();
       const url = new URL(flow.url);
       fail(f, url);
-      const response = await f.endpoints[1].handler(f.request({ ...flow, url: url.href }));
+
+      const response = await routed(() =>
+        f.endpoints[1].handler(f.request({ ...flow, url: url.href })),
+      );
+
       const text = await response.text();
 
       expect(response.status).toBe(status);
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(response.headers.get('cache-control')).toBe('no-store');
-      expect(JSON.parse(text)).toEqual(body);
+      expect(JSON.parse(text)).toMatchObject(body);
       expect(text).not.toMatch(/private-|fresh-token/);
       expect(f.warn).toHaveBeenCalledOnce();
       expect(f.warn.mock.calls[0][0]).toMatchObject({ piece: 'example' });
@@ -457,7 +471,7 @@ describe('OAuth linking endpoints', () => {
 
       const calls = f.fetch.mock.calls.length;
 
-      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
+      expect((await routed(() => f.endpoints[1].handler(f.request(flow)))).status).toBe(400);
       expect(f.fetch).toHaveBeenCalledTimes(calls);
     },
   );
@@ -470,17 +484,17 @@ describe('OAuth linking endpoints', () => {
       Response.json({ error_description: 'private-description' }, { status: 401 }),
     );
 
-    const response = await f.endpoints[1].handler(f.request(flow));
+    const response = await routed(() => f.endpoints[1].handler(f.request(flow)));
 
     expect(response.status).toBe(400);
     expect(f.warn.mock.calls[0][0].err).toMatchObject({
-      code: 'tokens',
+      code: 'oauth.tokens',
       cause: { message: 'The token endpoint answered 401.' },
     });
   });
 
   it.each([
-    ['auth', failed("Couldn't finish signing in to Example. Try again.", 'tokens')],
+    ['auth', failed("Couldn't finish signing in to Example.", 'tokens')],
     ['account', failed("Couldn't read the signed-in account from Example.", 'account')],
   ])('validates fresh-token %s before persistence', async (kind, body) => {
     const f = fixture({
@@ -494,12 +508,12 @@ describe('OAuth linking endpoints', () => {
     });
 
     const flow = await f.start();
-    const response = await f.endpoints[1].handler(f.request(flow));
+    const response = await routed(() => f.endpoints[1].handler(f.request(flow)));
 
     expect(response.status).toBe(400);
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(f.upsert).not.toHaveBeenCalled();
-    expect(await response.json()).toEqual(body);
+    expect(await response.json()).toMatchObject(body);
   });
 });
 
@@ -565,24 +579,26 @@ describe('piece-run sign-in endpoints', () => {
     const f = signInFixture();
     const cause = new Error('client id missing');
     f.authorize.mockRejectedValue(cause);
-    const response = await f.endpoints[0].handler(
-      f.request('http://localhost:3000/api/connections/example/authorize'),
+    const response = await routed(() =>
+      f.endpoints[0].handler(f.request('http://localhost:3000/api/connections/example/authorize')),
     );
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual(
-      failed("This connection's OAuth setup is incomplete. Check the server log.", 'configuration'),
+    expect(await response.json()).toMatchObject(
+      failed("This connection's OAuth setup is incomplete.", 'configuration'),
     );
     expect(f.warn).toHaveBeenCalledWith(
-      { err: expect.objectContaining({ code: 'configuration', cause }), piece: 'example' },
+      { err: expect.objectContaining({ code: 'oauth.configuration', cause }), piece: 'example' },
       '[frogbot] Connection OAuth failed',
     );
   });
 
   it('calls authorize with an absolute returnTo at the request origin and redirects', async () => {
     const f = signInFixture();
-    const response = await f.endpoints[0].handler(
-      f.request('http://localhost:3000/api/connections/example/authorize?returnTo=%2Fadmin%2Fx'),
+    const response = await routed(() =>
+      f.endpoints[0].handler(
+        f.request('http://localhost:3000/api/connections/example/authorize?returnTo=%2Fadmin%2Fx'),
+      ),
     );
 
     expect(response.status).toBe(302);
@@ -597,8 +613,8 @@ describe('piece-run sign-in endpoints', () => {
   it('defaults returnTo to the Linked accounts page', async () => {
     const f = signInFixture();
 
-    await f.endpoints[0].handler(
-      f.request('http://localhost:3000/api/connections/example/authorize'),
+    await routed(() =>
+      f.endpoints[0].handler(f.request('http://localhost:3000/api/connections/example/authorize')),
     );
 
     expect(f.authorize.mock.calls[0][0].returnTo).toBe(
@@ -610,9 +626,11 @@ describe('piece-run sign-in endpoints', () => {
     'refuses returnTo %s on another origin',
     async (returnTo) => {
       const f = signInFixture();
-      const response = await f.endpoints[0].handler(
-        f.request(
-          `http://localhost:3000/api/connections/example/authorize?returnTo=${encodeURIComponent(returnTo)}`,
+      const response = await routed(() =>
+        f.endpoints[0].handler(
+          f.request(
+            `http://localhost:3000/api/connections/example/authorize?returnTo=${encodeURIComponent(returnTo)}`,
+          ),
         ),
       );
 
@@ -623,8 +641,10 @@ describe('piece-run sign-in endpoints', () => {
 
   it('answers 404 on the core callback route', async () => {
     const f = signInFixture();
-    const response = await f.endpoints[1].handler(
-      f.request('http://localhost:3000/api/connections/example/callback?state=x&code=y'),
+    const response = await routed(() =>
+      f.endpoints[1].handler(
+        f.request('http://localhost:3000/api/connections/example/callback?state=x&code=y'),
+      ),
     );
 
     expect(response.status).toBe(404);
@@ -633,8 +653,8 @@ describe('piece-run sign-in endpoints', () => {
   it("saves the starting user's row through save", async () => {
     const f = signInFixture();
 
-    await f.endpoints[0].handler(
-      f.request('http://localhost:3000/api/connections/example/authorize'),
+    await routed(() =>
+      f.endpoints[0].handler(f.request('http://localhost:3000/api/connections/example/authorize')),
     );
 
     await f.authorize.mock.calls[0][0].save({
@@ -664,13 +684,13 @@ describe('piece-run sign-in endpoints', () => {
 
     change(f);
 
-    await f.endpoints[0].handler(
-      f.request('http://localhost:3000/api/connections/example/authorize'),
+    await routed(() =>
+      f.endpoints[0].handler(f.request('http://localhost:3000/api/connections/example/authorize')),
     );
 
     await expect(
       f.authorize.mock.calls[0][0].save({ tokens, account: { id: 'sub', label: 'Account' } }),
-    ).rejects.toThrow('OAuth');
+    ).rejects.toMatchObject({ code: expect.stringMatching(/^oauth\./) });
     expect(f.upsert).not.toHaveBeenCalled();
   });
 });

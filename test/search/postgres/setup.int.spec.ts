@@ -292,7 +292,7 @@ describePostgres(`postgres search setup [${driver}]`, () => {
           query: { text: 'anything' },
           overrideAccess: true,
         }),
-      ).rejects.toMatchObject({ name: 'SearchReadinessError', status: 503 });
+      ).rejects.toMatchObject({ code: 'search.not-ready', status: 503 });
 
       await payload.db.createMigration({
         migrationName: 'search',

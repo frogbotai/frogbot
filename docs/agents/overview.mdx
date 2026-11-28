@@ -680,7 +680,7 @@ There are two ways a structured run ends without an object, and FrogBot doesn't 
 | `overrideAccess` | `boolean` | `false` | Set `true` to run trusted: skips the agent's and tools' `access` rules, and tools receive it as `ctx.overrideAccess`. |
 | `abortSignal` | `AbortSignal` | — | Cancels the run. |
 | `output` | `AIOutput` | Text | An `Output` specification. `result.output` is typed from it. See [Return structured output](#return-structured-output). |
-| `model` | `AgentModelId` | The user's default for the agent | The model for this run only. It must be in the agent's `model.options` and allowed for the user by `ai.access`, else the run fails with `selection-unavailable` before any model call. Saved messages keep their own model. |
+| `model` | `AgentModelId` | The user's default for the agent | The model for this run only. It must be in the agent's `model.options` and allowed for the user by `ai.access`, else the run fails with `turn.selection-unavailable` before any model call. Saved messages keep their own model. |
 | `reasoning` | `string` | The model's default | A reasoning option of the run's model, as in the chat picker. An unknown key fails like a bad `model`. |
 | `chatId` | `DocID` | A new chat | `generate` only. The chat to save the user message and the reply in. `stream()` never saves. |
 | `autoApprove` | `boolean` | The chat's `autoApprove`, else `false` | Runs `approval: 'ask'` tools without asking. `'required'` tools still need a person. |
@@ -807,17 +807,17 @@ FrogBot loads stored history, rejects chats owned by another authenticated user,
 
 Malformed input returns `400` naming the first field that failed and why, for example `` `messages[0].parts[0].state`: expected one of 'input-streaming' | 'input-available' | …, received 'done' ``. An unknown slug returns `404`, and an aborted request returns a bodyless `499`.
 
-Errors are `{ error, code? }`. `code` is stable, so branch on it rather than the message:
+Errors are [Problem](https://www.rfc-editor.org/rfc/rfc9457) bodies with `Content-Type: application/problem+json`: `code` is stable, `detail` says what went wrong, and `hint` says what to do next. Branch on `code`, not on `detail`:
 
 | Code | Status | Meaning |
 | --- | --- | --- |
-| `agent-not-found` | 404 | No agent has this slug. |
-| `unauthenticated` | 401 | The agent's `access` refused a caller with no user. |
-| `access-denied` | 403 | The agent's `access` refused a signed-in caller. |
-| `access-error` | 500 | The agent's `access` threw. The error is logged. |
-| `model-not-allowed` | 403 | `model` isn't one of the agent's options, or `ai.access` blocks it for this user. The message lists the allowed models. |
-| `no-model-available` | 403 | No model is named and none of the agent's models is allowed for this user. |
-| `reasoning-unavailable` | 400 | The model doesn't offer this `reasoning` option. The message lists the ones it does. |
+| `agent.not-found` | 404 | No agent has this slug. |
+| `auth.unauthenticated` | 401 | The agent's `access` refused a caller with no user. |
+| `agent.access-denied` | 403 | The agent's `access` refused a signed-in caller. |
+| `agent.access-error` | 500 | The agent's `access` threw. The error is logged. |
+| `agent.model-not-allowed` | 403 | `model` isn't one of the agent's options, or `ai.access` blocks it for this user. `detail` lists the allowed models. |
+| `agent.no-model-available` | 403 | No model is named and none of the agent's models is allowed for this user. |
+| `agent.reasoning-unavailable` | 400 | The model doesn't offer this `reasoning` option. `detail` lists the ones it does. |
 
 See [Chat persistence](/chat/overview) for collection customization and durability behavior.
 

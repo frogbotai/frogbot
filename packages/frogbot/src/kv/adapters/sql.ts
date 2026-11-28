@@ -6,7 +6,7 @@ import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 import type { BaseDatabaseAdapter, KVStoreValue } from 'payload';
 import toSnakeCase from 'to-snake-case';
 
-import { KVUnsupportedError } from '../errors.js';
+import { kvUnsupported } from '../errors.js';
 import type { KVDatabaseAdapter, KVLock, KVSetOptions } from '../types.js';
 import { kvAtomic } from '../types.js';
 import { validateKVTTL } from '../validateTTL.js';
@@ -20,9 +20,7 @@ type SQLKVTable = SQLiteTable & {
 const overflowMarker = 'frogbot_kv_ttl_overflow';
 
 function unsupported(message: string): never {
-  const error = new KVUnsupportedError();
-  error.message = message;
-  throw error;
+  throw kvUnsupported(message);
 }
 
 async function mutation<T>(query: PromiseLike<T>): Promise<T> {

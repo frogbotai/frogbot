@@ -3,7 +3,7 @@ import { executeAccess, Forbidden } from 'payload';
 
 import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { describeSearchIndex, SearchFilterUnsupportedError } from './errors.js';
+import { describeSearchIndex, searchFilterUnsupported } from './errors.js';
 import type { SearchIndexDescriptor } from './types.js';
 
 const operators = new Set([
@@ -39,13 +39,13 @@ function validateWhere(
   label: string,
 ): asserts where is Where {
   if (!where || typeof where !== 'object' || Array.isArray(where)) {
-    throw new SearchFilterUnsupportedError(`${label} requires an object where predicate.`);
+    throw searchFilterUnsupported(`${label} requires an object where predicate.`);
   }
 
   for (const [path, constraint] of Object.entries(where)) {
     if (path === 'and' || path === 'or') {
       if (!Array.isArray(constraint) || !constraint.length) {
-        throw new SearchFilterUnsupportedError(`${label} requires a non-empty ${path} predicate.`);
+        throw searchFilterUnsupported(`${label} requires a non-empty ${path} predicate.`);
       }
 
       for (const item of constraint) validateWhere(item, index, label);
@@ -56,7 +56,7 @@ function validateWhere(
     const field = Object.hasOwn(index.filterFields, path) ? index.filterFields[path] : undefined;
 
     if (!field || field.many) {
-      throw new SearchFilterUnsupportedError(`${label} cannot filter path '${path}'.`);
+      throw searchFilterUnsupported(`${label} cannot filter path '${path}'.`);
     }
 
     if (
@@ -65,7 +65,7 @@ function validateWhere(
       Array.isArray(constraint) ||
       !Object.keys(constraint).length
     ) {
-      throw new SearchFilterUnsupportedError(`${label} requires operators on '${path}'.`);
+      throw searchFilterUnsupported(`${label} requires operators on '${path}'.`);
     }
 
     for (const [operator, value] of Object.entries(constraint)) {
@@ -81,9 +81,7 @@ function validateWhere(
         (!isList && operator !== 'exists' && !validValue(field.type, value)) ||
         (operator.includes('than') && (field.type === 'boolean' || field.type === 'id'))
       ) {
-        throw new SearchFilterUnsupportedError(
-          `${label} cannot filter '${path}' with '${operator}'.`,
-        );
+        throw searchFilterUnsupported(`${label} cannot filter '${path}' with '${operator}'.`);
       }
     }
   }

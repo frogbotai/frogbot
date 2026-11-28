@@ -97,7 +97,7 @@ describe('an enabled AI provider with no API key', () => {
       body: JSON.stringify({ prompt: 'Hello' }),
     });
 
-    expect(await response.json()).toEqual({ error: missingKey });
+    expect(await response.json()).toMatchObject({ code: 'ai.no-credential', detail: missingKey });
     expect(response.status).toBe(401);
     expect(upstreamCalls).toEqual([]);
   });

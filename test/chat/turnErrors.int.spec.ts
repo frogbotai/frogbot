@@ -8,7 +8,7 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
-import { modelPort, questionAgentSlug } from './shared.js';
+import { modelPort, questionAgentSlug, readerAgentSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -50,6 +50,28 @@ describe('chat turns: provider errors', () => {
     await model.close();
   });
 
+  it('refuses a signed-out agent call with a 401 Problem that says to sign in', async () => {
+    const response = await fetch(`${booted.baseUrl}/api/agents/${readerAgentSlug}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-request-id': 'req_signed_out' },
+      body: JSON.stringify({ prompt: 'Summarise.' }),
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('content-type')).toContain('application/problem+json');
+    expect(response.headers.get('x-request-id')).toBe('req_signed_out');
+    expect(await response.json()).toMatchObject({
+      type: 'https://docs.frogbot.ai/errors#auth.unauthenticated',
+      code: 'auth.unauthenticated',
+      status: 401,
+      detail: `Agent '${readerAgentSlug}' needs a signed-in user.`,
+      hint: expect.stringContaining('Sign in'),
+      retryable: false,
+      requestId: 'req_signed_out',
+    });
+    expect(model.requests).toEqual([]);
+  });
+
   function post(accept: string) {
     return fetch(`${booted.baseUrl}/api/agents/${questionAgentSlug}`, {
       method: 'POST',
@@ -76,7 +98,11 @@ describe('chat turns: provider errors', () => {
     const body = await response.text();
 
     expect(response.status).toBe(502);
-    expect(JSON.parse(body)).toEqual({ error: keyMessage });
+    expect(JSON.parse(body)).toMatchObject({
+      code: 'ai.key-rejected',
+      detail: 'The AI provider rejected the API key.',
+      hint: 'Check the API key configured for the test provider.',
+    });
     expect(body).not.toContain(keyFragment);
   });
 });

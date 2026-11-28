@@ -123,12 +123,12 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
       method: 'POST',
       body: JSON.stringify(body),
       headers: JSON_HEADERS,
-    }).catch(async (error: unknown) => {
+    }).catch((error: unknown) => {
       if (!(error instanceof FrogBotSDKError) || error.status !== 409) throw error;
 
-      const conflict = (await error.response.json()) as { settlement?: ToolCallSettlement };
+      const conflict = error.problem?.data as { settlement?: ToolCallSettlement } | undefined;
 
-      if (!conflict.settlement) {
+      if (!conflict?.settlement) {
         throw new ChatAdapterError('conflict', error.message, { cause: error });
       }
 

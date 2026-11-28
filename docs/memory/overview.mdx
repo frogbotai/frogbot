@@ -168,20 +168,23 @@ const hits = await sdk.memory.search({ scope: 'me', query: 'language' })
 | `DELETE /api/frogbot/memory/:id` | `forget` with `id` | Query: `scope`, `agent?` |
 | `DELETE /api/frogbot/memory` | `forget` without `id` | Query: `scope`, `agent?` |
 
-Each answers with what the server-side method returns. Errors come back as `{ errors: [{ message }] }`: `invalid` is 400, `not-found` 404, `limit` 409, `unavailable` 503, and a refused call 403. Over REST, scope functions see the request but no chat.
+Each answers with what the server-side method returns. Errors come back as FrogBot's error body, with the codes under [Errors](#errors) and their statuses; a refused call is `auth.forbidden` (403). Over REST, scope functions see the request but no chat.
 
 When memory is on, **Settings → Memory** in the admin lists the signed-in person's own `me` memories, newest first, and lets them forget any of them.
 
 ## Errors
 
-Adapters and `frogbot.memory` throw `MemoryAdapterError` with one of these codes:
+Adapters and `frogbot.memory` throw a `FrogBotError` with one of these codes. REST, agent tools and MCP report the same code.
 
-| Code | When |
-| --- | --- |
-| `invalid` | The input is wrong, or the scope word isn't declared or has no value for the request. |
-| `limit` | The scope is full, or pinned memories would pass their budget. |
-| `not-found` | No memory has that ID in the scope. |
-| `unavailable` | The backend or the embedding model failed. |
+| Code | Status | When |
+| --- | --- | --- |
+| `memory.invalid` | `400` | The input is wrong. |
+| `memory.invalid-scope` | `400` | The scope word isn't declared, or has no value for the request. |
+| `memory.duplicate` | `409` | Another memory in the scope already has that `key`. |
+| `memory.scope-full` | `409` | The scope holds `maxPerScope` memories. `data` has the `scope` and `max`. |
+| `memory.pinned-budget` | `409` | Pinned memories in the scope would pass their budget. |
+| `memory.not-found` | `404` | No memory has that ID in the scope. |
+| `memory.unavailable` | `503` | The backend or the embedding model failed. Retrying can help. |
 
 ## The database adapter
 
@@ -192,7 +195,7 @@ Adapters and `frogbot.memory` throw `MemoryAdapterError` with one of these codes
 | `namespace` | `string` | `''` | Part of every memory's key, so apps that share a database keep their memories apart. |
 | `scopes` | `Record<string, MemoryScope>` | — | Your own scope words, or a replacement for `team`. See [Scopes](#scopes). |
 | `access` | `MemoryAccess` | — | `read` and `write` functions for shared scopes. See [Access](#access). |
-| `maxPerScope` | `number` | `10000` | Most memories one scope may hold. A save past it fails with `limit`. |
+| `maxPerScope` | `number` | `10000` | Most memories one scope may hold. A save past it fails with `memory.scope-full`. |
 | `embeddingModel` | `ModelId` | — | Adds meaning search with this embedding model. Nothing picks one by default. |
 | `dimensions` | `number` | — | The embedding model's vector size, such as `1536`. Required with `embeddingModel`. |
 | `atlasSearch` | `boolean` | `false` | MongoDB only: search with Atlas Search indexes. Needs Atlas Search on the cluster. |
@@ -203,7 +206,7 @@ It keeps memories tidy without AI:
 - A save with a `key` updates the scope's memory with that key.
 - A save without one updates a near duplicate without a key instead of adding a memory: the same text once lowercased, stripped of punctuation and spaces collapsed, or text whose shared words make up at least 90% of all the distinct words in both texts. A memory with a key changes only through its key.
 - Writes to one scope run one at a time in each server process, so the checks above and the cap hold under concurrent saves. Across several processes, a key or the same text still maps to one memory, but the cap can be passed by a few.
-- Pinned memories in one scope may hold about 2,000 tokens, counted as characters divided by 4. A save or update past that fails with `limit`.
+- Pinned memories in one scope may hold about 2,000 tokens, counted as characters divided by 4. A save or update past that fails with `memory.pinned-budget`.
 
 ### Search
 
@@ -226,8 +229,8 @@ A memory adapter is an object with six methods. FrogBot resolves the scope and c
 | `save` | `(args: MemorySaveArgs) => Promise<Memory>` | — | Adds a memory, or updates the scope's memory with the same `key`. |
 | `search` | `(args: MemorySearchArgs) => Promise<MemorySearchHit[]>` | — | Returns hits for `query`, best first, at most `limit`. |
 | `list` | `(args: MemoryListArgs) => Promise<MemoryList>` | — | Returns one page of the scope, filtered by `pinned` when set. |
-| `get` | `(args: MemoryGetArgs) => Promise<Memory>` | — | Returns one memory, or throws `not-found`. |
-| `update` | `(args: MemoryUpdateArgs) => Promise<Memory>` | — | Changes one memory, or throws `not-found`. |
+| `get` | `(args: MemoryGetArgs) => Promise<Memory>` | — | Returns one memory, or throws `memory.not-found`. |
+| `update` | `(args: MemoryUpdateArgs) => Promise<Memory>` | — | Changes one memory, or throws `memory.not-found`. |
 | `forget` | `(args: MemoryForgetArgs) => Promise<{ deleted: number }>` | — | Removes one memory by `id`, or the whole scope without one. |
 | `init` | `(args: { frogbot }) => void \| Promise<void>` | — | Runs once at startup, to open clients. |
 | `afterTurn` | `(args: MemoryAfterTurnArgs) => void \| Promise<void>` | — | Runs after a finished turn of an agent with `memory: true`, to learn from it. The reply never waits for it, and a throw is logged. |
@@ -238,11 +241,11 @@ A memory adapter is an object with six methods. FrogBot resolves the scope and c
 | `access` | `MemoryAccess` | — | Accept it in your factory options, so apps can set access. |
 | `tools` | `{ memory_search?, memory_save?, memory_forget? }` | — | Accept it in your factory options, so apps can change tool approval. |
 
-Throw `MemoryAdapterError` from `frogbot/memory` with the code that fits.
+Throw `frogbotError('memory.<reason>', detail)` from `frogbot` with the code that fits.
 
 ### Test an adapter
 
-`testMemoryAdapter()` from `frogbot/memory/testing` runs the same cases against any adapter: a round trip through the six methods, upsert by key, scope and namespace isolation, `not-found`, and `init` and `afterTurn` when the adapter has them. It throws on the first case that fails. Pass a request from a FrogBot instance booted with the adapter, and a call for each other error code your adapter can produce:
+`testMemoryAdapter()` from `frogbot/memory/testing` runs the same cases against any adapter: a round trip through the six methods, upsert by key, scope and namespace isolation, `memory.not-found`, and `init` and `afterTurn` when the adapter has them. It throws on the first case that fails. Pass a request from a FrogBot instance booted with the adapter, and a call for each other error code your adapter can produce:
 
 ```ts
 import { testMemoryAdapter } from 'frogbot/memory/testing'
@@ -251,7 +254,7 @@ it('passes the memory adapter kit', async () => {
   await testMemoryAdapter(adapter, {
     req: await frogbot.createRequest(),
     errors: {
-      limit: (target) => adapter.save({ ...target, text: 'x'.repeat(10_000), pinned: true }),
+      'memory.pinned-budget': (target) => adapter.save({ ...target, text: 'x'.repeat(10_000), pinned: true }),
     },
   })
 })

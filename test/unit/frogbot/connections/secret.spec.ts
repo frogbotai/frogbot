@@ -4,11 +4,14 @@ import { z } from 'zod';
 import { linkedModels } from '../../../../packages/frogbot/src/ai/providerModels.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildSecretEndpoints } from '../../../../packages/frogbot/src/connections/secret.js';
-import { KVLockContentionError } from '../../../../packages/frogbot/src/kv/errors.js';
+import { kvLockHeld } from '../../../../packages/frogbot/src/kv/errors.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { routed } from '../../../__helpers/shared/routed.js';
 
-const failed = (message: string, code: string, data: Record<string, unknown> = {}) => ({
-  errors: [{ message, data: { code, ...data } }],
+const failed = (detail: string, code: string, data?: Record<string, unknown>) => ({
+  code,
+  detail,
+  ...(data ? { data } : {}),
 });
 
 function setup(auth: z.ZodType | null = z.object({ token: z.string().min(1) })) {
@@ -56,7 +59,7 @@ function setup(auth: z.ZodType | null = z.object({ token: z.string().min(1) })) 
 describe('static connection endpoints', () => {
   it('accepts raw schema input and returns metadata without secrets', async () => {
     const { endpoints, request, upsert } = setup();
-    const response = await endpoints[0].handler(request());
+    const response = await routed(() => endpoints[0].handler(request()));
 
     expect(response.status).toBe(200);
     expect(upsert).toHaveBeenCalledWith({
@@ -83,12 +86,12 @@ describe('static connection endpoints', () => {
     [[], 'the body must be an object', []],
   ])('names the failing field for raw input %j, never its value', async (body, issue, fields) => {
     const { endpoints, request, upsert } = setup();
-    const response = await endpoints[0].handler(request({ body }));
+    const response = await routed(() => endpoints[0].handler(request({ body })));
     const text = await response.text();
 
     expect(response.status).toBe(400);
-    expect(JSON.parse(text)).toEqual(
-      failed(`Invalid credentials: ${issue}.`, 'invalid_credentials', { fields }),
+    expect(JSON.parse(text)).toMatchObject(
+      failed(`Invalid credentials: ${issue}.`, 'connection.invalid-credentials', { fields }),
     );
     expect(text).not.toContain('secret-value');
     expect(text).not.toContain('42');
@@ -107,13 +110,13 @@ describe('static connection endpoints', () => {
     );
 
     const body = { key: 'secret-value', region: 'mars', nested: {}, extra: 'secret-value' };
-    const response = await endpoints[0].handler(request({ body }));
+    const response = await routed(() => endpoints[0].handler(request({ body })));
     const text = await response.text();
 
-    expect(JSON.parse(text)).toEqual(
+    expect(JSON.parse(text)).toMatchObject(
       failed(
         "Invalid credentials: key has the wrong format (expected starts_with); region must be one of us, eu; nested.id is required (expected number); the body has fields the key doesn't take.",
-        'invalid_credentials',
+        'connection.invalid-credentials',
         { fields: ['key', 'region', 'nested.id'] },
       ),
     );
@@ -127,13 +130,13 @@ describe('static connection endpoints', () => {
       z.preprocess((value) => value, z.object({ token: z.string().min(1) })),
     );
 
-    const response = await endpoints[0].handler(request({ body: { token: 42 } }));
+    const response = await routed(() => endpoints[0].handler(request({ body: { token: 42 } })));
     const text = await response.text();
 
-    expect(JSON.parse(text)).toEqual(
+    expect(JSON.parse(text)).toMatchObject(
       failed(
         'Invalid credentials: token has the wrong type (expected string).',
-        'invalid_credentials',
+        'connection.invalid-credentials',
         {
           fields: ['token'],
         },
@@ -153,13 +156,13 @@ describe('static connection endpoints', () => {
       'sk-live-SECRET123': true,
     };
 
-    const response = await endpoints[0].handler(request({ body }));
+    const response = await routed(() => endpoints[0].handler(request({ body })));
     const text = await response.text();
 
-    expect(JSON.parse(text)).toEqual(
+    expect(JSON.parse(text)).toMatchObject(
       failed(
         "Invalid credentials: headers has an invalid entry; the body has fields the key doesn't take.",
-        'invalid_credentials',
+        'connection.invalid-credentials',
         { fields: ['headers'] },
       ),
     );
@@ -168,10 +171,12 @@ describe('static connection endpoints', () => {
 
   it('says the piece takes no key when its entry has no auth schema', async () => {
     const { endpoints, request, upsert } = setup(null);
-    const response = await endpoints[0].handler(request());
+    const response = await routed(() => endpoints[0].handler(request()));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual(failed('Example takes no key.', 'no_credentials'));
+    expect(await response.json()).toMatchObject(
+      failed('Example takes no key.', 'connection.no-credentials'),
+    );
     expect(upsert).not.toHaveBeenCalled();
   });
 
@@ -184,12 +189,12 @@ describe('static connection endpoints', () => {
       }),
     );
 
-    const response = await endpoints[0].handler(request());
+    const response = await routed(() => endpoints[0].handler(request()));
     const text = await response.text();
 
     expect(response.status).toBe(400);
-    expect(JSON.parse(text)).toEqual(
-      failed('Invalid credentials: the key failed validation.', 'invalid_credentials', {
+    expect(JSON.parse(text)).toMatchObject(
+      failed('Invalid credentials: the key failed validation.', 'connection.invalid-credentials', {
         fields: [],
       }),
     );
@@ -203,10 +208,12 @@ describe('static connection endpoints', () => {
       json: () => Promise.reject(new Error('secret-value')),
     };
 
-    const response = await endpoints[0].handler(req as never);
+    const response = await routed(() => endpoints[0].handler(req as never));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual(failed("The body isn't valid JSON.", 'invalid_json'));
+    expect(await response.json()).toMatchObject(
+      failed("The body isn't valid JSON.", 'request.invalid-json'),
+    );
   });
 
   it.each([null, { id: 'owner', collection: 'customers' }])(
@@ -215,7 +222,9 @@ describe('static connection endpoints', () => {
       const { endpoints, request, upsert, remove } = setup();
 
       for (const endpoint of endpoints) {
-        expect((await endpoint.handler(request({ user }))).status).toBe(user ? 403 : 401);
+        expect((await routed(() => endpoint.handler(request({ user })))).status).toBe(
+          user ? 403 : 401,
+        );
       }
 
       expect(upsert).not.toHaveBeenCalled();
@@ -228,10 +237,14 @@ describe('static connection endpoints', () => {
     async (piece) => {
       const { endpoints, request, upsert } = setup();
 
-      const response = await endpoints[0].handler(request({ routeParams: { piece } }));
+      const response = await routed(() =>
+        endpoints[0].handler(request({ routeParams: { piece } })),
+      );
 
       expect(response.status).toBe(404);
-      expect(await response.json()).toEqual(failed('Connection not found', 'not_found'));
+      expect(await response.json()).toMatchObject(
+        failed('Connection not found.', 'connection.not-found'),
+      );
       expect(upsert).not.toHaveBeenCalled();
     },
   );
@@ -240,7 +253,7 @@ describe('static connection endpoints', () => {
     const { endpoints, request, connections } = setup();
     connections.entries.example.secret = false;
 
-    expect((await endpoints[0].handler(request())).status).toBe(404);
+    expect((await routed(() => endpoints[0].handler(request()))).status).toBe(404);
     expect(
       buildSecretEndpoints({ connections: { ...connections, enabled: false }, userSlug: 'users' }),
     ).toEqual([]);
@@ -250,23 +263,23 @@ describe('static connection endpoints', () => {
     const { endpoints, request, remove } = setup();
     const req = request({ routeParams: { id: 'row' } });
 
-    expect((await endpoints[1].handler(req)).status).toBe(204);
+    expect((await routed(() => endpoints[1].handler(req))).status).toBe(204);
     expect(remove).toHaveBeenCalledWith({ req, id: 'row' });
 
     remove.mockResolvedValue(false);
 
-    expect((await endpoints[1].handler(req)).status).toBe(404);
+    expect((await routed(() => endpoints[1].handler(req))).status).toBe(404);
   });
 
   it('redacts persistence errors and logs the cause', async () => {
     const { endpoints, request, upsert, warn } = setup();
     const cause = new Error('store down');
     upsert.mockRejectedValue(cause);
-    const response = await endpoints[0].handler(request());
+    const response = await routed(() => endpoints[0].handler(request()));
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual(
-      failed("Couldn't save the connection. Check the server log.", 'internal'),
+    expect(await response.json()).toMatchObject(
+      failed("The connection couldn't be saved.", 'connection.save-failed'),
     );
     expect(warn).toHaveBeenCalledWith(
       { err: cause, piece: 'example' },
@@ -276,11 +289,13 @@ describe('static connection endpoints', () => {
 
   it('reports lock contention without leaking the lock key', async () => {
     const { endpoints, request, upsert } = setup();
-    upsert.mockRejectedValue(new KVLockContentionError('private-owner-key'));
-    const response = await endpoints[0].handler(request());
+    upsert.mockRejectedValue(kvLockHeld());
+    const response = await routed(() => endpoints[0].handler(request()));
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual(failed('Connection is busy. Try again.', 'busy'));
+    expect(await response.json()).toMatchObject(
+      failed('This connection is being changed.', 'connection.busy'),
+    );
   });
 });
 
@@ -332,7 +347,7 @@ describe('static connection endpoint: provider key check', () => {
       Promise.resolve(['gpt-4o', 'whisper-1']),
     );
 
-    const response = await link.handler(req as never);
+    const response = await routed(() => link.handler(req as never));
 
     expect(response.status).toBe(200);
     expect(upsert).toHaveBeenCalledOnce();
@@ -353,13 +368,15 @@ describe('static connection endpoint: provider key check', () => {
     'refuses a key the provider rejects with %i, saving nothing',
     async (status) => {
       const { link, req, upsert } = setupProvider(() =>
-        Promise.reject(Object.assign(new Error('rejected'), { status })),
+        Promise.reject(Object.assign(new Error('connection.key-rejected'), { status })),
       );
 
-      const response = await link.handler(req as never);
+      const response = await routed(() => link.handler(req as never));
 
       expect(response.status).toBe(422);
-      expect(await response.json()).toEqual(failed("OpenAI didn't accept this key.", 'rejected'));
+      expect(await response.json()).toMatchObject(
+        failed("OpenAI didn't accept this key.", 'connection.key-rejected'),
+      );
       expect(upsert).not.toHaveBeenCalled();
     },
   );
@@ -369,11 +386,11 @@ describe('static connection endpoint: provider key check', () => {
       Promise.reject(new TypeError('fetch failed')),
     );
 
-    const response = await link.handler(req as never);
+    const response = await routed(() => link.handler(req as never));
 
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual(
-      failed("Couldn't reach OpenAI to check this key. Try again.", 'unreachable'),
+    expect(await response.json()).toMatchObject(
+      failed("Couldn't reach OpenAI to check this key.", 'connection.unreachable'),
     );
     expect(upsert).not.toHaveBeenCalled();
   });

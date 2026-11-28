@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  AggregateCapabilityError,
-  AggregateValidationError,
-} from '../../../../packages/frogbot/src/aggregate/errors.js';
 import { aggregateOperation } from '../../../../packages/frogbot/src/aggregate/operation.js';
 import type { AggregateOptions } from '../../../../packages/frogbot/src/aggregate/types.js';
 import { aggregateFixture } from './fixture.js';
@@ -50,7 +46,7 @@ describe('aggregate operation validation', () => {
       ...(options as object),
     } as never).catch((caught: unknown) => caught);
 
-    expect(error).toBeInstanceOf(AggregateValidationError);
+    expect(error).toMatchObject({ code: 'aggregate.invalid' });
     expect(error).toMatchObject({ status: 400 });
     expect((error as Error).message).toContain(message);
     expect(adapterAggregate).not.toHaveBeenCalled();
@@ -91,7 +87,7 @@ describe('aggregate operation validation', () => {
         values: count,
         req,
       }),
-    ).rejects.toThrow(AggregateCapabilityError);
+    ).rejects.toMatchObject({ code: 'aggregate.unsupported' });
   });
 
   it.each<[string, Omit<AggregateOptions, 'collection'>]>([

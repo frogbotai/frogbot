@@ -193,7 +193,9 @@ describe('Linear connections', () => {
 
       frogbot.find.mockResolvedValue({ docs: [] });
 
-      await expect(api.resolve({ piece: linear, req })).rejects.toMatchObject({ code: 'missing' });
+      await expect(api.resolve({ piece: linear, req })).rejects.toMatchObject({
+        code: 'connection.not-linked',
+      });
     },
   );
 
@@ -206,8 +208,8 @@ describe('Linear connections', () => {
     row.scopes.pop();
 
     await expect(api.resolve({ piece: linear, req })).rejects.toMatchObject({
-      code: 'scopes',
-      missingScopes: ['app:mentionable'],
+      code: 'connection.missing-scopes',
+      data: { missingScopes: ['app:mentionable'] },
     });
   });
 });

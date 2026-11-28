@@ -1,6 +1,6 @@
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
 import type { SearchReadiness } from 'frogbot/search';
-import { SearchReadinessError } from 'frogbot/search';
+import { searchNotReady } from 'frogbot/search';
 
 import { createSearchSetupError } from './createSearchSetupError.js';
 import { findSearchIndex } from './findSearchIndex.js';
@@ -30,17 +30,17 @@ export const readiness: SearchReadiness = async ({ collection, db, draft, index,
     } catch (error) {
       const setupError = createSearchSetupError({ error, searchIndex });
 
-      throw setupError.reason === 'setup-failed' ? error : setupError;
+      throw setupError.code === 'search.setup-failed' ? error : setupError;
     }
 
     if (!existing) {
-      throw new SearchReadinessError(
+      throw searchNotReady(
         `Search index '${searchIndex.name}' on '${Model.collection.name}' does not exist.`,
       );
     }
 
     if (!existing.queryable) {
-      throw new SearchReadinessError(
+      throw searchNotReady(
         `Search index '${searchIndex.name}' on '${Model.collection.name}' is not queryable yet (${existing.status ?? 'unknown'}).`,
       );
     }

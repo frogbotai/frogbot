@@ -393,7 +393,7 @@ describe.skipIf(!RUN_E2E)(
       expect(anonymous.ok).toBe(false);
       expect(refused.status).toBe(409);
       expect(await refused.json()).toMatchObject({
-        code: 'channel-chat',
+        code: 'turn.channel-chat',
         error:
           'This conversation happens in Telegram. Continue it there, or branch it into a new chat.',
       });

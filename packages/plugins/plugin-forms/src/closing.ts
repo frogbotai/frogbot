@@ -1,4 +1,4 @@
-import { type FrogBot, KVLockContentionError } from 'frogbot';
+import { type FrogBot, isFrogBotError } from 'frogbot';
 
 import type { FormDocument } from './types.js';
 
@@ -33,7 +33,7 @@ export async function withLock<T>(frogbot: FrogBot, key: string, fn: () => Promi
     try {
       return await frogbot.kv.lock(key, LOCK_TTL, fn);
     } catch (error) {
-      if (!(error instanceof KVLockContentionError) || attempt >= LOCK_ATTEMPTS) throw error;
+      if (!isFrogBotError(error, 'kv.lock-held') || attempt >= LOCK_ATTEMPTS) throw error;
 
       await new Promise((resolve) => setTimeout(resolve, 25 + Math.random() * 50));
     }

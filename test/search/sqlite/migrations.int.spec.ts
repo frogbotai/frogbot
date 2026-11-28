@@ -148,7 +148,7 @@ describe('SQLite search migrations', () => {
       overrideAccess: true,
     } as never);
 
-    await expect(searchIDs('migrated')).rejects.toMatchObject({ name: 'SearchReadinessError' });
+    await expect(searchIDs('migrated')).rejects.toMatchObject({ code: 'search.not-ready' });
 
     await run(await kit.generateMigration(base, current));
 

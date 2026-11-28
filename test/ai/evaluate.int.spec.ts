@@ -391,9 +391,9 @@ describe('booted TypeSafe evaluation', () => {
     expect(response.status).toBe(403);
     expect(response.body).toEqual({
       error: {
-        message: 'Access denied for AI evaluate',
+        message: 'Access denied for AI evaluate.',
         type: 'permission_error',
-        code: 'permission_denied',
+        code: 'ai.access-denied',
         param: null,
       },
     });

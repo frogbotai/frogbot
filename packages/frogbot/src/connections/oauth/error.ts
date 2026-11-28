@@ -1,12 +1,6 @@
-export class OAuthError extends Error {
-  constructor(
-    public readonly code: 'state' | 'configuration' | 'tokens' | 'account' | 'refresh' | 'signUp',
-    {
-      cause,
-      message = `OAuth ${code} validation failed.`,
-    }: { cause?: unknown; message?: string } = {},
-  ) {
-    super(message, cause === undefined ? undefined : { cause });
-    this.name = 'OAuthError';
-  }
+import { type FrogBotError, isFrogBotError } from '../../errors/FrogBotError.js';
+
+/** Whether `error` is a failed OAuth step: an `oauth.*` code. */
+export function isOAuthError(error: unknown): error is FrogBotError {
+  return isFrogBotError(error) && error.code.startsWith('oauth.');
 }

@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url';
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
 import {
-  ConnectionError,
   definePiece,
   type FrogBotConfig,
   type FrogBotRequest,
@@ -496,7 +495,7 @@ describe('email piece boot and runtime isolation', () => {
     expect(requestBody().from).toBe('"transactional" <sender@example.com>');
   });
 
-  it('fails with a named ConnectionError when only a user connection has credentials', async () => {
+  it('fails with a connection error when only a user connection has credentials', async () => {
     const piece = createResend({ from: { address: 'sender@example.com' } });
     const runtime = await bootRuntime({ email: piece, connections: [{ piece, secret: true }] });
     const user = await runtime.create({
@@ -517,16 +516,16 @@ describe('email piece boot and runtime isolation', () => {
 
     expect(await runtime.connections.resolve({ piece, req })).toEqual({ apiKey: 'user-only-key' });
 
-    await expect(getFrogBotPayload(runtime).sendEmail(message)).rejects.toBeInstanceOf(
-      ConnectionError,
-    );
+    await expect(getFrogBotPayload(runtime).sendEmail(message)).rejects.toMatchObject({
+      code: expect.stringMatching(/^connection\./),
+    });
     await expect(
       runtime.forgotPassword({
         collection: usersSlug,
         data: { email: user.email },
         req,
       }),
-    ).rejects.toMatchObject({ code: 'missing', piece: 'resend' });
+    ).rejects.toMatchObject({ code: 'connection.not-configured', data: { piece: 'resend' } });
 
     expect(fetch).not.toHaveBeenCalled();
   });

@@ -3,15 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import type { AgentInstance, AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
-import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
 import { assertStoredSelection } from '../../../../packages/frogbot/src/chat/turn/selection.js';
 import type * as StreamTurnModule from '../../../../packages/frogbot/src/chat/turn/streamTurn.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import {
   definePiece,
   pieceInstanceTools,
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import { routed } from '../../../__helpers/shared/routed.js';
 
 const { listPendingCalls, releaseTurn, resolveChatContext, streamTurn } = vi.hoisted(() => ({
   listPendingCalls: vi.fn(),
@@ -170,9 +171,11 @@ function makeRequest({
 }
 
 function postHandler() {
-  return buildAgentEndpoints().find(
+  const { handler } = buildAgentEndpoints().find(
     ({ path, method }) => path === '/agents/:slug' && method === 'post',
-  )!.handler;
+  )!;
+
+  return (req: FrogBotRequest) => routed(() => handler(req));
 }
 
 function listHandler() {
@@ -181,9 +184,11 @@ function listHandler() {
 }
 
 function authorizationsHandler() {
-  return buildAgentEndpoints().find(
+  const { handler } = buildAgentEndpoints().find(
     ({ path, method }) => path === '/agents/:slug/authorizations' && method === 'get',
-  )!.handler;
+  )!;
+
+  return (req: FrogBotRequest) => routed(() => handler(req));
 }
 
 describe('agent endpoints', () => {
@@ -265,9 +270,9 @@ describe('agent endpoints', () => {
     const response = await postHandler()(req);
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      code: 'model-not-allowed',
-      error: "Model 'openai/test' is not allowed for this user. Allowed: 'local/plain'",
+    expect(await response.json()).toMatchObject({
+      code: 'agent.model-not-allowed',
+      detail: "Model 'openai/test' is not allowed for this user. Allowed: 'local/plain'",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
     expect(streamTurn).not.toHaveBeenCalled();
@@ -464,13 +469,13 @@ describe('agent endpoints', () => {
 
   it('rejects the JSON response when the turn fails to persist', async () => {
     streamTurn.mockResolvedValue(
-      makeTurn({ persistence: Promise.reject(Object.assign(new Error('lost'), { status: 409 })) }),
+      makeTurn({ persistence: Promise.reject(frogbotError('turn.write-conflict', 'lost')) }),
     );
 
     const response = await postHandler()(makeRequest());
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'lost' });
+    expect(await response.json()).toMatchObject({ code: 'turn.write-conflict', detail: 'lost' });
   });
 
   it('streams the turn for an explicit text/event-stream media range', async () => {
@@ -526,9 +531,9 @@ describe('agent endpoints', () => {
     const response = await postHandler()(makeRequest({ body: { prompt: 'Hello', model } }));
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      code: 'model-not-allowed',
-      error: `Model '${model}' is not allowed for agent 'support'. Allowed: 'openai/test'`,
+    expect(await response.json()).toMatchObject({
+      code: 'agent.model-not-allowed',
+      detail: `Model '${model}' is not allowed for agent 'support'. Allowed: 'openai/test'`,
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
@@ -543,9 +548,9 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      code: 'model-not-allowed',
-      error:
+    expect(await response.json()).toMatchObject({
+      code: 'agent.model-not-allowed',
+      detail:
         "Model 'local/deep' is not allowed for agent 'support'. Allowed: 'openai/test', 'local/thinker', 'local/plain'",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
@@ -626,9 +631,9 @@ describe('agent endpoints', () => {
       );
 
       expect(response.status).toBe(400);
-      expect(await response.json()).toEqual({
-        code: 'reasoning-unavailable',
-        error: `Reasoning option 'high' is not available for model '${model}'. ${allowed}`,
+      expect(await response.json()).toMatchObject({
+        code: 'agent.reasoning-unavailable',
+        detail: `Reasoning option 'high' is not available for model '${model}'. ${allowed}`,
       });
       expect(resolveChatContext).not.toHaveBeenCalled();
       expect(streamTurn).not.toHaveBeenCalled();
@@ -641,9 +646,9 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      code: 'model-not-allowed',
-      error: "Model 'local/thinker' is not allowed for agent 'support'. Allowed: 'openai/test'",
+    expect(await response.json()).toMatchObject({
+      code: 'agent.model-not-allowed',
+      detail: "Model 'local/thinker' is not allowed for agent 'support'. Allowed: 'openai/test'",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
@@ -664,7 +669,7 @@ describe('agent endpoints', () => {
     const response = await postHandler()(makeRequest({ body }));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error });
+    expect(await response.json()).toMatchObject({ code: 'request.invalid', detail: error });
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
 
@@ -700,12 +705,15 @@ describe('agent endpoints', () => {
   });
 
   it('returns the attachment error status when the turn cannot load a file', async () => {
-    streamTurn.mockRejectedValue(Object.assign(new Error('missing file'), { status: 404 }));
+    streamTurn.mockRejectedValue(frogbotError('chat.file-not-found', 'missing file'));
 
     const response = await postHandler()(makeRequest());
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: 'missing file' });
+    expect(await response.json()).toMatchObject({
+      code: 'chat.file-not-found',
+      detail: 'missing file',
+    });
   });
 
   it('returns 202 with the queued message when the chat is busy', async () => {
@@ -748,30 +756,33 @@ describe('agent endpoints', () => {
     expect(streamTurn).not.toHaveBeenCalled();
   });
 
-  it('preserves safe status values from agent errors', async () => {
-    streamTurn.mockRejectedValue(Object.assign(new Error('denied'), { statusCode: 403 }));
+  it('hides an unexpected agent error behind internal', async () => {
+    streamTurn.mockRejectedValue(Object.assign(new Error('secret detail'), { statusCode: 403 }));
 
     const response = await postHandler()(makeRequest());
+    const text = await response.text();
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(500);
+    expect(JSON.parse(text)).toMatchObject({ code: 'internal' });
+    expect(text).not.toContain('secret detail');
   });
 
   it('returns the turn error code with its status', async () => {
     resolveChatContext.mockRejectedValue(
-      new TurnError('turn-in-progress', 'This chat already has a turn in progress.'),
+      frogbotError('turn.in-progress', 'This chat already has a turn in progress.'),
     );
 
     const response = await postHandler()(makeRequest({ body: { prompt: 'Hi', chatId: 'chat-1' } }));
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({
-      error: 'This chat already has a turn in progress.',
-      code: 'turn-in-progress',
+    expect(await response.json()).toMatchObject({
+      detail: 'This chat already has a turn in progress.',
+      code: 'turn.in-progress',
     });
   });
 
   it('propagates chat load failures as their status', async () => {
-    resolveChatContext.mockRejectedValue(Object.assign(new Error('not found'), { status: 404 }));
+    resolveChatContext.mockRejectedValue(frogbotError('doc.not-found', 'not found'));
 
     const response = await postHandler()(
       makeRequest({ body: { prompt: 'Hello', chatId: 'gone' } }),
@@ -790,9 +801,9 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      code: 'access-denied',
-      error: "Access denied for agent 'support'",
+    expect(await response.json()).toMatchObject({
+      code: 'agent.access-denied',
+      detail: "Access denied for agent 'support'.",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
     expect(streamTurn).not.toHaveBeenCalled();
@@ -802,9 +813,9 @@ describe('agent endpoints', () => {
     const response = await postHandler()(makeRequest({ user: null, body: { prompt: 'Hello' } }));
 
     expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({
-      code: 'unauthenticated',
-      error: 'Authentication required',
+    expect(await response.json()).toMatchObject({
+      code: 'auth.unauthenticated',
+      detail: "Agent 'support' needs a signed-in user.",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
@@ -822,9 +833,9 @@ describe('agent endpoints', () => {
     const response = await postHandler()(req);
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({
-      code: 'access-error',
-      error: `Access function for agent 'support' threw: ${String(crash)}`,
+    expect(await response.json()).toMatchObject({
+      code: 'agent.access-error',
+      detail: "Access function for agent 'support' threw. The server log has the error.",
     });
     expect(req.frogbot.logger.error).toHaveBeenCalledWith(
       { err: crash, agent: 'support' },
@@ -841,7 +852,7 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(400);
-    expect((await response.json()).error).toMatch(
+    expect((await response.json()).detail).toMatch(
       /^`messages\[0\]\.parts\[0\]\.type`: Invalid UI message part type\. .*"data-" or "tool-", received 'txt'$/,
     );
   });

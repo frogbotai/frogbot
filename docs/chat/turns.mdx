@@ -7,7 +7,7 @@ keywords: ["turn", "queue", "steer", "concurrency", "lease", "awaiting", "compac
 
 A turn is one run of the agent in response to a user message, from the first model step to the final reply. FrogBot runs at most one turn per chat at a time, whether the message comes from the admin chat, `@frogbotai/ui`, an HTTP client, a channel, or `agent.generate()`.
 
-Local `agent.generate({ chatId })` calls do not queue. If the chat already has a turn in progress, the call rejects with a `turn-in-progress` error.
+Local `agent.generate({ chatId })` calls do not queue. If the chat already has a turn in progress, the call rejects with a `turn.in-progress` error.
 
 ## Turn states
 
@@ -33,7 +33,7 @@ Stream requests receive a single transient `data-queued` part with the same `mes
 
 When the current turn ends, FrogBot promotes the oldest queued message and runs it as the next turn, as the user who sent it and with the model and reasoning option it was sent with. The next queued message waits for that turn to end. Messages sent while a question is waiting stay queued until the question is answered or dismissed, so answer the question first to run them.
 
-A turn that continues after a question is answered uses the model and reasoning option of the chat's latest user message, not the ones sent with the answer. If a stored model or reasoning option is no longer offered when its turn runs, for example after a configuration change, the turn fails with `code: "selection-unavailable"` before calling the model. FrogBot never substitutes another model or option.
+A turn that continues after a question is answered uses the model and reasoning option of the chat's latest user message, not the ones sent with the answer. If a stored model or reasoning option is no longer offered when its turn runs, for example after a configuration change, the turn fails with `code: "turn.selection-unavailable"` before calling the model. FrogBot never substitutes another model or option.
 
 In the chat UI, a queued message shows a queued indicator, and the chat reloads when the turn ends so the promoted turn appears once it is saved.
 
@@ -74,7 +74,7 @@ curl http://localhost:3000/api/agents/support/chats/CHAT_ID/messages/MESSAGE_ID 
   --data '{ "parts": [{ "type": "text", "text": "Only look at yesterday" }], "delivery": "steer" }'
 ```
 
-Send `parts`, `delivery`, or both. A `DELETE` request to the same path removes the message and returns `204 No Content`. Both return `403` for anyone other than the author, and `409` with `code: "not-queued"` once the message has been promoted.
+Send `parts`, `delivery`, or both. A `DELETE` request to the same path removes the message and returns `204 No Content`. Both return `403` for anyone other than the author, and `409` with `code: "turn.not-queued"` once the message has been promoted.
 
 ## Compaction
 
@@ -111,13 +111,13 @@ curl http://localhost:3000/api/frogbot/chat/compact \
   --data '{ "chatId": "CHAT_ID" }'
 ```
 
-It returns `{ "message": … }`. A chat whose turn is running or waiting for an answer returns `409` with `code: "turn-in-progress"`, and one with only a single exchange returns `409` with `code: "nothing-to-compact"`. Neither writes anything.
+It returns `{ "message": … }`. A chat whose turn is running or waiting for an answer returns `409` with `code: "turn.in-progress"`, and one with only a single exchange returns `409` with `code: "turn.nothing-to-compact"`. Neither writes anything.
 
 ## Channels
 
 Channel messages follow the same rules. A message posted while the bot is replying in a thread is queued, and nothing is posted for it until it is promoted. When the channel runs in the same process, FrogBot posts the promoted reply to the same thread; otherwise the reply is saved to the chat without being posted.
 
-A channel chat is continued only from its channel. Its owner can read it in the admin chat, but web and HTTP messages, answers, and dismissals are refused with `409` and `code: "channel-chat"`, so nothing is queued behind a channel turn from outside the thread. A channel chat that has no FrogBot owner cannot be opened from the web at all. See [who can write a chat](/chat/overview#who-can-write-a-chat).
+A channel chat is continued only from its channel. Its owner can read it in the admin chat, but web and HTTP messages, answers, and dismissals are refused with `409` and `code: "turn.channel-chat"`, so nothing is queued behind a channel turn from outside the thread. A channel chat that has no FrogBot owner cannot be opened from the web at all. See [who can write a chat](/chat/overview#who-can-write-a-chat).
 
 ## Crash recovery
 

@@ -2,7 +2,6 @@ import type { ModelMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  CompactionError,
   summarize,
   SUMMARY_SHORTENED,
   toolPartsAsText,
@@ -97,7 +96,7 @@ describe('summarize', () => {
 
     await expect(
       summarize({ req, model: 'openai/gpt-5', messages, update: false }),
-    ).rejects.toThrow(CompactionError);
+    ).rejects.toMatchObject({ code: 'turn.compaction-failed' });
   });
 
   it('fails on an empty reply', async () => {

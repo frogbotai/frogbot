@@ -1,5 +1,5 @@
 import type { Endpoint } from '../endpoints/types.js';
-import { AggregateValidationError } from './errors.js';
+import { aggregateInvalid } from './errors.js';
 import type { AggregateOptions } from './types.js';
 
 type AggregateBody = Omit<AggregateOptions, 'collection' | 'context' | 'overrideAccess' | 'req'>;
@@ -26,16 +26,16 @@ async function readBody(json: (() => Promise<unknown>) | undefined): Promise<Agg
   try {
     body = await json?.();
   } catch {
-    throw new AggregateValidationError('Aggregate requires a JSON request body.');
+    throw aggregateInvalid('Aggregate requires a JSON request body.');
   }
 
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-    throw new AggregateValidationError('Aggregate requires a JSON object request body.');
+    throw aggregateInvalid('Aggregate requires a JSON object request body.');
   }
 
   for (const key of Object.keys(body)) {
     if (!aggregateBodyKeys.has(key)) {
-      throw new AggregateValidationError(`Aggregate does not support the '${key}' option.`);
+      throw aggregateInvalid(`Aggregate does not support the '${key}' option.`);
     }
   }
 

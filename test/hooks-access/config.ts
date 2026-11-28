@@ -5,6 +5,8 @@ import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig
 import {
   accessBooleanSlug,
   accessWhereSlug,
+  afterErrorResponse,
+  afterErrorResponseHeader,
   afterErrorStatusHeader,
   afterMeResponse,
   afterMeResponseHeader,
@@ -349,6 +351,10 @@ const Users: CollectionConfig = {
         authHookLog.push({ phase: 'afterError', frogbot: typeof req.frogbot?.find });
       },
       ({ req }) => {
+        if (req.headers.get(afterErrorResponseHeader)) {
+          return { response: afterErrorResponse, status: 451 };
+        }
+
         if (req.headers.get(afterErrorStatusHeader)) return { status: 418 };
       },
     ],

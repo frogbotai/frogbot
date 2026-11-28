@@ -587,7 +587,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
 
     await expect(fixture.frogbot.jobs.resume({ token, data: 'late' })).rejects.toMatchObject({
       status: 409,
-      code: 'WAITPOINT_CONSUMED',
+      code: 'job.waitpoint-consumed',
     });
 
     expect(replacement.id).not.toBe(source.id);
@@ -731,7 +731,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
 
     await expect(fixture.frogbot.jobs.resume({ token, data: 'old' })).rejects.toMatchObject({
       status: 409,
-      code: 'WAITPOINT_CONSUMED',
+      code: 'job.waitpoint-consumed',
     });
 
     const waiting = (await findWaitpoint({ req, token }))!;
@@ -760,7 +760,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     await expect(resumeWaitpoint({ req, token: waiting.token, data: 'old' })).rejects.toMatchObject(
       {
         status: 409,
-        code: 'WAITPOINT_CONSUMED',
+        code: 'job.waitpoint-consumed',
       },
     );
 
@@ -1111,7 +1111,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect(attempts.filter(({ status }) => status === 'rejected')).toEqual(
       Array.from({ length: 11 }, () => ({
         status: 'rejected',
-        reason: expect.objectContaining({ status: 409, code: 'WAITPOINT_CONSUMED' }),
+        reason: expect.objectContaining({ status: 409, code: 'job.waitpoint-consumed' }),
       })),
     );
 
@@ -1526,7 +1526,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
 
     await expect(fixture.frogbot.jobs.resume({ token, data: 'old' })).rejects.toMatchObject({
       status: 409,
-      code: 'WAITPOINT_CONSUMED',
+      code: 'job.waitpoint-consumed',
     });
 
     const waiting = (await findWaitpoint({ req, token }))!;
@@ -1566,7 +1566,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
 
     expect(attempts[0]).toMatchObject({
       status: 'rejected',
-      reason: { status: 410, code: 'WAITPOINT_EXPIRED' },
+      reason: { status: 410, code: 'job.waitpoint-expired' },
     });
     expect(attempts[1].status).toBe('fulfilled');
 
@@ -1690,7 +1690,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     ).resolves.toEqual({ jobId: waiting.holder });
     await expect(resumeWaitpoint({ req, token: 'missing', data: null })).rejects.toMatchObject({
       status: 404,
-      code: 'WAITPOINT_NOT_FOUND',
+      code: 'job.waitpoint-not-found',
     });
   });
 

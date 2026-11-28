@@ -199,7 +199,7 @@ describe('MCP plugin tools', () => {
     ]);
 
     await expect(call(fails).result).resolves.toEqual({
-      content: [{ type: 'text', text: 'No ticket 42.' }],
+      content: [{ type: 'text', text: 'internal: No ticket 42.' }],
       isError: true,
     });
   });

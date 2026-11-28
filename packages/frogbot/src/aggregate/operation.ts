@@ -18,7 +18,7 @@ import {
 import type { FrogBot } from '../frogbot.js';
 import { toFrogBotRequest, toPayloadRequest } from '../seams/request.js';
 import type { CollectionSlug } from '../types/generated.js';
-import { AggregateValidationError, describeAggregate } from './errors.js';
+import { aggregateInvalid, describeAggregate } from './errors.js';
 import {
   type AggregateFieldHop,
   getWherePaths,
@@ -62,9 +62,7 @@ async function createAggregateRequest(
   { context, fallbackLocale, locale, overrideAccess, req }: AggregateOptions,
 ): Promise<PayloadRequest> {
   if (overrideAccess !== true && !req) {
-    throw new AggregateValidationError(
-      'Aggregate requires req unless overrideAccess: true is explicit.',
-    );
+    throw aggregateInvalid('Aggregate requires req unless overrideAccess: true is explicit.');
   }
 
   const payloadReq = await createPayloadRequest({
@@ -85,7 +83,7 @@ function resolve(scope: Scope, path: string): ResolvedAggregateField {
     payload: scope.payload,
   });
 
-  if (!resolved) throw new AggregateValidationError(`${scope.label} has no field '${path}'.`);
+  if (!resolved) throw aggregateInvalid(`${scope.label} has no field '${path}'.`);
 
   if (resolved.hidden) throw new Forbidden(scope.req.t);
 
@@ -104,13 +102,13 @@ function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): ResolvedGrou
     const { field, hops, type } = resolved;
 
     if (!type) {
-      throw new AggregateValidationError(
+      throw aggregateInvalid(
         `${scope.label} cannot group by '${path}': its field type has no single stored value.`,
       );
     }
 
     if (by && type !== 'date') {
-      throw new AggregateValidationError(
+      throw aggregateInvalid(
         `${scope.label} cannot group '${path}' by ${by}: it is not a date field.`,
       );
     }
@@ -146,13 +144,13 @@ function resolveValues(
     const { hops, many, type } = target;
 
     if (hops.length || many) {
-      throw new AggregateValidationError(
+      throw aggregateInvalid(
         `${scope.label} cannot ${operation} '${path}' for value '${name}': it must hold one value per document.`,
       );
     }
 
     if (type !== 'number' && (type !== 'date' || operation === 'sum' || operation === 'avg')) {
-      throw new AggregateValidationError(
+      throw aggregateInvalid(
         `${scope.label} cannot ${operation} '${path}' for value '${name}': ${
           operation === 'sum' || operation === 'avg'
             ? 'it needs a number field'
@@ -309,7 +307,7 @@ export async function aggregateOperation<
   const entity: Collection | undefined = payload.collections[input.collection];
 
   if (!entity) {
-    throw new AggregateValidationError(
+    throw aggregateInvalid(
       `${describeAggregate(String(input.collection))} cannot run: the collection does not exist.`,
     );
   }

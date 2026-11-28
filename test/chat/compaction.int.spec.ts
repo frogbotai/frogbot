@@ -49,7 +49,7 @@ type TurnJSON = {
   status?: string;
   chatId: number | string;
   text?: string;
-  error?: string;
+  detail?: string;
   code?: string;
   message?: UIMessage;
 };
@@ -349,7 +349,10 @@ describe('chat compaction', () => {
       const failed = await turn('When do they sing?', chatId);
 
       expect(failed.status).toBe(502);
-      expect(failed.body.error).toBe('The model did not fill in the summary template.');
+      expect(failed.body).toMatchObject({
+        code: 'turn.compaction-failed',
+        detail: 'The model did not fill in the summary template.',
+      });
       expect(model.requests).toHaveLength(1);
       expect(compactionParts(await stored(chatId))).toEqual([
         expect.objectContaining({
@@ -391,8 +394,11 @@ describe('chat compaction', () => {
 
       const failed = await turn('And in winter?', chatId);
 
-      expect(failed.status).toBe(502);
-      expect(failed.body.error).toBe('This chat is too long for test/small-window.');
+      expect(failed.status).toBe(400);
+      expect(failed.body).toMatchObject({
+        code: 'ai.context-overflow',
+        detail: 'This chat is too long for test/small-window.',
+      });
       expect(model.summaryRequests).toHaveLength(2);
     });
 
@@ -701,7 +707,7 @@ describe('chat compaction', () => {
       const failed = await turn('When do they sing?', chatId);
 
       expect(failed.status).toBeGreaterThanOrEqual(400);
-      expect(failed.body.error).not.toBe('This chat is too long for test/small-window.');
+      expect(failed.body.detail).not.toBe('This chat is too long for test/small-window.');
       expect(model.requests).toHaveLength(2);
       expect(model.summaryRequests).toHaveLength(0);
     });
@@ -797,7 +803,7 @@ describe('chat compaction', () => {
       const refused = await compactNow(chatId);
 
       expect(refused.status).toBe(409);
-      expect(refused.body.code).toBe('turn-in-progress');
+      expect(refused.body.code).toBe('turn.in-progress');
       expect(await stored(chatId)).toEqual(before);
 
       const answered = await settle(chatId, {
@@ -819,7 +825,7 @@ describe('chat compaction', () => {
 
       const refused = await compactNow(chatId);
 
-      expect(refused.body.code).toBe('turn-in-progress');
+      expect(refused.body.code).toBe('turn.in-progress');
       expect((await settle(chatId, { toolCallId: 'call-close', approved: true })).status).toBe(200);
       expect(approvedCalls).toHaveLength(1);
     });
@@ -844,7 +850,7 @@ describe('chat compaction', () => {
       release();
       await running;
 
-      expect(refused.body.code).toBe('turn-in-progress');
+      expect(refused.body.code).toBe('turn.in-progress');
     });
 
     it('writes nothing when there is nothing to compact', async () => {
@@ -854,7 +860,7 @@ describe('chat compaction', () => {
       const refused = await compactNow(chatId);
 
       expect(refused.status).toBe(409);
-      expect(refused.body.code).toBe('nothing-to-compact');
+      expect(refused.body.code).toBe('turn.nothing-to-compact');
       expect(await stored(chatId)).toHaveLength(2);
       expect(model.summaryRequests).toHaveLength(0);
     });

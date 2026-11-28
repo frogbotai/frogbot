@@ -1,7 +1,7 @@
 import type { Config, Payload } from 'payload';
 
 import type { SearchAdapter, SearchCapability } from '../database/types.js';
-import { SearchCapabilityError } from './errors.js';
+import { searchUnavailable } from './errors.js';
 import type { SearchCollection, SearchIndexDescriptor, SearchMode } from './types.js';
 
 const searchAdapters = new WeakMap<Payload['db'], SearchAdapter>();
@@ -35,22 +35,22 @@ export function assertSearchCapability({
   if (capability === 'supported') return;
 
   if (!capability || typeof capability !== 'object' || !capability.unsupported) {
-    throw new SearchCapabilityError(
+    throw searchUnavailable({
       collection,
-      index.name,
+      index: index.name,
       mode,
-      'not-implemented',
-      'The adapter did not declare this mode.',
-    );
+      reason: 'not-implemented',
+      detail: 'The adapter did not declare this mode.',
+    });
   }
 
-  throw new SearchCapabilityError(
+  throw searchUnavailable({
     collection,
-    index.name,
+    index: index.name,
     mode,
-    capability.unsupported,
-    capability.detail,
-  );
+    reason: capability.unsupported,
+    detail: capability.detail,
+  });
 }
 
 export function withSearchRuntime({

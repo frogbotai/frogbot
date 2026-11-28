@@ -692,7 +692,8 @@ describe('chat assets', () => {
       const body = (await response.json()) as Refusal;
 
       expect(response.status).toBe(400);
-      expect(body).toEqual({
+      expect(body).toMatchObject({
+        code: 'request.invalid',
         errors: [
           {
             name: 'ValidationError',

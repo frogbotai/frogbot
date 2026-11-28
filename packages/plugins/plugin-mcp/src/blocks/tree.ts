@@ -5,6 +5,8 @@ import type {
   SanitizedConfig,
 } from 'payload';
 
+import { blockError } from './errors.js';
+
 export type BlockData = Record<string, unknown> & { blockType: string; id?: number | string };
 
 /** A field on the way to a blocks field, with the data around it, for checking its access. */
@@ -158,11 +160,14 @@ export function findBlock(lists: BlockList[], blockId: number | string): BlockSp
   const [spot] = spots;
 
   if (!spot) {
-    throw new Error(`No block has the id '${blockId}'. Call listBlocks to see the block ids.`);
+    throw blockError(
+      'mcp.block-invalid',
+      `No block has the id '${blockId}'. Call listBlocks to see the block ids.`,
+    );
   }
 
   if (spots.length > 1) {
-    throw new Error(`More than one block has the id '${blockId}'.`);
+    throw blockError('mcp.block-invalid', `More than one block has the id '${blockId}'.`);
   }
 
   return spot;
@@ -254,7 +259,8 @@ export function resolveBlockList(
   config: SanitizedConfig,
 ): BlockList {
   const segments = path.split('.');
-  const notFound = new Error(
+  const notFound = blockError(
+    'mcp.block-invalid',
     `'${path}' is not a blocks field. Call listBlocks to see the fields' paths.`,
   );
 

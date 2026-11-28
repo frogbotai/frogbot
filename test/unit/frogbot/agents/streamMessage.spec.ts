@@ -1099,7 +1099,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
         options: { req, selection: { model: LOCAL_THINKER } },
       }),
     ).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       status: 409,
       message: "Model 'local/thinker' is not allowed for this user. Allowed: 'local/writer'",
     });
@@ -1134,7 +1134,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
 
     expect(errors).toEqual([
       expect.objectContaining({
-        code: 'selection-unavailable',
+        code: 'turn.selection-unavailable',
         message: "Model 'local/writer' is not allowed for this user. Allowed: 'local/thinker'",
       }),
     ]);
@@ -1332,7 +1332,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
 
       expect(errors).toEqual([
         expect.objectContaining({
-          code: 'selection-unavailable',
+          code: 'turn.selection-unavailable',
           message,
         }),
       ]);
@@ -1349,7 +1349,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
         options: { req, selection: { model: LOCAL_WRITER } },
       }),
     ).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       status: 409,
       message: "Model 'local/writer' is not allowed for agent 'support'. Allowed: 'local/thinker'",
     });

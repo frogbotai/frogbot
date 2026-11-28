@@ -81,9 +81,9 @@ describe('app model access without the AI policy plugin', () => {
     expect(response.status).toBe(403);
     expect(response.body).toEqual({
       error: {
-        message: 'Access denied for AI generate',
+        message: 'Access denied for AI generate.',
         type: 'permission_error',
-        code: 'permission_denied',
+        code: 'ai.access-denied',
         param: null,
       },
     });

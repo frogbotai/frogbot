@@ -2,23 +2,6 @@ import type { z } from 'zod';
 
 import { formatIssuePath } from '../chat/validateMessages.js';
 
-/** A connection endpoint's failure: `{ errors: [{ message, data: { code, ...data } }] }`. */
-export function errorResponse({
-  status,
-  message,
-  code,
-  data,
-  headers,
-}: {
-  status: number;
-  message: string;
-  code: string;
-  data?: Record<string, unknown>;
-  headers?: Headers;
-}): Response {
-  return Response.json({ errors: [{ message, data: { code, ...data } }] }, { status, headers });
-}
-
 type Issue = z.ZodError['issues'][number];
 
 function present(input: unknown, path: readonly PropertyKey[]): boolean {

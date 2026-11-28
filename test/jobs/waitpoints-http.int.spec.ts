@@ -437,7 +437,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const response = await post(url(), { approved: true });
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ error: { code: 'WAITPOINT_CONSUMED' } });
+    expect(await response.json()).toMatchObject({ code: 'job.waitpoint-consumed' });
 
     const form = await request(url(), {
       method: 'POST',
@@ -449,7 +449,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     await expect(
       fixture.worker.jobs.resume({ token: before.token, data: { approved: true } }),
-    ).rejects.toMatchObject({ status: 409, code: 'WAITPOINT_CONSUMED' });
+    ).rejects.toMatchObject({ status: 409, code: 'job.waitpoint-consumed' });
 
     await sweep();
     await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
@@ -613,7 +613,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const response = await post(url(), { approved: true });
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ error: { code: 'WAITPOINT_CONSUMED' } });
+    expect(await response.json()).toMatchObject({ code: 'job.waitpoint-consumed' });
     expect(await holder(source.id)).toMatchObject({ id: source.id, jobId, hasError: true });
 
     const replacement = await fixture.frogbot.jobs.queue({
@@ -652,7 +652,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const response = await post(url(), { approved: true });
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ error: { code: 'WAITPOINT_CONSUMED' } });
+    expect(await response.json()).toMatchObject({ code: 'job.waitpoint-consumed' });
     expect(await jobs()).toEqual([
       expect.objectContaining({ id: replacement.id, jobId, input: { key, replacement: true } }),
     ]);
@@ -1032,7 +1032,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const [late] = await Promise.all([post(links[1], 'too late'), sweep(), sweep()]);
 
     expect(late.status).toBe(410);
-    expect(await late.json()).toMatchObject({ error: { code: 'WAITPOINT_EXPIRED' } });
+    expect(await late.json()).toMatchObject({ code: 'job.waitpoint-expired' });
     expect((await request(links[1], { method: 'HEAD' })).status).toBe(410);
 
     vi.setSystemTime(now + 61_002);
@@ -1085,7 +1085,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       const response = await post(url(), data);
 
       expect(response.status).toBe(400);
-      expect(await response.json()).toMatchObject({ error: { code: 'INVALID_DATA' } });
+      expect(await response.json()).toMatchObject({ code: 'request.invalid' });
       expect((await waits())[0]).toEqual(before);
       expect(await jobs()).toHaveLength(1);
       expect(Object.prototype).not.toHaveProperty('approved');
@@ -1154,11 +1154,11 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const response = await post(url, null);
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toMatchObject({ error: { code: 'WAITPOINT_NOT_FOUND' } });
+    expect(await response.json()).toMatchObject({ code: 'job.waitpoint-not-found' });
 
     await expect(
       fixture.worker.jobs.resume({ token: 'missing', data: null }),
-    ).rejects.toMatchObject({ status: 404, code: 'WAITPOINT_NOT_FOUND' });
+    ).rejects.toMatchObject({ status: 404, code: 'job.waitpoint-not-found' });
 
     expect(await waits()).toHaveLength(0);
     expect(await jobs()).toHaveLength(0);

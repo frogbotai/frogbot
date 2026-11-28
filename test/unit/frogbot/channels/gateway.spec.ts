@@ -2,6 +2,7 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { Adapter } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
 import { ChannelHost } from '../../../../packages/frogbot/src/channels/host.js';
+import { kvLockHeld } from '../../../../packages/frogbot/src/kv/errors.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 
 function deferred() {
@@ -53,11 +54,7 @@ function exclusiveLock() {
   return vi.fn(
     async (_key: string, _ttl: number, run: (args: { signal: AbortSignal }) => Promise<void>) => {
       if (held) {
-        const error = new Error('held');
-
-        error.name = 'KVLockContentionError';
-
-        throw error;
+        throw kvLockHeld();
       }
 
       held = true;
@@ -273,7 +270,7 @@ describe('channel gateway listener', () => {
 
     drain.resolve();
 
-    expect(await run).toMatchObject({ name: 'KVLeaseLostError' });
+    expect(await run).toMatchObject({ code: 'kv.lease-lost' });
   });
 
   it('aborts and drains a manually started listener before shutting down adapters', async () => {

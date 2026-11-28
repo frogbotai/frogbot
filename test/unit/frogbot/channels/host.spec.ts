@@ -421,7 +421,7 @@ describe('ChannelHost conversation loop', () => {
 
   it('propagates persistence failures and never retries errors raised inside the turn', async () => {
     const fixture = channelFixture();
-    const error = Object.assign(new Error('turn failed'), { name: 'KVLockContentionError' });
+    const error = Object.assign(new Error('turn failed'), { code: 'kv.lock-held' });
 
     fixture.streamMessage.mockImplementationOnce(() => {
       const persistence = Promise.reject(error);

@@ -4,7 +4,8 @@ import {
   databaseKVAdapter as baseDatabaseKVAdapter,
 } from 'payload';
 
-import { KVUnsupportedError } from '../errors.js';
+import { isFrogBotError } from '../../errors/FrogBotError.js';
+import { kvUnsupported } from '../errors.js';
 import type { KVDatabaseAdapter, KVLock, KVSetOptions } from '../types.js';
 import { kvAtomic } from '../types.js';
 import { createMongoKV } from './mongo.js';
@@ -28,7 +29,7 @@ export class DatabaseKVAdapter extends BaseDatabaseKVAdapter implements KVDataba
       try {
         this.native = createSQLKV(args);
       } catch (error) {
-        if (!(error instanceof KVUnsupportedError)) throw error;
+        if (!isFrogBotError(error, 'kv.unsupported')) throw error;
         this.native = null;
       }
     }
@@ -38,7 +39,7 @@ export class DatabaseKVAdapter extends BaseDatabaseKVAdapter implements KVDataba
 
   private atomic() {
     const backend = this.backend();
-    if (!backend) throw new KVUnsupportedError();
+    if (!backend) throw kvUnsupported();
 
     return backend;
   }
@@ -76,7 +77,7 @@ export class DatabaseKVAdapter extends BaseDatabaseKVAdapter implements KVDataba
   async set(key: string, value: KVStoreValue, options?: KVSetOptions) {
     const backend = this.backend();
     if (backend) return backend.set(key, value, options);
-    if (options?.ttl !== undefined) throw new KVUnsupportedError();
+    if (options?.ttl !== undefined) throw kvUnsupported();
 
     return super.set(key, value);
   }

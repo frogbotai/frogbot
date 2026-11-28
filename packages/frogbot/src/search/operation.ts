@@ -8,9 +8,9 @@ import type { CollectionSlug } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
   describeSearchIndex,
-  SearchFilterUnsupportedError,
-  SearchReadinessError,
-  SearchValidationError,
+  searchFilterUnsupported,
+  searchInvalid,
+  searchNotReady,
 } from './errors.js';
 import { getFieldNodes, type SearchFieldNode } from './getEligibleFields.js';
 import { resolveSearchPredicate } from './predicates.js';
@@ -151,7 +151,7 @@ function prepareSearch<T extends CollectionSlug>(
   const index = collection && getCollectionIndex(frogbot, options.collection, options.index);
 
   if (!collection || !index) {
-    throw new SearchValidationError(`${label} is not configured.`);
+    throw searchInvalid(`${label} is not configured.`);
   }
 
   const input: unknown = options.query;
@@ -161,18 +161,18 @@ function prepareSearch<T extends CollectionSlug>(
     Object.keys(input).some((key) => key !== 'text' && key !== 'vector') ||
     (input.text === undefined && input.vector === undefined)
   ) {
-    throw new SearchValidationError(`${label} requires text and/or vector query input.`);
+    throw searchInvalid(`${label} requires text and/or vector query input.`);
   }
 
   if (input.text !== undefined && (typeof input.text !== 'string' || !input.text.trim())) {
-    throw new SearchValidationError(`${label} requires non-empty query text.`);
+    throw searchInvalid(`${label} requires non-empty query text.`);
   }
 
   if (input.vector !== undefined) {
     const dimensions = index.vector?.dimensions;
 
     if (dimensions === undefined) {
-      throw new SearchValidationError(`${label} does not configure vector search.`);
+      throw searchInvalid(`${label} does not configure vector search.`);
     }
 
     if (
@@ -180,9 +180,7 @@ function prepareSearch<T extends CollectionSlug>(
       input.vector.length !== dimensions ||
       input.vector.some((value) => typeof value !== 'number' || !Number.isFinite(value))
     ) {
-      throw new SearchValidationError(
-        `${label} requires a vector of ${dimensions} finite numbers.`,
-      );
+      throw searchInvalid(`${label} requires a vector of ${dimensions} finite numbers.`);
     }
   }
 
@@ -195,20 +193,20 @@ function prepareSearch<T extends CollectionSlug>(
     query.text !== undefined ? (query.vector !== undefined ? 'hybrid' : 'lexical') : 'vector';
 
   if (!index[mode]) {
-    throw new SearchValidationError(`${label} does not configure ${mode} search.`);
+    throw searchInvalid(`${label} does not configure ${mode} search.`);
   }
 
   const limit = options.limit ?? 10;
 
   if (!Number.isSafeInteger(limit) || limit < 1) {
-    throw new SearchValidationError(`${label} requires a positive integer limit.`);
+    throw searchInvalid(`${label} requires a positive integer limit.`);
   }
 
   if (
     options.candidates !== undefined &&
     (!Number.isSafeInteger(options.candidates) || options.candidates < 1)
   ) {
-    throw new SearchValidationError(`${label} requires a positive integer candidates count.`);
+    throw searchInvalid(`${label} requires a positive integer candidates count.`);
   }
 
   const candidates =
@@ -219,23 +217,23 @@ function prepareSearch<T extends CollectionSlug>(
   const depth = options.depth ?? 0;
 
   if (!Number.isSafeInteger(depth) || depth < 0) {
-    throw new SearchValidationError(`${label} requires a non-negative integer depth.`);
+    throw searchInvalid(`${label} requires a non-negative integer depth.`);
   }
 
   if (options.select !== undefined && !isRecord(options.select)) {
-    throw new SearchValidationError(`${label} requires an object select.`);
+    throw searchInvalid(`${label} requires an object select.`);
   }
 
   if (options.draft !== undefined && typeof options.draft !== 'boolean') {
-    throw new SearchValidationError(`${label} requires a boolean draft option.`);
+    throw searchInvalid(`${label} requires a boolean draft option.`);
   }
 
   if (options.overrideAccess !== undefined && typeof options.overrideAccess !== 'boolean') {
-    throw new SearchValidationError(`${label} requires a boolean overrideAccess option.`);
+    throw searchInvalid(`${label} requires a boolean overrideAccess option.`);
   }
 
   if (options.locale === 'all' || options.locale === '*' || options.req?.locale === 'all') {
-    throw new SearchFilterUnsupportedError(`${label} requires one locale per ranked result.`);
+    throw searchFilterUnsupported(`${label} requires one locale per ranked result.`);
   }
 
   return { options, collection, index, query, mode, limit, candidates, depth };
@@ -252,7 +250,7 @@ async function createSearchRequest(
   }: Pick<SearchOptions, 'fallbackLocale' | 'locale' | 'overrideAccess' | 'req'>,
 ): Promise<FrogBotRequest> {
   if (overrideAccess !== true && !req) {
-    throw new SearchValidationError('Search requires req unless overrideAccess: true is explicit.');
+    throw searchInvalid('Search requires req unless overrideAccess: true is explicit.');
   }
 
   const payloadReq = await createPayloadRequest({
@@ -273,7 +271,7 @@ async function runSearch<T extends CollectionSlug>(
   const label = describeSearchIndex(collection.slug, index.name);
 
   if (req.locale === 'all') {
-    throw new SearchFilterUnsupportedError(`${label} requires one locale per ranked result.`);
+    throw searchFilterUnsupported(`${label} requires one locale per ranked result.`);
   }
 
   const payloadReq = toPayloadRequest(req);
@@ -283,7 +281,7 @@ async function runSearch<T extends CollectionSlug>(
   const nodes = overrideAccess ? undefined : getFieldNodes(fromPayloadFields(collection.fields));
 
   if (nodes && getRankedPaths(index, mode).some((path) => isReadGuarded(nodes, path))) {
-    throw new SearchFilterUnsupportedError(
+    throw searchFilterUnsupported(
       `${label} cannot verify conditional visibility of ranked fields.`,
     );
   }
@@ -299,7 +297,7 @@ async function runSearch<T extends CollectionSlug>(
 
   if (nodes) {
     if (getFilterPaths(where).some((path) => isReadGuarded(nodes, path))) {
-      throw new SearchFilterUnsupportedError(
+      throw searchFilterUnsupported(
         `${label} cannot filter a field with document-dependent read access.`,
       );
     }
@@ -313,7 +311,7 @@ async function runSearch<T extends CollectionSlug>(
           where: options.where,
         });
       } catch {
-        throw new SearchFilterUnsupportedError(`${label} cannot authorize the requested filters.`);
+        throw searchFilterUnsupported(`${label} cannot authorize the requested filters.`);
       }
     }
   }
@@ -345,8 +343,7 @@ async function runSearch<T extends CollectionSlug>(
     where,
   });
 
-  const invalidResult = () =>
-    new SearchReadinessError(`${label} returned an invalid ranked result.`);
+  const invalidResult = () => searchNotReady(`${label} returned an invalid ranked result.`);
 
   if (
     !result ||
@@ -439,20 +436,18 @@ function assertSearchManyCollections(
   value: unknown,
 ): asserts value is readonly SearchManyCollection[] {
   if (!Array.isArray(value) || !value.length) {
-    throw new SearchValidationError('Search requires a non-empty collections list.');
+    throw searchInvalid('Search requires a non-empty collections list.');
   }
 
   const collections = new Set<unknown>();
 
   for (const entry of value) {
     if (!isRecord(entry)) {
-      throw new SearchValidationError('Search requires every collections entry to be an object.');
+      throw searchInvalid('Search requires every collections entry to be an object.');
     }
 
     if (typeof entry.collection !== 'string' || typeof entry.index !== 'string') {
-      throw new SearchValidationError(
-        'Search requires a collection and an index on every collections entry.',
-      );
+      throw searchInvalid('Search requires a collection and an index on every collections entry.');
     }
 
     const key = Object.keys(entry).find((name) => !searchManyCollectionKeys.has(name));
@@ -460,13 +455,11 @@ function assertSearchManyCollections(
     if (key !== undefined) {
       const label = describeSearchIndex(String(entry.collection), String(entry.index));
 
-      throw new SearchValidationError(`${label} does not accept a per-collection '${key}' option.`);
+      throw searchInvalid(`${label} does not accept a per-collection '${key}' option.`);
     }
 
     if (collections.has(entry.collection)) {
-      throw new SearchValidationError(
-        `Search lists collection '${String(entry.collection)}' more than once.`,
-      );
+      throw searchInvalid(`Search lists collection '${String(entry.collection)}' more than once.`);
     }
 
     collections.add(entry.collection);

@@ -1,7 +1,6 @@
 import { Forbidden } from 'payload';
 import { describe, expect, it } from 'vitest';
 
-import { SearchValidationError } from '../../../../packages/frogbot/src/search/errors.js';
 import {
   searchManyOperation,
   searchOperation,
@@ -216,7 +215,7 @@ describe('searchMany validation', () => {
       req,
     });
 
-    await expect(searching).rejects.toThrow(SearchValidationError);
+    await expect(searching).rejects.toMatchObject({ code: 'search.invalid' });
     await expect(searching).rejects.toThrow(message);
 
     expect(search).not.toHaveBeenCalled();

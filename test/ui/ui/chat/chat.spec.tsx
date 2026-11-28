@@ -803,7 +803,7 @@ describe('Chat', () => {
     const onError = vi.fn();
 
     render(<Chat {...props} onError={onError} />);
-    act(() => state.options?.onError?.(turnRequestError('selection-unavailable')));
+    act(() => state.options?.onError?.(turnRequestError('turn.selection-unavailable')));
 
     await waitFor(() => expect(onError).toHaveBeenCalledOnce());
 
@@ -814,7 +814,7 @@ describe('Chat', () => {
     const onError = vi.fn();
 
     render(<Chat {...props} onError={onError} />);
-    act(() => state.options?.onError?.(turnRequestError('already-settled')));
+    act(() => state.options?.onError?.(turnRequestError('turn.already-settled')));
 
     await waitFor(() => expect(state.clearError).toHaveBeenCalledOnce());
 
@@ -822,7 +822,7 @@ describe('Chat', () => {
   });
 
   it('renders a default inline error without errorContent', () => {
-    state.error = turnRequestError('selection-unavailable');
+    state.error = turnRequestError('turn.selection-unavailable');
 
     render(<Chat agent="support" />);
 
@@ -1510,7 +1510,11 @@ function turnRequestError(code: string) {
     url: '/api/agents/support',
     requestBodyValues: undefined,
     statusCode: 409,
-    responseBody: JSON.stringify({ error: 'The selected model is unavailable.', code }),
+    responseBody: JSON.stringify({
+      detail: 'The selected model is unavailable.',
+      code,
+      errors: [],
+    }),
   });
 }
 

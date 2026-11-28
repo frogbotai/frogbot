@@ -109,8 +109,8 @@ curl http://localhost:3000/api/agents/support/chats/CHAT_ID/settle \
 
 Errors are the same as for [questions](/chat/questions#answer-over-http):
 
-- Sending an `output` for an approval, or `approved` for a question, is `400` with `code: "invalid-output"`.
-- A second answer is `409` with `code: "already-settled"`.
+- Sending an `output` for an approval, or `approved` for a question, is `400` with `code: "turn.invalid-output"`.
+- A second answer is `409` with `code: "turn.already-settled"`.
 
 A chat UI built on the AI SDK can also answer with `addToolApprovalResponse` and resubmit the assistant message. FrogBot reads only each part's `toolCallId`, `approval.approved` and `approval.reason`, and settles them against the stored call. A resubmitted denial needs a `reason`; deny without one through settle.
 

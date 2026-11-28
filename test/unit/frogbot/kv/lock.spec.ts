@@ -2,10 +2,6 @@ import assert from 'node:assert/strict';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  KVLeaseLostError,
-  KVLockContentionError,
-} from '../../../../packages/frogbot/src/kv/errors.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 import type { KVLock } from '../../../../packages/frogbot/src/kv/types.js';
 
@@ -54,9 +50,9 @@ describe('runKVLock', () => {
     kv.acquireLock.mockResolvedValue(null);
     const fn = vi.fn();
 
-    await expect(runKVLock({ kv, key: 'job', ttl: 300, fn })).rejects.toBeInstanceOf(
-      KVLockContentionError,
-    );
+    await expect(runKVLock({ kv, key: 'job', ttl: 300, fn })).rejects.toMatchObject({
+      code: 'kv.lock-held',
+    });
     expect(fn).not.toHaveBeenCalled();
     expect(kv.extendLock).not.toHaveBeenCalled();
     expect(kv.releaseLock).not.toHaveBeenCalled();
@@ -209,7 +205,7 @@ describe('runKVLock', () => {
       },
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(89);
 
@@ -220,7 +216,7 @@ describe('runKVLock', () => {
     await assertion;
 
     expect(signal.aborted).toBe(true);
-    expect(signal.reason).toBeInstanceOf(KVLeaseLostError);
+    expect(signal.reason).toMatchObject({ code: 'kv.lease-lost' });
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
 
     await vi.advanceTimersByTimeAsync(180);
@@ -247,7 +243,7 @@ describe('runKVLock', () => {
       fn: () => new Promise<never>(() => {}),
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(80);
     renewal.resolve(true);
@@ -274,9 +270,9 @@ describe('runKVLock', () => {
       const result = runKVLock({ kv, key: 'job', ttl: 90, fn: () => callback.promise });
       const assertion =
         completion === 'resolve'
-          ? expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError)
+          ? expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' })
           : expectDelayed(result).rejects.toMatchObject({
-              errors: [callbackError, expect.any(KVLeaseLostError)],
+              errors: [callbackError, expect.objectContaining({ code: 'kv.lease-lost' })],
             });
 
       const settle = {
@@ -313,7 +309,7 @@ describe('runKVLock', () => {
       },
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(89);
 
@@ -352,7 +348,7 @@ describe('runKVLock', () => {
 
       const assertion =
         failure === 'false'
-          ? expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError)
+          ? expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' })
           : expectDelayed(result).rejects.toBe(error);
 
       await vi.advanceTimersByTimeAsync(30);
@@ -369,7 +365,7 @@ describe('runKVLock', () => {
     kv.acquireLock.mockReturnValue(acquisition.promise);
     const fn = vi.fn();
     const result = runKVLock({ kv, key: 'job', ttl: 90, fn });
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(90);
     await assertion;
@@ -391,7 +387,7 @@ describe('runKVLock', () => {
     kv.acquireLock.mockReturnValue(acquisition.promise);
     const fn = vi.fn(() => new Promise<never>(() => {}));
     const result = runKVLock({ kv, key: 'job', ttl: 90, fn });
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(80);
     acquisition.resolve(lock);
@@ -416,7 +412,7 @@ describe('runKVLock', () => {
     vi.spyOn(performance, 'now').mockReturnValue(90);
     acquisition.resolve(lock);
 
-    await expect(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    await expect(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
     expect(fn).not.toHaveBeenCalled();
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
   });
@@ -434,7 +430,7 @@ describe('runKVLock', () => {
 
     acquisition.resolve(lock);
 
-    await expect(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    await expect(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
     expect(fn).not.toHaveBeenCalled();
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
   });
@@ -448,7 +444,7 @@ describe('runKVLock', () => {
       fn: () => new Promise<never>(() => {}),
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(0);
     vi.spyOn(performance, 'now').mockReturnValue(90);
@@ -475,7 +471,7 @@ describe('runKVLock', () => {
       },
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(30);
     vi.spyOn(performance, 'now').mockReturnValue(90);
@@ -514,8 +510,10 @@ describe('runKVLock', () => {
 
       await expect(result).rejects.toEqual(
         completion === 'resolve'
-          ? expect.any(KVLeaseLostError)
-          : expect.objectContaining({ errors: [error, expect.any(KVLeaseLostError)] }),
+          ? expect.objectContaining({ code: 'kv.lease-lost' })
+          : expect.objectContaining({
+              errors: [error, expect.objectContaining({ code: 'kv.lease-lost' })],
+            }),
       );
       expect(signal.aborted).toBe(true);
       expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
@@ -531,9 +529,9 @@ describe('runKVLock', () => {
       return Promise.resolve(true);
     });
 
-    await expect(runKVLock({ kv, key: 'job', ttl: 90, fn: () => 'done' })).rejects.toBeInstanceOf(
-      KVLeaseLostError,
-    );
+    await expect(runKVLock({ kv, key: 'job', ttl: 90, fn: () => 'done' })).rejects.toMatchObject({
+      code: 'kv.lease-lost',
+    });
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
   });
 
@@ -547,7 +545,7 @@ describe('runKVLock', () => {
       fn: () => new Promise<never>(() => {}),
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(30);
     vi.setSystemTime(new Date('2000-01-01'));
@@ -575,7 +573,7 @@ describe('runKVLock', () => {
       fn: () => new Promise<never>(() => {}),
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(90);
     await assertion;
@@ -583,7 +581,7 @@ describe('runKVLock', () => {
     release.reject(new Error('late release failure'));
     await vi.advanceTimersByTimeAsync(90);
 
-    await expect(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    await expect(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
   });
 
@@ -601,7 +599,7 @@ describe('runKVLock', () => {
     });
 
     const assertion = expectDelayed(result).rejects.toMatchObject({
-      errors: [error, expect.any(KVLeaseLostError)],
+      errors: [error, expect.objectContaining({ code: 'kv.lease-lost' })],
     });
 
     await vi.advanceTimersByTimeAsync(30);
@@ -629,7 +627,7 @@ describe('runKVLock', () => {
     });
 
     const assertion = expectDelayed(result).rejects.toMatchObject({
-      errors: [expect.any(KVLeaseLostError), callbackError, releaseError],
+      errors: [expect.objectContaining({ code: 'kv.lease-lost' }), callbackError, releaseError],
     });
 
     await vi.advanceTimersByTimeAsync(90);
@@ -647,7 +645,7 @@ describe('runKVLock', () => {
       kv.releaseLock.mockRejectedValue(new Error('late release failure'));
       const fn = vi.fn();
       const result = runKVLock({ kv, key: 'job', ttl: 90, fn });
-      const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+      const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
       const settle = {
         reject: () => acquisition.reject(new Error('late acquisition failure')),
         'release rejection': () => acquisition.resolve(lock),
@@ -680,13 +678,13 @@ describe('runKVLock', () => {
       },
     });
 
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(100);
     await assertion;
 
     expect(signal.aborted).toBe(true);
-    expect(signal.reason).toBeInstanceOf(KVLeaseLostError);
+    expect(signal.reason).toMatchObject({ code: 'kv.lease-lost' });
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
   });
 
@@ -751,7 +749,7 @@ describe('runKVLock', () => {
     const renewal = deferred<boolean>();
     kv.extendLock.mockReturnValueOnce(renewal.promise);
     const result = runKVLock({ kv, key: 'job', ttl: 300, fn: () => callback.promise });
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(100);
     callback.resolve();
@@ -809,7 +807,7 @@ describe('runKVLock', () => {
     });
 
     const assertion = expectDelayed(result).rejects.toMatchObject({
-      errors: [expect.any(KVLeaseLostError), callbackError, releaseError],
+      errors: [expect.objectContaining({ code: 'kv.lease-lost' }), callbackError, releaseError],
     });
 
     await vi.advanceTimersByTimeAsync(100);
@@ -828,9 +826,9 @@ describe('runKVLock', () => {
     const kv = createKV();
     kv.releaseLock.mockResolvedValue(false);
 
-    await expect(runKVLock({ kv, key: 'job', ttl: 300, fn: () => 42 })).rejects.toBeInstanceOf(
-      KVLeaseLostError,
-    );
+    await expect(runKVLock({ kv, key: 'job', ttl: 300, fn: () => 42 })).rejects.toMatchObject({
+      code: 'kv.lease-lost',
+    });
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
   });
 
@@ -839,7 +837,7 @@ describe('runKVLock', () => {
     const callback = deferred<void>();
     kv.extendLock.mockResolvedValue(false);
     const result = runKVLock({ kv, key: 'job', ttl: 300, fn: () => callback.promise });
-    const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+    const assertion = expectDelayed(result).rejects.toMatchObject({ code: 'kv.lease-lost' });
 
     await vi.advanceTimersByTimeAsync(100);
     await assertion;

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { appIconEndpoints } from '../../../../../packages/frogbot/src/admin/appIcon/endpoints.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
+import { routed } from '../../../../__helpers/shared/routed.js';
 
 const [iconEndpoint, manifestEndpoint, iconHeadEndpoint, manifestHeadEndpoint] = appIconEndpoints();
 
@@ -75,7 +76,7 @@ describe('app icon endpoints', () => {
   it('answers HEAD for an icon with its headers and no body', async () => {
     const { req } = makeReq({}, '192');
 
-    const response = await iconHeadEndpoint.handler(req);
+    const response = await routed(() => iconHeadEndpoint.handler(req));
 
     expect(response.status).toBe(200);
     expect(response.body).toBeNull();
@@ -86,7 +87,7 @@ describe('app icon endpoints', () => {
   it('answers HEAD for an unknown icon size with 404 and no body', async () => {
     const { req } = makeReq({}, '64');
 
-    const response = await iconHeadEndpoint.handler(req);
+    const response = await routed(() => iconHeadEndpoint.handler(req));
 
     expect(response.status).toBe(404);
     expect(response.body).toBeNull();
@@ -95,7 +96,7 @@ describe('app icon endpoints', () => {
   it('answers HEAD for the manifest with its headers and no body', async () => {
     const { req } = makeReq();
 
-    const response = await manifestHeadEndpoint.handler(req);
+    const response = await routed(() => manifestHeadEndpoint.handler(req));
 
     expect(response.status).toBe(200);
     expect(response.body).toBeNull();
@@ -106,7 +107,7 @@ describe('app icon endpoints', () => {
   it.each([32, 180, 192, 512])('serves the FrogBot frog at %i px', async (size) => {
     const { req } = makeReq({}, String(size));
 
-    const response = await iconEndpoint.handler(req);
+    const response = await routed(() => iconEndpoint.handler(req));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('image/png');
@@ -117,7 +118,7 @@ describe('app icon endpoints', () => {
   it.each(['64', '032', 'large'])('returns 404 for size %s', async (size) => {
     const { req } = makeReq({}, size);
 
-    const response = await iconEndpoint.handler(req);
+    const response = await routed(() => iconEndpoint.handler(req));
 
     expect(response.status).toBe(404);
   });
@@ -128,7 +129,7 @@ describe('app icon endpoints', () => {
   ])('serves the %i px frog with corner pixel %j', async (size, pixel) => {
     const { req } = makeReq({}, String(size));
 
-    const response = await iconEndpoint.handler(req);
+    const response = await routed(() => iconEndpoint.handler(req));
 
     expect(firstPixel(Buffer.from(await response.arrayBuffer()))).toEqual(pixel);
   });
@@ -143,7 +144,7 @@ describe('app icon endpoints', () => {
 
       const { error, req } = makeReq({ appIcon: '/acme.png' }, size);
 
-      const response = await iconEndpoint.handler(req);
+      const response = await routed(() => iconEndpoint.handler(req));
 
       expect(response.status).toBe(200);
       expect(response.headers.get('content-type')).toBe('image/png');
@@ -156,7 +157,7 @@ describe('app icon endpoints', () => {
   it('returns 500 and logs when admin.meta.appIcon is missing from public/', async () => {
     const { error, req } = makeReq({ appIcon: '/acme.png' }, '192');
 
-    const response = await iconEndpoint.handler(req);
+    const response = await routed(() => iconEndpoint.handler(req));
 
     expect(response.status).toBe(500);
     expect(error).toHaveBeenCalledWith('[frogbot] admin.meta.appIcon: public/acme.png not found');
@@ -165,7 +166,7 @@ describe('app icon endpoints', () => {
   it('serves the manifest named after admin.meta.applicationName', async () => {
     const { req } = makeReq({ applicationName: 'Acme' });
 
-    const response = await manifestEndpoint.handler(req);
+    const response = await routed(() => manifestEndpoint.handler(req));
 
     expect(response.headers.get('content-type')).toBe('application/manifest+json');
     expect(response.headers.get('cache-control')).toBe('public, max-age=86400');
@@ -186,7 +187,7 @@ describe('app icon endpoints', () => {
   it('names the manifest FrogBot without admin.meta.applicationName', async () => {
     const { req } = makeReq();
 
-    const response = await manifestEndpoint.handler(req);
+    const response = await routed(() => manifestEndpoint.handler(req));
 
     await expect(response.json()).resolves.toMatchObject({
       name: 'FrogBot',

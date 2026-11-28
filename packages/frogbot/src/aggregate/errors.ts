@@ -1,24 +1,19 @@
-import { APIError } from 'payload';
+import { frogbotError } from '../errors/catalog.js';
+import type { FrogBotError } from '../errors/FrogBotError.js';
 
 export function describeAggregate(collection: string): string {
   return `Aggregate on collection '${collection}'`;
 }
 
-export class AggregateValidationError extends APIError {
-  name = 'AggregateValidationError';
-
-  constructor(message: string) {
-    super(message, 400);
-  }
+/** An aggregate query the caller can fix: `aggregate.invalid`, 400. */
+export function aggregateInvalid(detail: string): FrogBotError {
+  return frogbotError('aggregate.invalid', detail);
 }
 
-export class AggregateCapabilityError extends APIError {
-  name = 'AggregateCapabilityError';
-
-  constructor(collection: string) {
-    super(
-      `[frogbot] ${describeAggregate(collection)}: the database adapter has no aggregate implementation.`,
-      501,
-    );
-  }
+/** A database adapter without aggregate support: `aggregate.unsupported`, 501. */
+export function aggregateUnsupported(collection: string): FrogBotError {
+  return frogbotError('aggregate.unsupported', {
+    detail: `${describeAggregate(collection)}: the database adapter has no aggregate implementation.`,
+    data: { collection },
+  });
 }

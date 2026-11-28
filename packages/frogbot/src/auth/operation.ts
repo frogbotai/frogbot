@@ -12,7 +12,8 @@ import {
   type User,
 } from 'payload';
 
-import { KVLockContentionError } from '../kv/errors.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
+import { kvLockHeld } from '../kv/errors.js';
 import { runKVLock } from '../kv/lock.js';
 import type { KV, KVLockCallback } from '../kv/types.js';
 import { toPayloadRequest } from '../seams/request.js';
@@ -165,14 +166,14 @@ async function withSessionLock<T>({
 
   for (;;) {
     const remaining = deadline - Date.now();
-    if (remaining <= 0) throw new KVLockContentionError(key);
+    if (remaining <= 0) throw kvLockHeld();
     const wait = new AbortController();
     let occupied: unknown;
     try {
       occupied = await Promise.race([
         kv.get(key),
         setTimeout(remaining, undefined, { signal: wait.signal, ref: false }).then(() => {
-          throw new KVLockContentionError(key);
+          throw kvLockHeld();
         }),
       ]);
     } finally {
@@ -224,7 +225,7 @@ async function withSessionLock<T>({
         throw new AggregateError(errors, 'Session operation failed.');
       }
 
-      if (pending || !(error instanceof KVLockContentionError) || Date.now() >= deadline) {
+      if (pending || !isFrogBotError(error, 'kv.lock-held') || Date.now() >= deadline) {
         throw error;
       }
 

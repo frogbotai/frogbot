@@ -92,6 +92,7 @@ The budget is checked when a call runs, before every AI call that a signed-in us
 
 - When `monthlyBudget` is set and `spendThisPeriodUSD` has reached it, the call fails with a `403` and the code `budget_exceeded`: `The configured budget has been exhausted.`
 - A spent budget doesn't hide agents or models. Chat lists them as usual and shows this error when the user sends.
+- The [agent endpoints](/agents/overview) answer with a Problem body instead: `code` is `ai.budget-spent` for a spent budget and `agent.model-not-allowed` for a blocked model, and `data.gatewayCode` keeps the code above.
 - Calls without a signed-in user, such as scheduled tasks, have no per-user limit.
 
 ## Spend

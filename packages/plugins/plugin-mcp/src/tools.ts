@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp';
 import type { PieceAction, PieceInstance } from 'frogbot';
+import { toProblem } from 'frogbot';
 import type { AnyTool } from 'frogbot/internal';
 import {
   attachRegisteredFrogBot,
@@ -11,6 +12,7 @@ import {
   resolveToolApproval,
   sanitizeToolList,
   toApprovalStatus,
+  toolErrorText,
 } from 'frogbot/internal';
 
 type PayloadTool = NonNullable<MCPPluginConfig['tools']>[string];
@@ -133,12 +135,7 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
 
           return toResponse(result);
         } catch (error) {
-          return {
-            content: [
-              { type: 'text', text: error instanceof Error ? error.message : String(error) },
-            ],
-            isError: true,
-          };
+          return toErrorResponse(error);
         }
       },
     };
@@ -172,6 +169,17 @@ function assertListableSchema(slug: string, schema: JsonSchemaSource): void {
       `[plugin-mcp] Tool '${slug}' needs an object input schema, like z.object({...}).`,
     );
   }
+}
+
+function toErrorResponse(error: unknown): PayloadToolResponse {
+  const text = toolErrorText(error);
+  const problem = toProblem(error, { debug: true });
+
+  return {
+    content: [{ type: 'text', text }],
+    ...(problem.code === 'internal' ? {} : { structuredContent: { ...problem } }),
+    isError: true,
+  };
 }
 
 function toResponse(result: unknown): PayloadToolResponse {

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import type { KVAdapter } from 'payload';
 
-import { KVUnsupportedError } from './errors.js';
+import { kvUnsupported } from './errors.js';
 import { runKVLock } from './lock.js';
 import type { KV, KVAtomicAdapter } from './types.js';
 import { kvAtomic } from './types.js';
@@ -10,7 +10,7 @@ import { validateKVTTL } from './validateTTL.js';
 
 export function createKV({ adapter }: { adapter: KVAdapter }): KV {
   const atomic = (): KVAtomicAdapter => {
-    if (!(kvAtomic in adapter) || adapter[kvAtomic] !== true) throw new KVUnsupportedError();
+    if (!(kvAtomic in adapter) || adapter[kvAtomic] !== true) throw kvUnsupported();
 
     return adapter as KVAtomicAdapter;
   };

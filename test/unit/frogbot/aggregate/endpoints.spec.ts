@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildAggregateEndpoints } from '../../../../packages/frogbot/src/aggregate/endpoints.js';
-import { AggregateValidationError } from '../../../../packages/frogbot/src/aggregate/errors.js';
 import { aggregateOperation } from '../../../../packages/frogbot/src/aggregate/operation.js';
 import type { AggregateOptions } from '../../../../packages/frogbot/src/aggregate/types.js';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
@@ -59,7 +58,7 @@ describe('collection aggregate REST endpoint', () => {
       const { adapterAggregate, endpoint, req } = restFixture({ ...body, [key]: true });
 
       await expect(endpoint.handler(req)).rejects.toMatchObject({
-        name: 'AggregateValidationError',
+        code: 'aggregate.invalid',
         status: 400,
         message: `Aggregate does not support the '${key}' option.`,
       });
@@ -75,7 +74,7 @@ describe('collection aggregate REST endpoint', () => {
   ])('POST /api/deals/aggregate rejects %s as a 400 validation error', async (_label, input) => {
     const { endpoint, req } = restFixture(input);
 
-    await expect(endpoint.handler(req)).rejects.toBeInstanceOf(AggregateValidationError);
+    await expect(endpoint.handler(req)).rejects.toMatchObject({ code: 'aggregate.invalid' });
   });
 
   it('POST /api/deals/aggregate surfaces invalid options with their API status', async () => {

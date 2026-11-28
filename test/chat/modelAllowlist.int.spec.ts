@@ -40,7 +40,7 @@ const questionInput = {
 type AgentJSON = {
   chatId: Chat['id'];
   status?: string;
-  error?: string;
+  detail?: string;
   code?: string;
   messageId?: string;
 };
@@ -250,11 +250,11 @@ describe('per-user agent model allowlists', () => {
         model: 'test/writer',
       });
 
-      expect(response).toEqual({
+      expect(response).toMatchObject({
         status: 403,
         body: {
-          code: 'model-not-allowed',
-          error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
+          code: 'agent.model-not-allowed',
+          detail: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
         },
       });
       expect(model.requests).toEqual([]);
@@ -288,11 +288,11 @@ describe('per-user agent model allowlists', () => {
         headers,
       );
 
-      expect(response).toEqual({
+      expect(response).toMatchObject({
         status: 403,
         body: {
-          code: 'model-not-allowed',
-          error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
+          code: 'agent.model-not-allowed',
+          detail: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
         },
       });
       expect(model.requests).toEqual([]);
@@ -339,9 +339,9 @@ describe('per-user agent model allowlists', () => {
       model: 'test/thinker',
     });
 
-    expect(response).toEqual({
+    expect(response).toMatchObject({
       status: 403,
-      body: { error: 'The configured budget has been exhausted.' },
+      body: { code: 'ai.budget-spent', detail: 'The configured budget has been exhausted.' },
     });
     expect(model.requests).toEqual([]);
 
@@ -363,11 +363,11 @@ describe('per-user agent model allowlists', () => {
   it('POST rejects an agent with no user-allowed model', async () => {
     const response = await post(`/agents/${agentSlug}`, { prompt: 'Help.' });
 
-    expect(response).toEqual({
+    expect(response).toMatchObject({
       status: 403,
       body: {
-        code: 'no-model-available',
-        error: `No model on agent '${agentSlug}' is allowed for this user`,
+        code: 'agent.no-model-available',
+        detail: `No model on agent '${agentSlug}' is allowed for this user.`,
       },
     });
     expect(model.requests).toEqual([]);
@@ -380,11 +380,11 @@ describe('per-user agent model allowlists', () => {
       model: 'test/writer',
     });
 
-    expect(response).toEqual({
+    expect(response).toMatchObject({
       status: 403,
       body: {
-        code: 'model-not-allowed',
-        error: `Model 'test/writer' is not allowed for agent '${agentSlug}'. Allowed: none`,
+        code: 'agent.model-not-allowed',
+        detail: `Model 'test/writer' is not allowed for agent '${agentSlug}'. Allowed: none`,
       },
     });
     expect(model.requests).toEqual([]);
@@ -415,11 +415,11 @@ describe('per-user agent model allowlists', () => {
 
     hold.resolve();
 
-    expect(steer).toEqual({
+    expect(steer).toMatchObject({
       status: 403,
       body: {
-        code: 'model-not-allowed',
-        error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
+        code: 'agent.model-not-allowed',
+        detail: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
       },
     });
     expect((await turn).body.status).toBe('completed');
@@ -467,8 +467,8 @@ describe('per-user agent model allowlists', () => {
     const response = await turn;
 
     expect(response.body).toMatchObject({
-      code: 'selection-unavailable',
-      error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
+      code: 'turn.selection-unavailable',
+      detail: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
     });
     expect(model.requests.map(({ model }) => model)).toEqual(['thinker']);
     await expect(
@@ -530,7 +530,7 @@ describe('per-user agent model allowlists', () => {
     await expect(
       runQueuedTurn({ frogbot: booted.frogbot, chatId: first.body.chatId }),
     ).rejects.toMatchObject({
-      code: 'selection-unavailable',
+      code: 'turn.selection-unavailable',
       message: "Model 'test/thinker' is not allowed for this user. Allowed: 'test/writer'",
     });
 

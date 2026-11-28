@@ -4,7 +4,10 @@ import { APICallError, generateText, RetryError } from 'ai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { aiErrorMessage } from '../../../../packages/frogbot/src/ai/errorMessage.js';
+import {
+  aiError,
+  aiErrorText as aiErrorMessage,
+} from '../../../../packages/frogbot/src/ai/aiError.js';
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
@@ -28,7 +31,52 @@ function providerError(statusCode?: number) {
   });
 }
 
-describe('aiErrorMessage', () => {
+describe('aiError', () => {
+  it.each([
+    [401, 'ai.key-rejected', false],
+    [429, 'ai.rate-limited', true],
+    [404, 'ai.model-unavailable', false],
+    [503, 'ai.provider-down', true],
+    [400, 'ai.provider-error', false],
+    [undefined, 'ai.unreachable', true],
+  ])('gives provider status %s the code %s', (statusCode, code, retryable) => {
+    const error = aiError({
+      error: providerError(statusCode),
+      model: 'openai/gpt-4o-mini',
+      config,
+    });
+
+    expect(error).toMatchObject({ name: 'FrogBotError', code, retryable });
+    expect(JSON.stringify({ message: error?.message, hint: error?.hint })).not.toContain(
+      keyFragment,
+    );
+  });
+
+  it('keeps the gateway code and Retry-After on a gateway error', () => {
+    const error = aiError({ error: new BudgetExceededError() });
+
+    expect(error).toMatchObject({
+      code: 'ai.budget-spent',
+      data: { gatewayCode: 'budget_exceeded' },
+    });
+  });
+
+  it('reports a missing credential as ai.no-credential with its 401, not as a rejected key', () => {
+    const error = aiError({ error: new CallCredentialError('Set OPENAI_API_KEY.') });
+
+    expect(error).toMatchObject({
+      code: 'ai.no-credential',
+      status: 401,
+      message: 'Set OPENAI_API_KEY.',
+    });
+  });
+
+  it('returns undefined for an error that did not come from an AI call', () => {
+    expect(aiError({ error: new Error('Database failed') })).toBeUndefined();
+  });
+});
+
+describe('aiErrorText', () => {
   it.each([
     [401, 'The AI provider rejected the API key. Check OPENAI_API_KEY in .env.'],
     [403, 'The AI provider rejected the API key. Check OPENAI_API_KEY in .env.'],
@@ -42,7 +90,7 @@ describe('aiErrorMessage', () => {
     ],
     [500, 'The AI provider is unavailable right now. Try again in a moment.'],
     [503, 'The AI provider is unavailable right now. Try again in a moment.'],
-    [400, 'The AI provider returned an error. Check the terminal for details.'],
+    [400, 'The AI provider returned an error. Check the server log for details.'],
     [
       undefined,
       "FrogBot couldn't reach the AI provider. Check the network connection and try again.",
@@ -112,12 +160,12 @@ describe('aiErrorMessage', () => {
     });
 
     expect(aiErrorMessage({ error, model: 'openai/gpt-4o-mini', config })).toBe(
-      'This chat is too long for openai/gpt-4o-mini.',
+      'This chat is too long for openai/gpt-4o-mini. Compact the chat, start a new one, or pick a model with a larger context window.',
     );
   });
 });
 
-describe('aiErrorMessage on a linked account', () => {
+describe('aiErrorText on a linked account', () => {
   const MODEL = 'openai/gpt-4o-mini';
   const linkedConfig = {
     ...config,

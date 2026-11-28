@@ -1,4 +1,4 @@
-import { APIError } from 'payload';
+import { frogbotError } from '../../errors/catalog.js';
 
 export function isReservedWaitpointKey(key: string): boolean {
   return key === '__proto__' || key === 'constructor' || key === 'prototype';
@@ -8,7 +8,7 @@ export function copyResumeData(data: unknown): unknown {
   const ancestors = new Set<object>();
 
   const invalid = () => {
-    throw new APIError('FrogBot resume data must be a JSON value.', 400);
+    throw frogbotError('request.invalid', 'FrogBot resume data must be a JSON value.');
   };
 
   const validate = (value: unknown): void => {
@@ -37,7 +37,10 @@ export function copyResumeData(data: unknown): unknown {
       if (typeof key !== 'string') return invalid();
 
       if (isReservedWaitpointKey(key)) {
-        throw new APIError(`FrogBot resume data cannot contain the reserved key '${key}'.`, 400);
+        throw frogbotError(
+          'request.invalid',
+          `FrogBot resume data cannot contain the reserved key '${key}'.`,
+        );
       }
 
       if (array && (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= value.length)) return invalid();

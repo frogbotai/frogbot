@@ -82,7 +82,7 @@ describe('databaseMemory cleanup', () => {
   it('rejects text over 4,000 characters', async () => {
     await expect(
       frogbot.memory.save({ scope: 'team', text: 'a'.repeat(4_001) }),
-    ).rejects.toMatchObject({ code: 'invalid', message: expect.stringContaining('4000') });
+    ).rejects.toMatchObject({ code: 'memory.invalid', message: expect.stringContaining('4000') });
     await expect(
       frogbot.memory.save({ scope: 'team', text: 'a'.repeat(4_000) }),
     ).resolves.toMatchObject({
@@ -103,13 +103,13 @@ describe('databaseMemory cleanup', () => {
 
     await expect(
       frogbot.memory.save({ scope: 'team', text: 'b'.repeat(2_004), pinned: true }),
-    ).rejects.toMatchObject({ name: 'MemoryAdapterError', code: 'limit' });
+    ).rejects.toMatchObject({ name: 'FrogBotError', code: 'memory.pinned-budget' });
 
     const unpinned = await frogbot.memory.save({ scope: 'team', text: 'b'.repeat(2_004) });
 
     await expect(
       frogbot.memory.update({ scope: 'team', id: unpinned.id, pinned: true }),
-    ).rejects.toMatchObject({ code: 'limit' });
+    ).rejects.toMatchObject({ code: 'memory.pinned-budget' });
   });
 
   it('keeps one memory per key under concurrent saves', async () => {
@@ -149,7 +149,7 @@ describe('databaseMemory cleanup', () => {
 
     await expect(
       frogbot.memory.update({ scope: 'team', id: other.id, text: 'coffee at nine!' }),
-    ).rejects.toMatchObject({ code: 'invalid' });
+    ).rejects.toMatchObject({ code: 'memory.duplicate' });
   });
 
   it('rejects saves past the per-scope cap', async () => {
@@ -158,7 +158,7 @@ describe('databaseMemory cleanup', () => {
     }
 
     await expect(frogbot.memory.save({ scope: 'team', text: 'Delta four' })).rejects.toMatchObject({
-      code: 'limit',
+      code: 'memory.scope-full',
     });
 
     const updated = await frogbot.memory.save({ scope: 'team', text: 'alpha one!' });

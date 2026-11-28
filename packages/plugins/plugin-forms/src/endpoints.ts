@@ -3,7 +3,7 @@ import {
   APIError,
   type Endpoint,
   type FrogBotRequest,
-  KVLockContentionError,
+  isFrogBotError,
 } from 'frogbot';
 
 import { bodyAnswers, pickSubmission, shownQuestions } from './answers.js';
@@ -112,7 +112,7 @@ export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
 
         return Response.json(opening.definition);
       } catch (error) {
-        if (error instanceof KVLockContentionError) return busy();
+        if (isFrogBotError(error, 'kv.lock-held')) return busy();
 
         throw error;
       }
@@ -126,7 +126,7 @@ function saveFailed(req: FrogBotRequest, form: FormDocument, error: unknown): Re
 
   if (error instanceof APIError && error.status < 500) return failure(error.status, error.message);
 
-  if (error instanceof KVLockContentionError) return busy();
+  if (isFrogBotError(error, 'kv.lock-held')) return busy();
 
   req.frogbot.logger.error({ err: error, form: form.slug }, '[plugin-forms] Submit failed');
 
@@ -186,7 +186,7 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
 
         if (limit && !limit.allowed) return tooMany(limit.retryAfter);
       } catch (error) {
-        if (error instanceof KVLockContentionError) return busy();
+        if (isFrogBotError(error, 'kv.lock-held')) return busy();
 
         throw error;
       }

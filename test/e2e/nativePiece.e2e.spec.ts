@@ -482,7 +482,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
       expect(await direct({ user: unconnected, input, instance })).toMatchObject({
         status: 422,
-        body: { name: 'ConnectionError', code: 'missing' },
+        body: { name: 'FrogBotError', code: 'connection.not-linked' },
       });
 
       const generated = await agent({ user: unconnected, input, instance });
@@ -555,17 +555,21 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
   it.each(
     [
-      { label: 'revoked', code: 'revoked', data: { status: 'revoked' as const } },
-      { label: 'error state', code: 'error', data: { status: 'error' as const } },
-      { label: 'expired', code: 'expired', data: { expiresAt: '2000-01-01T00:00:00.000Z' } },
+      { label: 'revoked', code: 'connection.revoked', data: { status: 'revoked' as const } },
+      { label: 'error state', code: 'connection.unreadable', data: { status: 'error' as const } },
+      {
+        label: 'expired',
+        code: 'connection.expired',
+        data: { expiresAt: '2000-01-01T00:00:00.000Z' },
+      },
       {
         label: 'corrupt ciphertext',
-        code: 'error',
+        code: 'connection.unreadable',
         data: { credential: 'not-encrypted' },
       },
       {
         label: 'invalid auth shape',
-        code: 'error',
+        code: 'connection.unreadable',
         data: {},
         credentials: { wrongField: 'not-an-api-key' },
       },
@@ -578,7 +582,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       await saveConnection({ user: alice, credentials, data });
       const result = await direct({ user: alice, input });
 
-      expect(result).toMatchObject({ status: 422, body: { name: 'ConnectionError', code } });
+      expect(result).toMatchObject({ status: 422, body: { name: 'FrogBotError', code } });
 
       const generated = await agent({ user: alice, input });
 

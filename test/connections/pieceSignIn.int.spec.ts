@@ -167,7 +167,7 @@ describe(`piece-run OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
     ).resolves.toEqual({ token: 'plan-first-token', account: 'first-token' });
     await expect(
       frogbot.connections.resolve({ piece, req: await userRequest(users[1].id) }),
-    ).rejects.toMatchObject({ code: 'missing' });
+    ).rejects.toMatchObject({ code: 'connection.not-linked' });
   });
 
   it('refuses a save without the required scope, so a later call fails its scope check', async () => {
@@ -180,7 +180,10 @@ describe(`piece-run OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
 
     await expect(
       frogbot.connections.resolve({ piece, req: await userRequest(users[0].id) }),
-    ).rejects.toMatchObject({ code: 'scopes', missingScopes: ['plan.use'] });
+    ).rejects.toMatchObject({
+      code: 'connection.missing-scopes',
+      data: { missingScopes: ['plan.use'] },
+    });
   });
 
   it.each([false, true])(
@@ -216,7 +219,7 @@ describe(`piece-run OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       req: await userRequest(users[0].id),
     })) as { id: number | string; accountId: string }[];
 
-    await expect(link('wrong', 'sub-2', first.id)).rejects.toMatchObject({ code: 'account' });
+    await expect(link('wrong', 'sub-2', first.id)).rejects.toMatchObject({ code: 'oauth.account' });
 
     await link('renewed', 'sub-1', first.id);
 

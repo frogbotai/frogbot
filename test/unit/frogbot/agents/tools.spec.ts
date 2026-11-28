@@ -10,6 +10,7 @@ import {
   toAISDKTools,
   toAISDKToolsContext,
 } from '../../../../packages/frogbot/src/agents/tools.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import type { AnyTool, Tool, ToolCtx } from '../../../../packages/frogbot/src/tools/types.js';
 
 const usage = {
@@ -154,6 +155,29 @@ describe('toAISDKTools output cap', () => {
           throw error;
         }),
       ),
-    ).resolves.toEqual({ type: 'error-text', value: String(error) });
+    ).resolves.toEqual({ type: 'error-text', value: `internal: ${error.message}` });
+  });
+
+  it('shows the model a FrogBot error as its code, detail and problem', async () => {
+    const error = frogbotError('memory.scope-full', {
+      detail: "Memory scope 'me' is full.",
+      data: { scope: 'me', max: 3 },
+    });
+
+    const seen = await modelSees(
+      lookup(() => {
+        throw error;
+      }),
+    );
+
+    const [line, json] = (seen as { value: string }).value.split('\n');
+
+    expect(line).toBe("memory.scope-full: Memory scope 'me' is full.");
+    expect(JSON.parse(json)).toMatchObject({
+      code: 'memory.scope-full',
+      status: 409,
+      hint: expect.any(String),
+      data: { scope: 'me', max: 3 },
+    });
   });
 });

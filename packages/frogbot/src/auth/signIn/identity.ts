@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { type AccessResult, executeAccess, ValidationError } from 'payload';
 import { z } from 'zod';
 
-import { OAuthError } from '../../connections/oauth/index.js';
+import { frogbotError } from '../../errors/catalog.js';
 import { toPayloadRequest } from '../../seams/request.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { withSessionOperation } from '../operation.js';
@@ -25,11 +25,11 @@ export async function resolveSignInIdentity({
   email: unknown;
 }): Promise<string | number> {
   const parsed = z.string().trim().toLowerCase().pipe(z.email()).safeParse(accountEmail);
-  if (!parsed.success) throw new OAuthError('account');
+  if (!parsed.success) throw frogbotError('oauth.account');
   const email = parsed.data;
   const config = await req.frogbot.config._internal.payloadConfig;
   const collection = config.collections.find(({ slug }) => slug === collectionSlug);
-  if (!collection?.auth) throw new OAuthError('configuration');
+  if (!collection?.auth) throw frogbotError('oauth.configuration');
 
   return withSessionOperation({
     req,
@@ -51,7 +51,7 @@ export async function resolveSignInIdentity({
         });
 
         signal.throwIfAborted();
-        if (result.docs.length > 1) throw new OAuthError('account');
+        if (result.docs.length > 1) throw frogbotError('oauth.account');
         const user = result.docs[0];
         if (
           user &&
@@ -59,7 +59,7 @@ export async function resolveSignInIdentity({
             user.deletedAt ||
             (collection.auth.verify && user._verified !== true))
         ) {
-          throw new OAuthError('account');
+          throw frogbotError('oauth.account');
         }
 
         return user;
@@ -92,7 +92,7 @@ export async function resolveSignInIdentity({
           payloadReq.user = user;
         }
 
-        if (!allowed) throw new OAuthError('signUp');
+        if (!allowed) throw frogbotError('oauth.sign-up');
       }
 
       let createdId: string | number | undefined;
@@ -131,7 +131,7 @@ export async function resolveSignInIdentity({
 
       const user = await find();
       if (!user || (createdId !== undefined && user.id !== createdId)) {
-        throw new OAuthError('account');
+        throw frogbotError('oauth.account');
       }
 
       return user.id;

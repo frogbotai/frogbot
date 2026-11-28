@@ -6,7 +6,6 @@ import {
   type ConnectionStoreLock,
 } from '../../../../packages/frogbot/src/connections/store.js';
 import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/src/connections/types.js';
-import { KVLeaseLostError } from '../../../../packages/frogbot/src/kv/errors.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 import type { KVLockCallback } from '../../../../packages/frogbot/src/kv/types.js';
 
@@ -153,7 +152,7 @@ describe('connection store guards and leases', () => {
     const rejected = result.catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(10_000);
 
-    expect(await rejected).toBeInstanceOf(KVLeaseLostError);
+    expect(await rejected).toMatchObject({ code: 'kv.lease-lost' });
     expect(locked.signal.aborted).toBe(true);
 
     finish();
@@ -161,7 +160,7 @@ describe('connection store guards and leases', () => {
 
     expect(frogbot.create).not.toHaveBeenCalled();
     expect(frogbot.update).not.toHaveBeenCalled();
-    await expect(locked.delete()).rejects.toBeInstanceOf(KVLeaseLostError);
+    await expect(locked.delete()).rejects.toMatchObject({ code: 'kv.lease-lost' });
     expect(vi.getTimerCount()).toBe(0);
   });
 

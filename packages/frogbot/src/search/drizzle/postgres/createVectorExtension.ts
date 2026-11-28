@@ -1,7 +1,7 @@
 import type { BasePostgresAdapter } from '@payloadcms/drizzle/postgres';
 import { sql } from 'drizzle-orm';
 
-import { SearchCapabilityError } from '../../errors.js';
+import { searchUnavailable } from '../../errors.js';
 import { getErrorCode } from './getErrorCode.js';
 
 const minimumVersion = [0, 8, 0];
@@ -53,25 +53,25 @@ export async function createVectorExtension({
       const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error;
       const message = cause instanceof Error ? cause.message : String(cause);
 
-      throw new SearchCapabilityError(
+      throw searchUnavailable({
         collection,
         index,
-        'vector',
-        getReason(code),
-        `The pgvector extension could not be created${code ? ` (SQLSTATE ${code})` : ''}: ${message}`,
-      );
+        mode: 'vector',
+        reason: getReason(code),
+        detail: `The pgvector extension could not be created${code ? ` (SQLSTATE ${code})` : ''}: ${message}`,
+      });
     }
 
     version = await getInstalledVersion(adapter);
   }
 
   if (!version || !isSupportedVersion(version)) {
-    throw new SearchCapabilityError(
+    throw searchUnavailable({
       collection,
       index,
-      'vector',
-      'missing-prerequisite',
-      `pgvector ${minimumVersion.join('.')} or later is required; found ${version ?? 'none'}.`,
-    );
+      mode: 'vector',
+      reason: 'missing-prerequisite',
+      detail: `pgvector ${minimumVersion.join('.')} or later is required; found ${version ?? 'none'}.`,
+    });
   }
 }

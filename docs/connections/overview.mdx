@@ -92,9 +92,9 @@ Factory `auth` is used in exactly these cases:
 - The instance isn't the one in the connection entry and has its own factory `auth`, such as a bot account or company mailbox beside the linked instance. Every call on that instance uses its `auth`; use it for triggers and scheduled jobs.
 - The piece does app-owned work: it sends [transactional email](/email/overview), answers in a channel, such as [Slack](/pieces/slack), or removes a [webhook subscription](/pieces/triggers#routes-and-lifecycle) FrogBot created. That work uses factory `auth` even when the piece has a connection entry.
 
-For the instance in a connection entry, and for other instances of that piece with no factory `auth`, an action, tool or trigger call never uses factory `auth`. It uses the signed-in user's own connection. When the request has no user, as in a scheduled job or trigger, or the user hasn't linked the piece, it throws `ConnectionError` with code `missing` and the message `Connection for 'gmail' is not linked. Link it in Settings → Linked accounts.` Another user's connection never satisfies the call. Factory `auth` on the instance in a connection entry is accepted but unused. For an account the whole app shares, declare a [shared app account](#shared-app-accounts); a call with `as` never falls back to factory `auth` either.
+For the instance in a connection entry, and for other instances of that piece with no factory `auth`, an action, tool or trigger call never uses factory `auth`. It uses the signed-in user's own connection. When the request has no user, as in a scheduled job or trigger, or the user hasn't linked the piece, it throws `connection.not-linked` with the detail `Connection for 'gmail' is not linked.` and a hint to link it in Settings → Linked accounts. Another user's connection never satisfies the call. Factory `auth` on the instance in a connection entry is accepted but unused. For an account the whole app shares, declare a [shared app account](#shared-app-accounts); a call with `as` never falls back to factory `auth` either.
 
-An existing connection must resolve successfully. Invalid credentials, revoked or error states, missing scopes, and expiry that can't be refreshed throw `ConnectionError`.
+An existing connection must resolve successfully. Invalid credentials, revoked or error states, missing scopes, and expiry that can't be refreshed throw a `connection.*` error.
 
 ## Run AI on users' keys
 
@@ -161,7 +161,7 @@ const client = await gmail.client({ req, as: 'teamMailbox' })
 const auth = await frogbot.connections.resolve({ piece: gmail, req, as: 'teamMailbox' })
 ```
 
-- An unlinked slot throws `ConnectionError` with code `missing`. It never falls back to the caller's own account or to the factory `auth`.
+- An unlinked slot throws `connection.not-linked`. It never falls back to the caller's own account or to the factory `auth`.
 - A slot holds one account per piece. Linking it again, with any provider account, replaces it, so there is no default to choose.
 - An `as` name that no entry declares for that piece throws a configuration error, so a typo fails loudly instead of looking unlinked.
 - Any user of the `admin.user` collection can link, reconnect and disconnect a slot in the **App accounts** section of **Settings → Linked accounts**. No user can read a slot's credential, and slot rows never appear in reads made as a user (REST, or the Local API with `overrideAccess: false`).
@@ -219,7 +219,7 @@ Every connection endpoint answers a failure with the shape core uses, plus a `da
 
 A body that fails the piece's schema returns `400` with code `invalid_credentials`, naming each field's path and expected type in `message` and the paths in `fields`. Submitted values never appear in the response. Other codes from a static link are `invalid_json` (`400`), `no_credentials` (`400`, the piece declares no key schema), `rejected` (`422`, the provider refused the key), `unreachable` (`502`, the key couldn't be checked), `busy` (`409`) and `not_found` (`404`).
 
-An OAuth authorize or callback failure returns the `OAuthError` code: `state` (`400`, the sign-in expired or was already used), `tokens` (`400`, the provider denied the sign-in or the code exchange failed), `account` (`400`, including reconnecting with a different provider account) or `configuration` (`500`, such as an invalid `serverURL` or a recipe `authorize()` that throws). The routes also answer `unauthorized` (`401`, no signed-in user), `forbidden` (`403`, a user outside the admin user collection), `not_found` (`404`, an unknown piece or reconnect target) and `internal` (`500`, an unexpected error). When the provider redirects back with an RFC 6749 `error` such as `access_denied`, it appears as `data.provider`; its `error_description` never does. The server logs each failure's cause as a warning.
+An OAuth authorize or callback failure returns `oauth.state` (`400`, the sign-in expired or was already used), `oauth.tokens` (`400`, the provider denied the sign-in or the code exchange failed), `oauth.account` (`400`, including reconnecting with a different provider account) or `oauth.configuration` (`500`, such as an invalid `serverURL` or a recipe `authorize()` that throws). The routes also answer `auth.unauthenticated` (`401`, no signed-in user), `auth.forbidden` (`403`, a user outside the admin user collection), `connection.not-found` (`404`, an unknown piece or reconnect target) and `internal` (`500`, an unexpected error). When the provider redirects back with an RFC 6749 `error` such as `access_denied`, it appears as `data.provider`; its `error_description` never does. The server logs each failure's cause as a warning.
 
 Static forms support primitive values, nested objects, and arrays with supported item schemas. The piece's input schema defines the body shape; credentials do not use a common envelope.
 
@@ -300,7 +300,7 @@ The Google product recipes add these scopes to the identity scopes:
 
 When you add a scope, accounts linked earlier lack it:
 
-- Every action for that piece throws `ConnectionError` with code `scopes`, and `missingScopes` lists the provider strings.
+- Every action for that piece throws `connection.missing-scopes`, and `data.missingScopes` lists the provider strings.
 - Settings → Linked accounts shows those rows as **needs re-link**.
 - `frogbot.connections.authorizations()` lists the piece with its `authorizeUrl`.
 
@@ -333,7 +333,7 @@ if (work) {
 - **Failed refresh.** A failed refresh marks the connection `error` and throws. It never switches to factory `auth`. Reconnect to replace the failing credential.
 - **Disconnect.** Disconnecting removes the row, so the user's next call throws `missing`. It revokes access at the provider only when the recipe defines `revoke`.
 
-`ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, `scopes`, `ambiguous`, or `forbidden`. Its message ends with the next step, such as "Reconnect it in Settings → Linked accounts.", and an AI call on a linked provider key shows that message. When reading or refreshing the stored credential fails, the original error is the `cause` and is logged. A piece used with no `connections` entry and no factory `auth` throws `missing` and names the root `connections` config to add it to. Scope errors include `missingScopes`. `ambiguous` means the user has several accounts and none is the default; `forbidden` means a pinned `connection` isn't one of the caller's accounts for that piece, including an unknown ID. `authorizations` throws both instead of listing the piece, since linking another account wouldn't fix them. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
+A failed resolution throws a `FrogBotError` whose code is `connection.not-linked`, `connection.revoked`, `connection.expired`, `connection.unreadable`, `connection.missing-scopes`, `connection.ambiguous` or `connection.forbidden`; `isConnectionError(error)` from `frogbot` tells them apart from other errors. Its `hint` is the next step, such as "Reconnect it in Settings → Linked accounts.", and `data.piece` names the piece. When reading or refreshing the stored credential fails, the original error is the `cause` and is logged. A piece used with no `connections` entry and no factory `auth` throws `connection.not-configured`. Scope errors include `data.missingScopes`. `connection.ambiguous` means the user has several accounts and none is the default; `connection.forbidden` means a pinned `connection` isn't one of the caller's accounts for that piece, including an unknown ID. `authorizations` throws both instead of listing the piece, since linking another account wouldn't fix them. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
 
 ## Storage and access
 

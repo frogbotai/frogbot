@@ -110,7 +110,9 @@ describe('connections API', () => {
       const { api, req, piece, find } = await setup({ auth: { token: 'factory' }, row: {} });
       req.user = user as never;
 
-      await expect(api.resolve({ piece, req })).rejects.toMatchObject({ code: 'missing' });
+      await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+        code: 'connection.not-linked',
+      });
       expect(find).not.toHaveBeenCalled();
     },
   );
@@ -119,32 +121,33 @@ describe('connections API', () => {
     const { api, req, piece, factory } = await setup({ auth: { token: 'factory' } });
 
     await expect(api.resolve({ piece, req })).rejects.toMatchObject({
-      name: 'ConnectionError',
-      code: 'missing',
-      piece: 'example',
-      message: "Connection for 'example' is not linked. Link it in Settings → Linked accounts.",
+      name: 'FrogBotError',
+      code: 'connection.not-linked',
+      data: { piece: 'example' },
+      message: "Connection for 'example' is not linked.",
+      hint: 'Link or reconnect the account in Settings → Linked accounts, then retry.',
     });
     await expect(api.resolve({ piece: factory(), req })).rejects.toMatchObject({
-      name: 'ConnectionError',
-      code: 'missing',
-      piece: 'example',
+      name: 'FrogBotError',
+      code: 'connection.not-linked',
+      data: { piece: 'example' },
     });
   });
 
   it.each([
-    [{ status: 'revoked' }, 'revoked'],
-    [{ status: 'error' }, 'error'],
-    [{ expiresAt: '2000-01-01T00:00:00Z' }, 'expired'],
-    [{ expiresAt: 'invalid' }, 'error'],
-    [{ value: { token: 123 } }, 'error'],
-    [{ value: 'secret-value' }, 'error'],
-    [{ credential: 'broken-ciphertext' }, 'error'],
-    [{ method: 'legacy' }, 'error'],
+    [{ status: 'revoked' }, 'connection.revoked'],
+    [{ status: 'error' }, 'connection.unreadable'],
+    [{ expiresAt: '2000-01-01T00:00:00Z' }, 'connection.expired'],
+    [{ expiresAt: 'invalid' }, 'connection.unreadable'],
+    [{ value: { token: 123 } }, 'connection.unreadable'],
+    [{ value: 'secret-value' }, 'connection.unreadable'],
+    [{ credential: 'broken-ciphertext' }, 'connection.unreadable'],
+    [{ method: 'legacy' }, 'connection.unreadable'],
   ])('never falls back for an unusable existing row %j', async (row, code) => {
     const { api, req, piece } = await setup({ auth: { token: 'factory' }, row: row as never });
 
     await expect(api.resolve({ piece, req })).rejects.toMatchObject({
-      name: 'ConnectionError',
+      name: 'FrogBotError',
       code,
     });
   });
@@ -154,22 +157,26 @@ describe('connections API', () => {
     connectionsState(api).config.entries = {};
 
     await expect(api.resolve({ piece: factory(), req })).rejects.toMatchObject({
-      name: 'ConnectionError',
-      code: 'missing',
-      message:
-        "No `connections` entry declares 'example': add it to the root `connections` config (`secret: true` or `oauth`).",
+      name: 'FrogBotError',
+      code: 'connection.not-configured',
+      message: "No `connections` entry declares 'example'.",
     });
   });
 
   it.each([
-    [{ status: 'revoked' }, 'revoked', "Connection for 'example' is revoked."],
-    [{ status: 'error' }, 'error', "Connection for 'example' is in an error state."],
+    [{ status: 'revoked' }, 'connection.revoked', "Connection for 'example' is revoked."],
+    [
+      { status: 'error' },
+      'connection.unreadable',
+      "Connection for 'example' is in an error state.",
+    ],
   ])('ends an unusable row %j with the reconnect step', async (row, code, start) => {
     const { api, req, piece } = await setup({ row: row as never });
 
     await expect(api.resolve({ piece, req })).rejects.toMatchObject({
       code,
-      message: `${start} Reconnect it in Settings → Linked accounts.`,
+      message: start,
+      hint: 'Reconnect it in Settings → Linked accounts.',
     });
   });
 
@@ -178,10 +185,10 @@ describe('connections API', () => {
     const error = await api.resolve({ piece, req }).catch((error: unknown) => error);
 
     expect(error).toMatchObject({
-      name: 'ConnectionError',
-      code: 'error',
-      message:
-        "Connection for 'example' could not be read. Check the server log; if the credential key changed, reconnect it in Settings → Linked accounts.",
+      name: 'FrogBotError',
+      code: 'connection.unreadable',
+      message: "Connection for 'example' could not be read.",
+      hint: 'Check the server log; if the credential key changed, reconnect it in Settings → Linked accounts.',
       cause: expect.any(Error),
     });
     expect(warn).toHaveBeenCalledWith(
@@ -194,9 +201,9 @@ describe('connections API', () => {
     const { api, req, piece } = await setup({ secret: false, row: {}, auth: { token: 'factory' } });
 
     await expect(api.resolve({ piece, req })).rejects.toMatchObject({
-      code: 'error',
-      message:
-        "Connection for 'example' uses an unavailable method. Enable `secret` on its `connections` entry, or reconnect it in Settings → Linked accounts.",
+      code: 'connection.unreadable',
+      message: "Connection for 'example' uses an unavailable method.",
+      hint: 'Enable `secret` on its `connections` entry, or reconnect it in Settings → Linked accounts.',
     });
   });
 
@@ -204,9 +211,9 @@ describe('connections API', () => {
     const { api, req, piece } = await setup({ row: { expiresAt: 'not-a-date' } });
 
     await expect(api.resolve({ piece, req })).rejects.toMatchObject({
-      code: 'error',
-      message:
-        "Connection for 'example' has an invalid expiry. Reconnect it in Settings → Linked accounts.",
+      code: 'connection.unreadable',
+      message: "Connection for 'example' has an invalid expiry.",
+      hint: 'Reconnect it in Settings → Linked accounts.',
     });
   });
 
@@ -223,9 +230,8 @@ describe('connections API', () => {
     await expect(
       api.resolve({ piece, req, scopes: ['read', 'write', 'write'] }),
     ).rejects.toMatchObject({
-      code: 'scopes',
-      missingScopes: ['write'],
-      piece: 'example',
+      code: 'connection.missing-scopes',
+      data: { missingScopes: ['write'], piece: 'example' },
     });
   });
 
@@ -269,7 +275,7 @@ describe('connections API', () => {
 
       const error = await api.resolve({ piece, req }).catch((error: unknown) => error);
 
-      expect(error).toMatchObject({ name: 'ConnectionError', code: 'error' });
+      expect(error).toMatchObject({ name: 'FrogBotError', code: 'connection.unreadable' });
       expect(String(error)).not.toContain('secret-value');
     }
   });
@@ -340,7 +346,7 @@ describe('connections API', () => {
     const first = await piece.client({ req });
     find.mockResolvedValueOnce({ docs: [] });
 
-    await expect(piece.client({ req })).rejects.toMatchObject({ code: 'missing' });
+    await expect(piece.client({ req })).rejects.toMatchObject({ code: 'connection.not-linked' });
     expect(await piece.client({ req })).toBe(first);
   });
 
@@ -456,8 +462,8 @@ describe('connections API', () => {
     const tool = narrow.factory();
 
     await expect(narrow.api.resolve({ piece: tool, req: narrow.req })).rejects.toMatchObject({
-      code: 'scopes',
-      missingScopes: ['https://provider/labels'],
+      code: 'connection.missing-scopes',
+      data: { missingScopes: ['https://provider/labels'] },
     });
     expect(await narrow.api.authorizations({ pieces: [tool], req: narrow.req })).toEqual([
       {

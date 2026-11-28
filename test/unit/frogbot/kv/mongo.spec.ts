@@ -2,7 +2,6 @@ import type { BaseDatabaseAdapter } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createMongoKV } from '../../../../packages/frogbot/src/kv/adapters/mongo.js';
-import { KVUnsupportedError } from '../../../../packages/frogbot/src/kv/errors.js';
 import { kvAtomic } from '../../../../packages/frogbot/src/kv/types.js';
 
 type Fixture = ReturnType<typeof fixture>;
@@ -183,16 +182,18 @@ describe('Mongo KV', () => {
       model.db.db.command.mockResolvedValue(hello);
 
       await expect(kv.set('key', 'value', { ttl: 1000 })).rejects.toMatchObject({
-        name: 'KVUnsupportedError',
+        code: 'kv.unsupported',
         message: expect.stringContaining('replica set with transaction support'),
       });
-      await expect(kv.setIfAbsent('key', 'value')).rejects.toBeInstanceOf(KVUnsupportedError);
-      await expect(kv.extendLock({ key: 'key', token: 'owner' }, 1000)).rejects.toBeInstanceOf(
-        KVUnsupportedError,
-      );
-      await expect(kv.releaseLock({ key: 'key', token: 'owner' })).rejects.toBeInstanceOf(
-        KVUnsupportedError,
-      );
+      await expect(kv.setIfAbsent('key', 'value')).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
+      await expect(kv.extendLock({ key: 'key', token: 'owner' }, 1000)).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
+      await expect(kv.releaseLock({ key: 'key', token: 'owner' })).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
       expect(model.db.startSession).not.toHaveBeenCalled();
       expect(native.findOneAndUpdate).not.toHaveBeenCalled();
     },
@@ -203,16 +204,16 @@ describe('Mongo KV', () => {
     model.schema.path.mockReturnValue({ instance, options: {} });
 
     await expect(kv.set('key', 'value', { ttl: 1000 })).rejects.toMatchObject({
-      name: 'KVUnsupportedError',
+      code: 'kv.unsupported',
       message: expect.stringContaining('custom IDs are unsupported'),
     });
-    await expect(kv.setIfAbsent('key', 'value')).rejects.toBeInstanceOf(KVUnsupportedError);
-    await expect(kv.extendLock({ key: 'key', token: 'owner' }, 1000)).rejects.toBeInstanceOf(
-      KVUnsupportedError,
-    );
-    await expect(kv.releaseLock({ key: 'key', token: 'owner' })).rejects.toBeInstanceOf(
-      KVUnsupportedError,
-    );
+    await expect(kv.setIfAbsent('key', 'value')).rejects.toMatchObject({ code: 'kv.unsupported' });
+    await expect(kv.extendLock({ key: 'key', token: 'owner' }, 1000)).rejects.toMatchObject({
+      code: 'kv.unsupported',
+    });
+    await expect(kv.releaseLock({ key: 'key', token: 'owner' })).rejects.toMatchObject({
+      code: 'kv.unsupported',
+    });
     expect(native.insertOne).not.toHaveBeenCalled();
     expect(native.findOneAndUpdate).not.toHaveBeenCalled();
   });
@@ -319,7 +320,9 @@ describe('Mongo KV', () => {
       { $expr: expect.any(Object) },
       expect.objectContaining({ readPreference: 'primary' }),
     );
-    await expect(kv.setIfAbsent('key', 'intruder')).rejects.toBeInstanceOf(KVUnsupportedError);
+    await expect(kv.setIfAbsent('key', 'intruder')).rejects.toMatchObject({
+      code: 'kv.unsupported',
+    });
     expect(native.findOneAndUpdate).not.toHaveBeenCalled();
     expect(native.insertOne).not.toHaveBeenCalled();
     expect(native.updateOne).not.toHaveBeenCalled();

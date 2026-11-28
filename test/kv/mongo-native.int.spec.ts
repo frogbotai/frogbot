@@ -6,7 +6,6 @@ import type { BaseDatabaseAdapter } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished } from 'vitest';
 
 import { createMongoKV } from '../../packages/frogbot/src/kv/adapters/mongo.js';
-import { KVUnsupportedError } from '../../packages/frogbot/src/kv/errors.js';
 import type { KVDatabaseAdapter } from '../../packages/frogbot/src/kv/types.js';
 
 const primary = { readPreference: 'primary' as const };
@@ -315,18 +314,18 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
       expect(await storage.get('key')).toBe('value');
       expect(await storage.has('key')).toBe(true);
       expect(await storage.keys()).toEqual(['key']);
-      await expect(storage.set('key', 'intruder', { ttl: 1000 })).rejects.toBeInstanceOf(
-        KVUnsupportedError,
-      );
-      await expect(storage.setIfAbsent('key', 'intruder')).rejects.toBeInstanceOf(
-        KVUnsupportedError,
-      );
-      await expect(storage.extendLock({ key: 'key', token: 'value' }, 1000)).rejects.toBeInstanceOf(
-        KVUnsupportedError,
-      );
-      await expect(storage.releaseLock({ key: 'key', token: 'value' })).rejects.toBeInstanceOf(
-        KVUnsupportedError,
-      );
+      await expect(storage.set('key', 'intruder', { ttl: 1000 })).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
+      await expect(storage.setIfAbsent('key', 'intruder')).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
+      await expect(storage.extendLock({ key: 'key', token: 'value' }, 1000)).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
+      await expect(storage.releaseLock({ key: 'key', token: 'value' })).rejects.toMatchObject({
+        code: 'kv.unsupported',
+      });
       expect(await custom.collection.findOne({ key: 'key' }, primary)).toEqual(original);
 
       await storage.cleanup();

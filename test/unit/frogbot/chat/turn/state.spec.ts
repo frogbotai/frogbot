@@ -84,7 +84,7 @@ describe('holdTurn', () => {
 
     expect(lease.signal.aborted).toBe(true);
     expect(lease.signal.reason).toMatchObject({
-      code: 'turn-in-progress',
+      code: 'turn.in-progress',
       message: 'The turn lease was lost.',
     });
 

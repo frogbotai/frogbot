@@ -1,4 +1,8 @@
-import type { CollectionConfig as PayloadCollectionConfig, PayloadRequest } from 'payload';
+import type {
+  CollectionAfterErrorHook as PayloadCollectionAfterErrorHook,
+  CollectionConfig as PayloadCollectionConfig,
+  PayloadRequest,
+} from 'payload';
 
 import type { CollectionView } from '../../admin/views/types.js';
 import { buildAggregateEndpoints } from '../../aggregate/endpoints.js';
@@ -21,6 +25,7 @@ import {
   wrapUploadHandlers,
 } from '../../config/wrapRequest.js';
 import type { MapVectorField } from '../../database/types.js';
+import { recordAppErrorResult } from '../../errors/afterError.js';
 import { withAIFieldSelect } from '../../fields/baseFields/ai/select.js';
 import {
   type ScopedAutonumber,
@@ -334,7 +339,20 @@ export function sanitizeCollection(
     beforeOperation: [setupFrogBot, ...(existingHooks.beforeOperation ?? [])],
     ...(afterMe?.length ? { afterMe: [setupFrogBot, ...afterMe] } : {}),
     ...(afterLogout?.length ? { afterLogout: [setupFrogBot, ...afterLogout] } : {}),
-    ...(afterError?.length ? { afterError: [setupFrogBot, ...afterError] } : {}),
+    ...(afterError?.length
+      ? {
+          afterError: [
+            setupFrogBot,
+            ...afterError.map((hook): PayloadCollectionAfterErrorHook => async (args) => {
+              const result = await hook(args);
+
+              recordAppErrorResult(args.req, result);
+
+              return result;
+            }),
+          ],
+        }
+      : {}),
   };
 
   out.endpoints = wrapEndpointList(

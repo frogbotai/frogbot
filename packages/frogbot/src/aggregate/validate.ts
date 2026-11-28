@@ -1,6 +1,6 @@
 import type { Sort, Where } from 'payload';
 
-import { AggregateValidationError, describeAggregate } from './errors.js';
+import { aggregateInvalid, describeAggregate } from './errors.js';
 import type { AggregateDateUnit, AggregateOperation, AggregateOptions } from './types.js';
 
 export type ParsedAggregateGroup = {
@@ -80,30 +80,30 @@ function isPath(value: unknown): value is string {
 /** Refuses any option the Local API doesn't define, before hooks see the arguments. */
 export function assertAggregateKeys(options: unknown): asserts options is AggregateOptions {
   if (!isRecord(options)) {
-    throw new AggregateValidationError('Aggregate requires an options object.');
+    throw aggregateInvalid('Aggregate requires an options object.');
   }
 
   const label = describeAggregate(String(options.collection));
   const key = Object.keys(options).find((name) => !optionKeys.has(name));
 
-  if (key !== undefined) throw new AggregateValidationError(`${label} does not accept '${key}'.`);
+  if (key !== undefined) throw aggregateInvalid(`${label} does not accept '${key}'.`);
 }
 
 function parseGroup(entry: unknown, label: string): ParsedAggregateGroup {
   if (isPath(entry)) return { path: entry };
 
   if (!isRecord(entry) || Object.keys(entry).some((key) => key !== 'field' && key !== 'by')) {
-    throw new AggregateValidationError(
+    throw aggregateInvalid(
       `${label} requires each groupBy entry to be a field path or { field, by }.`,
     );
   }
 
   if (!isPath(entry.field)) {
-    throw new AggregateValidationError(`${label} requires a field path in groupBy.`);
+    throw aggregateInvalid(`${label} requires a field path in groupBy.`);
   }
 
   if (typeof entry.by !== 'string' || !dateUnits.has(entry.by)) {
-    throw new AggregateValidationError(
+    throw aggregateInvalid(
       `${label} cannot group '${entry.field}' by '${String(entry.by)}': use day, week, month, quarter or year.`,
     );
   }
@@ -115,7 +115,7 @@ function parseValue(name: string, value: unknown, label: string): ParsedAggregat
   const entries = isRecord(value) ? Object.entries(value) : [];
 
   if (entries.length !== 1 || !operations.has(entries[0][0])) {
-    throw new AggregateValidationError(
+    throw aggregateInvalid(
       `${label} requires value '${name}' to be one of { count: true }, { sum }, { avg }, { min } or { max }.`,
     );
   }
@@ -124,16 +124,14 @@ function parseValue(name: string, value: unknown, label: string): ParsedAggregat
 
   if (operation === 'count') {
     if (path !== true) {
-      throw new AggregateValidationError(
-        `${label} requires value '${name}' to be { count: true }.`,
-      );
+      throw aggregateInvalid(`${label} requires value '${name}' to be { count: true }.`);
     }
 
     return { name, operation };
   }
 
   if (!isPath(path)) {
-    throw new AggregateValidationError(`${label} requires a field path for value '${name}'.`);
+    throw aggregateInvalid(`${label} requires a field path for value '${name}'.`);
   }
 
   return { name, operation: operation as AggregateOperation, path };
@@ -146,7 +144,7 @@ function parseSort(sort: Sort | undefined, label: string): ParsedAggregateSort[]
 
   return items.map((item) => {
     if (typeof item !== 'string' || !item || item === '-') {
-      throw new AggregateValidationError(`${label} requires sort to name a group or a value.`);
+      throw aggregateInvalid(`${label} requires sort to name a group or a value.`);
     }
 
     return item.startsWith('-')
@@ -162,9 +160,7 @@ function parseInteger(
   if (value === undefined) return undefined;
 
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < min) {
-    throw new AggregateValidationError(
-      `${label} requires ${name} to be an integer of ${min} or more.`,
-    );
+    throw aggregateInvalid(`${label} requires ${name} to be an integer of ${min} or more.`);
   }
 
   return value;
@@ -174,7 +170,7 @@ function parseBoolean(value: unknown, { label, name }: { label: string; name: st
   if (value === undefined) return false;
 
   if (typeof value !== 'boolean') {
-    throw new AggregateValidationError(`${label} requires ${name} to be a boolean.`);
+    throw aggregateInvalid(`${label} requires ${name} to be a boolean.`);
   }
 
   return value;
@@ -188,7 +184,7 @@ export function parseAggregateOptions(options: AggregateOptions): ParsedAggregat
     groupInput === undefined ? [] : Array.isArray(groupInput) ? groupInput : [groupInput];
 
   if (groupInput !== undefined && !groupEntries.length) {
-    throw new AggregateValidationError(`${label} requires at least one groupBy field.`);
+    throw aggregateInvalid(`${label} requires at least one groupBy field.`);
   }
 
   const groupBy = groupEntries.map((entry) => parseGroup(entry, label));
@@ -196,7 +192,7 @@ export function parseAggregateOptions(options: AggregateOptions): ParsedAggregat
 
   for (const { path } of groupBy) {
     if (groupPaths.has(path)) {
-      throw new AggregateValidationError(`${label} groups by '${path}' more than once.`);
+      throw aggregateInvalid(`${label} groups by '${path}' more than once.`);
     }
 
     groupPaths.add(path);
@@ -205,12 +201,12 @@ export function parseAggregateOptions(options: AggregateOptions): ParsedAggregat
   const valuesInput: unknown = options.values;
 
   if (!isRecord(valuesInput) || !Object.keys(valuesInput).length) {
-    throw new AggregateValidationError(`${label} requires at least one named value.`);
+    throw aggregateInvalid(`${label} requires at least one named value.`);
   }
 
   const values = Object.entries(valuesInput).map(([name, value]) => {
     if (!name || name.startsWith('-') || groupPaths.has(name)) {
-      throw new AggregateValidationError(
+      throw aggregateInvalid(
         `${label} cannot name a value '${name}': names must differ from groupBy paths and not start with '-'.`,
       );
     }
@@ -223,31 +219,29 @@ export function parseAggregateOptions(options: AggregateOptions): ParsedAggregat
 
   for (const { name } of sort) {
     if (!groupPaths.has(name) && !valueNames.has(name)) {
-      throw new AggregateValidationError(
+      throw aggregateInvalid(
         `${label} cannot sort by '${name}': sort names a groupBy path or a value name.`,
       );
     }
   }
 
   if (options.where !== undefined && !isRecord(options.where)) {
-    throw new AggregateValidationError(`${label} requires where to be an object.`);
+    throw aggregateInvalid(`${label} requires where to be an object.`);
   }
 
   if (options.populate !== undefined && !isRecord(options.populate)) {
-    throw new AggregateValidationError(`${label} requires populate to be an object.`);
+    throw aggregateInvalid(`${label} requires populate to be an object.`);
   }
 
   if (options.locale === 'all' || options.locale === '*' || options.req?.locale === 'all') {
-    throw new AggregateValidationError(`${label} requires a single locale.`);
+    throw aggregateInvalid(`${label} requires a single locale.`);
   }
 
   if (!groupBy.length) {
     const paging = (['sort', 'limit', 'page'] as const).find((key) => options[key] !== undefined);
 
     if (paging) {
-      throw new AggregateValidationError(
-        `${label} cannot take ${paging} without groupBy: it returns one row.`,
-      );
+      throw aggregateInvalid(`${label} cannot take ${paging} without groupBy: it returns one row.`);
     }
   }
 

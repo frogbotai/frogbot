@@ -2,13 +2,13 @@ import type { ModelModality } from './ai.js';
 
 /** The `code` an agent endpoint error carries, so a caller can branch on it instead of the message. */
 export type AgentErrorCode =
-  | 'access-denied'
-  | 'access-error'
-  | 'agent-not-found'
-  | 'model-not-allowed'
-  | 'no-model-available'
-  | 'reasoning-unavailable'
-  | 'unauthenticated';
+  | 'agent.access-denied'
+  | 'agent.access-error'
+  | 'agent.not-found'
+  | 'agent.model-not-allowed'
+  | 'agent.no-model-available'
+  | 'agent.reasoning-unavailable'
+  | 'auth.unauthenticated';
 
 export type AgentProfile = {
   name?: string;

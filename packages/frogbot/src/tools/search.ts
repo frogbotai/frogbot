@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type { ModelId } from '../ai/types.js';
-import { describeSearchIndex, SearchValidationError } from '../search/errors.js';
+import { describeSearchIndex, searchInvalid } from '../search/errors.js';
 import type { SearchOptions, SearchQuery } from '../search/types.js';
 import type { CollectionSlug } from '../types/generated.js';
 import { isRecord } from '../utilities/isRecord.js';
@@ -146,14 +146,14 @@ export function searchTool<T extends CollectionSlug>(
       let searchQuery: SearchQuery = { text: query };
 
       if (descriptor && !model && !descriptor.lexical) {
-        throw new SearchValidationError(
+        throw searchInvalid(
           `${label} has no lexical search, so searchTool needs \`model\` to embed the query.`,
         );
       }
 
       if (descriptor && model) {
         if (!descriptor.vector) {
-          throw new SearchValidationError(
+          throw searchInvalid(
             `${label} has no vector search, so remove \`model\` from searchTool.`,
           );
         }

@@ -205,7 +205,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     });
 
     expect(duplicate.status).toBe(409);
-    expect(duplicate.body.code).toBe('already-settled');
+    expect(duplicate.body.code).toBe('turn.already-settled');
     expect(model.requests).toHaveLength(requests);
   });
 
@@ -232,7 +232,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.code).toBe('invalid-output');
+    expect(response.body.code).toBe('turn.invalid-output');
     expect(model.requests).toHaveLength(1);
 
     const messages = await storedMessages(body.chatId);
@@ -248,7 +248,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     const response = await settle(body.chatId, { toolCallId: 'forged', output: answer });
 
     expect(response.status).toBe(404);
-    expect(response.body.code).toBe('call-not-found');
+    expect(response.body.code).toBe('turn.call-not-found');
   });
 
   it('another user cannot settle a question in a chat they do not own', async () => {

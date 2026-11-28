@@ -736,7 +736,7 @@ describe('resolveChatContext', () => {
 
       await expect(
         resolveChatContext({ req, agentSlug: 'support', chatId: 'chat-1', incoming, tools: {} }),
-      ).rejects.toMatchObject({ code: 'turn-in-progress', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.in-progress', status: 409 });
       expect(create).not.toHaveBeenCalled();
       expect(update).not.toHaveBeenCalled();
     });
@@ -758,7 +758,7 @@ describe('resolveChatContext', () => {
 
       await expect(
         resolveChatContext({ req, agentSlug: 'support', chatId: 'chat-1', incoming, tools: {} }),
-      ).rejects.toMatchObject({ code: 'channel-chat', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.channel-chat', status: 409 });
       expect(claimTurn).not.toHaveBeenCalled();
       expect(create).not.toHaveBeenCalled();
     });
@@ -775,7 +775,7 @@ describe('resolveChatContext', () => {
           tools: {},
           queue: false,
         }),
-      ).rejects.toMatchObject({ code: 'turn-in-progress', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.in-progress', status: 409 });
       expect(create).not.toHaveBeenCalled();
     });
   });
@@ -883,7 +883,7 @@ describe('resolveChatContext', () => {
           incoming: [answered],
           tools: {},
         }),
-      ).rejects.toMatchObject({ code: 'not-awaiting', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.not-awaiting', status: 409 });
       expect(settleCall).not.toHaveBeenCalled();
     });
 
@@ -918,7 +918,7 @@ describe('resolveChatContext', () => {
           incoming: [answered],
           tools: {},
         }),
-      ).rejects.toMatchObject({ code: 'already-settled', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.already-settled', status: 409 });
       expect(claimTurn).not.toHaveBeenCalled();
     });
 
@@ -935,7 +935,7 @@ describe('resolveChatContext', () => {
           incoming: [answered],
           tools: {},
         }),
-      ).rejects.toMatchObject({ code: 'already-settled', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.already-settled', status: 409 });
       expect(settleCall).not.toHaveBeenCalled();
       expect(claimTurn).not.toHaveBeenCalled();
     });
@@ -953,7 +953,7 @@ describe('resolveChatContext', () => {
           incoming: [answered],
           tools: {},
         }),
-      ).rejects.toMatchObject({ code: 'pending-calls', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.pending-calls', status: 409 });
       expect(claimTurn).not.toHaveBeenCalled();
     });
 
@@ -970,7 +970,7 @@ describe('resolveChatContext', () => {
           incoming: [answered],
           tools: {},
         }),
-      ).rejects.toMatchObject({ code: 'turn-in-progress', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.in-progress', status: 409 });
     });
 
     it('returns the turn to awaiting when history cannot be loaded', async () => {

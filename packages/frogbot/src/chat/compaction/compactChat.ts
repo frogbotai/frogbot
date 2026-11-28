@@ -3,9 +3,9 @@ import { generateId } from 'ai';
 
 import { assertAgentAccess, getAgent } from '../../agents/service.js';
 import type { DocID } from '../../collections/config/types.js';
+import { frogbotError } from '../../errors/catalog.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { findWritableChat } from '../findChat.js';
-import { TurnError } from '../turn/errors.js';
 import { loadChatHistory, persistTurnMessage } from '../turn/messages.js';
 import { promoteQueuedMessage } from '../turn/queue.js';
 import { assertStoredSelection, findGoverningSelection } from '../turn/selection.js';
@@ -34,8 +34,8 @@ export async function compactChat({
   const claim = await claimTurn({ req, chatId: chat.id, from: 'idle' });
 
   if (!claim) {
-    throw new TurnError(
-      'turn-in-progress',
+    throw frogbotError(
+      'turn.in-progress',
       'This chat is busy. Compact it once the reply or the answer it waits for is done.',
     );
   }
@@ -70,7 +70,10 @@ export async function compactChat({
     run.model = model;
 
     if (!(await compact(run, 'manual'))) {
-      throw new TurnError('nothing-to-compact', 'There is nothing to compact in this chat yet.');
+      throw frogbotError(
+        'turn.nothing-to-compact',
+        'There is nothing to compact in this chat yet.',
+      );
     }
 
     const message: UIMessage = { id: generateId(), role: 'assistant', parts: [part!] };

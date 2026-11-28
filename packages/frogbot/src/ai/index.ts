@@ -1,4 +1,4 @@
-export { AIAccessError, enforceAIAccess, methodToCategory } from './access.js';
+export { enforceAIAccess, methodToCategory } from './access.js';
 export { catalog, getAllModelIds, getFilteredCatalog, isKnownModelId } from './catalog.js';
 export type { CatalogModelId, ProviderSlug } from './generated.js';
 export { toGatewayHooks, toHookUsage } from './hooks.js';

@@ -1,5 +1,5 @@
 import type { ReasoningVariant } from '@frogbotai/gateway';
-import type { AgentErrorCode, AgentModelNotice } from '@frogbotai/protocol';
+import type { AgentModelNotice } from '@frogbotai/protocol';
 
 import { canUseAIModel } from '../ai/access.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
@@ -9,6 +9,8 @@ import { resolveModelReasoning } from '../ai/reasoning.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import type { ManifestResponse } from '../chat/types.js';
+import { frogbotError } from '../errors/catalog.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import { pieceToolInstance } from '../pieces/definePiece.js';
 import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -25,28 +27,10 @@ export type ResolvedAgentSelection = {
   variant?: ReasoningVariant;
 };
 
-export type { AgentErrorCode };
-
-export class AgentServiceError extends Error {
-  readonly code?: AgentErrorCode;
-
-  constructor(
-    message: string,
-    readonly status: number,
-    options: { code?: AgentErrorCode; cause?: unknown } = {},
-  ) {
-    super(message, 'cause' in options ? { cause: options.cause } : undefined);
-
-    if (options.code) this.code = options.code;
-  }
-}
-
 export function getAgent({ req, slug }: { req: FrogBotRequest; slug?: string }): AgentInstance {
   const agent = slug ? req.frogbot.agents[slug] : undefined;
   if (!agent) {
-    throw new AgentServiceError(`Agent '${slug ?? ''}' not found`, 404, {
-      code: 'agent-not-found',
-    });
+    throw frogbotError('agent.not-found', `Agent '${slug ?? ''}' not found.`);
   }
 
   return agent;
@@ -69,37 +53,25 @@ export async function assertAgentAccess({
   } catch (error) {
     req.frogbot.logger.error({ err: error, agent: agent.slug }, '[frogbot] Agent access threw');
 
-    throw new AgentServiceError(
-      `Access function for agent '${agent.slug}' threw: ${thrownText(error)}`,
-      500,
-      { code: 'access-error', cause: error },
-    );
+    throw frogbotError('agent.access-error', {
+      detail: `Access function for agent '${agent.slug}' threw. The server log has the error.`,
+      cause: error,
+    });
   }
 
   if (allowed) return;
 
   if (!req.user) {
-    throw new AgentServiceError('Authentication required', 401, { code: 'unauthenticated' });
+    throw frogbotError('auth.unauthenticated', `Agent '${agent.slug}' needs a signed-in user.`);
   }
 
-  throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403, {
-    code: 'access-denied',
-  });
-}
-
-function thrownText(error: unknown): string {
-  try {
-    return String(error);
-  } catch {
-    return 'a value that cannot be printed';
-  }
+  throw frogbotError('agent.access-denied', `Access denied for agent '${agent.slug}'.`);
 }
 
 /** Whether `error` is `assertAgentAccess` refusing the caller, as opposed to failing. */
 export function isAgentAccessDenial(error: unknown): boolean {
   return (
-    error instanceof AgentServiceError &&
-    (error.code === 'access-denied' || error.code === 'unauthenticated')
+    isFrogBotError(error, 'agent.access-denied') || isFrogBotError(error, 'auth.unauthenticated')
   );
 }
 
@@ -270,27 +242,26 @@ export async function assertAgentSelection({
   const model = selection.model ?? (await userDefaultModel({ agent, req }));
 
   if (selection.model !== undefined && !agentModels(agent).includes(selection.model)) {
-    throw new AgentServiceError(
+    throw frogbotError(
+      'agent.model-not-allowed',
       `Model '${model}' is not allowed for agent '${agent.slug}'.${await allowedModels({ agent, req })}`,
-      403,
-      { code: 'model-not-allowed' },
     );
   }
 
   if (model === undefined) {
-    throw new AgentServiceError(`No model on agent '${agent.slug}' is allowed for this user`, 403, {
-      code: 'no-model-available',
-    });
+    throw frogbotError(
+      'agent.no-model-available',
+      `No model on agent '${agent.slug}' is allowed for this user.`,
+    );
   }
 
   if (
     selection.model !== undefined &&
     !(await canUseAIModel({ req, method: 'generateText', model }))
   ) {
-    throw new AgentServiceError(
+    throw frogbotError(
+      'agent.model-not-allowed',
       `Model '${model}' is not allowed for this user.${await allowedModels({ agent, req })}`,
-      403,
-      { code: 'model-not-allowed' },
     );
   }
 
@@ -300,14 +271,13 @@ export async function assertAgentSelection({
   const variant = variants.find(({ key }) => key === selection.reasoning);
 
   if (!variant) {
-    throw new AgentServiceError(
+    throw frogbotError(
+      'agent.reasoning-unavailable',
       `Reasoning option '${selection.reasoning}' is not available for model '${model}'. ${
         variants.length
           ? allowedList(variants.map(({ key }) => key))
           : 'It has no reasoning options'
       }`,
-      400,
-      { code: 'reasoning-unavailable' },
     );
   }
 

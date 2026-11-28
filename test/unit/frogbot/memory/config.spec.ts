@@ -180,8 +180,8 @@ describe('frogbot.memory', () => {
 
   it('fails with invalid for an undeclared scope word', async () => {
     await expect(stubFrogBot(stubAdapter()).list({ scope: 'client' })).rejects.toMatchObject({
-      name: 'MemoryAdapterError',
-      code: 'invalid',
+      name: 'FrogBotError',
+      code: 'memory.invalid-scope',
     });
   });
 
@@ -225,13 +225,13 @@ describe('frogbot.memory', () => {
     const adapter = stubAdapter({ scopes: { client: () => undefined } });
 
     await expect(stubFrogBot(adapter).list({ scope: 'client' })).rejects.toMatchObject({
-      code: 'invalid',
+      code: 'memory.invalid-scope',
     });
     await expect(stubFrogBot(adapter).list({ scope: 'me' })).rejects.toMatchObject({
-      code: 'invalid',
+      code: 'memory.invalid-scope',
     });
     await expect(stubFrogBot(adapter).list({ scope: 'agent' })).rejects.toMatchObject({
-      code: 'invalid',
+      code: 'memory.invalid-scope',
     });
   });
 
@@ -278,7 +278,7 @@ describe('frogbot.memory', () => {
       memory.update({ scope: 'team', id: '1' }),
       memory.list({ scope: 'team', page: 0 }),
     ]) {
-      await expect(call).rejects.toMatchObject({ code: 'invalid' });
+      await expect(call).rejects.toMatchObject({ code: 'memory.invalid' });
     }
 
     expect(adapter.save).not.toHaveBeenCalled();

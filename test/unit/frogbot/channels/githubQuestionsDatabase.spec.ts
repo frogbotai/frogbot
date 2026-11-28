@@ -520,7 +520,7 @@ describe('GitHub questions with SQLite persistence', () => {
         toolCallId: 'call-web',
         outcome: { output: { answers: [{ header: 'Color', selected: ['Blue_ish'] }] } },
       }),
-    ).rejects.toMatchObject({ code: 'channel-chat', status: 409 });
+    ).rejects.toMatchObject({ code: 'turn.channel-chat', status: 409 });
 
     expect(await settlements(issue)).toEqual([]);
     expect(api.edits(asked.id)).toEqual([]);

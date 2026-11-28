@@ -1,8 +1,8 @@
 import { Forbidden } from 'payload';
 
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { checkMemoryAccess } from './access.js';
-import { isMemoryAdapterError } from './errors.js';
 import { memoryScopeWords, resolveMemoryScope } from './scopes.js';
 import type { MemoryCallArgs } from './types.js';
 
@@ -93,7 +93,7 @@ async function createRun(source: MemoryRunSource): Promise<MemoryRun> {
 
           return { scope, scopeId };
         } catch (error) {
-          if (isMemoryAdapterError(error) || error instanceof Forbidden) return undefined;
+          if (isMemoryError(error) || error instanceof Forbidden) return undefined;
 
           throw error;
         }
@@ -148,4 +148,8 @@ export function memoryRun(source: MemoryRunSource): Promise<MemoryRun> {
   }
 
   return run;
+}
+
+function isMemoryError(error: unknown): boolean {
+  return isFrogBotError(error) && error.code.startsWith('memory.');
 }

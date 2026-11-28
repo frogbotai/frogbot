@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
 import type { PendingCall } from '../../../../packages/frogbot/src/chat/turn/types.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import { question, type QuestionInput } from '../../../../packages/frogbot/src/tools/question.js';
 import { LinearClient } from '../../../../packages/pieces/piece-linear/node_modules/@linear/sdk/dist/index.mjs';
 import { LinearChannelAdapter } from '../../../../packages/pieces/piece-linear/src/adapter.js';
@@ -319,7 +319,7 @@ describe('Linear questions through the channel host', () => {
   it('asks again when the tool access check forbids the responder', async () => {
     const fixture = await asked();
 
-    settleClientToolCall.mockRejectedValueOnce(new TurnError('forbidden', 'No.'));
+    settleClientToolCall.mockRejectedValueOnce(frogbotError('turn.forbidden', 'No.'));
 
     const { activities, queued } = await prompt(fixture, { body: 'Red' });
 

@@ -95,7 +95,6 @@ export type {
   WidgetServerProps,
   WidgetWidth,
 } from './admin/views/types.js';
-export type { AgentErrorCode } from './agents/service.js';
 export type {
   AgentAccess,
   AgentConfig,
@@ -122,7 +121,6 @@ export type {
   AgentStreamOpts,
   AgentStreamResult,
 } from './agents/types.js';
-export { AggregateCapabilityError, AggregateValidationError } from './aggregate/errors.js';
 export type {
   AggregateDateGroup,
   AggregateDateUnit,
@@ -214,7 +212,6 @@ export type { CanWriteChatProps, WritableChat } from './chat/access/canWriteChat
 export { canWriteChat } from './chat/access/canWriteChat.js';
 export type { PersistedMessage } from './chat/messagesToUIMessages.js';
 export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
-export type { TurnErrorCode } from './chat/turn/errors.js';
 export type {
   ClientToolSettlement,
   ClientToolsOption,
@@ -298,7 +295,7 @@ export type {
   RootLivePreviewConfig,
 } from './config/types.js';
 export type { AuthorizationRequirement, ConnectionResolveArgs } from './connections/api.js';
-export { ConnectionError, Connections } from './connections/api.js';
+export { Connections, isConnectionError } from './connections/api.js';
 export type { CredentialEncryption } from './connections/encryption.js';
 export { createCredentialEncryption, CredentialCryptoError } from './connections/encryption.js';
 export type { ConnectionMetadata } from './connections/store.js';
@@ -334,6 +331,18 @@ export type {
 } from './database/types.js';
 export { definePlugin } from './definePlugin.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
+export { problemResponse } from './errors/afterError.js';
+export { frogbotError, type FrogBotErrorCode } from './errors/catalog.js';
+export {
+  defineErrors,
+  type ErrorDefinition,
+  type ErrorDetails,
+  type ErrorFactory,
+  ERRORS_DOCS_URL,
+  FrogBotError,
+  isFrogBotError,
+} from './errors/FrogBotError.js';
+export { toFrogBotError, toProblem, type ToProblemOptions } from './errors/toProblem.js';
 export type { AIFieldArgs, AISelectFieldArgs } from './fields/baseFields/ai/index.js';
 export { aiField } from './fields/baseFields/ai/index.js';
 export type { FindByAutonumberKeyArgs } from './fields/baseFields/autonumber/find.js';
@@ -448,7 +457,6 @@ export type {
 export type { RunInlineTaskFunction } from './jobs/waitpoints/types.js';
 export type { DatabaseKVAdapterOptions } from './kv/adapters/DatabaseKVAdapter.js';
 export { databaseKVAdapter } from './kv/adapters/DatabaseKVAdapter.js';
-export { KVLeaseLostError, KVLockContentionError, KVUnsupportedError } from './kv/errors.js';
 export type { KV, KVAtomicAdapter, KVLock, KVLockCallback, KVSetOptions } from './kv/types.js';
 export { createPieceHelpers, definePiece } from './pieces/definePiece.js';
 export type { EmailPiece } from './pieces/email.js';
@@ -488,12 +496,6 @@ export type {
   SignInMethod,
 } from './pieces/types.js';
 export type { Plugin, PluginsMap, RegisteredPlugins } from './plugin.js';
-export {
-  SearchCapabilityError,
-  SearchFilterUnsupportedError,
-  SearchReadinessError,
-  SearchValidationError,
-} from './search/errors.js';
 export type {
   SearchCollection,
   SearchComponentRanking,
@@ -575,6 +577,13 @@ export type {
   RestoreVersionArgs,
   TypeWithVersion,
 } from './versions/types.js';
+export type {
+  AgentErrorCode,
+  Problem,
+  ProblemEntry,
+  ProblemField,
+  TurnErrorCode,
+} from '@frogbotai/protocol';
 export type { StopCondition, UIMessage } from 'ai';
 export { isStepCount, Output, stepCountIs } from 'ai';
 export type {

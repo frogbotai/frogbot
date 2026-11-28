@@ -8,8 +8,8 @@ import type {
   QuestionInteraction,
 } from '../../../../packages/frogbot/src/channels/questions/types.js';
 import { hasChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
-import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
 import type { PendingCall } from '../../../../packages/frogbot/src/chat/turn/types.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import { asyncChunks, channelFixture } from './helpers.js';
 
@@ -633,9 +633,9 @@ describe('channel question delivery', () => {
   });
 
   it.each([
-    ['forbidden', new TurnError('forbidden', 'No.'), 'denied'],
-    ['a new turn', new TurnError('call-not-found', 'Gone.'), 'stale'],
-    ['invalid output', new TurnError('invalid-output', 'Answer every question.'), 'rejected'],
+    ['forbidden', frogbotError('turn.forbidden', 'No.'), 'denied'],
+    ['a new turn', frogbotError('turn.call-not-found', 'Gone.'), 'stale'],
+    ['invalid output', frogbotError('turn.invalid-output', 'Answer every question.'), 'rejected'],
   ] as const)('maps %s from settlement to a notice', async (_name, error, hook) => {
     const { fixture, hooks } = await askedFixture();
 

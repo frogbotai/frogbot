@@ -3,6 +3,7 @@ import { commitTransaction, initTransaction, killTransaction } from 'payload';
 
 import type { AgentSelection } from '../agents/types.js';
 import type { DocID } from '../collections/config/types.js';
+import { frogbotError } from '../errors/catalog.js';
 import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ChannelChatAccess } from './channelAccess.js';
@@ -10,7 +11,6 @@ import type { ChatDocument } from './findChat.js';
 import { findWritableChat } from './findChat.js';
 import { placeholderChatTitle } from './title.js';
 import { actorFromRequest } from './turn/actor.js';
-import { TurnError } from './turn/errors.js';
 import {
   findTurnMessage,
   getPendingCalls,
@@ -63,7 +63,7 @@ export async function resolveChatContext({
   const last = newMessages.at(-1);
 
   if (!last) {
-    throw Object.assign(new Error('At least one user message is required'), { status: 400 });
+    throw frogbotError('request.invalid', 'At least one user message is required');
   }
 
   if (last.role === 'assistant' && chatId !== undefined) {
@@ -73,7 +73,7 @@ export async function resolveChatContext({
   }
 
   if (newMessages.some((message) => message.role !== 'user')) {
-    throw Object.assign(new Error('Only user messages can be submitted'), { status: 400 });
+    throw frogbotError('request.invalid', 'Only user messages can be submitted');
   }
 
   const chat =
@@ -89,7 +89,7 @@ export async function resolveChatContext({
 
   if (!claim) {
     if (!queue) {
-      throw new TurnError('turn-in-progress', 'This chat already has a turn in progress.');
+      throw frogbotError('turn.in-progress', 'This chat already has a turn in progress.');
     }
 
     await persistIncoming({ req, chatId: resolvedChatId, messages: [last], selection, delivery });
@@ -209,16 +209,14 @@ async function persistIncoming({
       ).docs[0];
 
       if (existing && delivery) {
-        throw new TurnError(
-          'turn-in-progress',
+        throw frogbotError(
+          'turn.in-progress',
           `Message '${message.id}' cannot be edited while this chat has a turn in progress.`,
         );
       }
 
       if (existing && (existing.role !== 'user' || existing.status === 'queued')) {
-        throw Object.assign(new Error(`Message '${message.id}' cannot be edited.`), {
-          status: 400,
-        });
+        throw frogbotError('request.invalid', `Message '${message.id}' cannot be edited.`);
       }
 
       if (existing) {
@@ -295,7 +293,7 @@ async function resumeChat({
   const turnMessage = await findTurnMessage({ req, chatId: chat.id });
 
   if (!turnMessage || turnMessage.id !== message.id) {
-    throw new TurnError('not-awaiting', 'This message is not awaiting input.');
+    throw frogbotError('turn.not-awaiting', 'This message is not awaiting input.');
   }
 
   const outputs = message.parts.filter(
@@ -305,9 +303,7 @@ async function resumeChat({
   );
 
   if (outputs.length === 0) {
-    throw Object.assign(new Error('Submit a tool output or approval for a pending call.'), {
-      status: 400,
-    });
+    throw frogbotError('request.invalid', 'Submit a tool output or approval for a pending call.');
   }
 
   const pending = new Set(
@@ -319,7 +315,7 @@ async function resumeChat({
   const answers = outputs.filter((part) => isToolPart(part) && pending.has(part.toolCallId));
 
   if (answers.length === 0) {
-    throw new TurnError('already-settled', 'This call has already been answered.');
+    throw frogbotError('turn.already-settled', 'This call has already been answered.');
   }
 
   let allSettled = false;
@@ -332,10 +328,10 @@ async function resumeChat({
       !part.approval.approved &&
       !part.approval.reason?.trim()
     ) {
-      throw Object.assign(
-        new Error('Deny without a reason through the settle endpoint, which ends the turn.'),
-        { status: 400 },
-      );
+      throw frogbotError('request.invalid', {
+        detail: 'A denial sent with the chat needs a reason.',
+        hint: 'Add `approval.reason`, or deny through `POST /api/agents/<slug>/chats/<chatId>/settle`, which ends the turn.',
+      });
     }
   }
 
@@ -361,19 +357,22 @@ async function resumeChat({
     });
 
     if (settlement.status === 'already-settled') {
-      throw new TurnError('already-settled', 'This call has already been answered.');
+      throw frogbotError('turn.already-settled', 'This call has already been answered.');
     }
 
     allSettled = settlement.allSettled;
   }
 
   if (!allSettled) {
-    throw new TurnError('pending-calls', 'Other calls in this step are still waiting for input.');
+    throw frogbotError(
+      'turn.pending-calls',
+      'Other calls in this step are still waiting for input.',
+    );
   }
 
   const claim = await claimTurn({ req, chatId: chat.id, from: 'awaiting' });
 
-  if (!claim) throw new TurnError('turn-in-progress', 'This turn is already continuing.');
+  if (!claim) throw frogbotError('turn.in-progress', 'This turn is already continuing.');
 
   try {
     const uiMessages = await loadChatHistory({ req, chatId: chat.id, tools });

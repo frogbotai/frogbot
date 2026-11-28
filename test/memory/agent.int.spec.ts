@@ -96,7 +96,7 @@ describe('agent memory', () => {
     expect(mine.docs.map(({ text }) => text)).toEqual(['Prefers email over phone.']);
     expect(theirs.docs).toEqual([]);
     expect(contents(model.requests[1], 'tool').join('\n')).toContain(
-      `Memory invalid: Memory scope '${otherScope}' is not declared.`,
+      `memory.invalid-scope: Memory scope '${otherScope}' is not declared.`,
     );
   });
 

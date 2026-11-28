@@ -86,6 +86,19 @@ function sdkError(status: number, body: unknown) {
   return () => Response.json(body, { status });
 }
 
+function problem(code: string, detail: string, data?: Record<string, unknown>) {
+  return {
+    type: `https://docs.frogbot.ai/errors#${code}`,
+    code,
+    title: detail,
+    status: 409,
+    detail,
+    retryable: false,
+    ...(data ? { data } : {}),
+    errors: [{ message: detail }],
+  };
+}
+
 describe('createRestChatAdapter', () => {
   afterEach(() => vi.unstubAllGlobals());
 
@@ -252,9 +265,12 @@ describe('createRestChatAdapter', () => {
     expect(settled.calls[0]?.body).toEqual({ toolCallId: 'call-1', dismissed: true });
 
     const raced = adapterFor({
-      [settle]: sdkError(409, {
-        settlement: { status: 'already-settled', allSettled: true, part },
-      }),
+      [settle]: sdkError(
+        409,
+        problem('turn.already-settled', 'This call has already been answered.', {
+          settlement: { status: 'already-settled', allSettled: true, part },
+        }),
+      ),
     });
 
     await expect(raced.adapter.dismissToolCall?.('support', 'chat-1', 'call-1')).resolves.toEqual({
@@ -299,9 +315,10 @@ describe('createRestChatAdapter', () => {
 
   it('throws a conflict for a 409 without a settlement', async () => {
     const { adapter } = adapterFor({
-      'POST /agents/support/chats/chat-1/settle': sdkError(409, {
-        errors: [{ message: 'Not awaiting' }],
-      }),
+      'POST /agents/support/chats/chat-1/settle': sdkError(
+        409,
+        problem('turn.not-awaiting', 'Not awaiting'),
+      ),
     });
 
     const error = await adapter

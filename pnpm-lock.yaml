@@ -2213,6 +2213,9 @@ importers:
 
   packages/sdk:
     dependencies:
+      '@frogbotai/protocol':
+        specifier: workspace:*
+        version: link:../protocol
       qs-esm:
         specifier: 8.0.1
         version: 8.0.1

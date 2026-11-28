@@ -137,15 +137,15 @@ To dismiss, send `{ "toolCallId": "call_1", "dismissed": true }` instead of `out
 
 | Status | `code` | Meaning |
 | --- | --- | --- |
-| `400` | `invalid-output` | The output does not match the tool's schema or the offered options |
-| `403` | `forbidden` | The tool's `client.access` rejected this caller |
-| `404` | `call-not-found` | No pending call has that ID in this chat |
-| `409` | `already-settled` | Someone else answered first; `settlement.part` holds the stored answer |
-| `409` | `channel-chat` | The chat is a [channel conversation](#channel-conversations); answer in its channel |
-| `409` | `not-awaiting` | The chat is not waiting for input |
-| `409` | `write-conflict` | The message kept changing while FrogBot tried to save the answer; retry |
+| `400` | `turn.invalid-output` | The output does not match the tool's schema or the offered options |
+| `403` | `turn.forbidden` | The tool's `client.access` rejected this caller |
+| `404` | `turn.call-not-found` | No pending call has that ID in this chat |
+| `409` | `turn.already-settled` | Someone else answered first; `data.settlement.part` holds the stored answer |
+| `409` | `turn.channel-chat` | The chat is a [channel conversation](#channel-conversations); answer in its channel |
+| `409` | `turn.not-awaiting` | The chat is not waiting for input |
+| `409` | `turn.write-conflict` | The message kept changing while FrogBot tried to save the answer; retry |
 
-A body without `toolCallId` and exactly one of `output`, `dismissed: true` or `approved` returns `400` without a `code`. When the chat UI resubmits answers, the same codes apply, plus `pending-calls` while other calls in the step still need an answer and `turn-in-progress` when another request already continued the turn.
+A body without `toolCallId` and exactly one of `output`, `dismissed: true` or `approved` returns `400` with `code: "request.invalid"`. When the chat UI resubmits answers, the same codes apply, plus `turn.pending-calls` while other calls in the step still need an answer and `turn.in-progress` when another request already continued the turn.
 
 The first valid answer wins. Answers from two tabs or two participants settle once and continue once.
 
@@ -165,7 +165,7 @@ A conversation started in a channel, such as a Slack thread, is written only in 
 - **Branch** on the notice copies the whole conversation into a new private chat, and **Branch** on an assistant message copies it up to that message. The branch is an ordinary web chat. Questions still waiting in the channel arrive in it closed, and nothing written in it reaches the channel.
 - New channel messages appear when you reload the chat.
 
-HTTP and programmatic writes to a channel conversation fail with `409` and `code: "channel-chat"`. See [who can write a chat](/chat/overview#who-can-write-a-chat).
+HTTP and programmatic writes to a channel conversation fail with `409` and `code: "turn.channel-chat"`. See [who can write a chat](/chat/overview#who-can-write-a-chat).
 
 ## Where questions are offered
 
@@ -221,7 +221,7 @@ A client tool takes the `slug`, `description`, `inputSchema`, and `component` [t
 | --- | --- | --- | --- |
 | `kind` | `string` | Required | Groups client tools by the kind of answer they need. Must be non-empty. Interactive chat entry points offer every kind; other entry points withhold the tool. |
 | `access` | `({ req, call }) => boolean \| Promise<boolean>` | Anyone who can continue the chat | Extra check for who may settle a call. Return `false` to reject with `403`. `call` is the pending call, with `toolCallId`, `toolName`, `input`, `messageId`, `chatId`, `agentSlug`, and `createdAt`. |
-| `validate` | `({ input, output }) => true \| string` | — | Check of the parsed output against the stored input. Return `true` to accept or an error message to reject with `400` `invalid-output`. |
+| `validate` | `({ input, output }) => true \| string` | — | Check of the parsed output against the stored input. Return `true` to accept or an error message to reject with `400` `turn.invalid-output`. |
 
 Render the call with a [tool renderer](/chat/ui-registries#answer-client-tools). The renderer receives `addToolOutput` and `dismiss` while the call is waiting.
 

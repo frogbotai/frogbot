@@ -18,7 +18,7 @@ import type {
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import { sanitize as sanitizeConfig } from '../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
-import { ConnectionError } from '../../../../packages/frogbot/src/connections/api.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import {
   definePiece,
   pieceInstanceTools,
@@ -339,8 +339,8 @@ describe('agent service', () => {
       assertAgentAccess({ req, agent: req.frogbot.agents.broken }),
     ).rejects.toMatchObject({
       status: 500,
-      code: 'access-error',
-      message: "Access function for agent 'broken' threw: Error: broken",
+      code: 'agent.access-error',
+      message: "Access function for agent 'broken' threw. The server log has the error.",
       cause: crash,
     });
   });
@@ -379,8 +379,8 @@ describe('agent service', () => {
       }),
     ).rejects.toMatchObject({
       status: 500,
-      code: 'access-error',
-      message: "Access function for agent 'support' threw: a value that cannot be printed",
+      code: 'agent.access-error',
+      message: "Access function for agent 'support' threw. The server log has the error.",
     });
   });
 
@@ -389,13 +389,13 @@ describe('agent service', () => {
 
     await expect(
       assertAgentAccess({ req: makeRequest({ user: null }), agent: support }),
-    ).rejects.toMatchObject({ status: 401, code: 'unauthenticated' });
+    ).rejects.toMatchObject({ status: 401, code: 'auth.unauthenticated' });
     await expect(
       assertAgentAccess({
         req: makeRequest({}),
         agent: makeAgent({ access: () => false }),
       }),
-    ).rejects.toMatchObject({ status: 403, code: 'access-denied' });
+    ).rejects.toMatchObject({ status: 403, code: 'agent.access-denied' });
     await expect(
       hasAgentAccess({ req: makeRequest({ user: null }), agent: support }),
     ).resolves.toBe(false);
@@ -675,7 +675,7 @@ describe('agent service', () => {
     const req = makeRequest({ allowed: [] });
 
     await expect(assertAgentSelection({ agent, config, selection: {}, req })).rejects.toMatchObject(
-      { message: "No model on agent 'support' is allowed for this user", status: 403 },
+      { message: "No model on agent 'support' is allowed for this user.", status: 403 },
     );
   });
 
@@ -869,7 +869,7 @@ describe('agent service', () => {
     ).rejects.toMatchObject({
       message:
         "Model 'my-local/thinker' is not allowed for agent 'support'. Allowed: 'openai/test', 'openai/other'",
-      code: 'model-not-allowed',
+      code: 'agent.model-not-allowed',
       status: 403,
     });
   });
@@ -895,7 +895,7 @@ describe('agent service', () => {
       assertAgentSelection({ agent, config, selection: { model: MY_LOCAL_THINKER }, req }),
     ).rejects.toMatchObject({
       message: "Model 'my-local/thinker' is not allowed for agent 'support'.",
-      code: 'model-not-allowed',
+      code: 'agent.model-not-allowed',
       status: 403,
     });
     expect(req.frogbot.logger.error).toHaveBeenCalledWith(
@@ -972,7 +972,7 @@ describe('model picker for a linked provider account', () => {
     const resolvePieceCredential = vi.fn(() =>
       linked
         ? Promise.resolve({ auth, key })
-        : Promise.reject(new ConnectionError('Not linked.', 'missing')),
+        : Promise.reject(frogbotError('connection.not-linked', 'Not linked.')),
     );
 
     Object.assign(req.frogbot, { connections: { resolvePieceCredential } });

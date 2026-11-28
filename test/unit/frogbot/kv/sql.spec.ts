@@ -14,7 +14,6 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
 import { createSQLKV } from '../../../../packages/frogbot/src/kv/adapters/sql.js';
-import { KVUnsupportedError } from '../../../../packages/frogbot/src/kv/errors.js';
 import { kvAtomic } from '../../../../packages/frogbot/src/kv/types.js';
 
 const collectionSlug = 'customKVStore';
@@ -259,7 +258,7 @@ describe('SQL KV with local SQLite', () => {
       '@payloadcms/db-vercel-postgres',
     ]) {
       expect(() => createSQLKV({ adapter: { ...adapter, packageName }, collectionSlug })).toThrow(
-        KVUnsupportedError,
+        expect.objectContaining({ code: 'kv.unsupported' }),
       );
     }
 
@@ -270,7 +269,9 @@ describe('SQL KV with local SQLite', () => {
     adapter.clientConfig.url = 'file:local.db';
     adapter.clientConfig.syncUrl = 'libsql://remote.example';
 
-    expect(() => createSQLKV({ adapter, collectionSlug })).toThrow(KVUnsupportedError);
+    expect(() => createSQLKV({ adapter, collectionSlug })).toThrow(
+      expect.objectContaining({ code: 'kv.unsupported' }),
+    );
   });
 
   it('propagates backend errors without interpreting them as contention or TTL overflow', async () => {

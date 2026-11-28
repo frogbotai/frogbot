@@ -398,7 +398,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       });
 
       expect(delayed).toBe(true);
-      expect(failed.status).toBe(500);
+      expect(failed.status).toBe(409);
       expect(sessionCookie(failed)).toBeUndefined();
       expect((await rawUser(email)).sessions ?? []).toEqual([]);
       expect(Object.keys(frogbot.db.sessions ?? {})).toHaveLength(0);

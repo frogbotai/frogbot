@@ -584,7 +584,7 @@ describe('Linear questions with SQLite persistence', () => {
         toolCallId: 'call-web',
         outcome: { output: { answers: [{ header: 'Color', selected: ['Blue'] }] } },
       }),
-    ).rejects.toMatchObject({ code: 'channel-chat', status: 409 });
+    ).rejects.toMatchObject({ code: 'turn.channel-chat', status: 409 });
 
     expect(await settlements(session)).toEqual([]);
     expect(activities(session)).toHaveLength(1);

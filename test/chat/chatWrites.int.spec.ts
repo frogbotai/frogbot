@@ -32,8 +32,8 @@ const slackSupport = definePiece({ slug: 'slack', label: 'Slack', actions: [] })
 });
 
 const channelRefusal = {
-  code: 'channel-chat',
-  error: expect.stringContaining('This conversation happens in Slack.'),
+  code: 'turn.channel-chat',
+  detail: expect.stringContaining('This conversation happens in Slack.'),
 };
 
 type StoredMessage = {
@@ -373,7 +373,7 @@ describe('chat writes: a chat is written only from its home', () => {
       const chat = await createChannelChat(nextThreadId());
 
       await expect(sendAs(await channelRequest(nextThreadId()), chat)).rejects.toMatchObject({
-        code: 'channel-chat',
+        code: 'turn.channel-chat',
         status: 409,
       });
 
@@ -384,7 +384,7 @@ describe('chat writes: a chat is written only from its home', () => {
       const chat = await createChannelChat(nextThreadId());
 
       await expect(sendAs(await webRequest(), chat)).rejects.toMatchObject({
-        code: 'channel-chat',
+        code: 'turn.channel-chat',
         status: 409,
       });
 
@@ -401,7 +401,7 @@ describe('chat writes: a chat is written only from its home', () => {
           toolCallId: 'call-question',
           outcome: { output: answer },
         }),
-      ).rejects.toMatchObject({ code: 'channel-chat', status: 409 });
+      ).rejects.toMatchObject({ code: 'turn.channel-chat', status: 409 });
 
       expect(await pending(chat)).toBe(1);
     });

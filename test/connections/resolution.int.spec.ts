@@ -17,6 +17,7 @@ import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js
 import { gmailScopes } from '../../packages/pieces/piece-gmail/src/config.js';
 import { googleOAuth, googleScopes } from '../../packages/pieces/piece-google/src/index.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
+import { routed } from '../__helpers/shared/routed.js';
 
 const client = vi.fn(({ auth }) => ({ token: auth.token.value }));
 const { defineAction } = createPieceHelpers<{ token: string }>();
@@ -100,24 +101,28 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
 
   const expectMissing = (resolution: Promise<unknown>) =>
     expect(resolution).rejects.toMatchObject({
-      name: 'ConnectionError',
-      code: 'missing',
-      piece: 'example',
-      message: "Connection for 'example' is not linked. Link it in Settings → Linked accounts.",
+      name: 'FrogBotError',
+      code: 'connection.not-linked',
+      data: { piece: 'example' },
+      message: "Connection for 'example' is not linked.",
     });
 
   const link = (body: unknown, user = owner) =>
-    endpoints[0].handler({
-      ...request(user),
-      routeParams: { piece: 'example' },
-      json: () => Promise.resolve(body),
-    } as never);
+    routed(() =>
+      endpoints[0].handler({
+        ...request(user),
+        routeParams: { piece: 'example' },
+        json: () => Promise.resolve(body),
+      } as never),
+    );
 
   const remove = (id: number | string, user = owner) =>
-    endpoints[1].handler({
-      ...request(user),
-      routeParams: { id: String(id) },
-    } as never);
+    routed(() =>
+      endpoints[1].handler({
+        ...request(user),
+        routeParams: { id: String(id) },
+      } as never),
+    );
 
   beforeAll(async () => {
     const config = await buildConfig({
@@ -284,10 +289,9 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     await expect(
       frogbot.connections.resolve({ piece: gmail, req: request() }),
     ).rejects.toMatchObject({
-      name: 'ConnectionError',
-      code: 'scopes',
-      missingScopes: ['https://www.googleapis.com/auth/gmail.labels'],
-      piece: 'gmail',
+      name: 'FrogBotError',
+      code: 'connection.missing-scopes',
+      data: { missingScopes: ['https://www.googleapis.com/auth/gmail.labels'], piece: 'gmail' },
     });
 
     await link('new-grant', [...granted, gmailScopes['gmail.labels']]);
@@ -309,13 +313,10 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       const text = await response.text();
 
       expect(response.status).toBe(400);
-      expect(JSON.parse(text)).toEqual({
-        errors: [
-          {
-            message: `Invalid credentials: ${issue}.`,
-            data: { code: 'invalid_credentials', fields: ['token'] },
-          },
-        ],
+      expect(JSON.parse(text)).toMatchObject({
+        code: 'connection.invalid-credentials',
+        detail: `Invalid credentials: ${issue}.`,
+        data: { fields: ['token'] },
       });
       expect(text).not.toContain('private');
     }
@@ -344,10 +345,10 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
   });
 
   it.each([
-    [{ status: 'revoked' as const }, 'revoked'],
-    [{ status: 'error' as const }, 'error'],
-    [{ expiresAt: '2000-01-01T00:00:00Z' }, 'expired'],
-    [{ credential: { wrong: 'private' } }, 'error'],
+    [{ status: 'revoked' as const }, 'connection.revoked'],
+    [{ status: 'error' as const }, 'connection.unreadable'],
+    [{ expiresAt: '2000-01-01T00:00:00Z' }, 'connection.expired'],
+    [{ credential: { wrong: 'private' } }, 'connection.unreadable'],
   ])('blocks existing unusable rows without factory fallback: %j', async (data, code) => {
     await store.upsert({
       owner,
@@ -358,9 +359,9 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     });
 
     await expect(piece.read({ input: {}, req: request() })).rejects.toMatchObject({
-      name: 'ConnectionError',
+      name: 'FrogBotError',
       code,
-      piece: 'example',
+      data: { piece: 'example' },
     });
     expect(client).not.toHaveBeenCalled();
   });
@@ -398,9 +399,9 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       .catch((error: unknown) => error);
 
     expect(error).toMatchObject({
-      message:
-        "Connection for 'example' could not be refreshed. Reconnect it in Settings → Linked accounts.",
-      cause: { code: 'refresh', cause: { message: 'No refresh token is stored.' } },
+      message: "Connection for 'example' could not be refreshed.",
+      hint: 'Reconnect it in Settings → Linked accounts.',
+      cause: { code: 'oauth.refresh', cause: { message: 'No refresh token is stored.' } },
     });
     expect(warn).toHaveBeenCalledWith(
       { err: (error as Error).cause, piece: 'example' },
@@ -410,12 +411,12 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     warn.mockRestore();
 
     await expect(frogbot.connections.resolve({ piece, req: request() })).rejects.toMatchObject({
-      name: 'ConnectionError',
-      code: 'error',
-      piece: 'example',
+      name: 'FrogBotError',
+      code: 'connection.unreadable',
+      data: { piece: 'example' },
     });
     await expect(frogbot.connections.resolve({ piece, req: request() })).rejects.toMatchObject({
-      code: 'error',
+      code: 'connection.unreadable',
     });
     expect(client).not.toHaveBeenCalled();
   });

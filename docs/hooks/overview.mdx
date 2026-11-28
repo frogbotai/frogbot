@@ -91,6 +91,8 @@ The hook can return an object to change the error response, or nothing to keep i
 | `status` | `number` | — | Replaces the REST response status code. |
 | `graphqlResult` | `GraphQLFormattedError` | — | Replaces the GraphQL error. |
 
+FrogBot's own root hook runs first and turns every REST error into a [Problem](/agents/overview#invoke-over-http) body. Your root hooks run after it, so `result` is that Problem and a returned `response` replaces it. A collection's `afterError` runs before the root hooks: a `response` it returns is sent as it is, with only `X-Request-Id` added, and a `status` it returns replaces the Problem's. GraphQL errors keep their GraphQL shape.
+
 ## Awaited vs. non-blocking hooks
 
 Hooks can either block the request until they finish or run without blocking it. What matters is whether your hook returns a Promise.

@@ -1,6 +1,6 @@
 export { postgresAggregateAdapter } from '../aggregate/drizzle/postgres/index.js';
 export { sqliteAggregateAdapter } from '../aggregate/drizzle/sqlite/index.js';
-export { AggregateCapabilityError, AggregateValidationError } from '../aggregate/errors.js';
+export { aggregateInvalid, aggregateUnsupported } from '../aggregate/errors.js';
 export type {
   AggregateDateUnit,
   AggregateFieldType,

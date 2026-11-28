@@ -83,7 +83,7 @@ describe('D1 search schema push', () => {
 
     await database.binding.prepare(`DROP TABLE "${fts}"`).run();
 
-    await expect(searchIDs()).rejects.toMatchObject({ name: 'SearchReadinessError', status: 503 });
+    await expect(searchIDs()).rejects.toMatchObject({ code: 'search.not-ready', status: 503 });
 
     await push();
 
