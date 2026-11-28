@@ -186,7 +186,7 @@ It is shown only this once. Change it on the account page after signing in.
 ```
 
 - **Collection, password, database and local only** work as for [`users create`](#create-the-first-user): `--collection <slug>`, a new 32-byte random password each run, the database printed first, and `--yes` needed for anything but a local SQLite file.
-- **Same rules as the reset link.** It runs the collection's forgot- and reset-password operations without sending an email, so the collection's password validation and hooks apply, a lockout from failed sign-ins is cleared, and the user's existing sessions end.
+- **Same rules as the reset link.** It runs the collection's reset-password operation without sending an email, so the collection's password validation and hooks apply, a lockout from failed sign-ins is cleared, and the user's existing sessions end.
 - **Unknown email.** When no user, trashed ones aside, has the email, it exits `1` with `USER_NOT_FOUND` and writes nothing.
 - **Verification.** On a collection with `auth.verify`, an unverified user is marked verified, so the printed password signs in.
 

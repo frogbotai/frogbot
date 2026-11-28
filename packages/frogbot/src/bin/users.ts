@@ -179,9 +179,9 @@ type UsersContext = {
  * `frogbot users create <email>` makes the first user of the admin's auth collection, or `--collection`'s,
  * with a random password printed once, and refuses when the collection has any user, trashed ones included.
  * `frogbot users reset-password <email>` gives an existing user a new random password, printed once,
- * through Payload's forgot- and reset-password operations with no email sent: the collection's password
- * rules and hooks run, a lockout is cleared, and other sessions end. An unverified user is marked verified
- * first, as `create` makes its user, so the printed password signs in. Both write to anything but a local SQLite file only with `--yes`.
+ * through Payload's reset-password operation with no email sent: the collection's password rules and hooks
+ * run, a lockout is cleared, and other sessions end. Once it succeeds, an unverified user is marked
+ * verified, as `create` makes its user, so the printed password signs in. Both write to anything but a local SQLite file only with `--yes`.
  */
 export async function users(
   args: string[],
@@ -312,39 +312,34 @@ async function create(
 async function resetPassword({ config, collection, fail }: UsersContext, email: string) {
   const { slug } = collection;
   const password = randomBytes(32).toString('base64url');
+  const token = randomBytes(20).toString('hex');
 
   await withApp(config, async (instance) => {
-    const token = await instance.forgotPassword({
+    const user = await instance.db.findOne<{ id: number | string; _verified?: boolean }>({
       collection: slug,
-      data: { email },
-      disableEmail: true,
+      where: {
+        email: { equals: email.toLowerCase().trim() },
+        ...(collection.trash && { deletedAt: { exists: false } }),
+      },
     });
 
-    if (!token) {
+    if (!user) {
       throw fail(
         'USER_NOT_FOUND',
         `no user in ${slug} has the email ${email}, so nothing was written.`,
       );
     }
 
+    await instance.db.updateOne({
+      collection: slug,
+      id: user.id,
+      data: {
+        resetPasswordToken: token,
+        resetPasswordExpiration: new Date(Date.now() + 10 * 60_000).toISOString(),
+      },
+    });
+
     try {
-      if (collection.auth.verify) {
-        const user = await instance.db.findOne<{ id: number | string; _verified?: boolean }>({
-          collection: slug,
-          where: { resetPasswordToken: { equals: token } },
-        });
-
-        if (user && !user._verified) {
-          await instance.update({
-            collection: slug,
-            id: user.id,
-            data: { _verified: true },
-            depth: 0,
-            overrideAccess: true,
-          });
-        }
-      }
-
       await instance.resetPassword({
         collection: slug,
         data: { token, password },
@@ -352,6 +347,10 @@ async function resetPassword({ config, collection, fail }: UsersContext, email: 
       });
     } catch (error) {
       throw fail('RESET_FAILED', `${slug} rejected the new password: ${cause(error)}`);
+    }
+
+    if (collection.auth.verify && !user._verified) {
+      await instance.db.updateOne({ collection: slug, id: user.id, data: { _verified: true } });
     }
   });
 
