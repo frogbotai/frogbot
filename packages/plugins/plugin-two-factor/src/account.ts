@@ -1,4 +1,4 @@
-import type { Endpoint, FrogBotRequest } from 'frogbot';
+import { type Endpoint, frogbotError, type FrogBotRequest } from 'frogbot';
 import { combineQueries, executeAccess } from 'payload';
 
 import {
@@ -16,6 +16,7 @@ import {
   jsonError,
   noStore,
   payloadRequest,
+  problemError,
   readBody,
   readUser,
   TEN_MINUTES,
@@ -44,7 +45,7 @@ async function signedIn(
   const user =
     req.user?.collection === ctx.slug ? await readUser(req, ctx.slug, req.user.id) : null;
 
-  return user ? { user } : { refused: jsonError('Sign in first.', 401) };
+  return user ? { user } : { refused: problemError(req, frogbotError('auth.unauthenticated')) };
 }
 
 async function findResettable(
@@ -85,9 +86,11 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
   const { slug, options } = ctx;
 
   const mayEnable = async (req: FrogBotRequest, user: TwoFactorUser) => {
-    if (hasTwoFactor(user)) return jsonError('Two-factor sign-in is already on.', 409);
+    if (hasTwoFactor(user)) return jsonError(req, 'two-factor.already-on');
     if (!(await options.canEnable({ req, user }))) {
-      return jsonError('You may not turn on two-factor sign-in.', 403);
+      return jsonError(req, 'two-factor.not-allowed', {
+        detail: "This user can't turn on two-factor sign-in.",
+      });
     }
 
     return null;
@@ -122,7 +125,7 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         if (refused) return refused;
 
         const { code, refused: unread } = readCode((await readBody(req)).body);
-        if (unread) return refusalResponse(unread);
+        if (unread) return refusalResponse(req, unread);
         const key = enablingKey(slug, user.id);
 
         const codes = await withCodeLock({
@@ -161,10 +164,12 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         });
 
         if (codes === 'expired') {
-          return jsonError('Start turning on two-factor sign-in again.', 400, { code: 'expired' });
+          return jsonError(req, 'two-factor.expired', {
+            detail: 'Start turning on two-factor sign-in again.',
+          });
         }
 
-        if (codes === 'wrong') return refusalResponse(WRONG);
+        if (codes === 'wrong') return refusalResponse(req, WRONG);
 
         await sendTwoFactorEmail({ req, ctx, event: 'enabled', user });
 
@@ -177,10 +182,10 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
       handler: async (req) => {
         const { user, refused: anonymous } = await signedIn(req, ctx);
         if (anonymous) return anonymous;
-        if (!hasTwoFactor(user)) return jsonError('Two-factor sign-in is off.', 400);
+        if (!hasTwoFactor(user)) return jsonError(req, 'two-factor.off');
 
         const { code, refused: unread } = readCode((await readBody(req)).body);
-        if (unread) return refusalResponse(unread);
+        if (unread) return refusalResponse(req, unread);
 
         const outcome = await withStoredCode({
           req,
@@ -201,7 +206,7 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           },
         });
 
-        if (outcome.status !== 'ok') return refusalResponse(codeRefusal(outcome));
+        if (outcome.status !== 'ok') return refusalResponse(req, codeRefusal(outcome));
 
         await sendTwoFactorEmail({ req, ctx, event: 'recoveryCodesCreated', user });
 
@@ -214,14 +219,14 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
       handler: async (req) => {
         const { user, refused: anonymous } = await signedIn(req, ctx);
         if (anonymous) return anonymous;
-        if (!hasTwoFactor(user)) return jsonError('Two-factor sign-in is off.', 400);
+        if (!hasTwoFactor(user)) return jsonError(req, 'two-factor.off');
 
         if (await options.require({ req, user })) {
-          return jsonError('Two-factor sign-in is required for this account.', 403);
+          return jsonError(req, 'two-factor.required');
         }
 
         const { code, refused: unread } = readCode((await readBody(req)).body);
-        if (unread) return refusalResponse(unread);
+        if (unread) return refusalResponse(req, unread);
 
         const outcome = await withStoredCode({
           req,
@@ -231,7 +236,7 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           fn: () => writeUser({ req, slug, id: user.id, data: CLEARED }),
         });
 
-        if (outcome.status !== 'ok') return refusalResponse(codeRefusal(outcome));
+        if (outcome.status !== 'ok') return refusalResponse(req, codeRefusal(outcome));
 
         await sendTwoFactorEmail({ req, ctx, event: 'disabled', user });
 
@@ -249,15 +254,28 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         const id =
           typeof body?.id === 'string' || typeof body?.id === 'number' ? body.id : undefined;
 
-        if (id === undefined) return jsonError('Send the id of the user to reset.', 400);
+        if (id === undefined) {
+          return problemError(
+            req,
+            frogbotError('request.invalid', {
+              detail: 'Send the id of the user to reset.',
+              fields: [{ path: 'id', message: 'Send the id of the user to reset.' }],
+            }),
+          );
+        }
+
         if (String(id) === String(admin.id)) {
-          return jsonError("You can't reset your own two-factor sign-in.", 403);
+          return jsonError(req, 'two-factor.not-allowed', {
+            detail: "You can't reset your own two-factor sign-in.",
+          });
         }
 
         const user = await findResettable(req, slug, id);
-        if (!user) return jsonError('User not found.', 404);
+        if (!user) return problemError(req, frogbotError('doc.not-found', 'User not found.'));
         if (user === 'forbidden' || !(await options.canReset({ req, user }))) {
-          return jsonError("You may not reset this user's two-factor sign-in.", 403);
+          return jsonError(req, 'two-factor.not-allowed', {
+            detail: "This user can't reset that user's two-factor sign-in.",
+          });
         }
 
         await withCodeLock({

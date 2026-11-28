@@ -11,9 +11,9 @@ describe('two-factor readCode', () => {
 
   it('refuses a missing or mistyped code and an unreadable body', () => {
     for (const code of [undefined, '', '  ', true, 12.5, -1, 1_000_000, ['123456'], null]) {
-      expect(readCode({ code }).refused?.code).toBe('code_missing');
+      expect(readCode({ code }).refused?.code).toBe('two-factor.code-missing');
     }
 
-    expect(readCode(null).refused?.code).toBe('body_unreadable');
+    expect(readCode(null).refused?.code).toBe('two-factor.body-unreadable');
   });
 });
