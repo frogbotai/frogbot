@@ -2,6 +2,7 @@ import { Cron } from 'croner';
 import type { Payload } from 'payload';
 
 import { loadConfig } from '../config/load.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import type { FrogBot } from '../frogbot.js';
 import { toPayloadRequest } from '../seams/request.js';
 import { formatCliError } from './formatCliError.js';
@@ -35,7 +36,7 @@ export async function jobsRun(args: string[]): Promise<void> {
   let activeTick: Promise<void> | undefined;
 
   let stopping = false;
-  let failure: CliError | undefined;
+  let failure: Error | undefined;
 
   let resolveStopped!: () => void;
   const stopped = new Promise<void>((resolve) => {
@@ -52,10 +53,14 @@ export async function jobsRun(args: string[]): Promise<void> {
   };
 
   const fail = (error: unknown) => {
-    const message = formatCliError(error, 'jobs:run failed');
+    if (isFrogBotError(error)) {
+      failure ??= error;
+    } else {
+      const message = formatCliError(error, 'jobs:run failed');
 
-    console.error(message);
-    failure ??= new CliError(message, { code: 'JOBS_FAILED', reported: true });
+      console.error(message);
+      failure ??= new CliError(message, { code: 'JOBS_FAILED', reported: true });
+    }
 
     stop();
   };

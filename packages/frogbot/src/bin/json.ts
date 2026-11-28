@@ -99,20 +99,22 @@ export function writeJson(value: unknown): void {
 }
 
 /**
- * The `--json` result for a command that failed with `error`. A `FrogBotError`'s `error` is its
- * `Problem`, with `message` set to its `detail`.
+ * The `--json` result for a command that failed with `error`: `ok: false`, with `success: false`
+ * kept for older scripts. A `FrogBotError`'s `error` is its `Problem`, with `message` set to its
+ * `detail`.
  */
 export function failureJson(command: string, error: unknown) {
   if (isFrogBotError(error)) {
     const problem = toProblem(error, { debug: true });
 
-    return { command, success: false, error: { ...problem, message: problem.detail } };
+    return { command, ok: false, success: false, error: { ...problem, message: problem.detail } };
   }
 
   const message = formatCliError(error).replace(/^\[frogbot\] /, '');
 
   return {
     command,
+    ok: false,
     success: false,
     error: {
       code:
