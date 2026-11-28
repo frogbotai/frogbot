@@ -267,7 +267,7 @@ export const apps: Noun = {
           `Move ${app.slug} to ${workspace.name} (${workspace.slug}) now? It keeps running at its address; ${workspace.name} pays for it from then on.`,
         );
 
-        const { moved } = await withPayLink(io, () =>
+        const { moved } = await withPayLink(dojo(), io, () =>
           dojoJSON<{ moved: (string | number)[] }>(dojo(), `/api/apps/${segment(app.id)}/move`, {
             method: 'POST',
             body: { workspace: workspace.id },

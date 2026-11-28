@@ -4,7 +4,7 @@ import { dojoJSON, segment } from '../dojo.js';
 import { needsPayment, ShareError } from '../error.js';
 import type { DojoIO } from '../io.js';
 import { canWait, dojoProgram, done, say } from '../io.js';
-import { maxPolls, pollMs, showPayLink } from '../payment.js';
+import { isPaywall, maxPolls, pollMs, showPayLink } from '../payment.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace, listWorkspaces } from '../workspaces.js';
 import { count } from './resolve.js';
@@ -66,12 +66,16 @@ export function recipient(value: unknown): string {
 }
 
 /**
- * A move's refusal keeps Dojo's words and code. When Dojo sent the page that pays for room, it is a payment a person
+ * A move's refusal keeps Dojo's words and code. When Dojo sent its upgrade page, it is a payment a person
  * makes there. With a terminal or `--wait` it shows the page once and sends the request again every 5 seconds until
  * Dojo takes it, for up to 30 minutes: Dojo's plan check can't see the room a move pays for, so only sending it again
- * tells. Without either it exits 4, with the page as the step's link.
+ * tells. Without either it exits 4, with the page as the step's link. Any other refusal is thrown as it came.
  */
-export async function withPayLink<T>(io: DojoIO, send: () => Promise<T>): Promise<T> {
+export async function withPayLink<T>(
+  dojo: DojoClient,
+  io: DojoIO,
+  send: () => Promise<T>,
+): Promise<T> {
   for (let polls = 0; ; polls += 1) {
     try {
       const sent = await send();
@@ -80,7 +84,9 @@ export async function withPayLink<T>(io: DojoIO, send: () => Promise<T>): Promis
 
       return sent;
     } catch (error) {
-      if (!(error instanceof ShareError) || !error.url) throw error;
+      if (!(error instanceof ShareError) || !error.url || !isPaywall(dojo, error.url)) {
+        throw error;
+      }
 
       const { code, status, url } = error;
 
@@ -98,7 +104,7 @@ export async function withPayLink<T>(io: DojoIO, send: () => Promise<T>): Promis
         throw new ShareError(
           `Dojo still has no payment for the room after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, run the command again.`,
           1,
-          { code, status, url },
+          { code: 'payment_required', status, url },
         );
       }
 
@@ -232,7 +238,7 @@ const accept: Verb = {
       `Accept ${subject(handover)} from ${handover.sender} into ${workspace.name} (${workspace.slug})? You become its Admin, and ${workspace.name} pays for it from then on.`,
     );
 
-    const { moved } = await withPayLink(io, () =>
+    const { moved } = await withPayLink(dojo(), io, () =>
       dojoJSON<{ moved: (string | number)[] }>(
         dojo(),
         `/api/handovers/${segment(handover.id)}/accept`,

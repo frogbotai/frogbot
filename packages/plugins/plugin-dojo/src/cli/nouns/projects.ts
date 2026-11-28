@@ -272,7 +272,7 @@ export const projects: Noun = {
           `Move the project ${project.name} and its apps to ${workspace.name} (${workspace.slug}) now? They keep running at the same addresses; ${workspace.name} pays for them from then on.`,
         );
 
-        const { moved } = await withPayLink(io, () =>
+        const { moved } = await withPayLink(dojo(), io, () =>
           dojoJSON<{ moved: (string | number)[] }>(
             dojo(),
             `/api/projects/${segment(project.id)}/move`,

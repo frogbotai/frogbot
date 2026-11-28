@@ -71,6 +71,11 @@ function showPaywall(io: DojoIO, paywall: Pick<Paywall, 'why' | 'url' | 'owner'>
   if (io.isTTY && paywall.owner) io.openBrowser(paywall.url);
 }
 
+/** Whether `link` is Dojo's upgrade page, which pays for room in a workspace. */
+export function isPaywall(dojo: DojoClient, link: string): boolean {
+  return readPaywall('', dojo.url, link) !== undefined;
+}
+
 /** Shows the pay link Dojo sent with a refusal, worded as a wait for a payment shows it. */
 export function showPayLink(io: DojoIO, why: string, url: string): void {
   showPaywall(io, { why: why.replace(nextStep, ''), url, owner: !someoneElse.test(why) });
