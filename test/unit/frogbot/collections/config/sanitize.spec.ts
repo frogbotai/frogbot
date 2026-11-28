@@ -21,3 +21,29 @@ describe('sanitizeCollection auth', () => {
     expect(collection.auth).toEqual({ tokenExpiration: 60 });
   });
 });
+
+describe('sanitizeCollection upload', () => {
+  const upload = (value: unknown) =>
+    sanitizeCollection({ slug: 'pins', upload: value, fields: [] } as CollectionConfig, vi.fn(), {
+      resolveFrogBot: vi.fn(),
+    }).upload;
+
+  it.each([true, {}, { staticDir: '' }])(
+    'stores files in files/<slug>, which apps already ignore, for upload: %j',
+    (value) => {
+      expect(upload(value)).toMatchObject({ staticDir: 'files/pins' });
+    },
+  );
+
+  it('keeps a staticDir the collection sets', () => {
+    expect(upload({ staticDir: 'media', mimeTypes: ['image/*'] })).toEqual({
+      staticDir: 'media',
+      mimeTypes: ['image/*'],
+    });
+  });
+
+  it('leaves collections without uploads alone', () => {
+    expect(upload(undefined)).toBeUndefined();
+    expect(upload(false)).toBe(false);
+  });
+});

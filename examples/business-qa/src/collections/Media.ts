@@ -13,5 +13,4 @@ export const Media: CollectionConfig = {
     update: authenticated,
   },
   fields: [{ name: 'alt', type: 'text' }],
-  upload: { staticDir: 'media' },
 };
