@@ -1,6 +1,6 @@
 # `@frogbotai/piece-oidc`
 
-OpenID Connect sign-in for FrogBot: "Continue with SSO" for any provider that publishes a discovery document, such as Auth0, Keycloak or Microsoft Entra. For Okta, use `@frogbotai/piece-okta`.
+OpenID Connect sign-in for FrogBot: "Continue with SSO" for any provider that publishes a discovery document, such as Auth0 or Keycloak. For Okta, use `@frogbotai/piece-okta`.
 
 ## Usage
 
