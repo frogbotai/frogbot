@@ -1123,7 +1123,7 @@ describe('API keys plugin integration', () => {
 
         expect(widened.status).toBe(403);
         expect(widened.body).toMatchObject({
-          code: 'api-key.field-locked',
+          code: 'api-keys.field-locked',
           detail: 'API key "P" can\'t change "tenant" on a key.',
           hint: 'Sign in to change it.',
         });
@@ -1220,8 +1220,8 @@ describe('API keys plugin integration', () => {
       );
     });
 
-    it('answers a missing key on revoke, minted-count and rotate with api-key.not-found', async () => {
-      const notFound = { code: 'api-key.not-found', status: 404, detail: 'API key not found.' };
+    it('answers a missing key on revoke, minted-count and rotate with api-keys.not-found', async () => {
+      const notFound = { code: 'api-keys.not-found', status: 404, detail: 'API key not found.' };
 
       for (const response of [
         await revoke(session, 999_999),
@@ -1244,7 +1244,7 @@ describe('API keys plugin integration', () => {
 
         expect(refused.status).toBe(404);
         expect(refused.body).toMatchObject({
-          code: 'api-key.not-found',
+          code: 'api-keys.not-found',
           detail:
             'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.',
         });
@@ -1548,7 +1548,7 @@ describe('API keys plugin integration', () => {
 
       expect(rotated.status).toBe(400);
       expect(rotated.body).toMatchObject({
-        code: 'api-key.expired',
+        code: 'api-keys.expired',
         hint: 'Mint a new key instead.',
       });
       expect((await stored(key.body.id)).revokedAt ?? null).toBeNull();

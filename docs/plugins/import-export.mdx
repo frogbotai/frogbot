@@ -163,15 +163,15 @@ Every failure is a [Problem](/agents/overview#invoke-over-http). Branch on `code
 
 | Code | Status | Means |
 | --- | --- | --- |
-| `import.not-allowed` | `403` | The user can't create an import. |
-| `import.collection-not-importable` | `400` | `collectionSlug` isn't a collection this import collection serves. When the plugin's `collections` option limits them, `detail` and `data.allowed` list the ones it serves. |
-| `import.file-data-missing` | `400` | `fileData` is missing or empty. |
-| `import.unsupported-format` | `400` | `format` isn't `"csv"` or `"json"`. The file's content isn't inspected, so an xlsx sent as `"csv"` reads as text. |
-| `import.file-unreadable` | `400` | The file couldn't be parsed, for example JSON that isn't an array, or `Item 2 is not an object (got number).` |
-| `import.ai-model-missing` | `404` | `suggest-columns` was called with no AI model set. |
-| `import.ai-suggestion-failed` | `502` | The model call failed. The server log has the model's error. |
+| `import-export.import-not-allowed` | `403` | The user can't create an import. |
+| `import-export.collection-not-importable` | `400` | `collectionSlug` isn't a collection this import collection serves. When the plugin's `collections` option limits them, `detail` and `data.allowed` list the ones it serves. |
+| `import-export.file-data-missing` | `400` | `fileData` is missing or empty. |
+| `import-export.unsupported-format` | `400` | `format` isn't `"csv"` or `"json"`. The file's content isn't inspected, so an xlsx sent as `"csv"` reads as text. |
+| `import-export.file-unreadable` | `400` | The file couldn't be parsed, for example JSON that isn't an array, or `Item 2 is not an object (got number).` |
+| `import-export.ai-model-missing` | `404` | `suggest-columns` was called with no AI model set. |
+| `import-export.ai-suggestion-failed` | `502` | The model call failed. The server log has the model's error. |
 
-An export download answers `export.collection-not-exportable` (`400`) for a collection the export collection doesn't serve, and `export.not-allowed` (`403`) when the user can't read it.
+An export download answers `import-export.collection-not-exportable` (`400`) for a collection the export collection doesn't serve, and `import-export.export-not-allowed` (`403`) when the user can't read it.
 
 ### Link records from code
 

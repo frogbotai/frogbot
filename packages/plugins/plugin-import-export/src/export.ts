@@ -80,7 +80,7 @@ function checkedDownload(handler: PayloadHandler, exportsSlug: string): PayloadH
 
     if (!target || (served && !served.includes(collectionSlug))) {
       throw importExportError(
-        'export.collection-not-exportable',
+        'import-export.collection-not-exportable',
         `Collection "${collectionSlug}" can't be exported here.`,
       );
     }
@@ -90,7 +90,7 @@ function checkedDownload(handler: PayloadHandler, exportsSlug: string): PayloadH
       target.access.read,
     );
 
-    if (!allowed) throw importExportError('export.not-allowed');
+    if (!allowed) throw importExportError('import-export.export-not-allowed');
 
     const patched = { ...body, data: withoutStatusFilter(req, data) };
 

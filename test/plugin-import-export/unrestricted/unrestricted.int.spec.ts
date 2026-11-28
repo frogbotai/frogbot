@@ -37,7 +37,7 @@ describe('importExportPlugin with an empty `collections` option', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject({
-      code: 'import.collection-not-importable',
+      code: 'import-export.collection-not-importable',
       detail: `Collection "nope" can't be imported here.`,
     });
   });

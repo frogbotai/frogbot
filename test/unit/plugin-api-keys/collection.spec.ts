@@ -200,7 +200,7 @@ describe('API keys collection', () => {
 
       expect(response.status).toBe(403);
       expect(await response.json()).toMatchObject({
-        code: 'api-key.session-required',
+        code: 'api-keys.session-required',
         detail: "This API key can't mint or rotate API keys.",
         hint: 'Sign in, or use a key that can mint keys.',
       });
@@ -337,7 +337,7 @@ describe('API keys collection', () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({
-      code: 'api-key.expired',
+      code: 'api-keys.expired',
       hint: 'Mint a new key instead.',
     });
     expect(create).not.toHaveBeenCalled();

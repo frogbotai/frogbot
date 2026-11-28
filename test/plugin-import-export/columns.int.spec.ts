@@ -210,7 +210,7 @@ describe('import columns endpoint', () => {
     const response = await post('import-columns', [['Name']]);
 
     expect(response.status).toBe(403);
-    expect(response.body).toMatchObject({ code: 'import.not-allowed' });
+    expect(response.body).toMatchObject({ code: 'import-export.import-not-allowed' });
   });
 
   it('refuses a collection this import collection does not serve, listing the ones it does', async () => {
@@ -222,7 +222,7 @@ describe('import columns endpoint', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject({
-      code: 'import.collection-not-importable',
+      code: 'import-export.collection-not-importable',
       detail: `Collection "users" can't be imported here. Importable: companies, tags, contacts, notes.`,
       data: { allowed: ['companies', 'tags', 'contacts', 'notes'] },
     });
@@ -233,7 +233,7 @@ describe('import columns endpoint', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject({
-      code: 'import.file-data-missing',
+      code: 'import-export.file-data-missing',
       hint: 'Send the file base64-encoded as `fileData`.',
     });
   });
@@ -245,7 +245,7 @@ describe('import columns endpoint', () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toMatchObject({
-        code: 'import.unsupported-format',
+        code: 'import-export.unsupported-format',
         detail: `Unsupported format ${JSON.stringify(format)}. Use "csv" or "json".`,
         data: { allowed: ['csv', 'json'] },
       });
@@ -264,7 +264,7 @@ describe('import columns endpoint', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject({
-      code: 'import.file-unreadable',
+      code: 'import-export.file-unreadable',
       detail: 'Could not read the file: Item 2 is not an object (got number).',
     });
   });
@@ -274,7 +274,7 @@ describe('import columns endpoint', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject({
-      code: 'import.file-unreadable',
+      code: 'import-export.file-unreadable',
       detail: 'Could not read the file: A JSON import must be an array of objects.',
     });
   });

@@ -73,10 +73,10 @@ describe('API key services', () => {
 
     await expect(
       mintApiKey({ req, collectionSlug: 'credentials', tokenPrefix: 'fb', name: 'Persist' }),
-    ).rejects.toMatchObject({ code: 'api-key.session-required', status: 403 });
+    ).rejects.toMatchObject({ code: 'api-keys.session-required', status: 403 });
     await expect(
       rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
-    ).rejects.toMatchObject({ code: 'api-key.session-required', status: 403 });
+    ).rejects.toMatchObject({ code: 'api-keys.session-required', status: 403 });
     expect(create).not.toHaveBeenCalled();
     expect(find).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
@@ -261,7 +261,7 @@ describe('API key services', () => {
 
     await expect(
       rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
-    ).rejects.toMatchObject({ code: 'api-key.not-found', status: 404 });
+    ).rejects.toMatchObject({ code: 'api-keys.not-found', status: 404 });
     expect(update).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
   });
@@ -447,7 +447,7 @@ describe('API key services', () => {
 
       await expect(
         rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
-      ).rejects.toMatchObject({ code: 'api-key.expired', status: 400 });
+      ).rejects.toMatchObject({ code: 'api-keys.expired', status: 400 });
       expect(create).not.toHaveBeenCalled();
       expect(update).not.toHaveBeenCalled();
     });

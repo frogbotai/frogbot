@@ -123,7 +123,7 @@ describe('AI column suggestions', () => {
 
     expect(response.status).toBe(502);
     expect(response.body).toMatchObject({
-      code: 'import.ai-suggestion-failed',
+      code: 'import-export.ai-suggestion-failed',
       detail: 'AI suggestion failed.',
     });
   });

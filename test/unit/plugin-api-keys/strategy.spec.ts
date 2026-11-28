@@ -183,7 +183,7 @@ describe('API key authentication strategy', () => {
 
       const thrown = thrownBy(() => run(req));
 
-      expect(thrown).toMatchObject({ code: 'api-key.refused', message, status: 401 });
+      expect(thrown).toMatchObject({ code: 'api-keys.refused', message, status: 401 });
       expect((thrown as { headers: Headers }).headers.get('WWW-Authenticate')).toBe(
         `Bearer error="invalid_token", error_description="${message}"`,
       );

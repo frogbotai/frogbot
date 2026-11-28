@@ -85,7 +85,7 @@ export function refuseRejectedApiKey({
 }
 
 function refusedKey(message: string): FrogBotError {
-  return apiKeyError('api-key.refused', {
+  return apiKeyError('api-keys.refused', {
     detail: message,
     headers: { 'WWW-Authenticate': `Bearer ${apiKeyChallenge(message)}` },
   });

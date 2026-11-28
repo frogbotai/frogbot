@@ -426,7 +426,7 @@ describe('API key controls', () => {
   it("shows the Problem's detail when revoking fails", async () => {
     keysMade(0, {
       ok: false,
-      json: () => Promise.resolve({ code: 'api-key.not-found', detail: 'API key not found' }),
+      json: () => Promise.resolve({ code: 'api-keys.not-found', detail: 'API key not found' }),
     });
 
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);

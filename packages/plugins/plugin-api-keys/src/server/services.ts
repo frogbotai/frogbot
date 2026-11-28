@@ -65,7 +65,7 @@ function requestKey(req: FrogBotRequest) {
 
 function keyNotFound(req: FrogBotRequest) {
   return apiKeyError(
-    'api-key.not-found',
+    'api-keys.not-found',
     isApiKeyRequest(req)
       ? 'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.'
       : undefined,
@@ -74,7 +74,7 @@ function keyNotFound(req: FrogBotRequest) {
 
 /** The 403 for an API key that tried to mint or rotate keys without `canMint`. */
 export function sessionRequired() {
-  return apiKeyError('api-key.session-required');
+  return apiKeyError('api-keys.session-required');
 }
 
 function requireMinter(req: FrogBotRequest) {
@@ -153,7 +153,7 @@ export const keyScopeBeforeValidate: CollectionBeforeValidateHook = ({
   );
 
   if (changed) {
-    throw apiKeyError('api-key.field-locked', {
+    throw apiKeyError('api-keys.field-locked', {
       detail: `${keyName(parent)} can't change "${changed}" on a key.`,
       fields: [{ path: changed, message: "An API key can't change this field." }],
     });
@@ -433,7 +433,7 @@ export async function rotateApiKey({
 }: RotateApiKeyOptions) {
   const { mintedBy: rotator } = requireMinter(req);
   const key = await findKey({ req, collectionSlug, id, anyOwner, rotator });
-  if (isExpiredKey(key)) throw apiKeyError('api-key.expired');
+  if (isExpiredKey(key)) throw apiKeyError('api-keys.expired');
 
   const expiresAt = expiryTime(key.expiresAt);
   const minted = await mintForOwner({

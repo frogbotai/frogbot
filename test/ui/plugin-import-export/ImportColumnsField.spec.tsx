@@ -192,7 +192,7 @@ describe('ImportColumnsField', () => {
   it('keeps the mapping and shows the message when the AI call fails', async () => {
     respond(
       [columnsResponse],
-      [{ code: 'import.ai-suggestion-failed', detail: 'AI suggestion failed.' }, 502],
+      [{ code: 'import-export.ai-suggestion-failed', detail: 'AI suggestion failed.' }, 502],
     );
 
     render(<ImportColumnsField {...fieldProps} ai />);
@@ -208,7 +208,7 @@ describe('ImportColumnsField', () => {
   it("shows the endpoint's error when the file can't be read", async () => {
     respond([
       {
-        code: 'import.file-unreadable',
+        code: 'import-export.file-unreadable',
         detail: 'Could not read the file: Invalid Closing Quote',
       },
       400,

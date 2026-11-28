@@ -62,7 +62,7 @@ export const suggestColumnsEndpoint = (props: ColumnsEndpointProps): Endpoint =>
     const model = frogbot.config.ai?.smallModel ?? frogbot.config.ai?.defaultModel;
 
     if (!model) {
-      throw importExportError('import.ai-model-missing');
+      throw importExportError('import-export.ai-model-missing');
     }
 
     let picks: Record<string, unknown>;
@@ -81,7 +81,7 @@ export const suggestColumnsEndpoint = (props: ColumnsEndpointProps): Endpoint =>
 
       picks = readPicks(result.output);
     } catch (error) {
-      throw importExportError('import.ai-suggestion-failed', { cause: error });
+      throw importExportError('import-export.ai-suggestion-failed', { cause: error });
     }
 
     let suggested = 0;
