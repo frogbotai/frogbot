@@ -13,7 +13,8 @@ export type OktaOptions = Omit<OidcOptions, 'issuer' | 'trustEmail' | 'label'> &
 
 /**
  * A "Continue with Okta" sign-in method. Okta doesn't reliably send `email_verified`, so the
- * email from your Okta org's directory is trusted.
+ * email from your Okta org's directory is trusted when the claim is missing. An email Okta marks
+ * unverified is refused.
  */
 export function createOkta({ label = 'Okta', issuer, ...options }: OktaOptions) {
   return defineOidc({

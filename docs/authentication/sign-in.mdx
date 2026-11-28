@@ -145,14 +145,14 @@ createOidc({
 | `oauth` | `{ clientId: string; clientSecret: string }` | Required | Your provider app's client credentials. |
 | `slug` | `string` | `'oidc'` | Instance slug used in the sign-in routes. Set one per provider to add several. |
 | `label` | `string` | `'SSO'` | Button text after "Continue with". |
-| `trustEmail` | `boolean` | `false` | Accept an email the provider doesn't mark `email_verified`. |
+| `trustEmail` | `boolean` | `false` | Accept an email when the provider sends no `email_verified` claim. An email marked unverified is still refused. |
 
 ### How OpenID Connect sign-in works
 
-Both request `openid email profile`, use PKCE, send the client secret with HTTP Basic auth, and read the person from the provider's userinfo endpoint. FrogBot keeps the discovery document for an hour and refuses one that names a different issuer.
+Both request `openid email profile`, use PKCE, send the client secret with HTTP Basic auth, and read the person from the provider's userinfo endpoint. FrogBot keeps the discovery document for an hour, refuses one that names a different issuer, and, for an `https` issuer, refuses one whose endpoints aren't all `https`.
 
 <Warning>
-Okta doesn't reliably send `email_verified`, so `createOkta()` trusts the email from your Okta org's directory. Anyone who can change their email in that org can sign in as the FrogBot user with that email. Keep Okta's default, which makes people verify a new email. Turn on `trustEmail` for another provider only under the same condition.
+Okta doesn't reliably send `email_verified`, so when the claim is missing `createOkta()` trusts the email from your Okta org's directory. An email Okta marks unverified is still refused. Anyone who can change their email in that org can sign in as the FrogBot user with that email. Keep Okta's default, which makes people verify a new email. Turn on `trustEmail` for another provider only under the same condition.
 </Warning>
 
 Signing out ends the FrogBot session, not the Okta one. Okta groups don't map to FrogBot roles.

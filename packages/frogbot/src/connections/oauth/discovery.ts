@@ -35,6 +35,19 @@ async function fetchMetadata(issuer: string): Promise<OidcMetadata> {
       throw new Error(`${url} names issuer ${metadata.issuer}, not ${issuer}.`);
     }
 
+    if (new URL(issuer).protocol === 'https:') {
+      for (const name of [
+        'authorization_endpoint',
+        'token_endpoint',
+        'userinfo_endpoint',
+      ] as const) {
+        const endpoint = metadata[name];
+        if (endpoint && new URL(endpoint).protocol !== 'https:') {
+          throw new Error(`${url} names an ${name} that isn't https: ${endpoint}.`);
+        }
+      }
+    }
+
     return metadata;
   } catch (cause) {
     throw frogbotError('oauth.configuration', {

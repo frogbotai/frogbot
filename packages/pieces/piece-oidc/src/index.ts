@@ -16,8 +16,9 @@ export type OidcOptions = {
   /** The button text after "Continue with". Defaults to `SSO`. */
   label?: string;
   /**
-   * Accept the provider's email without `email_verified: true`. Only for a provider whose
-   * directory you control, where people can't set an email they don't own.
+   * Accept the provider's email when it sends no `email_verified` claim. An email marked
+   * unverified is still refused. Only for a provider whose directory you control, where people
+   * can't set an email they don't own.
    */
   trustEmail?: boolean;
 };
@@ -56,8 +57,9 @@ export async function oidcAccount({
 
   if (!response.ok) throw new Error(`${issuer} account lookup failed.`);
   const account = userinfoSchema.safeParse(await response.json());
-  const verified = account.data && String(account.data.email_verified) === 'true';
-  if (!account.success || (!trustEmail && !verified)) {
+  const claim = account.data?.email_verified;
+  const verified = String(claim) === 'true' || (trustEmail && claim === undefined);
+  if (!account.success || !verified) {
     throw new Error(`${issuer} did not return a verified email address.`);
   }
 
