@@ -66,7 +66,7 @@ A collection about one platform takes its logo, always with the `brand-` prefix:
 
 ## Views and done records
 
-`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take. A list view's `editable` lets people edit cells in place, like a spreadsheet: `true` for every supported column, or an array of field names or dot paths. Text, textarea, email, number, select, checkbox, date, single relationship fields and every field kind edit in the cell with the field's own input (Enter saves, Esc cancels, Tab moves on and wraps rows); `hasMany`, other types, the linked first column and fields the person can't update open the record instead. Saves are one normal `PATCH` (drafts save as drafts). Startup fails on an entry that isn't a field or never edits in a cell (richText, array, blocks, group, tabs, upload, join, autonumber). Docs: https://docs.frogbot.ai/admin/collection-list#editing-cells-in-place
+`admin.views` lists a collection's views in tab order. The first, of any type, is the default and opens at `/collections/<slug>`; pick it as [ADMIN-DESIGN.md](ADMIN-DESIGN.md#default-view-fits-the-job) says. A collection has at most one list view, in any position. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take. A list view's `editable` lets people edit cells in place, like a spreadsheet: `true` for every supported column, or an array of field names or dot paths. Text, textarea, email, number, select, checkbox, date, single relationship fields and every field kind edit in the cell with the field's own input (Enter saves, Esc cancels, Tab moves on and wraps rows); `hasMany`, other types, the linked first column and fields the person can't update open the record instead. Saves are one normal `PATCH` (drafts save as drafts). Startup fails on an entry that isn't a field or never edits in a cell (richText, array, blocks, group, tabs, upload, join, autonumber). Docs: https://docs.frogbot.ai/admin/collection-list#editing-cells-in-place
 
 ```ts
 export const Tasks: CollectionConfig = {
@@ -108,14 +108,20 @@ A timeline draws each record as a bar from `start` to `end` (date fields), in ba
 
 A list, board or timeline `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
 
-Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key.
+Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key. A gallery shows 25 cards per page; set `pagination: { defaultLimit: 48, limits: [24, 48, 96] }` on the view to change it (`limits` are the page-size choices). A board's `pagination.defaultLimit` is the cards fetched per column (default 50). There is no `limits` key on the view and no `admin.pagination` for views.
 
 ```ts
 admin: {
   useAsThumbnail: 'logo',
   views: [
     { type: 'list' },
-    { type: 'gallery', label: 'Logos', thumbnailFit: 'contain', defaultFields: ['industry'] },
+    {
+      type: 'gallery',
+      label: 'Logos',
+      thumbnailFit: 'contain',
+      defaultFields: ['industry'],
+      pagination: { defaultLimit: 48 },
+    },
     { type: 'board', groupBy: 'lifecycle', useAsThumbnail: false },
   ],
 }

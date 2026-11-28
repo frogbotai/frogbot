@@ -310,10 +310,11 @@ Use `frogbot.config.ts` as the configuration entry, `req.frogbot` in request cal
 Run these steps, in order, before you say a task is done:
 
 1. After changing collections, fields, jobs, or other generated schemas, run `frogbot generate:types`.
-2. Run `frogbot check`, and fix what it reports until it passes, including `MISSING_ICON` warnings.
-3. Run the app's `typecheck` script.
-4. Run the app's `test` script, if it has one.
-5. Run each job you added or changed once, with a run-once script like the one in [JOBS.md](reference/JOBS.md#workflow-waits), and say what it did.
+2. Then run `frogbot generate:importmap`: field kinds such as `moneyField`, views and `admin.components` add admin components, and `generate:types` doesn't update the import map. `frogbot check` reports `IMPORT_MAP_STALE` when you skip it.
+3. Run `frogbot check`, and fix what it reports until it passes, including `MISSING_ICON` warnings.
+4. Run the app's `typecheck` script.
+5. Run the app's `test` script, if it has one.
+6. Run each job you added or changed once, with a run-once script like the one in [JOBS.md](reference/JOBS.md#workflow-waits), and say what it did.
 
 Then report one line per step: passed, failed, or not run and why, for example "not run: no test script" or "not run: no AI provider configured".
 
