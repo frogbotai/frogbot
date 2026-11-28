@@ -436,6 +436,8 @@ async function keepRunning(
   const moving = typeof requested === 'number' && requested !== found.port;
 
   if (!switching && !moving) {
+    if (found.state === 'starting') return awaitFirstBuild(found, log);
+
     if (nothingServes(found)) {
       throw new CliError(`${alreadyUp(found).join('\n')}\n[frogbot] log: ${found.log}`, {
         code: 'BUILD_FAILED',
@@ -489,6 +491,41 @@ async function keepRunning(
   }
 
   return upResult(readRegistration(registrationFile(found.id)) ?? found);
+}
+
+async function awaitFirstBuild(
+  found: Registration,
+  log: (line: string) => void,
+): Promise<UpResult> {
+  const file = registrationFile(found.id);
+
+  log(`[frogbot] ${found.dir} is already starting; waiting for its first build`);
+
+  try {
+    await waitUntilUp(file, () => {
+      const now = readRegistration(file);
+
+      if (!now || !isAlive(now.pid)) return 'the supervisor stopped';
+      if (nothingServes(now)) return now.lastError ?? now.state;
+
+      return undefined;
+    });
+  } catch (error) {
+    const left = readRegistration(file);
+    const after =
+      left && isAlive(left.pid)
+        ? `[frogbot] still watching ${found.dir} at ${left.url}; it rebuilds on your next change (\`frogbot down\` to stop)`
+        : undefined;
+
+    throw new CliError(withLogTail(error, found.log, after).message, { code: 'BUILD_FAILED' });
+  }
+
+  const registration = readRegistration(file) ?? found;
+
+  log(`[frogbot] ${registration.dir} is up at ${registration.url}`);
+  log(`[frogbot] log: ${registration.log}`);
+
+  return upResult(registration);
 }
 
 async function waitFor(

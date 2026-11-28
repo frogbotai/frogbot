@@ -205,6 +205,41 @@ describe('migrate', () => {
     });
   });
 
+  describe('a "no" at a terminal', () => {
+    it.each([
+      ['migrate', 'migrate'],
+      ['migrate:fresh', 'migrateFresh'],
+    ] as const)('exits `%s` 1 with CANCELLED and no complete line', async (command, method) => {
+      mocks.adapter[method].mockResolvedValueOnce({
+        cancelled: true,
+        migrated: [],
+        rolledBack: [],
+      } as never);
+
+      await expect(migrate([command])).rejects.toMatchObject({
+        exitCode: 1,
+        code: 'CANCELLED',
+        message: `[frogbot] ${command} cancelled: nothing changed.`,
+      });
+      expect(log).not.toHaveBeenCalledWith(`[frogbot] ${command} complete.`);
+    });
+
+    it('exits migrate:create 1 with CANCELLED when an empty migration is declined', async () => {
+      mocks.adapter.createMigration.mockResolvedValueOnce({ created: false });
+
+      await expect(migrate(['migrate:create', 'empty'])).rejects.toMatchObject({
+        exitCode: 1,
+        code: 'CANCELLED',
+      });
+    });
+
+    it('still completes migrate:create --skip-empty with nothing to create', async () => {
+      mocks.adapter.createMigration.mockResolvedValueOnce({ created: false });
+
+      await expect(migrate(['migrate:create', 'empty', '--skip-empty'])).resolves.toEqual({});
+    });
+  });
+
   describe('without a terminal', () => {
     beforeEach(() => setTTY(undefined));
 

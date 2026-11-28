@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { onTestFinished } from 'vitest';
+import { afterEach, beforeEach, onTestFinished, vi } from 'vitest';
 
 import type {
   DeployConfig,
@@ -10,6 +10,19 @@ import type {
   DeployIO,
   DeployTarget,
 } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
+
+/** Keeps the host's values for the fixture `.env`'s keys out of a deploy, which reads them through `@next/env`. */
+export function withoutHostEnv(): void {
+  beforeEach(() => {
+    for (const key of ['FROGBOT_SECRET', 'DATABASE_URL', 'OPENAI_API_KEY', 'NEXT_PUBLIC_SITE']) {
+      vi.stubEnv(key, undefined);
+    }
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+}
 
 export async function tempDir(): Promise<string> {
   const dir = await realpath(await mkdtemp(join(tmpdir(), 'frogbot-deploy-test-')));

@@ -93,3 +93,23 @@ export function overviewJson(appCommands: Record<string, CLICommand>) {
     groups: commandGroups(appCommands),
   };
 }
+
+/** What `frogbot <command> --help --json` prints: the command's entry from `help --json`, with its help text. */
+export function commandHelpJson(
+  name: string,
+  appCommands: Record<string, CLICommand>,
+  help: string,
+) {
+  const found = commandGroups(appCommands)
+    .flatMap(({ commands }) => commands)
+    .find((command) => command.name === name);
+
+  return {
+    command: name,
+    success: true,
+    ...(found?.summary && { summary: found.summary }),
+    ...(found?.usage && { usage: found.usage }),
+    flags: found?.flags ?? [],
+    help,
+  };
+}

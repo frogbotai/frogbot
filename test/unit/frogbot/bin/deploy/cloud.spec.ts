@@ -8,7 +8,16 @@ import type {
   DeployConfig,
   DeployTarget,
 } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
-import { deployConfig, type FakeProgram, tempDir, testIO, writeApp } from './helpers.js';
+import {
+  deployConfig,
+  type FakeProgram,
+  tempDir,
+  testIO,
+  withoutHostEnv,
+  writeApp,
+} from './helpers.js';
+
+withoutHostEnv();
 
 async function deployWith(
   target: DeployTarget,
