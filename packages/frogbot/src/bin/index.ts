@@ -31,7 +31,7 @@ import { runScript } from './run.js';
 import { start } from './start.js';
 import { status } from './status.js';
 import { up } from './up.js';
-import { users } from './usersCreate.js';
+import { users } from './users.js';
 
 type LoadedConfig = { config?: FrogBotSanitizedConfig; loadError?: unknown };
 

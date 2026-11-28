@@ -5,6 +5,12 @@ import config from './frogbot.config.mjs';
 const [email, password, action] = process.argv.slice(2);
 const frogbot = await getFrogBot({ config, disableOnInit: true });
 
+if (action === 'unverify') {
+  const { docs } = await frogbot.db.find({ collection: 'users', limit: 1, pagination: false });
+
+  await frogbot.db.updateOne({ collection: 'users', id: docs[0].id, data: { _verified: false } });
+}
+
 if (action === 'trash') {
   const { docs } = await frogbot.find({ collection: 'users', overrideAccess: true });
 

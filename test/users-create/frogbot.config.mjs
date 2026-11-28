@@ -22,7 +22,9 @@ export default buildConfig({
           ? { verify: true }
           : scenario === 'no-local'
             ? { disableLocalStrategy: { enableFields: true } }
-            : true,
+            : scenario === 'lock'
+              ? { maxLoginAttempts: 2, lockTime: 600_000 }
+              : true,
       trash: true,
       fields: scenario === 'name' ? [{ name: 'name', type: 'text', required: true }] : [],
     },

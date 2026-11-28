@@ -1,4 +1,7 @@
+import { randomBytes } from 'node:crypto';
 import { parseArgs } from 'node:util';
+
+import type { SanitizedCollectionConfig } from 'payload';
 
 import { firstUser } from '../auth/firstUser.js';
 import type { FrogBotSanitizedConfig } from '../config/sanitized.js';
@@ -8,22 +11,23 @@ import { toPayloadRequest } from '../seams/request.js';
 import { formatCliError } from './formatCliError.js';
 import { CliError, usageError } from './json.js';
 
-export const usersUsage =
-  '[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]';
+export const usersUsage = [
+  '[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]',
+  '                 frogbot users reset-password <email> [--collection <slug>] [--yes] [--json]',
+].join('\n');
 
-export type UsersCreateOptions = {
-  email: string;
-  collection?: string;
-  data: Record<string, string>;
-  yes: boolean;
-};
+type UsersTarget = { email: string; collection?: string; yes: boolean };
+
+export type UsersOptions =
+  | (UsersTarget & { command: 'create'; data: Record<string, string> })
+  | (UsersTarget & { command: 'reset-password' });
 
 export type DatabaseLocation = { local: boolean; label: string };
 
 type ValidationErrors = { data?: { errors?: { path?: string; message?: string }[] } };
 
-/** Reads `users create`'s arguments, or throws a usage error (exit 2) naming what's wrong and the usage. */
-export function parseUsersArgs(args: string[]): UsersCreateOptions {
+/** Reads `users`' arguments, or throws a usage error (exit 2) naming what's wrong and the usage. */
+export function parseUsersArgs(args: string[]): UsersOptions {
   try {
     return readUsersArgs(args);
   } catch (error) {
@@ -33,14 +37,32 @@ export function parseUsersArgs(args: string[]): UsersCreateOptions {
   }
 }
 
-function readUsersArgs(args: string[]): UsersCreateOptions {
+function readUsersArgs(args: string[]): UsersOptions {
   const parsed = parse(args);
 
-  const [subcommand, email, ...extra] = parsed.positionals;
+  const [command, email, ...extra] = parsed.positionals;
 
-  if (subcommand !== 'create') throw new Error('the only users command is `create`.');
-  if (!email) throw new Error('give the email of the user to create.');
+  if (command !== 'create' && command !== 'reset-password') {
+    throw new Error('the users commands are `create` and `reset-password`.');
+  }
+
+  if (!email) {
+    throw new Error(
+      command === 'create'
+        ? 'give the email of the user to create.'
+        : 'give the email of the user whose password to reset.',
+    );
+  }
+
   if (extra.length) throw new Error(`unexpected argument "${extra[0]}".`);
+
+  const target = { email, collection: parsed.values.collection, yes: parsed.values.yes ?? false };
+
+  if (command === 'reset-password') {
+    if (parsed.values.set) throw new Error("reset-password doesn't take --set.");
+
+    return { command, ...target };
+  }
 
   const data: Record<string, string> = {};
 
@@ -56,7 +78,7 @@ function readUsersArgs(args: string[]): UsersCreateOptions {
     if (field in data) throw new Error(`--set can't set ${field}.`);
   }
 
-  return { email, collection: parsed.values.collection, data, yes: parsed.values.yes ?? false };
+  return { command, ...target, data };
 }
 
 function parse(args: string[]) {
@@ -134,23 +156,32 @@ function fieldErrors(error: unknown): string | undefined {
   return fields?.length ? fields.join(', ') : undefined;
 }
 
+function cause(error: unknown): string {
+  return formatCliError(error).replace(/^\[frogbot\] (error: )?/, '');
+}
+
 function createError(slug: string, error: unknown): string {
   const fields = fieldErrors(error);
 
-  if (!fields) return formatCliError(error).replace(/^\[frogbot\] (error: )?/, '');
+  if (!fields) return cause(error);
   if (fields.startsWith('email ')) return `${slug} rejected the email: ${fields}.`;
 
   return `${slug} rejected the user: ${fields}. Pass a missing field with --set <field>=<value>.`;
 }
 
-function fail(code: string, message: string): CliError {
-  return new CliError(`[frogbot] users create: ${message}`, { code });
-}
+type UsersContext = {
+  config: FrogBotSanitizedConfig;
+  collection: SanitizedCollectionConfig;
+  fail: (code: string, message: string) => CliError;
+};
 
 /**
- * `frogbot users create <email>`: makes the first user of the admin's auth collection, or `--collection`'s,
- * with a random password printed once. It refuses when the collection has any user, trashed ones included,
- * and writes to anything but a local SQLite file only with `--yes`.
+ * `frogbot users create <email>` makes the first user of the admin's auth collection, or `--collection`'s,
+ * with a random password printed once, and refuses when the collection has any user, trashed ones included.
+ * `frogbot users reset-password <email>` gives an existing user a new random password, printed once,
+ * through Payload's forgot- and reset-password operations with no email sent: the collection's password
+ * rules and hooks run, a lockout is cleared, and other sessions end. An unverified user is marked verified
+ * first, as `create` makes its user, so the printed password signs in. Both write to anything but a local SQLite file only with `--yes`.
  */
 export async function users(
   args: string[],
@@ -161,6 +192,8 @@ export async function users(
   }: { config?: FrogBotSanitizedConfig; loadError?: unknown; json?: boolean },
 ): Promise<Record<string, unknown>> {
   const options = parseUsersArgs(args);
+  const fail = (code: string, message: string) =>
+    new CliError(`[frogbot] users ${options.command}: ${message}`, { code });
 
   if (loadError) throw new CliError(formatCliError(loadError), { code: 'CONFIG_INVALID' });
 
@@ -177,35 +210,70 @@ export async function users(
   if (collection.auth.disableLocalStrategy) {
     throw fail(
       'NO_PASSWORD_LOGIN',
-      `"${slug}" signs in without a password (disableLocalStrategy), so there is no login to create. Sign in with its provider instead.`,
+      `"${slug}" signs in without a password (disableLocalStrategy), so there is no password to ${options.command === 'create' ? 'create' : 'reset'}. Sign in with its provider instead.`,
     );
   }
 
   const { url, syncUrl } = payloadConfig.db as Pick<DatabaseAdapter, 'url' | 'syncUrl'>;
   const database = describeDatabase(url, syncUrl);
 
-  console.log(`[frogbot] users create: database ${database.label}`);
+  console.log(`[frogbot] users ${options.command}: database ${database.label}`);
 
   if (!database.local && !options.yes) {
     throw fail(
       'CONFIRM_REQUIRED',
-      "this isn't a local SQLite file, so nothing was written. Run again with --yes if this is the database to add the user to.",
+      `this isn't a local SQLite file, so nothing was written. Run again with --yes if this is the database to ${options.command === 'create' ? 'add the user to' : 'change the password in'}.`,
     );
   }
 
+  const context = { config, collection, fail };
+  const { password } =
+    options.command === 'create'
+      ? await create(context, options)
+      : await resetPassword(context, options.email);
+
+  if (!json) {
+    console.log(
+      options.command === 'create'
+        ? `Created ${options.email} in ${slug}.`
+        : `Reset the password of ${options.email} in ${slug}. Its other sessions are signed out.`,
+    );
+
+    console.log(`Password: ${password}`);
+    console.log('It is shown only this once. Change it on the account page after signing in.');
+  }
+
+  return { email: options.email, collection: slug, database: database.label, password };
+}
+
+async function withApp<T>(
+  config: FrogBotSanitizedConfig,
+  fn: (frogbot: FrogBot) => Promise<T>,
+): Promise<T> {
   let frogbot: FrogBot | undefined;
 
   try {
-    const [{ FrogBot }, { withSessionOperation }] = await Promise.all([
-      import('../frogbot.js'),
-      import('../auth/operation.js'),
-    ]);
+    const { FrogBot } = await import('../frogbot.js');
 
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
 
-    const instance = frogbot;
+    return await fn(frogbot);
+  } finally {
+    await frogbot?.destroy();
+  }
+}
+
+async function create(
+  { config, collection, fail }: UsersContext,
+  { email, data }: { email: string; data: Record<string, string> },
+) {
+  const { slug } = collection;
+  const { withSessionOperation } = await import('../auth/operation.js');
+
+  const created = await withApp(config, async (instance) => {
     const req = await instance.createRequest();
-    const created = await withSessionOperation({
+
+    return withSessionOperation({
       req,
       collectionSlug: slug,
       fn: async () => {
@@ -219,11 +287,11 @@ export async function users(
         if (docs.length > 0) {
           return fail(
             'USERS_EXIST',
-            `the ${slug} collection already has users, so nothing was written. Sign in with one of them, or add users in the admin.`,
+            `the ${slug} collection already has users, so nothing was written. Sign in with one of them, add users in the admin, or run \`frogbot users reset-password <email>\`.`,
           );
         }
 
-        const user = firstUser({ collection, email: options.email, data: options.data });
+        const user = firstUser({ collection, email, data });
 
         try {
           await instance.create({ ...user.create, req });
@@ -234,19 +302,58 @@ export async function users(
         return user;
       },
     });
+  });
 
-    if (created instanceof CliError) throw created;
+  if (created instanceof CliError) throw created;
 
-    const { password } = created;
+  return created;
+}
 
-    if (!json) {
-      console.log(`Created ${options.email} in ${slug}.`);
-      console.log(`Password: ${password}`);
-      console.log('It is shown only this once. Change it on the account page after signing in.');
+async function resetPassword({ config, collection, fail }: UsersContext, email: string) {
+  const { slug } = collection;
+  const password = randomBytes(32).toString('base64url');
+
+  await withApp(config, async (instance) => {
+    const token = await instance.forgotPassword({
+      collection: slug,
+      data: { email },
+      disableEmail: true,
+    });
+
+    if (!token) {
+      throw fail(
+        'USER_NOT_FOUND',
+        `no user in ${slug} has the email ${email}, so nothing was written.`,
+      );
     }
 
-    return { email: options.email, collection: slug, database: database.label, password };
-  } finally {
-    await frogbot?.destroy();
-  }
+    try {
+      if (collection.auth.verify) {
+        const user = await instance.db.findOne<{ id: number | string; _verified?: boolean }>({
+          collection: slug,
+          where: { resetPasswordToken: { equals: token } },
+        });
+
+        if (user && !user._verified) {
+          await instance.update({
+            collection: slug,
+            id: user.id,
+            data: { _verified: true },
+            depth: 0,
+            overrideAccess: true,
+          });
+        }
+      }
+
+      await instance.resetPassword({
+        collection: slug,
+        data: { token, password },
+        overrideAccess: true,
+      });
+    } catch (error) {
+      throw fail('RESET_FAILED', `${slug} rejected the new password: ${cause(error)}`);
+    }
+  });
+
+  return { password };
 }

@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot users create", "first user", "frogbot deploy", "frogbot dojo", "plugin-dojo", "pull", "logs", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot users create", "first user", "frogbot users reset-password", "reset password", "lost password", "frogbot deploy", "frogbot dojo", "plugin-dojo", "pull", "logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -36,7 +36,7 @@ Run
 
 ## JSON output
 
-Every command that finishes takes `--json`: `status`, `up`, `down`, `check`, `deploy`, `users create`, every `migrate` command, `generate:types`, `generate:importmap`, `generate:piece-types`, `pieces:port` and `jobs:run` (once the worker stops). With it, stdout holds exactly one JSON object, on success and on failure, and everything else, including your config's and the database's logs, goes to stderr:
+Every command that finishes takes `--json`: `status`, `up`, `down`, `check`, `deploy`, `users create`, `users reset-password`, every `migrate` command, `generate:types`, `generate:importmap`, `generate:piece-types`, `pieces:port` and `jobs:run` (once the worker stops). With it, stdout holds exactly one JSON object, on success and on failure, and everything else, including your config's and the database's logs, goes to stderr:
 
 ```json
 { "command": "up", "success": true, "folder": "/apps/crm", "url": "http://127.0.0.1:3000", "mode": "production", "state": "running", "log": "/apps/crm/.frogbot/service.log" }
@@ -53,7 +53,7 @@ A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command
 | `status` | `apps`: one `{ folder, url, mode, state, uptime?, lastError?, advisory? }` per app `up` started. |
 | `up` | `folder`, `url`, `mode`, `state` and `log` of the running app. |
 | `down` | `folder`, and `wasRunning`. |
-| `users create` | `email`, `collection`, `database`, and the one-time `password`, which isn't printed anywhere else. |
+| `users create`, `users reset-password` | `email`, `collection`, `database`, and the one-time `password`, which isn't printed anywhere else. |
 | `migrate`, `migrate:down`, `migrate:fresh`, `migrate:refresh`, `migrate:reset` | `migrated` and `rolledBack`: the migration names. |
 | `migrate:status` | `migrations`: each migration with whether it ran and its batch. |
 | `migrate:create` | `path` of the migration it wrote. |
@@ -72,6 +72,7 @@ A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command
 | `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
 | `check` | `--json` | Loads your config as the running app does, with no server or database, and lists every problem it finds. See [Check your config](#check-your-config). |
 | `users create` | `<email>`, `--collection`, `--set <field>=<value>`, `--yes` | Creates the first user of an empty auth collection and prints a random password once. See [Create the first user](#create-the-first-user). |
+| `users reset-password` | `<email>`, `--collection`, `--yes` | Gives an existing user a new random password, printed once, and signs out their sessions. See [Reset a lost password](#reset-a-lost-password). |
 | `deploy` | `[target]`, `--dry-run`, `--json`, `--no-interactive`, `--env-file` | Checks the app, then deploys it to Dojo or builds a Docker image. See [Deploy](#deploy). |
 | `generate:types` | — | Writes `frogbot-types.ts` from your config. See [Generating types](/typescript/generating-types). |
 | `generate:importmap` | — | Writes the admin import map for the custom components your config references. See [Custom components](/custom-components/overview). |
@@ -164,13 +165,30 @@ Password: 3q2-7wZq…
 It is shown only this once. Change it on the account page after signing in.
 ```
 
-- **Collection.** It writes to `admin.user`'s collection, or the auth collection `--collection <slug>` names It refuses a collection with `auth.disableLocalStrategy`, whose users sign in without a password.
-- **Only the first user.** It refuses, exiting `1`, when the collection has any user, trashed ones included, as the create-first-user page does. It takes the same per-collection lock as sign-in, so two runs, or a run and a sign-in, can't both make the first user. Add more users in the admin.
+- **Collection.** It writes to `admin.user`'s collection, or the auth collection `--collection <slug>` names. It refuses a collection with `auth.disableLocalStrategy`, whose users sign in without a password.
+- **Only the first user.** It refuses, exiting `1`, when the collection has any user, trashed ones included, as the create-first-user page does. It takes the same per-collection lock as sign-in, so two runs, or a run and a sign-in, can't both make the first user. Add more users in the admin. To get back into an app whose password you lost, [reset it](#reset-a-lost-password).
 - **Password.** Each run makes a new random password (32 random bytes). There is no option or variable to set one, and it is stored only as the collection's usual hash. Change it on the account page.
 - **Required fields.** The collection's hooks, validation and required fields apply. When one has no value, it exits `1` and names the field; pass string fields with `--set <field>=<value>` (repeatable).
 - **Verification.** On a collection with `auth.verify`, the user is created already verified and no verification email is sent.
 - **Database.** It first prints the database it will write to: a SQLite `file:` path, or the host and database name without credentials. An embedded replica (a `file:` URL with a `syncUrl`) prints as `file:./replica.db, a replica of libsql://<host>`, because its writes reach the remote. For anything but a local `file:` SQLite database without a `syncUrl` it exits `1` without writing, unless you pass `--yes`.
 - **Local only.** It runs only in the terminal, against the app's code, database and `FROGBOT_SECRET`. No HTTP endpoint or admin button does the same. A login made this way reaches a deployed app only if you deploy with `--data`, which asks first.
+
+## Reset a lost password
+
+`frogbot users reset-password <email>` gives an existing user a new random password and prints it once, so a lost password from `users create` doesn't mean editing the database by hand:
+
+```sh
+$ pnpm frogbot users reset-password me@example.com
+[frogbot] users reset-password: database file:./frogbot.db
+Reset the password of me@example.com in users. Its other sessions are signed out.
+Password: 9fK_2mXv…
+It is shown only this once. Change it on the account page after signing in.
+```
+
+- **Collection, password, database and local only** work as for [`users create`](#create-the-first-user): `--collection <slug>`, a new 32-byte random password each run, the database printed first, and `--yes` needed for anything but a local SQLite file.
+- **Same rules as the reset link.** It runs the collection's forgot- and reset-password operations without sending an email, so the collection's password validation and hooks apply, a lockout from failed sign-ins is cleared, and the user's existing sessions end.
+- **Unknown email.** When no user, trashed ones aside, has the email, it exits `1` with `USER_NOT_FOUND` and writes nothing.
+- **Verification.** On a collection with `auth.verify`, an unverified user is marked verified, so the printed password signs in.
 
 ## Deploy
 

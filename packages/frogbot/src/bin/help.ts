@@ -123,8 +123,9 @@ export const commandDocs: Record<string, CommandDoc> = {
   ),
   users: {
     group: 'Database',
-    summary: 'Create the first login of an empty auth collection',
-    usage: 'users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]',
+    summary: 'Create the first login, or reset a lost password',
+    usage:
+      'users create|reset-password <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]',
   },
   'generate:types': {
     group: 'Generate',
@@ -174,7 +175,7 @@ export const commandHelp: Record<string, string> = {
   ),
   users: line(
     commandDocs.users.usage,
-    "Creates the first login when the auth collection is empty and prints its random password once.\n  --collection <slug>    the auth collection, when the app has more than one\n  --set <field>=<value>  a value for another required field\n  --yes                  confirm writing to a database that isn't a local SQLite file\n  --json                 one result object on stdout, with the password",
+    "create makes the first login when the auth collection is empty; reset-password gives an existing login a new password and signs out its sessions. Each prints the random password once.\n  --collection <slug>    the auth collection, when the app has more than one\n  --set <field>=<value>  create only: a value for another required field\n  --yes                  confirm writing to a database that isn't a local SQLite file\n  --json                 one result object on stdout, with the password",
   ),
   'generate:types': line(
     commandDocs['generate:types'].usage,
