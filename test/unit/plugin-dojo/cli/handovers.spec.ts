@@ -155,7 +155,7 @@ describe('handovers accept', () => {
       { recipient: false },
       'This handover was sent to bo@example.com. Sign in as them to accept it.',
     ],
-    [{ status: 'expired' }, 'This handover is expired. Ask for a new one.'],
+    [{ status: 'expired' }, "This handover is expired, so it can't be accepted."],
     [{ workspaces: [] }, 'You admin no workspace that can take the project Ops.'],
   ])('refuses %j before accepting', async (change, message) => {
     const { dojo, run } = await setup({
@@ -185,14 +185,22 @@ describe('handovers accept', () => {
 
     const text = await run(['handovers', 'accept', 'h1', '--yes']);
 
-    expect(text.code).toBe(1);
+    expect(text.code).toBe(4);
     expect(text.stderr()).toEqual([
-      `[frogbot] Dojo couldn't accept the project Ops: Acme has no paid app free for this app. ${url}`,
+      `[frogbot] Dojo couldn't accept the project Ops: Acme has no paid app free for this app. Pay for room at ${url}, then run the command again.`,
     ]);
 
     const json = await run(['handovers', 'accept', 'h1', '--yes', '--json']);
 
-    expect(JSON.parse(json.stdout().join('\n'))).toMatchObject({ ok: false, status: 409, url });
+    expect(json.code).toBe(4);
+    expect(JSON.parse(json.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'conflict',
+      status: 409,
+      url,
+      needs: 'payment',
+      link: url,
+    });
   });
 });
 

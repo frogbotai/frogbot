@@ -44,7 +44,8 @@ export async function askData({
 
     if (data === undefined && !io.isTTY) {
       throw new ShareError(
-        `This first deploy can bring the local data (${summary}). Ask the person whether to bring it, then rerun with --data or --no-data.`,
+        `This first deploy can bring the local data (${summary}). Rerun with --data to bring it or --no-data to start empty.`,
+        2,
       );
     }
 

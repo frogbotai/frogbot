@@ -113,7 +113,8 @@ async function pickWorkspace({
 
   if (!io.isTTY) {
     throw new ShareError(
-      `Ask the person which workspace to use (${slugs}), then rerun with --workspace <slug>.`,
+      `You're in more than one workspace (${slugs}). Rerun with --workspace <slug> to pick one.`,
+      2,
     );
   }
 

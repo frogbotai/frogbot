@@ -2,7 +2,7 @@ import type { Noun, VerbFlag, VerbInput } from '../command.js';
 import type { DojoClient } from '../dojo.js';
 import { dojoJSON, dojoList, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
-import { done } from '../io.js';
+import { dojoProgram, done } from '../io.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace } from '../workspaces.js';
 import { whereEquals } from './resolve.js';
@@ -11,11 +11,13 @@ import { whereEquals } from './resolve.js';
 export type Member = {
   id: string | number;
   email: string;
-  role: 'owner' | 'member';
+  role: 'viewer' | 'editor' | 'admin' | 'owner';
   user?: string | number | null;
 };
 
-const roles = ['owner', 'member'];
+const roles = ['viewer', 'editor', 'admin'] as const;
+
+const roleList = roles.join(', ');
 
 const workspaceFlag: VerbFlag = {
   type: 'string',
@@ -23,12 +25,21 @@ const workspaceFlag: VerbFlag = {
   help: 'The workspace. Needed when you are in more than one.',
 };
 
-const ownerNeeded = 'owner access to the workspace';
+const adminNeeded = 'Admin access to the workspace';
 
-function checkRole(role: string): Member['role'] {
-  if (!roles.includes(role)) throw new ShareError(`Choose a role: ${roles.join(' or ')}.`, 2);
+function checkRole(role: string, program: string): (typeof roles)[number] {
+  if (role === 'owner') {
+    throw new ShareError(
+      `Nobody is added or changed to owner. The Owner hands over with ${dojoProgram(program)} workspaces owner <slug> <email>. Roles: ${roleList}.`,
+      2,
+    );
+  }
 
-  return role as Member['role'];
+  const found = roles.find((each) => each === role);
+
+  if (!found) throw new ShareError(`"${role}" isn't a role. Choose one of: ${roleList}.`, 2);
+
+  return found;
 }
 
 async function inWorkspace({ io, dojo, values }: VerbInput): Promise<Workspace> {
@@ -39,7 +50,8 @@ async function inWorkspace({ io, dojo, values }: VerbInput): Promise<Workspace> 
   });
 }
 
-async function listMembers(dojo: DojoClient, workspace: Workspace): Promise<Member[]> {
+/** Every member of `workspace`, with their role. */
+export async function listMembers(dojo: DojoClient, workspace: Workspace): Promise<Member[]> {
   return dojoList<Member>(
     dojo,
     `/api/members?depth=0&limit=100&sort=email&${whereEquals('workspace', workspace.id)}`,
@@ -86,13 +98,14 @@ export const members: Noun = {
       summary: 'Add someone by email. They join when they sign in with it.',
       args: '<email>',
       flags: {
-        role: { type: 'string', value: 'owner|member', help: 'Their role. Default member.' },
+        role: { type: 'string', value: roles.join('|'), help: 'Their role. Default viewer.' },
         workspace: workspaceFlag,
       },
       run: async (input) => {
         const [email = ''] = input.positionals;
         const role = checkRole(
-          typeof input.values.role === 'string' ? input.values.role : 'member',
+          typeof input.values.role === 'string' ? input.values.role : 'viewer',
+          input.io.program,
         );
 
         const workspace = await inWorkspace(input);
@@ -101,7 +114,7 @@ export const members: Noun = {
           method: 'POST',
           body: { workspace: workspace.id, email, role },
           what: `Couldn't add ${email} to ${workspace.slug}`,
-          needs: ownerNeeded,
+          needs: adminNeeded,
         });
 
         done(input.io, shown(doc), [
@@ -110,12 +123,12 @@ export const members: Noun = {
       },
     },
     role: {
-      summary: "Change a member's role.",
+      summary: "Change a member's role: viewer, editor or admin.",
       args: '<email> <role>',
       flags: { workspace: workspaceFlag },
       run: async (input) => {
         const [email = '', wanted = ''] = input.positionals;
-        const role = checkRole(wanted);
+        const role = checkRole(wanted, input.io.program);
         const workspace = await inWorkspace(input);
         const member = await findMember(input.dojo(), workspace, email);
 
@@ -126,7 +139,7 @@ export const members: Noun = {
             method: 'PATCH',
             body: { role },
             what: `Couldn't change ${email}'s role`,
-            needs: ownerNeeded,
+            needs: adminNeeded,
           },
         );
 
@@ -146,7 +159,7 @@ export const members: Noun = {
         await dojoJSON(input.dojo(), `/api/members/${segment(member.id)}`, {
           method: 'DELETE',
           what: `Couldn't remove ${email}`,
-          needs: ownerNeeded,
+          needs: adminNeeded,
         });
 
         done(input.io, { removed: shown(member) }, [

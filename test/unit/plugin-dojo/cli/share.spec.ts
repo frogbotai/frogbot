@@ -338,7 +338,7 @@ describe('frogbot deploy: workspace', () => {
     expect(dojo.apps[0]?.workspace).toBe(1);
   });
 
-  it('asks the person to choose when there are two and no TTY', async () => {
+  it('names --workspace and exits 2 when there are two and no TTY', async () => {
     const { root, dojo, run, signIn } = await setup();
 
     await signIn();
@@ -346,9 +346,9 @@ describe('frogbot deploy: workspace', () => {
 
     const result = await run(['--no-data']);
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(2);
     expect(result.stderr()).toEqual([
-      '[frogbot] Ask the person which workspace to use (trend-capital, colby), then rerun with --workspace <slug>.',
+      "[frogbot] You're in more than one workspace (trend-capital, colby). Rerun with --workspace <slug> to pick one.",
     ]);
     expect(dojo.paths()).not.toContain('POST /api/apps');
     await expect(stat(join(root, '.frogbot'))).rejects.toThrow();

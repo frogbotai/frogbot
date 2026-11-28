@@ -1,7 +1,7 @@
 import type { Noun, Verb, VerbFlag } from '../command.js';
 import type { DojoClient } from '../dojo.js';
 import { dojoJSON, segment } from '../dojo.js';
-import { ShareError } from '../error.js';
+import { needsPayment, ShareError } from '../error.js';
 import type { DojoIO } from '../io.js';
 import { dojoProgram, done } from '../io.js';
 import type { Workspace } from '../workspaces.js';
@@ -64,18 +64,21 @@ export function recipient(value: unknown): string {
   return email;
 }
 
-/** A move's refusal keeps Dojo's words and adds the page that pays for room when Dojo sent one. */
+/**
+ * A move's refusal keeps Dojo's words and code. When Dojo sent the page that pays for room, it is a payment a person
+ * makes there: exit 4, with the page as the step's link.
+ */
 export async function withPayLink<T>(send: () => Promise<T>): Promise<T> {
   try {
     return await send();
   } catch (error) {
     if (!(error instanceof ShareError) || !error.url) throw error;
 
-    throw new ShareError(`${error.message} ${error.url}`, error.exitCode, {
-      code: error.code,
-      status: error.status,
-      url: error.url,
-    });
+    throw new ShareError(
+      `${error.message} Pay for room at ${error.url}, then run the command again.`,
+      needsPayment,
+      { code: error.code, status: error.status, url: error.url, needs: 'payment', link: error.url },
+    );
   }
 }
 
@@ -190,7 +193,9 @@ const accept: Verb = {
     }
 
     if (handover.status !== 'pending') {
-      throw new ShareError(`This handover is ${handover.status}. Ask for a new one.`);
+      throw new ShareError(
+        `This handover is ${handover.status}, so it can't be accepted. Its sender can send a new one.`,
+      );
     }
 
     const slug =

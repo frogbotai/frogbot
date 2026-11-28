@@ -1,15 +1,34 @@
 import type { Noun } from '../command.js';
+import type { DojoClient } from '../dojo.js';
 import { dojoJSON, segment } from '../dojo.js';
+import { ShareError } from '../error.js';
 import { done } from '../io.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace, listWorkspaces } from '../workspaces.js';
-import { findMember } from './members.js';
+import { findMember, listMembers } from './members.js';
+import { namingPurge, purgeApps, purgeNotice, purgeTrashFlag, trashedApps } from './trash.js';
 
 type DocReply = { doc: Workspace };
 
 const shown = ({ id, slug, name }: Workspace) => ({ id, slug, name });
 
 const ownerNeeded = "the workspace's Owner";
+
+async function mustOwn(dojo: DojoClient, workspace: Workspace): Promise<void> {
+  const user = await dojo.signIn();
+  const member = (await listMembers(dojo, workspace)).find(
+    (each) =>
+      String(each.user ?? '') === String(user.id) ||
+      (user.email !== undefined && each.email.toLowerCase() === user.email.toLowerCase()),
+  );
+
+  if (member?.role === 'owner') return;
+
+  throw new ShareError(
+    `Only ${workspace.slug}'s Owner can delete it, so nothing was deleted. ${member ? `You are ${member.role}.` : `You aren't a member of it.`}`,
+    2,
+  );
+}
 
 /** `workspaces list | create | rename | delete | owner`. */
 export const workspaces: Noun = {
@@ -64,26 +83,45 @@ export const workspaces: Noun = {
       summary:
         'Delete an empty workspace for good, with its projects, members, keys and plan. Its Owner only.',
       args: '<slug>',
+      flags: { 'purge-trash': purgeTrashFlag('workspace') },
       confirm: true,
-      run: async ({ io, dojo, confirm, positionals: [slug = ''] }) => {
+      run: async ({ io, dojo, confirm, values, positionals: [slug = ''] }) => {
         const workspace = await findWorkspace({ dojo: dojo(), io, slug });
+        const purging = values['purge-trash'] === true;
+
+        if (purging) await mustOwn(dojo(), workspace);
+
+        const trashed = purging
+          ? await trashedApps(dojo(), 'workspace', workspace.id, workspace.slug)
+          : [];
 
         await confirm(
-          `Delete ${workspace.name} (${workspace.slug}) for good? Its projects, members, API keys and plan go with it.`,
+          `Delete ${workspace.name} (${workspace.slug}) for good? Its projects, members, API keys and plan go with it.${purgeNotice(trashed)}`,
         );
 
-        await dojoJSON<{ deleted: boolean }>(
-          dojo(),
-          `/api/workspaces/${segment(workspace.id)}/delete`,
-          {
-            method: 'POST',
-            body: { name: workspace.name.trim() },
-            what: `Dojo couldn't delete ${workspace.slug}`,
-            needs: ownerNeeded,
-          },
+        await purgeApps(dojo(), trashed);
+
+        await namingPurge(purging ? trashed.map(({ slug: app }) => app) : undefined, () =>
+          dojoJSON<{ deleted: boolean }>(
+            dojo(),
+            `/api/workspaces/${segment(workspace.id)}/delete`,
+            {
+              method: 'POST',
+              body: { name: workspace.name.trim() },
+              what: `Dojo couldn't delete ${workspace.slug}`,
+              needs: ownerNeeded,
+            },
+          ),
         );
 
-        done(io, { deleted: shown(workspace) }, [`[frogbot] Deleted ${workspace.slug}.`]);
+        const purged = trashed.map(({ slug: app }) => app);
+
+        done(io, { deleted: shown(workspace), purged }, [
+          ...(purged.length
+            ? [`[frogbot] Deleted for good from Trash: ${purged.join(', ')}.`]
+            : []),
+          `[frogbot] Deleted ${workspace.slug}.`,
+        ]);
       },
     },
     owner: {
