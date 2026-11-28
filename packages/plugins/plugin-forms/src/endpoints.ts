@@ -61,7 +61,11 @@ const invalid = (req: FrogBotRequest, errors: FormFieldError[]) =>
         ? 'forms.invalid-answer'
         : 'forms.invalid',
       {
-        fields: errors.map(({ field, message }) => ({ path: field ?? '', message })),
+        fields: errors.map(({ code, field, message }) => ({
+          path: field ?? '',
+          message,
+          ...(code === 'invalid_answer' ? { code: 'forms.invalid-answer' } : {}),
+        })),
       },
     ),
   );

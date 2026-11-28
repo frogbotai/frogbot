@@ -2,6 +2,8 @@
 export type ProblemField = {
   path: string;
   message: string;
+  /** A code for this field's fault when it differs from the others, such as `forms.invalid-answer`. */
+  code?: string;
 };
 
 /** One entry of `Problem.errors`, in the shape Payload's admin and toasts read. */

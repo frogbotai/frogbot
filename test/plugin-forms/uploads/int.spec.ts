@@ -269,6 +269,26 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
     expect(await tickets()).toEqual([]);
   });
 
+  it('marks which field had the wrong type when a refusal also names a file', async () => {
+    const result = await submit({ subject: 5 }, [
+      text('attachments', 'a.txt'),
+      text('attachments', 'b.txt'),
+      text('attachments', 'c.txt'),
+    ]);
+
+    expect({ status: result.status, body: refusal(result.body) }).toEqual({
+      status: 400,
+      body: {
+        code: 'forms.invalid-answer',
+        errors: expect.arrayContaining([
+          { field: 'attachments', message: 'Attach up to 2 files.' },
+          expect.objectContaining({ field: 'subject', code: 'forms.invalid-answer' }),
+        ]),
+      },
+    });
+    expect(await tickets()).toEqual([]);
+  });
+
   it("answers 413 for more files than the app's upload limits allow", async () => {
     const result = await submit({ subject: 'Too many' }, [
       text('screenshot', 'a.txt'),

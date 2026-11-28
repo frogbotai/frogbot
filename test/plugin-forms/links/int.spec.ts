@@ -790,7 +790,13 @@ describe(`form edit links [${adapterLabel}]`, () => {
       expect(refused.status).toBe(400);
       expect(refusal(refused.body)).toEqual({
         code: 'forms.invalid-answer',
-        errors: [{ field: 'phone', message: 'phone: expected a string, got 5550100.' }],
+        errors: [
+          {
+            field: 'phone',
+            message: 'phone: expected a string, got 5550100.',
+            code: 'forms.invalid-answer',
+          },
+        ],
       });
       expect(await uses(token)).toEqual({ submissions: 0, lastSubmittedAt: null });
       expect(await application(mine)).toMatchObject({ name: 'Ada', phone: '555-0100' });

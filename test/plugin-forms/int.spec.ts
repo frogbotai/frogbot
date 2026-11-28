@@ -314,8 +314,16 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     expect(refusal(body)).toEqual({
       code: 'forms.invalid-answer',
       errors: [
-        { field: 'firstName', message: 'firstName: expected a string, got 5.' },
-        { field: 'interest', message: 'interest: expected a string, got ["sales"].' },
+        {
+          field: 'firstName',
+          message: 'firstName: expected a string, got 5.',
+          code: 'forms.invalid-answer',
+        },
+        {
+          field: 'interest',
+          message: 'interest: expected a string, got ["sales"].',
+          code: 'forms.invalid-answer',
+        },
       ],
     });
     expect(await leads()).toEqual([]);
@@ -344,7 +352,13 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     expect(status).toBe(400);
     expect(refusal(body)).toEqual({
       code: 'forms.invalid-answer',
-      errors: [{ field: 'interest', message: 'interest: expected a string, got 7.' }],
+      errors: [
+        {
+          field: 'interest',
+          message: 'interest: expected a string, got 7.',
+          code: 'forms.invalid-answer',
+        },
+      ],
     });
     expect(await leads()).toEqual([]);
   });
