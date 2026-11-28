@@ -58,6 +58,7 @@ export const CHECK_INPUTS = {
     'scripts/lib/generate-import-map.mjs',
   ],
   lexical: ['pnpm-lock.yaml', 'packages/ui/package.json'],
+  messages: ['packages/**/src/**', 'docs/**'],
   'option-tables': ['docs/**'],
   'package-boundaries': ['packages/**/src/**', 'packages/ui/package.json'],
   packages: ['pnpm-workspace.yaml', ...MANIFESTS],
