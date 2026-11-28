@@ -98,7 +98,7 @@ which fields changed. Admins and managers can read it; nobody can edit it.
 | `src/agents/`                   | The `assistant` agent (removed with `--ai none`)                 |
 | `src/app/(frogbot)/`            | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
 | `src/app/(frogbot)/api/health/` | Health check, `GET /api/health`, for hosting                     |
-| `src/frogbot-types.ts`          | Generated types (`npm run generate:types`)                       |
+| `src/frogbot-types.ts`          | Generated types (the `generate:types` script)                    |
 
 ## Next steps
 

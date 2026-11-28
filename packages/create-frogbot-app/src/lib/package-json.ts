@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { Database } from '../types.js';
+import { BUILD_SCRIPT_PACKAGES } from './package-manager.js';
 
 export type DatabaseDependencies = Partial<Record<Database, Record<string, string>>>;
 
@@ -14,6 +15,7 @@ export function applyPackageJson(
 ): void {
   const pkgPath = path.join(dest, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+    allowScripts?: Record<string, boolean>;
     dependencies: Record<string, string>;
     name: string;
   };
@@ -34,6 +36,8 @@ export function applyPackageJson(
   pkg.dependencies = Object.fromEntries(
     Object.entries(pkg.dependencies).sort(([a], [b]) => a.localeCompare(b)),
   );
+
+  pkg.allowScripts = Object.fromEntries(BUILD_SCRIPT_PACKAGES.map((name) => [name, true]));
 
   fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 }

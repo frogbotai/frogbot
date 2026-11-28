@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import prettier from 'prettier';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { detectPackageManager, scaffold } from '../../../packages/create-frogbot-app/src/index.js';
@@ -214,5 +215,101 @@ describe.each(TEMPLATES)('packed $name template', (template) => {
     expect(env).not.toContain('OPENCODE_API_KEY');
     expect(example).not.toContain('OPENAI_API_KEY');
     expect(example).not.toContain('OPENCODE_API_KEY');
+  });
+});
+
+describe('first run of the packed blank template', () => {
+  function readme(dest: string) {
+    return fs.readFileSync(path.join(dest, 'README.md'), 'utf8');
+  }
+
+  it('writes the README for --ai none without agents, chats or markers', () => {
+    const options = createDest();
+
+    scaffold({ ...options, ai: 'none', packageManager: 'npm', templateDir });
+
+    const text = readme(options.dest);
+
+    expect(text).not.toMatch(/agent `access`|two agents|\*\*Chats\*\*|OPENAI_API_KEY/);
+    expect(text).toContain('created with `--ai none`');
+    expect(text).toContain('`npx frogbot up`');
+    expect(text).not.toContain('<!--');
+  });
+
+  it('writes the README for an AI provider without the --ai none sections', () => {
+    const options = createDest();
+
+    scaffold({ ...options, ai: 'openai', templateDir });
+
+    const text = readme(options.dest);
+
+    expect(text).toContain('two agents (`general` and `assistant`)');
+    expect(text).toContain('**Chats**');
+    expect(text).not.toContain('--ai none');
+    expect(text).not.toContain('<!--');
+  });
+
+  it.each([
+    ['npm', 'npm run dev', 'npx frogbot up'],
+    ['pnpm', 'pnpm dev', 'pnpm frogbot up'],
+    ['yarn', 'yarn dev', 'yarn frogbot up'],
+    ['bun', 'bun run dev', 'bunx frogbot up'],
+  ] as const)('writes %s commands in READMEs Prettier accepts', async (packageManager, dev, up) => {
+    for (const [template, ai] of TEMPLATES.flatMap((entry) =>
+      (['none', 'openai'] as const).map((provider) => [entry, provider] as const),
+    )) {
+      const options = createDest(template);
+
+      scaffold({ ...options, ai, packageManager, templateDir: packedDir(template) });
+
+      const text = readme(options.dest);
+      const filepath = path.join(options.dest, 'README.md');
+
+      expect(text).toContain(dev);
+
+      if (template.name === 'blank') expect(text).toContain(up);
+
+      expect(
+        await prettier.check(text, { ...(await prettier.resolveConfig(filepath)), filepath }),
+      ).toBe(true);
+
+      if (packageManager !== 'npm') expect(text).not.toMatch(/npm run |npx /);
+    }
+  });
+
+  it('pre-approves install scripts for npm as pnpm-workspace.yaml does for pnpm', () => {
+    for (const packageManager of ['npm', 'pnpm'] as const) {
+      const options = createDest();
+
+      scaffold({ ...options, packageManager, templateDir });
+
+      const pkg = JSON.parse(fs.readFileSync(path.join(options.dest, 'package.json'), 'utf8')) as {
+        allowScripts?: Record<string, boolean>;
+      };
+
+      expect(pkg.allowScripts).toEqual({ esbuild: true, sharp: true });
+    }
+  });
+
+  it.each(TEMPLATES)('keeps the bundled skills out of Prettier in $name', (template) => {
+    const options = createDest(template);
+
+    scaffold({ ...options, templateDir: packedDir(template) });
+
+    const ignored = fs.readFileSync(path.join(options.dest, '.prettierignore'), 'utf8').split('\n');
+
+    expect(ignored).toEqual(expect.arrayContaining(['.claude/', '.agents/']));
+  });
+
+  it('adds no Payload package to a generated app', () => {
+    const databaseDependencies = JSON.parse(
+      fs.readFileSync(path.join(packageRoot, 'dist', 'database-dependencies.json'), 'utf8'),
+    ) as Record<string, Record<string, string>>;
+
+    const names = Object.values(databaseDependencies).flatMap(Object.keys);
+
+    expect(names.filter((name) => name === 'payload' || name.startsWith('@payloadcms/'))).toEqual(
+      [],
+    );
   });
 });

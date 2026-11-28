@@ -57,6 +57,7 @@ for (const template of TEMPLATES) {
 }
 
 const { DATABASE_CHOICES } = await import('../dist/lib/db.js');
+const isPayload = (name) => name === 'payload' || name.startsWith('@payloadcms/');
 const databaseDependencies = {};
 
 for (const database of DATABASE_CHOICES) {
@@ -66,7 +67,7 @@ for (const database of DATABASE_CHOICES) {
 
   databaseDependencies[database] = Object.fromEntries(
     Object.entries(adapter.dependencies ?? {})
-      .filter(([, version]) => !version.startsWith('workspace:'))
+      .filter(([name, version]) => !version.startsWith('workspace:') && !isPayload(name))
       .map(([name, version]) => [name, version === 'catalog:' ? catalogVersion(name) : version]),
   );
 }
