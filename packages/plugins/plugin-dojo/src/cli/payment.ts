@@ -71,9 +71,11 @@ function showPaywall(io: DojoIO, paywall: Pick<Paywall, 'why' | 'url' | 'owner'>
   if (io.isTTY && paywall.owner) io.openBrowser(paywall.url);
 }
 
-/** Whether `link` is Dojo's upgrade page, which pays for room in a workspace. */
-export function isPaywall(dojo: DojoClient, link: string): boolean {
-  return readPaywall('', dojo.url, link) !== undefined;
+/** `link` resolved against Dojo when it is Dojo's upgrade page, which pays for room in a workspace. */
+export function payPage(dojo: DojoClient, link: string): string | undefined {
+  if (!URL.canParse(link, dojo.url)) return undefined;
+
+  return readPaywall('', dojo.url, link)?.url;
 }
 
 /** Shows the pay link Dojo sent with a refusal, worded as a wait for a payment shows it. */

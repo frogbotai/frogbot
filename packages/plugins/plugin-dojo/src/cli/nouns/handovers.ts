@@ -4,7 +4,7 @@ import { dojoJSON, segment } from '../dojo.js';
 import { needsPayment, ShareError } from '../error.js';
 import type { DojoIO } from '../io.js';
 import { canWait, dojoProgram, done, say } from '../io.js';
-import { isPaywall, maxPolls, pollMs, showPayLink } from '../payment.js';
+import { maxPolls, payPage, pollMs, showPayLink } from '../payment.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace, listWorkspaces } from '../workspaces.js';
 import { count } from './resolve.js';
@@ -84,11 +84,13 @@ export async function withPayLink<T>(
 
       return sent;
     } catch (error) {
-      if (!(error instanceof ShareError) || !error.url || !isPaywall(dojo, error.url)) {
-        throw error;
-      }
+      if (!(error instanceof ShareError) || !error.url) throw error;
 
-      const { code, status, url } = error;
+      const url = payPage(dojo, error.url);
+
+      if (!url) throw error;
+
+      const { code, status } = error;
 
       if (!canWait(io)) {
         throw new ShareError(
