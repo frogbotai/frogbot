@@ -40,7 +40,7 @@ async function setup({ isTTY = false, linked = true } = {}) {
     return { code: await runDojo(args, io.io), ...io };
   };
 
-  return { dojo, run };
+  return { dojo, run, cwd };
 }
 
 const sent = (dojo: FakeDojo, route: string) =>
@@ -109,6 +109,17 @@ describe('frogbot dojo env unset: which argument is the app', () => {
 
     expect(result.code).toBe(0);
     expect(sent(dojo, 'PUT /api/apps/7/keys')).toEqual([{ values: { api_key: null } }]);
+  });
+
+  it('reads the first argument as the app when the folder’s link has no app id', async () => {
+    const { dojo, run, cwd } = await setup({ linked: false });
+
+    await writeFiles(cwd, { '.frogbot/app.json': '{}' });
+
+    const result = await run('env', 'unset', 'deals', 'FOO', '--yes');
+
+    expect(result.code).toBe(0);
+    expect(sent(dojo, 'PUT /api/apps/7/keys')).toEqual([{ values: { FOO: null } }]);
   });
 
   it('takes --app outside a linked folder', async () => {

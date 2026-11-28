@@ -127,6 +127,13 @@ export async function linkedApp(
   return String(link.appId);
 }
 
+async function isLinked(cwd: string): Promise<boolean> {
+  return readLink(cwd).then(
+    (link) => link !== undefined,
+    () => false,
+  );
+}
+
 /** `positionals` with the folder's app put first when a verb's leading `[app]` was left out. */
 export async function withApp(
   verb: Pick<Verb, 'args' | 'appFirst'>,
@@ -144,7 +151,7 @@ export async function withApp(
   const given = variadic
     ? positionals.length >= parts.length &&
       first !== undefined &&
-      (!verb.appFirst || verb.appFirst(first, { linked: (await readLink(io.cwd)) !== undefined }))
+      (!verb.appFirst || verb.appFirst(first, { linked: await isLinked(io.cwd) }))
     : positionals.length >= parts.length;
 
   if (given || positionals.length < parts.length - 1) return positionals;
