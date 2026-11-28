@@ -170,7 +170,9 @@ function fail({
     title: 'Two-factor sign-in',
     body: body ?? '',
     status: twoFactorError.definitions[refusal.code].status,
-    headers: refusal.headers,
+    ...(refusal.retryAfter !== undefined && {
+      headers: { 'retry-after': String(refusal.retryAfter) },
+    }),
   });
 }
 

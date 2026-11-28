@@ -250,9 +250,9 @@ export async function readBody(
 export function jsonError(
   req: FrogBotRequest,
   code: TwoFactorErrorCode,
-  { detail, headers }: { detail?: string; headers?: HeadersInit } = {},
+  { detail, retryAfter }: { detail?: string; retryAfter?: number } = {},
 ): Response {
-  return problemError(req, twoFactorError(code, { ...(detail ? { detail } : {}), headers }));
+  return problemError(req, twoFactorError(code, { ...(detail ? { detail } : {}), retryAfter }));
 }
 
 /** The 400 for a `returnTo` that isn't a path on this server. */

@@ -20,11 +20,11 @@ export type CodeOutcome<T> =
   | { status: 'locked'; retryAfter: number }
   | { status: 'wrong' | 'expired' };
 
-/** A refused request: its code, the message a person reads, and its headers. */
+/** A refused request: its code, the message a person reads, and the seconds to wait before retrying. */
 export type Refusal = {
   code: TwoFactorErrorCode;
   message: string;
-  headers?: HeadersInit;
+  retryAfter?: number;
 };
 
 export const LOCKED = 'Too many wrong codes. Try again in 10 minutes.';
@@ -36,8 +36,8 @@ export const EXPIRED: Refusal = {
 
 export const WRONG: Refusal = { message: WRONG_CODE, code: 'two-factor.wrong-code' };
 
-export const refusalResponse = (req: FrogBotRequest, { message, code, headers }: Refusal) =>
-  jsonError(req, code, { detail: message, headers });
+export const refusalResponse = (req: FrogBotRequest, { message, code, retryAfter }: Refusal) =>
+  jsonError(req, code, { detail: message, retryAfter });
 
 /** The refusal for a code that wasn't accepted. */
 export function codeRefusal(outcome: Exclude<CodeOutcome<unknown>, { status: 'ok' }>): Refusal {
@@ -46,7 +46,7 @@ export function codeRefusal(outcome: Exclude<CodeOutcome<unknown>, { status: 'ok
   return {
     message: LOCKED,
     code: 'two-factor.locked',
-    headers: { 'retry-after': String(outcome.retryAfter) },
+    retryAfter: outcome.retryAfter,
   };
 }
 
