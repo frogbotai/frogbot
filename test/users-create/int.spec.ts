@@ -174,7 +174,9 @@ describe('frogbot users reset-password on a local SQLite app', () => {
     expect(result.stdout).toContain(
       `[frogbot] users reset-password: database ${env.USERS_CREATE_DATABASE_URL}`,
     );
-    expect(result.stdout).toContain('Reset the password of A@B.co in users.');
+    expect(result.stdout).toContain(
+      'Reset the password of A@B.co in users. Its other sessions are signed out.',
+    );
 
     const secret = password(result);
 
@@ -183,6 +185,20 @@ describe('frogbot users reset-password on a local SQLite app', () => {
     expect(result.stdout.split(secret)).toHaveLength(2);
     expect(await login(env, 'a@b.co', secret)).toMatchObject({ status: 200, users: 1 });
     expect(await login(env, 'a@b.co', old)).toMatchObject({ status: 401 });
+  });
+
+  it('says existing tokens stay valid on a collection without sessions', async () => {
+    const env = sqlite('reset-no-sessions', 'no-sessions');
+
+    await frogbot(['users', 'create', 'a@b.co'], env);
+
+    const result = await frogbot(['users', 'reset-password', 'a@b.co'], env);
+
+    expect(result.code, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).not.toContain('signed out');
+    expect(result.stdout).toContain(
+      'Reset the password of a@b.co in users. Existing tokens stay valid until they expire.',
+    );
   });
 
   it('refuses an unknown email, and a trashed user, writing nothing', async () => {

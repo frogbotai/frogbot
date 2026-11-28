@@ -24,7 +24,9 @@ export default buildConfig({
             ? { disableLocalStrategy: { enableFields: true } }
             : scenario === 'lock'
               ? { maxLoginAttempts: 2, lockTime: 600_000 }
-              : true,
+              : scenario === 'no-sessions'
+                ? { useSessions: false }
+                : true,
       trash: true,
       hooks:
         scenario === 'verify-block'
