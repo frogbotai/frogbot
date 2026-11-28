@@ -6,7 +6,10 @@ import {
   type Field,
   frogbotError,
   type FrogBotRequest,
+  isFrogBotError,
   moneyField,
+  type ProblemField,
+  toFrogBotError,
 } from 'frogbot';
 
 import {
@@ -37,6 +40,24 @@ type CollectionOptions = {
 
 function invalid(path: string, message: string) {
   return frogbotError('request.invalid', { detail: message, fields: [{ path, message }] });
+}
+
+function withFieldDetail(error: unknown): never {
+  const fields = (error as { data?: { errors?: ProblemField[] } } | null)?.data?.errors;
+
+  if (
+    isFrogBotError(error) ||
+    !fields?.length ||
+    toFrogBotError(error).code !== 'request.invalid'
+  ) {
+    throw error;
+  }
+
+  throw frogbotError('request.invalid', {
+    detail: fields.map(({ message }) => message).join(' '),
+    fields: fields.map(({ path, message }) => ({ path, message })),
+    cause: error,
+  });
 }
 
 const ownKeys: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false);
@@ -120,7 +141,7 @@ function createEndpoints({
             name,
             data: data as Record<string, unknown>,
             expiresAt,
-          }),
+          }).catch(withFieldDetail),
           { status: 201 },
         );
       },
@@ -192,7 +213,9 @@ function createEndpoints({
         const anyOwner = (await canRevokeAnyKey?.(req)) === true;
 
         return Response.json(
-          await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }),
+          await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }).catch(
+            withFieldDetail,
+          ),
           { status: 201 },
         );
       },

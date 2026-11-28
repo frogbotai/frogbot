@@ -53,6 +53,18 @@ function expiryFromDay(day: string): string {
   return new Date(year, month - 1, date + 1).toISOString();
 }
 
+type MintResult = {
+  token?: string;
+  detail?: string;
+  errors?: { data?: { errors?: { message: string }[] } }[];
+};
+
+function refusalMessage({ detail, errors = [] }: MintResult): string {
+  const fields = errors.flatMap((entry) => entry.data?.errors?.map(({ message }) => message) ?? []);
+
+  return fields.join(' ') || detail || 'Unable to create API key';
+}
+
 export function ApiKeysManager(props: ApiKeysManagerProps) {
   const { config } = useConfig();
   const listQuery = useListQuery();
@@ -104,11 +116,11 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
       }),
     });
 
-    const result = (await response.json()) as { detail?: string; token?: string };
+    const result = (await response.json()) as MintResult;
 
     setLoading(false);
     if (!response.ok || !result.token) {
-      setError(result.detail ?? 'Unable to create API key');
+      setError(refusalMessage(result));
 
       return;
     }
