@@ -67,6 +67,25 @@ export const Pages: CollectionConfig = {
 
 Use the public guards in the [field type guards skill reference](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/FIELD-TYPE-GUARDS.md) when walking unknown field trees. Handle `tabs` and `blocks` separately from `fieldHasSubFields`.
 
+## Field kinds
+
+Field kinds are functions exported from `frogbot` that return a normal field with its own input, cell and validation. Each takes that field's usual options except `type` and `hasMany`, plus the settings shown:
+
+```ts
+moneyField({ name: 'price', currency: 'EUR' }), // number in whole units, not cents; precision: 'auto' | 0-100
+percentField({ name: 'progress', precision: 1 }), // store 0.42 for 42%; precision is decimals shown, 0-8
+ratingField({ name: 'score', max: 10 }), // whole stars from 1 to max (default 5, at most 10)
+durationField({ name: 'runtime', format: 'h:mm' }), // whole seconds; 'h:mm' or 'h:mm:ss' (default)
+urlField({ name: 'website' }), // text; accepts https://example.com or example.com
+phoneField({ name: 'phone' }), // text with 7 to 15 digits
+barcodeField({ name: 'sku' }), // text, such as a UPC or EAN code
+colorField({ name: 'brandColor', swatches: ['#3b82f6', '#22c55e'] }), // hex text such as #3b82f6; [] hides swatches
+autonumberField({ name: 'number' }), // 1, 2, 3 set by FrogBot, read-only; scope counts per relationship
+aiField({ name: 'summary', inputs: ['title', 'notes'], prompt: 'Summarize in one sentence.' }), // add options for an AI select
+```
+
+After adding one, run `frogbot generate:types`, then `frogbot generate:importmap`. Docs: https://docs.frogbot.ai/fields/overview
+
 ## Slug field
 
 `slugField(options)` returns the built-in Slug field, `{ name: 'slug', type: 'slug', ...options }`. Its `useAsSlug` source is a top-level field in the same collection.

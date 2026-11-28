@@ -2,7 +2,7 @@
 
 Use this when the person asks to set up FrogBot or build their first app and the folder has no `frogbot.config.ts`. The goal: one question (plus one optional follow-up), then a running app with their data, a login and sample records, before they open a browser.
 
-Don't run `npx skills add` first: `create-frogbot-app` installs this skill into the new app.
+Don't run `npx skills add` first: `create-frogbot-app` installs this skill into the new app. If it already ran (some prompts start with it), don't run it again or remove that copy: create the app as below, and from step 3 on read the app's copy in `.claude/skills/frogbot/` or `.agents/skills/frogbot/`, which matches the app's FrogBot version.
 
 ## Steps
 

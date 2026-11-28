@@ -77,7 +77,7 @@ The first entry in `admin.views` is what people see first, so pick it from what 
 - Things with dates people plan around: `calendar` or `timeline` first.
 - Records people scan and compare: `list` first, with 4 to 6 `defaultFields`.
 
-A list view must still be in `admin.views`; it just doesn't have to be first when another view fits better.
+Any view can be first. Add a list view (at most one, anywhere in the order) when people also need to scan, sort or edit cells.
 
 ## Components
 
