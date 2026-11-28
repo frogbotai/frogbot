@@ -269,17 +269,28 @@ export type PieceOAuthRecipe<
   TClient,
   TAccount extends PieceOAuthAccount = PieceOAuthAccount,
   TScope extends string = string,
-> = PieceOAuthShared<TAuth, TScope> & {
-  authorizationUrl: string;
-  tokenUrl: string;
-  tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post';
-  scopeSeparator?: ' ' | ',';
-  pkce?: boolean;
-  params?: Record<string, string>;
-  account?(args: { tokens: OAuthTokens; client: TClient; req: FrogBotRequest }): Promise<TAccount>;
-  refresh?: (args: { tokens: OAuthTokens; req: FrogBotRequest }) => Promise<OAuthTokens>;
-  authorize?: never;
-};
+> = PieceOAuthShared<TAuth, TScope> &
+  (
+    | { authorizationUrl: string; tokenUrl: string; issuer?: never }
+    | {
+        /** An OpenID Connect issuer whose discovery document supplies the authorization and token URLs. */
+        issuer: string;
+        authorizationUrl?: never;
+        tokenUrl?: never;
+      }
+  ) & {
+    tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post';
+    scopeSeparator?: ' ' | ',';
+    pkce?: boolean;
+    params?: Record<string, string>;
+    account?(args: {
+      tokens: OAuthTokens;
+      client: TClient;
+      req: FrogBotRequest;
+    }): Promise<TAccount>;
+    refresh?: (args: { tokens: OAuthTokens; req: FrogBotRequest }) => Promise<OAuthTokens>;
+    authorize?: never;
+  };
 
 /** Stores a finished piece-run sign-in as the starting user's linked account. */
 export type PieceOAuthSave = (args: {
@@ -300,6 +311,7 @@ export type PieceOAuthSignIn<TAuth, TScope extends string = string> = PieceOAuth
   refresh(args: { tokens: OAuthTokens; req: FrogBotRequest }): Promise<OAuthTokens>;
   authorizationUrl?: never;
   tokenUrl?: never;
+  issuer?: never;
   tokenEndpointAuthMethod?: never;
   scopeSeparator?: never;
   pkce?: never;

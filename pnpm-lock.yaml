@@ -1416,6 +1416,32 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/pieces/piece-oidc:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/pieces/piece-okta:
+    dependencies:
+      '@frogbotai/piece-oidc':
+        specifier: workspace:*
+        version: link:../piece-oidc
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/pieces/piece-openai:
     dependencies:
       '@ai-sdk/provider':
@@ -2845,6 +2871,12 @@ importers:
       '@frogbotai/piece-notion':
         specifier: workspace:*
         version: link:../packages/pieces/piece-notion
+      '@frogbotai/piece-oidc':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-oidc
+      '@frogbotai/piece-okta':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-okta
       '@frogbotai/piece-openai':
         specifier: workspace:*
         version: link:../packages/pieces/piece-openai

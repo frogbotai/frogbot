@@ -5,6 +5,7 @@ import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import { urlRecipe } from '../../pieces/oauth.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
+import { oauthEndpoints } from './discovery.js';
 
 const tokenSchema = z
   .object({
@@ -152,7 +153,7 @@ async function requestTokens({
 
   try {
     return await timed(async (signal) => {
-      const response = await fetch(recipe.tokenUrl, {
+      const response = await fetch((await oauthEndpoints(recipe)).tokenUrl, {
         method: 'POST',
         headers,
         body,

@@ -270,6 +270,16 @@
     "type": "Parameters<typeof import('@frogbotai/piece-google').createGoogle>[0]"
   },
   {
+    "page": "authentication/sign-in",
+    "heading": "Enable Okta or any OpenID Connect provider",
+    "type": "import('@frogbotai/piece-okta').OktaOptions"
+  },
+  {
+    "page": "authentication/sign-in",
+    "heading": "Other OpenID Connect providers",
+    "type": "import('@frogbotai/piece-oidc').OidcOptions"
+  },
+  {
     "page": "chat/questions",
     "heading": "Build a client tool",
     "type": "Omit<import('frogbot').ClientTool, Exclude<keyof import('frogbot').Tool, 'execute'>>"

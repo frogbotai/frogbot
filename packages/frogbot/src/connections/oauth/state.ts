@@ -9,6 +9,7 @@ import { urlRecipe } from '../../pieces/oauth.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { CredentialEncryption } from '../encryption.js';
+import { oauthEndpoints } from './discovery.js';
 import { oauthScopes } from './scopes.js';
 
 const lifetime = 600_000;
@@ -155,7 +156,7 @@ export async function createOAuthState({
     throw frogbotError('oauth.state');
   }
 
-  const url = callbackURL(recipe.authorizationUrl);
+  const url = callbackURL((await oauthEndpoints(recipe)).authorizationUrl);
   const reserved = new Set([
     'state',
     'redirect_uri',

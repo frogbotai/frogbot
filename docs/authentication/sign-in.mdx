@@ -2,7 +2,7 @@
 title: "OAuth sign-in"
 sidebarTitle: "Sign-in"
 description: "Add collection-scoped OAuth login with identity pieces."
-keywords: ["authentication", "sign-in", "OAuth", "Google", "sessions"]
+keywords: ["authentication", "sign-in", "OAuth", "Google", "Okta", "OIDC", "OpenID Connect", "SSO", "sessions"]
 ---
 
 Add OAuth pieces to a collection's `auth.signIn` array to let users sign in through a provider. FrogBot matches the local user by email, or creates one when the collection's [`create` access](#who-can-sign-up) allows it, and issues that collection's session.
@@ -80,9 +80,88 @@ A custom login page can link to the start endpoint:
 
 `returnTo` must resolve to the same origin as the callback. Without it, the admin user collection returns to `routes.admin`; other collections return to `/`. OAuth state expires after ten minutes, is bound to the initiating browser and exact login route, and can be used only once. PKCE is used when the piece recipe sets `pkce: true`.
 
+## Enable Okta or any OpenID Connect provider
+
+Okta, Auth0, Keycloak, Microsoft Entra and other OpenID Connect providers need only the issuer URL, client ID and client secret from your provider's app settings. FrogBot reads the rest from the issuer's discovery document.
+
+```bash
+pnpm add @frogbotai/piece-okta
+```
+
+```ts
+import { createOkta } from '@frogbotai/piece-okta'
+
+export const Users: CollectionConfig = {
+  slug: 'users',
+  auth: {
+    signIn: [
+      createOkta({
+        issuer: process.env.OKTA_ISSUER!,
+        oauth: { clientId: process.env.OKTA_CLIENT_ID!, clientSecret: process.env.OKTA_CLIENT_SECRET! }
+      })
+    ]
+  },
+  fields: []
+}
+```
+
+In Okta, create an **OIDC, Web Application** app integration with the Authorization Code grant, add the [callback](#register-the-callback) `https://app.example.com/api/users/sign-in/okta/callback` as a sign-in redirect URI, and assign the people or groups who may sign in. Set `OKTA_ISSUER` to one of these:
+
+| Okta authorization server | Issuer |
+| --- | --- |
+| Org (the default) | `https://acme.okta.com` |
+| Custom, such as `default` | `https://acme.okta.com/oauth2/default` |
+
+To start sign-in from the Okta dashboard, set the app's **Initiate login URI** to `https://app.example.com/api/users/sign-in/okta`.
+
+`createOkta()` accepts these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `issuer` | `string` | Required | Your Okta authorization server, from the table above. |
+| `oauth` | `{ clientId: string; clientSecret: string }` | Required | Your Okta app integration's client credentials. |
+| `slug` | `string` | `'okta'` | Instance slug used in the sign-in routes. |
+| `label` | `string` | `'Okta'` | Button text after "Continue with". |
+
+### Other OpenID Connect providers
+
+For any other provider, use `@frogbotai/piece-oidc`:
+
+```ts
+import { createOidc } from '@frogbotai/piece-oidc'
+
+createOidc({
+  issuer: 'https://acme.us.auth0.com/',
+  oauth: { clientId: process.env.SSO_CLIENT_ID!, clientSecret: process.env.SSO_CLIENT_SECRET! },
+  label: 'Acme SSO'
+})
+```
+
+`createOidc()` accepts these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `issuer` | `string` | Required | The issuer exactly as the provider's `/.well-known/openid-configuration` names it, including any trailing slash. |
+| `oauth` | `{ clientId: string; clientSecret: string }` | Required | Your provider app's client credentials. |
+| `slug` | `string` | `'oidc'` | Instance slug used in the sign-in routes. Set one per provider to add several. |
+| `label` | `string` | `'SSO'` | Button text after "Continue with". |
+| `trustEmail` | `boolean` | `false` | Accept an email the provider doesn't mark `email_verified`. |
+
+### How OpenID Connect sign-in works
+
+Both request `openid email profile`, use PKCE, send the client secret with HTTP Basic auth, and read the person from the provider's userinfo endpoint. FrogBot keeps the discovery document for an hour and refuses one that names a different issuer.
+
+<Warning>
+Okta doesn't reliably send `email_verified`, so `createOkta()` trusts the email from your Okta org's directory. Anyone who can change their email in that org can sign in as the FrogBot user with that email. Keep Okta's default, which makes people verify a new email. Turn on `trustEmail` for another provider only under the same condition.
+</Warning>
+
+Signing out ends the FrogBot session, not the Okta one. Okta groups don't map to FrogBot roles.
+
 ## Identity and local verification
 
 Every login matches by email within the target collection. Provider account IDs and connection rows are not login identifiers. FrogBot trims and lowercases the provider email, validates its format, and requires an unambiguous local match.
+
+A piece recipe for an OpenID Connect provider can set `issuer` in place of `authorizationUrl` and `tokenUrl`; FrogBot reads both from the discovery document. `discoverOidc(issuer)` from `frogbot/pieces` returns that document, for example to find its `userinfo_endpoint`.
 
 For piece authors, `oauth.account({ tokens, client, req })` returns `{ id, label, email? }`. **Only return `email` when the provider has verified that identity.** Omit it or reject the lookup when verification cannot be established. Core validates the email's format; the recipe is responsible for proving provider verification. A missing email cannot sign a user in.
 

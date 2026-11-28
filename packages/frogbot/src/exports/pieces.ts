@@ -16,6 +16,8 @@ export type {
   RenderedQuestion,
 } from '../channels/questions/types.js';
 export type { TurnActor } from '../chat/turn/types.js';
+export type { OidcMetadata } from '../connections/oauth/discovery.js';
+export { discoverOidc } from '../connections/oauth/discovery.js';
 export type {
   CustomApiCallAction,
   CustomApiCallConfig,
