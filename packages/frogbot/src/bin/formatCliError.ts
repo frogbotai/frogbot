@@ -1,5 +1,8 @@
 import { inspect, types } from 'node:util';
 
+import { isFrogBotError } from '../errors/FrogBotError.js';
+import { toProblem } from '../errors/toProblem.js';
+
 const prefix = '[frogbot]';
 const maxCauses = 5;
 const indent = '      ';
@@ -57,12 +60,21 @@ function formatCause(cause: unknown): string {
   return [`  Caused by: ${first}`, ...continuation].join('\n');
 }
 
+/**
+ * The text `frogbot` prints for a failure: `[frogbot] <message>` and its causes. A `FrogBotError`
+ * prints as `[frogbot] <code>: <detail>`, then `  Fix: <hint>` and `  Docs: <link>`.
+ */
 export function formatCliError(error: unknown, context?: string): string {
   const message = error instanceof Error ? error.message : String(error);
-  const detail = message.startsWith(prefix) ? message.slice(prefix.length).trimStart() : message;
+  const stripped = message.startsWith(prefix) ? message.slice(prefix.length).trimStart() : message;
+  const problem = isFrogBotError(error) ? toProblem(error, { debug: true }) : undefined;
+  const detail = problem ? `${problem.code}: ${stripped}` : stripped;
   const head = context ? `${prefix} ${context}: ${detail}` : `${prefix} ${detail}`;
 
   const blocks = [head];
+
+  if (problem?.hint) blocks.push(`  Fix: ${problem.hint}`);
+  if (problem) blocks.push(`  Docs: ${problem.type}`);
   const seen = new Set<unknown>([error]);
   let cause = nextCause(error);
 
