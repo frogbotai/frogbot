@@ -1244,10 +1244,10 @@ describe('frogbot sanitize', () => {
       );
     });
 
-    it('leaves an upload config without handlers untouched', async () => {
+    it('gives an upload config without handlers only its default folder', async () => {
       const sanitized = await sanitizeRequestFunctions({ upload: true });
 
-      expect(sanitized.pages.upload).toBe(true);
+      expect(sanitized.pages.upload).toEqual({ staticDir: 'files/pages' });
     });
 
     it('gives verify and forgot-password email templates req.frogbot', async () => {
