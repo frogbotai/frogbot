@@ -124,7 +124,7 @@ describe('two-factor refusals', () => {
     expect(response.status).toBe(200);
   });
 
-  it('codes a wrong code and the lock, and sends Retry-After with the lock', async () => {
+  it('codes a wrong code and the lock, and sends the lock delay as Retry-After and retryAfter', async () => {
     await t.createUser('locked@example.com');
     const { secret } = await t.enable('locked@example.com');
     const cookie = await pendingFor('locked@example.com');
@@ -146,7 +146,11 @@ describe('two-factor refusals', () => {
 
     expect(locked.status).toBe(429);
     expect(await locked.json()).toEqual(
-      refusal('Too many wrong codes. Try again in 10 minutes.', 'locked'),
+      expect.objectContaining({
+        code: 'two-factor.locked',
+        detail: 'Too many wrong codes. Try again in 10 minutes.',
+        retryAfter,
+      }),
     );
     expect(retryAfter).toBeGreaterThan(590);
     expect(retryAfter).toBeLessThanOrEqual(600);
