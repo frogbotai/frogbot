@@ -93,6 +93,20 @@ const castBans = [
   },
 ];
 
+const errorBodyBans = [
+  {
+    selector:
+      "CallExpression[callee.object.name=/^(Next)?Response$/][callee.property.name='json'] > ObjectExpression > Property[key.name=/^errors?$/]",
+    message:
+      'Throw a FrogBotError (frogbotError or a plugin factory from defineErrors) instead of building an error body; the root afterError hook sends it as a Problem',
+  },
+];
+
+const FOREIGN_ERROR_ENVELOPES = [
+  'packages/gateway/src/routes/**',
+  'packages/plugins/plugin-dojo/src/export.ts',
+];
+
 const CAST_CONVERTERS = [
   'packages/frogbot/src/seams/config.ts',
   'packages/frogbot/src/seams/request.ts',
@@ -338,6 +352,10 @@ export default tseslint.config(
   {
     files: ['packages/**/src/**/*.{ts,tsx}'],
     ignores: [...SPECS, '**/vitest.setup.ts', ...CAST_CONVERTERS],
+    rules: { 'no-restricted-syntax': ['error', ...brandBans, ...castBans, ...errorBodyBans] },
+  },
+  {
+    files: FOREIGN_ERROR_ENVELOPES,
     rules: { 'no-restricted-syntax': ['error', ...brandBans, ...castBans] },
   },
   {
