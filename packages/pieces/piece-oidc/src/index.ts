@@ -44,7 +44,7 @@ export async function oidcAccount({
   accessToken: string | undefined;
   trustEmail?: boolean;
   signal?: AbortSignal;
-}): Promise<PieceOAuthAccount> {
+}): Promise<PieceOAuthAccount & { email: string }> {
   const { userinfo_endpoint: userinfo } = await discoverOidc(issuer);
   if (!userinfo) throw new Error(`${issuer} has no userinfo endpoint.`);
   if (!accessToken) throw new Error(`${issuer} returned no access token.`);
