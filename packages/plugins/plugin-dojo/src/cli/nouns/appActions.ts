@@ -28,7 +28,7 @@ function lifecycle(
 ): Verb {
   return {
     summary,
-    args: '<app>',
+    args: '[app]',
     ...(action === 'stop' && {
       confirm: ({ positionals: [ref = ''] }) =>
         `Stop ${ref}? Visitors see a paused page until you start it again.`,
@@ -113,7 +113,7 @@ export const appActions: Record<string, Verb> = {
   start: lifecycle('start', 'Start a stopped app.', (slug) => `Started ${slug}.`),
   keep: {
     summary: 'Keep a free preview as a paid app, or print the link that pays for one.',
-    args: '<app>',
+    args: '[app]',
     run: async ({ io, dojo, positionals: [ref = ''] }) => {
       const app = await findApp(dojo(), ref);
       const { preview, url } = await dojoJSON<{ preview: Preview; url: string | null }>(
@@ -140,7 +140,7 @@ export const appActions: Record<string, Verb> = {
   },
   usage: {
     summary: "Show an app's AI spend this month and its workspace's AI balance.",
-    args: '<app>',
+    args: '[app]',
     run: async ({ io, dojo, positionals: [ref = ''] }) => {
       const app = await findApp(dojo(), ref);
       const usage = await dojoJSON<Usage>(dojo(), `/api/apps/${segment(app.id)}/usage`, {
@@ -178,7 +178,7 @@ export const appActions: Record<string, Verb> = {
   },
   restore: {
     summary: 'Restore an app from Trash.',
-    args: '<app>',
+    args: '[app]',
     run: async ({ io, dojo, positionals: [ref = ''] }) => {
       const apps = await listTrash(dojo());
       const app =
@@ -207,7 +207,7 @@ export const appActions: Record<string, Verb> = {
   },
   'export-data': {
     summary: "Download an app's live database and uploaded files as a .zip.",
-    args: '<app>',
+    args: '[app]',
     flags: {
       out: { type: 'string', value: 'file', help: 'Where to save it. Default: ./<app>-data.zip.' },
     },

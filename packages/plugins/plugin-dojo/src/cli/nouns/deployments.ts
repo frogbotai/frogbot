@@ -47,7 +47,7 @@ export const deployments: Noun = {
   verbs: {
     list: {
       summary: `List an app's deployments, newest first, ${pageSize} a page.`,
-      args: '<app>',
+      args: '[app]',
       flags: {
         page: { type: 'string', value: 'n', help: 'Show this page of older deployments.' },
       },
@@ -200,7 +200,7 @@ export const deployments: Noun = {
     },
     rollback: {
       summary: "Put an earlier live version back, keeping today's data and keys.",
-      args: '<app> <id>',
+      args: '[app] <id>',
       run: async ({ io, dojo, positionals: [ref = '', id = ''] }) => {
         const app = await findApp(dojo(), ref);
         const { deploymentId } = await dojoJSON<{ deploymentId: string | number }>(

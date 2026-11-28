@@ -4,31 +4,36 @@ description: "Run Dojo from the terminal: sign in, deploy, follow builds, and ma
 keywords: ["Dojo", "CLI", "frogbot dojo", "frogbot deploy", "plugin-dojo", "coding agents", "--json"]
 ---
 
-Everything you do in Dojo's site, you can do from the terminal with `frogbot deploy` and `frogbot dojo`. They come with the [Dojo plugin](/plugins/dojo), which apps made with `create-frogbot-app` already list, and also run without an app:
+Everything you do in Dojo's site, you can do from the terminal with `frogbot deploy` and `frogbot dojo`. They come with the [Dojo plugin](/plugins/dojo), which apps made with `create-frogbot-app` already list. `npx frogbot dojo` needs such an app; in any other folder, including on a fresh machine, run the same commands as `npx @frogbotai/plugin-dojo`:
 
 ```bash
-npx frogbot dojo login
-npx frogbot deploy
+npx @frogbotai/plugin-dojo login
 npx @frogbotai/plugin-dojo apps list
 ```
 
-## A first session
+## Every day
+
+In a folder you deployed, the commands act on its app, so you don't name it:
 
 ```bash
-npx frogbot dojo login                       # confirm the code in your browser
 npx frogbot deploy                           # build and deploy this folder, print its URL
-npx frogbot dojo sharing invite deals ana@example.com --level editor
-npx frogbot dojo env set deals STRIPE_SECRET_KEY=sk_live_...
-npx frogbot dojo apps logs deals --follow
+npx frogbot dojo status                      # address, live or not, and the last deploy
+npx frogbot dojo logs --follow               # runtime log, or the build log when the last deploy failed
+npx frogbot dojo open                        # print the address and open it
+npx frogbot dojo rollback                    # back to the previous live version
+npx frogbot dojo env set STRIPE_SECRET_KEY=sk_live_...
 ```
+
+`frogbot deploy` writes the app's id to `.frogbot/app.json`, which is how the others find it. Name an app to act on another one: `npx frogbot dojo status deals`. Most commands below that take `<app>` also leave it out in that folder; `apps pull` and `sharing leave` always need it.
 
 ## Commands
 
-The commands are grouped by noun: `workspaces`, `members`, `projects`, `apps`, `handovers`, `deployments`, `git`, `env`, `domains`, `sharing`, `keys` and `billing`. The full table, with every flag, is in the [Dojo plugin reference](/plugins/dojo#commands). `frogbot dojo --help`, `frogbot dojo apps --help` and `frogbot dojo apps delete --help` print the same lists.
+The daily commands come first in `frogbot dojo --help`. The rest are grouped by noun: `workspaces`, `members`, `projects`, `apps`, `handovers`, `deployments`, `git`, `env`, `domains`, `sharing`, `keys` and `billing`. The full table, with every flag, is in the [Dojo plugin reference](/plugins/dojo#commands). `frogbot dojo --help`, `frogbot dojo apps --help` and `frogbot dojo apps delete --help` print the same lists.
 
 ## For scripts and coding agents
 
 - Add `--json` to any command to get one JSON value on stdout and nothing else.
+- `frogbot dojo --help --json` lists every command, verb and flag, with its usage, as one JSON value.
 - Set `FROGBOT_DOJO_TOKEN` to an [API key](/dojo/api-keys) so nothing waits for a browser.
 - Commands that delete or replace something ask first; pass `--yes` when there's no terminal.
 

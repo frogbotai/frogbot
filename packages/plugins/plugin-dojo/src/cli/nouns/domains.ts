@@ -51,7 +51,7 @@ export const domains: Noun = {
   verbs: {
     get: {
       summary: "Show an app's domain, its DNS record and certificate status.",
-      args: '<app>',
+      args: '[app]',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const reply = await domainCall(dojo(), await findApp(dojo(), ref));
 
@@ -61,7 +61,7 @@ export const domains: Noun = {
     set: {
       summary:
         'Point a domain you own at the app. Then add the CNAME record it prints. Asks before replacing one.',
-      args: '<app> <host>',
+      args: '[app] <host>',
       flags: { yes: yesFlag },
       run: async ({ io, dojo, confirm, positionals: [ref = '', host = ''] }) => {
         const app = await findApp(dojo(), ref);
@@ -78,7 +78,7 @@ export const domains: Noun = {
     },
     clear: {
       summary: "Remove the app's custom domain. Its frogbot.app address stays.",
-      args: '<app>',
+      args: '[app]',
       confirm: true,
       run: async ({ io, dojo, confirm, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);

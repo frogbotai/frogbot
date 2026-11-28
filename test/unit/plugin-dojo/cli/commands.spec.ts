@@ -496,6 +496,7 @@ describe('--json', () => {
     const result = await run(['apps', 'logs', 'deals', '--json']);
 
     expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      source: 'runtime',
       lines: [{ at: '2026-11-07T00:00:00Z', message: 'ready' }],
       next: '1',
     });

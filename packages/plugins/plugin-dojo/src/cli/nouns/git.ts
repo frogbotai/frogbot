@@ -35,7 +35,7 @@ export const git: Noun = {
   verbs: {
     status: {
       summary: "Show the app's repo, branch and folder, and whether pushes deploy.",
-      args: '<app>',
+      args: '[app]',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
         const { repo } = await dojoJSON<{ repo: RepoLink | null }>(
@@ -53,7 +53,7 @@ export const git: Noun = {
     connect: {
       summary:
         'Connect a repo. GitHub gives a link for a person to open; other providers read an access token from stdin.',
-      args: '<app>',
+      args: '[app]',
       flags: {
         provider: {
           type: 'string',
@@ -153,7 +153,7 @@ export const git: Noun = {
     },
     disconnect: {
       summary: "Disconnect the app's repo. Pushes stop deploying; deployments already made stay.",
-      args: '<app>',
+      args: '[app]',
       confirm: ({ positionals: [ref] }) =>
         `Disconnect ${ref}'s repo? Pushes stop deploying it; deployments already made stay.`,
       run: async ({ io, dojo, positionals: [ref = ''] }) => {

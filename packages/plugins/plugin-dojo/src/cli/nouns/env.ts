@@ -68,7 +68,7 @@ export const env: Noun = {
   verbs: {
     list: {
       summary: "List an app's keys, masked.",
-      args: '<app>',
+      args: '[app]',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
         const { keys } = await dojoJSON<KeysReply>(dojo(), `/api/apps/${segment(app.id)}/keys`, {
@@ -95,7 +95,8 @@ export const env: Noun = {
     },
     set: {
       summary: 'Set keys. The app restarts once with them.',
-      args: '<app> <KEY=value>...',
+      args: '[app] <KEY=value>...',
+      appFirst: (first) => !first.includes('='),
       run: async ({ io, dojo, positionals: [ref = '', ...assignments] }) => {
         const result = await change(dojo(), ref, parseAssignments(assignments));
 
@@ -106,7 +107,8 @@ export const env: Noun = {
     },
     unset: {
       summary: 'Remove keys. The app restarts once without them.',
-      args: '<app> <KEY>...',
+      args: '[app] <KEY>...',
+      appFirst: (first) => /^[a-z0-9][a-z0-9-]*$/.test(first),
       confirm: ({ positionals: [ref, ...names] }) => `Remove ${names.join(', ')} from ${ref}?`,
       run: async ({ io, dojo, positionals: [ref = '', ...names] }) => {
         const values = Object.fromEntries(names.map((name) => [checkName(name), null]));

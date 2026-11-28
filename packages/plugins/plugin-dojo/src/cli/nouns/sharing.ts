@@ -20,7 +20,7 @@ export const sharing: Noun = {
   verbs: {
     list: {
       summary: 'List the people an app is shared with and their level.',
-      args: '<app>',
+      args: '[app]',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
         const reply = await dojoJSON<SharingReply>(dojo(), `/api/apps/${segment(app.id)}/sharing`, {
@@ -47,7 +47,8 @@ export const sharing: Noun = {
     },
     invite: {
       summary: 'Share an app with people by email. Dojo emails each one.',
-      args: '<app> <email>...',
+      args: '[app] <email>...',
+      appFirst: (first) => !first.includes('@'),
       flags: {
         level: {
           type: 'string',
