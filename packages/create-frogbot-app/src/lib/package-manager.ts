@@ -4,6 +4,25 @@ import path from 'node:path';
 
 import type { PackageManager } from '../types.js';
 
+/** Dependencies whose install scripts a new app needs: npm's `allowScripts`, pnpm's `allowBuilds`. */
+export const BUILD_SCRIPT_PACKAGES = ['sharp', 'esbuild'];
+
+/** How each package manager runs a `package.json` script, as in `npm run dev`. */
+export const RUN_COMMANDS: Record<PackageManager, string> = {
+  bun: 'bun run',
+  npm: 'npm run',
+  pnpm: 'pnpm',
+  yarn: 'yarn',
+};
+
+/** How each package manager runs an installed binary, as in `npx frogbot up`. */
+export const EXEC_COMMANDS: Record<PackageManager, string> = {
+  bun: 'bunx',
+  npm: 'npx',
+  pnpm: 'pnpm',
+  yarn: 'yarn',
+};
+
 const INSTALL_COMMANDS: Record<PackageManager, string> = {
   bun: 'bun install',
   npm: 'npm install',
@@ -22,9 +41,11 @@ export function detectPackageManager(
 export function writePnpmWorkspace(dest: string, packageManager: PackageManager): void {
   if (packageManager !== 'pnpm') return;
 
+  const allowBuilds = BUILD_SCRIPT_PACKAGES.map((name) => `  ${name}: true\n`).join('');
+
   fs.writeFileSync(
     path.join(dest, 'pnpm-workspace.yaml'),
-    "packages:\n  - '.'\nallowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
+    `packages:\n  - '.'\nallowBuilds:\n${allowBuilds}minimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n`,
   );
 }
 

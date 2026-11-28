@@ -28,9 +28,9 @@ const template = templatePath('blank');
 const roots: string[] = [];
 const buildOutput = new Set(['.next', 'node_modules']);
 const DATABASE_DEPENDENCIES = {
-  mongodb: { '@payloadcms/db-mongodb': '4.0.0' },
-  postgres: { '@payloadcms/db-postgres': '4.0.0' },
-  sqlite: { '@payloadcms/db-sqlite': '4.0.0' },
+  mongodb: {},
+  postgres: { 'drizzle-orm': '0.45.2' },
+  sqlite: { '@libsql/client': '0.14.0', 'drizzle-orm': '0.45.2' },
 };
 
 function templatePath(name: string): string {
@@ -514,16 +514,16 @@ export default buildConfig({
   it('declares the adapter runtime dependencies directly so they resolve from the app root', () => {
     const dest = copyTemplate();
 
-    applyPackageJson(dest, 'my-app', 'mongodb', '0.24.0', {
-      mongodb: { '@payloadcms/db-mongodb': '3.90.1', payload: '3.90.1' },
-      postgres: { '@payloadcms/db-postgres': '3.90.1' },
+    applyPackageJson(dest, 'my-app', 'postgres', '0.24.0', {
+      postgres: { 'drizzle-orm': '0.45.2', pg: '8.16.0' },
+      sqlite: { '@libsql/client': '0.14.0' },
     });
 
     const pkg = readPackage(dest);
 
-    expect(pkg.dependencies['@payloadcms/db-mongodb']).toBe('3.90.1');
-    expect(pkg.dependencies.payload).toBe('3.90.1');
-    expect(pkg.dependencies['@payloadcms/db-postgres']).toBeUndefined();
+    expect(pkg.dependencies['drizzle-orm']).toBe('0.45.2');
+    expect(pkg.dependencies.pg).toBe('8.16.0');
+    expect(pkg.dependencies['@libsql/client']).toBeUndefined();
     expect(Object.keys(pkg.dependencies)).toEqual(
       [...Object.keys(pkg.dependencies)].sort((a, b) => a.localeCompare(b)),
     );

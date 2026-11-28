@@ -17,8 +17,10 @@ import { applyPackageJson, type DatabaseDependencies } from './lib/package-json.
 import {
   detectPackageManager,
   installDependencies,
+  RUN_COMMANDS,
   writePnpmWorkspace,
 } from './lib/package-manager.js';
+import { applyReadme } from './lib/readme.js';
 import { installSkill } from './lib/skill.js';
 import { PromptCancelledError, resolvePlan } from './prompts.js';
 import type { TemplateRegistryEntry } from './templates.js';
@@ -29,12 +31,6 @@ export { detectPackageManager } from './lib/package-manager.js';
 export type { PackageManager } from './types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const COMMANDS: Record<PackageManager, string> = {
-  bun: 'bun dev',
-  npm: 'npm run dev',
-  pnpm: 'pnpm dev',
-  yarn: 'yarn dev',
-};
 
 interface ScaffoldOptions {
   agents?: AgentTarget[];
@@ -127,6 +123,7 @@ export function scaffold(options: ScaffoldOptions): void {
     version: readVersion(),
   });
 
+  applyReadme(options.dest, { ai, packageManager });
   writePnpmWorkspace(options.dest, packageManager);
 }
 
@@ -209,6 +206,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       : 'https://docs.frogbot.ai/ai/providers';
 
   p.outro(
-    `Created ${plan.projectName}.\n\n  cd ${plan.projectName}\n  ${COMMANDS[plan.packageManager]}\n\n  http://localhost:3000\n  https://docs.frogbot.ai/database/${plan.database}\n  ${providerDocs}`,
+    `Created ${plan.projectName}.\n\n  cd ${plan.projectName}\n  ${RUN_COMMANDS[plan.packageManager]} dev\n\n  http://localhost:3000\n  https://docs.frogbot.ai/database/${plan.database}\n  ${providerDocs}`,
   );
 }

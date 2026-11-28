@@ -26,7 +26,6 @@
     "@frogbotai/richtext-lexical": "workspace:*",
     "@frogbotai/transformer-sharp": "workspace:*",
     "@frogbotai/ui": "workspace:*",
-    "@payloadcms/db-mongodb": "4.0.0",
     "cross-env": "^7.0.3",
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
@@ -43,5 +42,9 @@
     "@types/react-dom": "19.2.3",
     "prettier": "^3.2.5",
     "typescript": "6.0.3"
+  },
+  "allowScripts": {
+    "sharp": true,
+    "esbuild": true
   }
 }

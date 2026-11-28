@@ -25,9 +25,9 @@
     "@frogbotai/richtext-lexical": "workspace:*",
     "@frogbotai/transformer-sharp": "workspace:*",
     "@frogbotai/ui": "workspace:*",
-    "@payloadcms/db-postgres": "4.0.0",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.7",
+    "drizzle-orm": "0.45.2",
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
     "json-schema-to-typescript": "^15.0.3",
@@ -43,5 +43,9 @@
     "@types/react-dom": "19.2.3",
     "prettier": "^3.2.5",
     "typescript": "6.0.3"
+  },
+  "allowScripts": {
+    "sharp": true,
+    "esbuild": true
   }
 }
