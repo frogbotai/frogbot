@@ -40,6 +40,7 @@ export { default as BrandMastercardIcon } from './icons/BrandMastercardIcon.js';
 export { default as BrandMcpIcon } from './icons/BrandMcpIcon.js';
 export { default as BrandMicrosoftIcon } from './icons/BrandMicrosoftIcon.js';
 export { default as BrandNotionIcon } from './icons/BrandNotionIcon.js';
+export { default as BrandOktaIcon } from './icons/BrandOktaIcon.js';
 export { default as BrandRedditIcon } from './icons/BrandRedditIcon.js';
 export { default as BrandSlackIcon } from './icons/BrandSlackIcon.js';
 export { default as BrandStripeIcon } from './icons/BrandStripeIcon.js';

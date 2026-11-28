@@ -109,7 +109,14 @@ export function buildSignInEndpoints({
 
           return new Response(null, { status: 302, headers });
         } catch (error) {
-          return failure(isFrogBotError(error, 'oauth.state') ? 400 : 500, headers);
+          if (isFrogBotError(error, 'oauth.state')) return failure(400, headers);
+
+          req.frogbot.logger.error(
+            { err: error, piece: method.slug },
+            '[frogbot] Sign-in could not start',
+          );
+
+          return failure(500, headers);
         }
       },
     },

@@ -22,12 +22,23 @@ export function urlRecipe(
 }
 
 function validateURLs(slug: string, recipe: PieceOAuthRecipe<unknown, unknown>): void {
-  for (const [field, value] of [
-    ['authorizationUrl', recipe.authorizationUrl],
-    ['tokenUrl', recipe.tokenUrl],
-  ] as const) {
+  const discovered = 'issuer' in recipe;
+  const fields = discovered
+    ? ([['issuer', recipe.issuer]] as const)
+    : ([
+        ['authorizationUrl', recipe.authorizationUrl],
+        ['tokenUrl', recipe.tokenUrl],
+      ] as const);
+
+  if (discovered && (recipe.authorizationUrl ?? recipe.tokenUrl) !== undefined) {
+    throw new Error(
+      `[frogbot] Piece '${slug}' OAuth takes an issuer or authorizationUrl and tokenUrl, not both.`,
+    );
+  }
+
+  for (const [field, value] of fields) {
     try {
-      const url = new URL(value);
+      const url = new URL(value ?? '');
       if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error();
     } catch {
       throw new Error(`[frogbot] Piece '${slug}' OAuth ${field} must be an HTTP URL.`);
@@ -40,7 +51,14 @@ function validateURLs(slug: string, recipe: PieceOAuthRecipe<unknown, unknown>):
 }
 
 function validateSignIn(slug: string, recipe: PieceOAuthSignIn<unknown>): void {
-  const urlFields = ['authorizationUrl', 'tokenUrl', 'pkce', 'params', 'account'] as const;
+  const urlFields = [
+    'authorizationUrl',
+    'tokenUrl',
+    'issuer',
+    'pkce',
+    'params',
+    'account',
+  ] as const;
 
   if (urlFields.some((field) => recipe[field] !== undefined)) {
     throw new Error(

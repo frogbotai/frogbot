@@ -70,6 +70,7 @@ const iconNames = [
   'BrandGoogleIcon',
   'BrandMicrosoftIcon',
   'BrandNotionIcon',
+  'BrandOktaIcon',
   'BrandSlackIcon',
   'BrandStripeIcon',
   'BrandXeroIcon',

@@ -39,6 +39,7 @@ export const adminIconExports = [
   'BrandMcpIcon',
   'BrandMicrosoftIcon',
   'BrandNotionIcon',
+  'BrandOktaIcon',
   'BrandRedditIcon',
   'BrandSlackIcon',
   'BrandStripeIcon',

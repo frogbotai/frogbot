@@ -713,7 +713,7 @@ describe('definePiece piece-run sign-in', () => {
     [
       'redirect-flow fields',
       { tokenUrl: 'https://provider.test/token' },
-      'OAuth authorize runs its own sign-in and takes no authorizationUrl, tokenUrl, pkce, params, account.',
+      'OAuth authorize runs its own sign-in and takes no authorizationUrl, tokenUrl, issuer, pkce, params, account.',
     ],
     ['no refresh', { refresh: undefined }, 'OAuth authorize requires a refresh function.'],
     ['an empty label', { label: ' ' }, 'OAuth label must be a non-empty string.'],
@@ -730,6 +730,41 @@ describe('definePiece piece-run sign-in', () => {
         actions: [],
       }),
     ).toThrow(`Piece 'bad' ${message}`);
+  });
+
+  it.each<[string, object, string]>([
+    ['an issuer that is no URL', { issuer: 'acme.okta.com' }, 'OAuth issuer must be an HTTP URL.'],
+    [
+      'an issuer with a token URL',
+      { issuer: 'https://acme.okta.com', tokenUrl: 'https://acme.okta.com/token' },
+      'OAuth takes an issuer or authorizationUrl and tokenUrl, not both.',
+    ],
+  ])('refuses a redirect flow with %s', (_kind, oauth, message) => {
+    expect(() =>
+      definePiece({
+        slug: 'bad',
+        label: 'Bad',
+        auth: accessTokenAuth,
+        client: ({ auth }) => auth,
+        oauth: { scopes: { catalog: {}, defaults: [] }, ...oauth } as never,
+        actions: [],
+      }),
+    ).toThrow(`Piece 'bad' ${message}`);
+  });
+
+  it('accepts an OpenID Connect issuer in place of the URLs', () => {
+    const createIssuer = definePiece({
+      slug: 'issuer',
+      label: 'Issuer',
+      auth: accessTokenAuth,
+      client: ({ auth }) => auth,
+      oauth: { issuer: 'https://acme.okta.com', scopes: { catalog: {}, defaults: [] } },
+      actions: [],
+    });
+
+    expect(
+      createIssuer({ oauth: { clientId: 'id', clientSecret: 'secret' } })[pieceCapabilities],
+    ).toMatchObject({ factoryOAuth: true, pieceOAuth: false });
   });
 
   it('keeps redirect-flow pieces off pieceOAuth', () => {

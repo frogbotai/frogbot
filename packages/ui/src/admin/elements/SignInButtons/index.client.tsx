@@ -7,6 +7,7 @@ import BrandGitHubIcon from '../../../icons/icons/BrandGitHubIcon.js';
 import BrandGoogleIcon from '../../../icons/icons/BrandGoogleIcon.js';
 import BrandMicrosoftIcon from '../../../icons/icons/BrandMicrosoftIcon.js';
 import BrandNotionIcon from '../../../icons/icons/BrandNotionIcon.js';
+import BrandOktaIcon from '../../../icons/icons/BrandOktaIcon.js';
 import BrandSlackIcon from '../../../icons/icons/BrandSlackIcon.js';
 import BrandStripeIcon from '../../../icons/icons/BrandStripeIcon.js';
 import BrandXeroIcon from '../../../icons/icons/BrandXeroIcon.js';
@@ -20,6 +21,7 @@ const providerIcons: Record<string, LucideIcon> = {
   google: BrandGoogleIcon,
   microsoft: BrandMicrosoftIcon,
   notion: BrandNotionIcon,
+  okta: BrandOktaIcon,
   slack: BrandSlackIcon,
   stripe: BrandStripeIcon,
   xero: BrandXeroIcon,
