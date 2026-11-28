@@ -9,7 +9,7 @@ import { createOkta } from '@frogbotai/piece-okta';
 import { serve } from '@hono/node-server';
 import { buildConfig, type FrogBotInstance } from 'frogbot';
 import { FrogBot } from 'frogbot/test';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
@@ -262,6 +262,19 @@ describe(`Sign in with OpenID Connect [${process.env.FROGBOT_DATABASE || 'sqlite
     expect((await me.json()).user).toMatchObject({ id: ada.id });
   });
 
+  it('refuses an Okta email marked unverified', async () => {
+    for (const email_verified of [false, 'false']) {
+      const response = await signIn('okta', `${idpURL}/oauth2/default`, {
+        sub: '00u1',
+        email: 'ada@example.com',
+        email_verified,
+      });
+
+      expect(response.status).not.toBe(200);
+      expect(session(response)).toBeUndefined();
+    }
+  });
+
   it("keeps Okta sign-ups behind the collection's access.create", async () => {
     const response = await signIn('okta', `${idpURL}/oauth2/default`, {
       sub: '00u2',
@@ -273,9 +286,16 @@ describe(`Sign in with OpenID Connect [${process.env.FROGBOT_DATABASE || 'sqlite
   });
 
   it('refuses to start when the discovery document names another issuer', async () => {
+    const logged = vi.spyOn(frogbot.logger, 'error');
     const response = await start('wrong');
 
     expect(response.status).toBe(500);
     expect(response.headers.get('location')).toBeNull();
+    expect(logged).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.objectContaining({ code: 'oauth.configuration' }) }),
+      expect.any(String),
+    );
+
+    logged.mockRestore();
   });
 });
