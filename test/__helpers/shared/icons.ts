@@ -40,6 +40,7 @@ export const excludedIcons: Record<string, number | null> = {
   BrandMcpIcon: 4.312,
   BrandMicrosoftIcon: 0,
   BrandNotionIcon: 0,
+  BrandOktaIcon: 0,
   BrandRedditIcon: 1.5,
   BrandSlackIcon: 0,
   BrandStripeIcon: 0,
