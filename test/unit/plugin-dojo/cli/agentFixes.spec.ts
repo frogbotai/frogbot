@@ -190,7 +190,7 @@ describe('--purge-trash', () => {
 
     expect(result.code).toBe(1);
     expect(JSON.parse(result.stdout().join('\n')).error).toBe(
-      'Deals still holds 1 app outside Trash (live), so nothing was deleted. Move each with apps move or delete it with apps delete, then rerun with --purge-trash.',
+      'Deals still holds 1 app outside Trash (live), so nothing was deleted. Move each with frogbot dojo apps move or delete it with frogbot dojo apps delete, then rerun with --purge-trash.',
     );
     expect(changes(dojo)).toEqual([]);
   });
@@ -216,9 +216,11 @@ describe('--purge-trash', () => {
     ]);
 
     expect(result.code).toBe(1);
-    expect(JSON.parse(result.stdout().join('\n')).error).toBe(
-      "Dojo couldn't delete leads for good: boom Already deleted for good: old-crm. Rerun to carry on.",
-    );
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      error:
+        "Dojo couldn't delete leads for good: boom Already deleted for good: old-crm. Rerun to carry on.",
+      purged: ['old-crm'],
+    });
   });
 
   it('names what it purged when apps the caller can’t see still block the delete', async () => {
@@ -243,8 +245,9 @@ describe('--purge-trash', () => {
     ]);
 
     expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n')).purged).toEqual(['old-crm', 'leads']);
     expect(JSON.parse(result.stdout().join('\n')).error).toBe(
-      "Dojo couldn't delete trend-capital: This workspace still holds 3 apps, counting Trash. Already deleted for good from Trash: old-crm, leads. The apps left are ones you can't see: their Admins can move them with apps move or delete them with apps delete, then rerun.",
+      "Dojo couldn't delete trend-capital: This workspace still holds 3 apps, counting Trash. Already deleted for good from Trash: old-crm, leads. The apps left are ones you can't see: their Admins can move them with frogbot dojo apps move or delete them with frogbot dojo apps delete, then rerun.",
     );
     expect(changes(dojo).map(([route]) => route)).toEqual([
       'POST /api/apps/8/delete-permanently',

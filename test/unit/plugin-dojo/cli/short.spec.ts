@@ -120,7 +120,7 @@ describe("frogbot dojo's daily commands", () => {
 
     const result = await run('status');
 
-    expect(result.code).toBe(0);
+    expect(result.code).toBe(1);
     expect(result.stdout()).toEqual([
       'deals  https://deals.frogbot.app',
       'Status: failed',
@@ -202,6 +202,7 @@ describe("frogbot dojo's daily commands", () => {
     expect(JSON.parse(result.stdout().join('\n'))).toEqual({
       app: 'deals',
       rolledBackTo: '28',
+      replaced: 30,
       deploymentId: 33,
     });
     expect(paths(dojo)).toContain('POST /api/apps/7/deployments/28/rollback');
@@ -275,9 +276,82 @@ describe("frogbot dojo's daily commands", () => {
 
     expect(result.code).toBe(2);
     expect(result.stderr().join('\n')).toContain(
-      'deals has no earlier live version to go back to.',
+      'deals has no earlier healthy version to go back to.',
     );
     expect(paths(dojo).some((path) => path.endsWith('/rollback'))).toBe(false);
+  });
+
+  it('rollback refuses with exit 1 when nothing is live, and sends no rollback', async () => {
+    const { dojo, run } = await setup({
+      app: { status: 'failed', deployment: null },
+      replies: deployments(deploy(31, { status: 'failed', liveAt: null }), deploy(28)),
+    });
+
+    const result = await run('rollback', '--json');
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'NO_LIVE_DEPLOYMENT',
+      error:
+        'deals has no live deployment to roll back from. frogbot dojo deployments list deals shows its deployments.',
+    });
+    expect(paths(dojo).some((path) => path.endsWith('/rollback'))).toBe(false);
+  });
+
+  it('rollback skips a version that went live and later failed', async () => {
+    const { dojo, run } = await setup({
+      replies: {
+        ...deployments(
+          deploy(30, { runtimeStatus: 'live' }),
+          deploy(29, { runtimeStatus: 'failed' }),
+          deploy(28, { status: 'failed' }),
+          deploy(27),
+        ),
+        'POST /api/apps/7/deployments/27/rollback': { status: 201, body: { deploymentId: 33 } },
+      },
+    });
+
+    expect((await run('rollback')).code).toBe(0);
+    expect(paths(dojo)).toContain('POST /api/apps/7/deployments/27/rollback');
+  });
+
+  it('rollback asks nothing, and names what it replaces and the command that undoes it', async () => {
+    const { run } = await setup({
+      isTTY: true,
+      replies: {
+        ...deployments(deploy(30, { runtimeStatus: 'live' }), deploy(28)),
+        'POST /api/apps/7/deployments/28/rollback': { status: 201, body: { deploymentId: 33 } },
+      },
+    });
+
+    const result = await run('rollback');
+
+    expect(result.code).toBe(0);
+    expect(result.asked).toEqual([]);
+    expect(result.stdout()).toEqual([
+      "[frogbot] Rolling deals back from 30 to 28 as deployment 33. If it can't start, the current version keeps running.",
+      "frogbot dojo status shows when it's live.",
+      'Undo with frogbot dojo rollback 30.',
+    ]);
+  });
+
+  it('a named rollback also carries the deployment it replaces', async () => {
+    const { run } = await setup({
+      replies: {
+        'POST /api/apps/7/deployments/27/rollback': { status: 201, body: { deploymentId: 33 } },
+      },
+    });
+
+    const result = await run('rollback', '27', '--json');
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      app: 'deals',
+      rolledBackTo: '27',
+      replaced: 30,
+      deploymentId: 33,
+    });
   });
 
   it('logs prints the runtime log when the last deploy is fine', async () => {

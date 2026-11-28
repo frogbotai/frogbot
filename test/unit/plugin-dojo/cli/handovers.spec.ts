@@ -26,7 +26,12 @@ const pending = {
   canRemove: false,
 };
 
-type Options = { isTTY?: boolean; confirm?: boolean; select?: string };
+type Options = {
+  isTTY?: boolean;
+  confirm?: boolean;
+  select?: string;
+  onWait?: () => void;
+};
 
 async function setup(replies: Record<string, { status?: number; body: unknown }> = {}) {
   const dojo = await startFakeDojo();
@@ -44,8 +49,16 @@ async function setup(replies: Record<string, { status?: number; body: unknown }>
 
   for (const [route, reply] of Object.entries(replies)) dojo.replies.set(route, reply);
 
-  const run = async (args: string[], options: Options = {}) => {
+  const run = async (args: string[], { onWait, ...options }: Options = {}) => {
     const result = testIO({ cwd, env, ...options });
+
+    if (onWait) {
+      result.io.wait = () => {
+        onWait();
+
+        return Promise.resolve();
+      };
+    }
 
     return { code: await runDojo(args, result.io), ...result };
   };
@@ -187,7 +200,7 @@ describe('handovers accept', () => {
 
     expect(text.code).toBe(4);
     expect(text.stderr()).toEqual([
-      `[frogbot] Dojo couldn't accept the project Ops: Acme has no paid app free for this app. Pay for room at ${url}, then run the command again.`,
+      `[frogbot] Dojo couldn't accept the project Ops: Acme has no paid app free for this app. Pay for room at ${url}, then run the command again. Add --wait to wait for the payment here.`,
     ]);
 
     const json = await run(['handovers', 'accept', 'h1', '--yes', '--json']);
@@ -200,6 +213,90 @@ describe('handovers accept', () => {
       url,
       needs: 'payment',
       link: url,
+    });
+  });
+});
+
+describe('--wait on a move or accept that needs room paid for', () => {
+  const url = 'https://dojo.example/billing/upgrade?workspace=2';
+  const noRoom = {
+    status: 409,
+    body: {
+      errors: [
+        { message: 'Acme has no paid app free for this app.', data: { code: 'conflict', url } },
+      ],
+    },
+  };
+
+  it.each([
+    [
+      ['handovers', 'accept', 'h1', '--yes'],
+      'POST /api/handovers/h1/accept',
+      "Dojo couldn't accept the project Ops",
+    ],
+    [
+      ['apps', 'move', 'deals', '--workspace', 'acme', '--yes'],
+      'POST /api/apps/7/move',
+      "Dojo couldn't move deals",
+    ],
+    [
+      ['projects', 'move', 'p1', '--workspace', 'acme', '--yes'],
+      'POST /api/projects/p1/move',
+      "Dojo couldn't move Ops",
+    ],
+  ])(
+    '%j shows the pay page once, then sends it again until Dojo takes it',
+    async (args, route, lead) => {
+      const { dojo, run } = await setup({
+        'GET /api/handovers/h1/details': { body: pending },
+        'GET /api/projects': {
+          body: { docs: [{ id: 'p1', name: 'Ops', workspace: 1, isDefault: false }] },
+        },
+        [route]: noRoom,
+      });
+
+      let waits = 0;
+
+      const result = await run([...args, '--wait', '--json'], {
+        onWait: () => {
+          waits += 1;
+
+          if (waits === 2) dojo.replies.set(route, { body: { moved: [7] } });
+        },
+      });
+
+      expect(result.code).toBe(0);
+      expect(dojo.paths().filter((each) => each === route)).toHaveLength(3);
+      expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ moved: [7] });
+      expect(result.stderr()).toEqual(
+        expect.arrayContaining([
+          `[frogbot] ${lead}: Acme has no paid app free for this app.`,
+          url,
+          '[frogbot] Paid. Carrying on.',
+        ]),
+      );
+      expect(result.stderr().filter((line) => line === url)).toHaveLength(1);
+    },
+  );
+
+  it('gives up with exit 1 after 30 minutes without the payment', async () => {
+    const { dojo, run } = await setup({
+      'GET /api/handovers/h1/details': { body: pending },
+      'POST /api/handovers/h1/accept': noRoom,
+    });
+
+    const result = await run(['handovers', 'accept', 'h1', '--yes', '--wait', '--json']);
+
+    expect(result.code).toBe(1);
+    expect(dojo.paths().filter((each) => each === 'POST /api/handovers/h1/accept')).toHaveLength(
+      361,
+    );
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'conflict',
+      url,
+      error:
+        "Dojo still has no payment for the room after 30 minutes. Once it's paid, run the command again.",
     });
   });
 });

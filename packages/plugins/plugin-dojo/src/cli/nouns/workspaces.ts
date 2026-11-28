@@ -2,7 +2,7 @@ import type { Noun } from '../command.js';
 import type { DojoClient } from '../dojo.js';
 import { dojoJSON, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
-import { done } from '../io.js';
+import { dojoProgram, done } from '../io.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace, listWorkspaces } from '../workspaces.js';
 import { findMember, listMembers } from './members.js';
@@ -88,11 +88,12 @@ export const workspaces: Noun = {
       run: async ({ io, dojo, confirm, values, positionals: [slug = ''] }) => {
         const workspace = await findWorkspace({ dojo: dojo(), io, slug });
         const purging = values['purge-trash'] === true;
+        const program = dojoProgram(io.program);
 
         if (purging) await mustOwn(dojo(), workspace);
 
         const trashed = purging
-          ? await trashedApps(dojo(), 'workspace', workspace.id, workspace.slug)
+          ? await trashedApps(dojo(), 'workspace', workspace.id, workspace.slug, program)
           : [];
 
         await confirm(
@@ -101,7 +102,7 @@ export const workspaces: Noun = {
 
         await purgeApps(dojo(), trashed);
 
-        await namingPurge(purging ? trashed.map(({ slug: app }) => app) : undefined, () =>
+        await namingPurge(purging ? trashed.map(({ slug: app }) => app) : undefined, program, () =>
           dojoJSON<{ deleted: boolean }>(
             dojo(),
             `/api/workspaces/${segment(workspace.id)}/delete`,

@@ -49,10 +49,10 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 
 | Command | Arguments | Description |
 | --- | --- | --- |
-| `status` | `[app]` | The app's address, its status (`live`, `paused`, `deploying`, `failed`, `not_deployed`, `removed`) and its last deploy. |
-| `logs` | `[app]`, `--follow` | The runtime log, or the last deploy's build or start log when it failed. |
+| `status` | `[app]` | The app's address, its status (`live`, `paused`, `deploying`, `failed`, `not_deployed`, `removed`) and its last deploy. Exits `1` when that deploy failed. |
+| `logs` | `[app]`, `--follow` | The runtime log, or the last deploy's build or start log when it failed. Exits `0` once the log is printed, even for a failed deploy. |
 | `open` | `[app]` | Prints the live address, and opens it when there's a terminal. |
-| `rollback` | `[id]` | Puts back the newest version that went live before the current one, or the deployment you name. Acts on this folder's app. |
+| `rollback` | `[id]` | Puts back the newest version that went live before the current one and hasn't failed since, or the deployment you name. Acts on this folder's app. It doesn't ask: it prints the version it replaces and `rollback <that id>`, which undoes it, and `--json` carries `replaced`. With nothing live it exits `1` (`NO_LIVE_DEPLOYMENT`). |
 | `login` | — | Signs in with a code you confirm in the browser. The first sign-in makes your Dojo account. |
 | `logout` | — | Revokes the stored sign-in and removes it from `auth.json`. See [`dojo logout`](/getting-started/cli#dojo-logout). |
 | `whoami` | — | Shows the account, the Dojo URL and your workspaces. |
@@ -104,7 +104,7 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 | `git disconnect` | `<app>`, `--yes` | Removes the repo link and Dojo's webhook; deployments already made stay. Admins only. |
 | `env list` | `<app>` | Lists an app's environment keys, masked. |
 | `env set` | `<app> KEY=value…` | Sets keys; the app restarts once. |
-| `env unset` | `<app> KEY…`, `--yes` | Removes keys; the app restarts once. |
+| `env unset` | `[app] KEY…`, `--app`, `--yes` | Removes keys; the app restarts once. In a folder you deployed every argument is a key, and `--app <slug>` names another app; elsewhere the first argument is the app. |
 | `domains get` | `<app>` | Shows the custom domain, the CNAME record to add, and its certificate status. |
 | `domains set` | `<app> <host>`, `--yes` | Points a domain you own at the app. Asks before replacing a domain it already has. |
 | `domains clear` | `<app>`, `--yes` | Removes the custom domain. |
@@ -122,17 +122,17 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 
 - `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. Digits that are one app's id and another app's slug are refused. Name that app by its id.
 - Lists read every page, except `deployments list`, which shows 20 a page.
-- A command that needs a payment nobody is there to make, such as `apps keep`, `apps restore` or `apps create`, prints the link and exits `4`; `--wait` waits for the payment instead.
+- A command that needs a payment nobody is there to make, such as `apps keep`, `apps restore`, `apps create`, or an `apps move`, `projects move` or `handovers accept` into a workspace with no room, prints the link and exits `4`; `--wait` waits for the payment instead, for up to 30 minutes.
 - `frogbot dojo --help`, `frogbot dojo apps --help`, and `frogbot dojo apps delete --help` list the commands, a noun's verbs, and a verb's flags.
 - An unknown command or verb prints the list and exits with code `2`.
 
 ### Scripts and agents
 
-- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr. A failed command prints `{ "ok": false, "code", "error" }` on stdout, with Dojo's own `code`, `status` and `url` when Dojo refused it (a failed build under `deployments logs --follow` prints `BUILD_FAILED` and its `deploymentId`), and exits `1`, or `2` for bad usage (`USAGE_ERROR`, including an unknown command or verb), `3` for a sign-in (`SIGN_IN_REQUIRED`) or `4` for a payment (`payment_required`) that nobody is there to give. The codes are the ones in [When a deploy stops](/deployment/overview#when-a-deploy-stops). [`frogbot deploy --json`](/deployment/overview) prints its own `{ target, ok, dryRun, issues, result }` object, even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
+- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr. A failed command prints `{ "ok": false, "code", "error" }` on stdout, with Dojo's own `code`, `status` and `url` when Dojo refused it (a failed build under `deployments logs --follow` prints `BUILD_FAILED` and its `deploymentId`, and a `--purge-trash` delete that stops partway adds `purged`, the apps already deleted for good), and exits `1`, or `2` for bad usage (`USAGE_ERROR`, including an unknown command or verb), `3` for a sign-in (`SIGN_IN_REQUIRED`) or `4` for a payment (`payment_required`) that nobody is there to give. The codes are the ones in [When a deploy stops](/deployment/overview#when-a-deploy-stops). [`frogbot deploy --json`](/deployment/overview) prints its own `{ target, ok, dryRun, issues, result }` object, even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
 - **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `3` instead of starting a browser sign-in; `whoami` exits `1`, because it only reports who is signed in. In CI (`CI` set, no terminal), a command with no token and no stored sign-in exits `3` at once, naming the variable. `FROGBOT_DOJO_URL` targets another Dojo. A deploy never uploads either one from `.env` as an app key.
 - **No terminal.** Every question has a flag, or fails naming it. `apps delete`, `apps stop`, `members remove`, `projects delete`, `projects move`, `projects handover`, `apps move`, `apps handover`, `handovers accept`, `handovers remove-access`, `workspaces delete`, `workspaces owner`, `git disconnect`, `keys revoke`, `sharing leave`, `env unset`, `domains clear`, and `domains set` when it replaces a domain, ask before acting, and need `--yes` without a terminal. `apps delete` looks the app up first and names it in the question.
 - **Nobody to wait for.** Without a terminal, a command that needs a sign-in exits `3` with the link and code, and keeps the code so the next run signs in once the person confirms it; one that needs a payment exits `4` with the upgrade link. Under `--json` the error adds `needs`, `link` and, for a sign-in, `userCode`. `--wait` waits instead.
-- **Refusals.** A `402` prints Dojo's upgrade link. A move or handover that the target workspace can't pay for exits `4` with the page that pays for room. Refused `--replace-data`, `--confirm` and `--data` choices exit `2`, and so does a workspace choice without `--workspace` when you're in several. A `403` says which access the command needs, such as owner access to the app.
+- **Refusals.** A `402` prints Dojo's upgrade link. A move or handover that the target workspace can't pay for exits `4` with the page that pays for room; with a terminal or `--wait` it shows the page and carries on once room is paid for. Refused `--replace-data`, `--confirm` and `--data` choices exit `2`, and so does a workspace choice without `--workspace` when you're in several. A `403` says which access the command needs, such as owner access to the app.
 - **Creating keys.** `keys create` mints a key with the CLI's sign-in, using the API keys plugin's [keys that mint keys](/plugins/api-keys#keys-that-mint-keys): the new key is never broader than the sign-in, and `keys list` shows which key made it. When Dojo doesn't let the sign-in create keys, the command says which sign-ins can (a browser sign-in, or a key made with `--can-mint`) and exits with code `1`.
 - **People stay in the loop for two things.** Signing up and confirming a sign-in happen in the browser, through `login`, and so does paying: `billing manage` prints the link.
 

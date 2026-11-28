@@ -2,7 +2,7 @@ import type { Noun, VerbFlag, VerbInput } from '../command.js';
 import type { DojoClient } from '../dojo.js';
 import { dojoJSON, dojoList, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
-import { done } from '../io.js';
+import { dojoProgram, done } from '../io.js';
 import { findWorkspace } from '../workspaces.js';
 import { intoFlag, recipient, sendHandover, toFlag, withPayLink } from './handovers.js';
 import { count, relationId, whereEquals } from './resolve.js';
@@ -186,6 +186,7 @@ export const projects: Noun = {
       run: async (input) => {
         const project = await findProject(input);
         const purging = input.values['purge-trash'] === true;
+        const program = dojoProgram(input.io.program);
 
         if (purging && project.isDefault) {
           throw new ShareError(
@@ -195,7 +196,7 @@ export const projects: Noun = {
         }
 
         const trashed = purging
-          ? await trashedApps(input.dojo(), 'project', project.id, project.name)
+          ? await trashedApps(input.dojo(), 'project', project.id, project.name, program)
           : [];
 
         await input.confirm(
@@ -204,7 +205,7 @@ export const projects: Noun = {
 
         await purgeApps(input.dojo(), trashed);
 
-        await namingPurge(purging ? trashed.map(({ slug: app }) => app) : undefined, () =>
+        await namingPurge(purging ? trashed.map(({ slug: app }) => app) : undefined, program, () =>
           dojoJSON(input.dojo(), `/api/projects/${segment(project.id)}`, {
             method: 'DELETE',
             what: `Dojo couldn't delete ${project.name}`,
@@ -271,7 +272,7 @@ export const projects: Noun = {
           `Move the project ${project.name} and its apps to ${workspace.name} (${workspace.slug}) now? They keep running at the same addresses; ${workspace.name} pays for them from then on.`,
         );
 
-        const { moved } = await withPayLink(() =>
+        const { moved } = await withPayLink(io, () =>
           dojoJSON<{ moved: (string | number)[] }>(
             dojo(),
             `/api/projects/${segment(project.id)}/move`,

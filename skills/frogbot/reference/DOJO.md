@@ -10,14 +10,14 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). `npx frogbot dojo <c
 
 Run these in the app's folder:
 
-| Command                                 | Does                                                                                                               |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `npx frogbot deploy`                    | Ships this folder, the first time and every time after.                                                            |
-| `npx frogbot dojo status`               | The address, the status (`live`, `paused`, `deploying`, `failed`, `not_deployed`, `removed`), and the last deploy. |
-| `npx frogbot dojo logs [--follow]`      | The runtime log; when the last deploy failed, its build or start log instead, with the error.                      |
-| `npx frogbot dojo open`                 | Prints the live address. It opens a browser only at a terminal, so it never opens one for you.                     |
-| `npx frogbot dojo rollback [id]`        | Puts back the newest version that went live before the current one, or the deployment you name.                    |
-| `npx frogbot dojo env set KEY=value...` | Sets keys; the app restarts once. The first argument is an app only when it has no `=`.                            |
+| Command                                 | Does                                                                                                                                                                                                         |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npx frogbot deploy`                    | Ships this folder, the first time and every time after.                                                                                                                                                      |
+| `npx frogbot dojo status`               | The address, the status (`live`, `paused`, `deploying`, `failed`, `not_deployed`, `removed`), and the last deploy; exits `1` when it failed.                                                                 |
+| `npx frogbot dojo logs [--follow]`      | The runtime log; when the last deploy failed, its build or start log instead, with the error. Exits `0` either way.                                                                                          |
+| `npx frogbot dojo open`                 | Prints the live address. It opens a browser only at a terminal, so it never opens one for you.                                                                                                               |
+| `npx frogbot dojo rollback [id]`        | Puts back the newest healthy version that went live before the current one, or the deployment you name. It doesn't ask; it prints `Undo with … rollback <id>`: pass that on. With nothing live it exits `1`. |
+| `npx frogbot dojo env set KEY=value...` | Sets keys; the app restarts once. The first argument is an app only when it has no `=`.                                                                                                                      |
 
 Each also takes an app's slug to act on another app: `status deals`, `logs deals`, `open deals`. `rollback` acts on the folder's app only; `deployments rollback <app> <id>` names another.
 
@@ -77,7 +77,7 @@ Add `--json` whenever you read a result to act on it: stdout then holds one JSON
 - `npx frogbot dojo apps rename <app> <name>` changes the name; the slug and address stay. Owners only.
 - `npx frogbot dojo apps create <name> --template <template>` builds the new app from a template, named by id or name, and prints its first deployment's id; a template saved in a workspace makes the app in that workspace. Follow it with `deployments logs <id> --follow`. `npx frogbot dojo templates list` prints `<id>  <name>  <summary>` for FrogBot's templates and the ones saved in the user's workspaces.
 - `npx frogbot dojo apps delete <app> --yes` moves the app to Trash: it stops at once and Dojo deletes it, its versions and its data for good after 30 days. Owners only, and only after the user says yes to the question above.
-- `npx frogbot dojo apps move <app> --workspace <slug> --yes` moves the app at once into another workspace the user admins, after the question above: it keeps its address, everyone keeps access (Admins from outside that workspace become Editors), and that workspace pays for it from then on. Dojo refuses during a build, for a free preview, and when that workspace has no paid app free; then it exits `4` with the link that pays for one: pass it on. `--project <project>` instead moves it into another project of its own workspace.
+- `npx frogbot dojo apps move <app> --workspace <slug> --yes` moves the app at once into another workspace the user admins, after the question above: it keeps its address, everyone keeps access (Admins from outside that workspace become Editors), and that workspace pays for it from then on. Dojo refuses during a build, for a free preview, and when that workspace has no paid app free; then it exits `4` with the link that pays for one: pass it on. With `--wait` it shows the link and carries on once the room is paid for, as `projects move` and `handovers accept` do; use that only when the user is paying now. `--project <project>` instead moves it into another project of its own workspace.
 - `npx frogbot dojo apps handover <app> --to <email> --yes` hands the app to someone, after the question above. Dojo emails them a link to accept it into a workspace they admin, which then pays for it; it waits 7 days. It prints the handover's id, and `handovers cancel <id>` takes it back.
 - `npx frogbot dojo apps trash` prints `<slug>  deleted for good <date>` for each app in Trash the user is an owner of. `npx frogbot dojo apps restore <app>` takes one out; an app that had gone live needs a paid app free in its workspace, so it may print the upgrade link (exit `4` without a terminal): pass it on.
 - `npx frogbot dojo apps restart <app>` restarts the live app on its current version and keys. `npx frogbot dojo apps stop <app> --yes` stops it, after the question above: visitors get a paused page, and it keeps its address, data and paid app. `npx frogbot dojo apps start <app>` starts it again. Owners only.
@@ -112,7 +112,7 @@ An app's environment keys on Dojo. Owners only.
 
 - `npx frogbot dojo env list <app>` prints `<KEY> ••••<last 4>` per key.
 - `npx frogbot dojo env set <app> KEY=value...` sets one or more keys. Values go only as `KEY=value` arguments; there is no file or stdin option. Tell the user first that the live app restarts once. It prints `[frogbot] Set 1 key on <app>. It restarts once.`
-- `npx frogbot dojo env unset <app> KEY... --yes` removes keys, after the question above; the app restarts once. In the app's folder leave `<app>` out; with two or more names, a first one that could be a slug (lower case, digits and `-`) is read as the app.
+- `npx frogbot dojo env unset <app> KEY... --yes` removes keys, after the question above; the app restarts once. In the app's folder every argument is a key: leave `<app>` out, and name another app with `--app <slug>`. Outside one, the first argument is the app.
 
 Keys in the local `.env` reach Dojo on the first `deploy`; on later deploys, pass `--update-keys` to send local values that differ from live, or use `env set`.
 

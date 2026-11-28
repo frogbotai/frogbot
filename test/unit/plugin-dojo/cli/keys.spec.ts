@@ -2,13 +2,19 @@ import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
 import { keyFingerprint, sealKeys } from '../../../../packages/plugins/plugin-dojo/src/cli/seal.js';
 import { deployDojo } from './deployDojo.js';
 import { fingerprint, openKeys, startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
+
+for (const key of ['AIRTABLE_KEY', 'OPENAI_API_KEY', 'STRIPE_KEY']) vi.stubEnv(key, undefined);
+
+afterAll(() => {
+  vi.unstubAllEnvs();
+});
 
 const stripe = 'sk_test_aaaa4242';
 const openai = 'sk-proj-abcdx7Qa';

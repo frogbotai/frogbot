@@ -3,7 +3,8 @@ import type { DojoClient } from '../dojo.js';
 import { dojoJSON, segment } from '../dojo.js';
 import { needsPayment, ShareError } from '../error.js';
 import type { DojoIO } from '../io.js';
-import { dojoProgram, done } from '../io.js';
+import { canWait, dojoProgram, done, say } from '../io.js';
+import { maxPolls, pollMs, showPayLink } from '../payment.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace, listWorkspaces } from '../workspaces.js';
 import { count } from './resolve.js';
@@ -66,19 +67,43 @@ export function recipient(value: unknown): string {
 
 /**
  * A move's refusal keeps Dojo's words and code. When Dojo sent the page that pays for room, it is a payment a person
- * makes there: exit 4, with the page as the step's link.
+ * makes there. With a terminal or `--wait` it shows the page once and sends the request again every 5 seconds until
+ * Dojo takes it, for up to 30 minutes: Dojo's plan check can't see the room a move pays for, so only sending it again
+ * tells. Without either it exits 4, with the page as the step's link.
  */
-export async function withPayLink<T>(send: () => Promise<T>): Promise<T> {
-  try {
-    return await send();
-  } catch (error) {
-    if (!(error instanceof ShareError) || !error.url) throw error;
+export async function withPayLink<T>(io: DojoIO, send: () => Promise<T>): Promise<T> {
+  for (let polls = 0; ; polls += 1) {
+    try {
+      const sent = await send();
 
-    throw new ShareError(
-      `${error.message} Pay for room at ${error.url}, then run the command again.`,
-      needsPayment,
-      { code: error.code, status: error.status, url: error.url, needs: 'payment', link: error.url },
-    );
+      if (polls > 0) say(io, '[frogbot] Paid. Carrying on.');
+
+      return sent;
+    } catch (error) {
+      if (!(error instanceof ShareError) || !error.url) throw error;
+
+      const { code, status, url } = error;
+
+      if (!canWait(io)) {
+        throw new ShareError(
+          `${error.message} Pay for room at ${url}, then run the command again. Add --wait to wait for the payment here.`,
+          needsPayment,
+          { code, status, url, needs: 'payment', link: url },
+        );
+      }
+
+      if (polls === 0) showPayLink(io, error.message, url);
+
+      if (polls >= maxPolls) {
+        throw new ShareError(
+          `Dojo still has no payment for the room after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, run the command again.`,
+          1,
+          { code, status, url },
+        );
+      }
+
+      await io.wait(pollMs);
+    }
   }
 }
 
@@ -207,7 +232,7 @@ const accept: Verb = {
       `Accept ${subject(handover)} from ${handover.sender} into ${workspace.name} (${workspace.slug})? You become its Admin, and ${workspace.name} pays for it from then on.`,
     );
 
-    const { moved } = await withPayLink(() =>
+    const { moved } = await withPayLink(io, () =>
       dojoJSON<{ moved: (string | number)[] }>(
         dojo(),
         `/api/handovers/${segment(handover.id)}/accept`,
