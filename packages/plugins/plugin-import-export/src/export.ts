@@ -1,3 +1,4 @@
+import { frogbotError } from 'frogbot';
 import type {
   CollectionBeforeOperationHook,
   CollectionConfig,
@@ -7,6 +8,8 @@ import type {
   TaskConfig,
 } from 'payload';
 import { addDataAndFileToRequest, executeAccess } from 'payload';
+
+import { importExportError } from './errors.js';
 
 type ExportBody = { collectionSlug?: unknown; drafts?: unknown; [key: string]: unknown };
 
@@ -66,7 +69,7 @@ function checkedDownload(handler: PayloadHandler, exportsSlug: string): PayloadH
     const body = typeof req.json === 'function' ? await req.json() : undefined;
     const data = (body as { data?: ExportBody } | undefined)?.data;
 
-    if (!data) return downloadError('Request data is required.', 400);
+    if (!data) throw frogbotError('request.invalid', 'Send the export settings as `data`.');
 
     const collectionSlug = typeof data.collectionSlug === 'string' ? data.collectionSlug : '';
     const target = req.payload.collections[collectionSlug]?.config;
@@ -76,7 +79,10 @@ function checkedDownload(handler: PayloadHandler, exportsSlug: string): PayloadH
         ?.collectionSlugs;
 
     if (!target || (served && !served.includes(collectionSlug))) {
-      return downloadError(`Collection "${collectionSlug}" can't be exported here.`, 400);
+      throw importExportError(
+        'export.collection-not-exportable',
+        `Collection "${collectionSlug}" can't be exported here.`,
+      );
     }
 
     const allowed = await executeAccess(
@@ -84,7 +90,7 @@ function checkedDownload(handler: PayloadHandler, exportsSlug: string): PayloadH
       target.access.read,
     );
 
-    if (!allowed) return downloadError('You are not allowed to export this collection.', 403);
+    if (!allowed) throw importExportError('export.not-allowed');
 
     const patched = { ...body, data: withoutStatusFilter(req, data) };
 
@@ -115,8 +121,4 @@ function hasDrafts(req: PayloadRequest, collectionSlug: unknown): boolean {
   const versions = req.payload.collections[collectionSlug]?.config.versions;
 
   return typeof versions === 'object' && Boolean(versions.drafts);
-}
-
-function downloadError(message: string, status: number): Response {
-  return Response.json({ errors: [{ message }] }, { status });
 }

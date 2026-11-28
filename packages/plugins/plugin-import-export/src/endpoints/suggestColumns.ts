@@ -6,8 +6,9 @@ import type { ImportColumn } from '../columns/columnMap.js';
 import { readColumnMap } from '../columns/columnMap.js';
 import type { ImportTarget } from '../columns/suggest.js';
 import { sanitizeColumns, suggestColumns, toColumn } from '../columns/suggest.js';
+import { importExportError } from '../errors.js';
 import type { ColumnsEndpointProps } from './request.js';
-import { importError, readColumnsRequest } from './request.js';
+import { readColumnsRequest } from './request.js';
 
 /** What `suggest-columns` returns: the mapping with AI picks in its "Skip" columns. */
 export type SuggestColumnsResponse = {
@@ -61,11 +62,7 @@ export const suggestColumnsEndpoint = (props: ColumnsEndpointProps): Endpoint =>
     const model = frogbot.config.ai?.smallModel ?? frogbot.config.ai?.defaultModel;
 
     if (!model) {
-      throw importError(
-        'ai_model_missing',
-        'No AI model is configured: set `ai.smallModel` or `ai.defaultModel`.',
-        404,
-      );
+      throw importExportError('import.ai-model-missing');
     }
 
     let picks: Record<string, unknown>;
@@ -84,9 +81,7 @@ export const suggestColumnsEndpoint = (props: ColumnsEndpointProps): Endpoint =>
 
       picks = readPicks(result.output);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-
-      throw importError('ai_suggestion_failed', `AI suggestion failed: ${message}`, 502);
+      throw importExportError('import.ai-suggestion-failed', { cause: error });
     }
 
     let suggested = 0;

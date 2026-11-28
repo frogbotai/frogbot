@@ -1,8 +1,9 @@
 import type { FlattenedField, PayloadRequest } from 'payload';
-import { addDataAndFileToRequest, APIError, executeAccess } from 'payload';
+import { addDataAndFileToRequest, executeAccess } from 'payload';
 
 import type { ImportTarget } from '../columns/suggest.js';
 import { listImportTargets } from '../columns/suggest.js';
+import { importExportError } from '../errors.js';
 import type { ImportFileColumns, ImportFormat } from './parseFile.js';
 import { readImportFile } from './parseFile.js';
 
@@ -22,39 +23,18 @@ export type ColumnsRequest = ImportFileColumns & {
   body: Record<string, unknown>;
 };
 
-/** The `data.code` of every column endpoint failure. */
-export type ImportErrorCode =
-  | 'ai_model_missing'
-  | 'ai_suggestion_failed'
-  | 'collection_not_importable'
-  | 'file_data_missing'
-  | 'file_unreadable'
-  | 'import_not_allowed'
-  | 'unknown_import_collection'
-  | 'unsupported_format';
-
 const formats: ImportFormat[] = ['csv', 'json'];
-
-/** A column endpoint failure, answered by Payload as `{ errors: [{ message, data: { code } }] }`. */
-export function importError(
-  code: ImportErrorCode,
-  message: string,
-  status: number,
-  extra?: Record<string, unknown>,
-): APIError {
-  return new APIError(message, status, { code, ...extra }, true);
-}
 
 /** How a column endpoint reads its requests. */
 export type ColumnsEndpointProps = {
-  /** List the served collections in a `collection_not_importable` error: only when the plugin's `collections` option limits them. */
+  /** List the served collections in a `import.collection-not-importable` error: only when the plugin's `collections` option limits them. */
   listCollections: boolean;
 };
 
 /**
  * Reads a column endpoint's request. The user must be allowed to create an import, the target
  * collection must be one this import collection serves, and `format` must be `csv` (the default)
- * or `json`. Throws an `importError` on any failure.
+ * or `json`. Throws an `import.*` error on any failure.
  */
 export async function readColumnsRequest(
   req: PayloadRequest,
@@ -65,14 +45,14 @@ export async function readColumnsRequest(
   const importsSlug = String(req.routeParams?.collection ?? '');
   const imports = req.payload.collections[importsSlug]?.config;
 
-  if (!imports) throw importError('unknown_import_collection', 'Unknown import collection.', 404);
+  if (!imports) throw importExportError('import.unknown-collection');
 
   const allowed = await executeAccess(
     { disableErrors: true, req, slug: importsSlug },
     imports.access.create,
   );
 
-  if (!allowed) throw importError('import_not_allowed', 'You are not allowed to import.', 403);
+  if (!allowed) throw importExportError('import.not-allowed');
 
   const body = (req.data ?? {}) as Record<string, unknown> & ImportColumnsBody;
 
@@ -86,32 +66,24 @@ export async function readColumnsRequest(
     const message = `Collection "${collectionSlug}" can't be imported here.`;
 
     throw listCollections && served
-      ? importError(
-          'collection_not_importable',
-          `${message} Importable: ${served.join(', ')}.`,
-          400,
-          { allowed: served },
-        )
-      : importError('collection_not_importable', message, 400);
+      ? importExportError('import.collection-not-importable', {
+          detail: `${message} Importable: ${served.join(', ')}.`,
+          data: { allowed: served },
+        })
+      : importExportError('import.collection-not-importable', message);
   }
 
   if (typeof body.fileData !== 'string' || body.fileData === '') {
-    throw importError(
-      'file_data_missing',
-      'No file data provided: send the file base64-encoded as `fileData`.',
-      400,
-    );
+    throw importExportError('import.file-data-missing');
   }
 
   const format = body.format === undefined ? 'csv' : body.format;
 
   if (!formats.includes(format as ImportFormat)) {
-    throw importError(
-      'unsupported_format',
-      `Unsupported format ${JSON.stringify(format)}. Use "csv" or "json".`,
-      400,
-      { allowed: formats },
-    );
+    throw importExportError('import.unsupported-format', {
+      detail: `Unsupported format ${JSON.stringify(format)}. Use "csv" or "json".`,
+      data: { allowed: formats },
+    });
   }
 
   let file: ImportFileColumns;
@@ -119,11 +91,10 @@ export async function readColumnsRequest(
   try {
     file = readImportFile(Buffer.from(body.fileData, 'base64'), format as ImportFormat);
   } catch (error) {
-    throw importError(
-      'file_unreadable',
-      `Could not read the file: ${error instanceof Error ? error.message : String(error)}`,
-      400,
-    );
+    throw importExportError('import.file-unreadable', {
+      detail: `Could not read the file: ${error instanceof Error ? error.message : String(error)}`,
+      cause: error,
+    });
   }
 
   return {

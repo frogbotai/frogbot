@@ -122,12 +122,10 @@ describe('AI column suggestions', () => {
     const response = await suggest(sent);
 
     expect(response.status).toBe(502);
-    expect(response.body.errors).toMatchObject([
-      {
-        message: expect.stringMatching(/^AI suggestion failed: /),
-        data: { code: 'ai_suggestion_failed' },
-      },
-    ]);
+    expect(response.body).toMatchObject({
+      code: 'import.ai-suggestion-failed',
+      detail: 'AI suggestion failed.',
+    });
   });
 
   it('calls no model when no column is "Skip"', async () => {

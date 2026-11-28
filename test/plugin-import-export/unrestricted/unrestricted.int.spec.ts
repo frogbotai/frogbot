@@ -12,8 +12,6 @@ import { importsDir, importsSlug } from '../shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-type ErrorBody = { errors: { name?: string; message: string; data: Record<string, unknown> }[] };
-
 describe('importExportPlugin with an empty `collections` option', () => {
   let booted: BootedFrogBot;
   let headers: Record<string, string>;
@@ -31,19 +29,16 @@ describe('importExportPlugin with an empty `collections` option', () => {
   });
 
   it('refuses an unknown collection without listing every collection in the app', async () => {
-    const response = await booted.restClient.post<ErrorBody>(
+    const response = await booted.restClient.post(
       `/api/${importsSlug}/import-columns`,
       { collectionSlug: 'nope', fileData: csv([['Name']]).toString('base64'), format: 'csv' },
       { headers },
     );
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
-      {
-        name: 'APIError',
-        message: `Collection "nope" can't be imported here.`,
-        data: { code: 'collection_not_importable' },
-      },
-    ]);
+    expect(response.body).toMatchObject({
+      code: 'import.collection-not-importable',
+      detail: `Collection "nope" can't be imported here.`,
+    });
   });
 });
