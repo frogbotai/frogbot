@@ -5,7 +5,7 @@ import {
   describeDatabase,
   parseUsersArgs,
   users,
-} from '../../../../packages/frogbot/src/bin/usersCreate.js';
+} from '../../../../packages/frogbot/src/bin/users.js';
 import type { FrogBotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
 
 describe('parseUsersArgs', () => {
@@ -23,6 +23,7 @@ describe('parseUsersArgs', () => {
         '--yes',
       ]),
     ).toEqual({
+      command: 'create',
       email: 'a@b.co',
       collection: 'admins',
       data: { name: 'Ada', note: 'a=b' },
@@ -30,9 +31,19 @@ describe('parseUsersArgs', () => {
     });
   });
 
+  it('reads reset-password with its email, collection and --yes', () => {
+    expect(parseUsersArgs(['reset-password', 'a@b.co', '--collection', 'admins', '--yes'])).toEqual(
+      { command: 'reset-password', email: 'a@b.co', collection: 'admins', yes: true },
+    );
+  });
+
   it.each([
-    [[], 'the only users command is `create`.'],
-    [['list'], 'the only users command is `create`.'],
+    [[], 'the users commands are `create` and `reset-password`.'],
+    [['list'], 'the users commands are `create` and `reset-password`.'],
+    [['reset-password'], 'give the email of the user whose password to reset.'],
+    [['reset-password', 'a@b.co', 'b@c.co'], 'unexpected argument "b@c.co".'],
+    [['reset-password', 'a@b.co', '--set', 'name=x'], "reset-password doesn't take --set."],
+    [['reset-password', 'a@b.co', '--password', 'x'], "Unknown option '--password'"],
     [['create'], 'give the email of the user to create.'],
     [['create', 'a@b.co', 'b@c.co'], 'unexpected argument "b@c.co".'],
     [['create', 'a@b.co', '--set', 'name'], '--set takes <field>=<value>, not "name".'],
@@ -131,8 +142,11 @@ describe('users', () => {
     await expect(users(['create'], {})).rejects.toMatchObject({
       exitCode: 2,
       code: 'USAGE_ERROR',
-      message:
-        'users: give the email of the user to create.\n[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]',
+      message: [
+        'users: give the email of the user to create.',
+        '[frogbot] usage: frogbot users create <email> [--collection <slug>] [--set <field>=<value>]... [--yes] [--json]',
+        '                 frogbot users reset-password <email> [--collection <slug>] [--yes] [--json]',
+      ].join('\n'),
     });
   });
 
@@ -189,5 +203,31 @@ describe('users', () => {
     ]);
     expect(String(failure)).toContain('Run again with --yes');
     expect([...log.mock.calls.flat(), String(failure)].join('\n')).not.toContain('secret');
+  });
+
+  it('refuses to reset a password on a collection that signs in without one', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await expect(
+      users(['reset-password', 'a@b.co', '--collection', 'sso'], { config: app('file:./x.db') }),
+    ).rejects.toMatchObject({
+      code: 'NO_PASSWORD_LOGIN',
+      message:
+        '[frogbot] users reset-password: "sso" signs in without a password (disableLocalStrategy), so there is no password to reset. Sign in with its provider instead.',
+    });
+    expect(log.mock.calls.flat().join('\n')).not.toContain('Password:');
+  });
+
+  it('names a remote database and resets nothing without --yes', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const failure = await users(['reset-password', 'a@b.co'], {
+      config: app('postgres://u:secret@db.host/app'),
+    }).catch((e: Error) => e);
+
+    expect(log.mock.calls.flat()).toEqual([
+      '[frogbot] users reset-password: database postgres://db.host/app',
+    ]);
+    expect(failure).toMatchObject({ code: 'CONFIRM_REQUIRED', exitCode: 1 });
+    expect(String(failure)).toContain('the database to change the password in');
   });
 });
