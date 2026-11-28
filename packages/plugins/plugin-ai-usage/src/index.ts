@@ -5,8 +5,10 @@ import {
   type Endpoint,
   FROGBOT_QUEUE,
   type FrogBotConfig,
+  frogbotError,
   type FrogBotRequest,
   type Plugin,
+  type ProblemField,
 } from 'frogbot';
 
 export type UsageReportGroup = 'apiKey' | 'day' | 'model' | 'user';
@@ -113,14 +115,27 @@ function parseRequest(req: FrogBotRequest, groups: ReadonlySet<UsageReportGroup>
   const groupBy = search.get('groupBy') as UsageReportGroup | null;
   const fromDate = new Date(search.get('from') ?? '');
   const toDate = new Date(search.get('to') ?? '');
-  if (
-    !groupBy ||
-    !groups.has(groupBy) ||
-    Number.isNaN(fromDate.getTime()) ||
-    Number.isNaN(toDate.getTime()) ||
-    fromDate > toDate
-  ) {
-    return;
+  const fields: ProblemField[] = [];
+
+  if (!groupBy || !groups.has(groupBy)) {
+    fields.push({ path: 'groupBy', message: `groupBy must be one of: ${[...groups].join(', ')}.` });
+  }
+
+  if (Number.isNaN(fromDate.getTime())) {
+    fields.push({ path: 'from', message: 'from must be a date, such as 2026-11-01.' });
+  }
+
+  if (Number.isNaN(toDate.getTime())) {
+    fields.push({ path: 'to', message: 'to must be a date, such as 2026-11-30.' });
+  } else if (fromDate > toDate) {
+    fields.push({ path: 'to', message: 'to must not be before from.' });
+  }
+
+  if (fields.length || !groupBy) {
+    throw frogbotError('request.invalid', {
+      detail: fields.map(({ message }) => message).join(' '),
+      fields,
+    });
   }
 
   return { groupBy, from: fromDate.toISOString(), to: toDate.toISOString() };
@@ -137,12 +152,14 @@ function buildReportEndpoint({ slug, groups, access }: ReportEndpointOptions): E
     method: 'get',
     path: '/usage/report',
     handler: async (req) => {
-      if (!req.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!req.user) throw frogbotError('auth.unauthenticated');
       const permitted = await access({ req, slug });
-      if (permitted === false) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      if (permitted === false) {
+        throw frogbotError('auth.forbidden', "This user can't read AI usage reports.");
+      }
+
       const scope: Exclude<AccessResult, boolean>[] = permitted === true ? [] : [permitted];
       const query = parseRequest(req, groups);
-      if (!query) return Response.json({ error: 'Invalid groupBy or date range' }, { status: 400 });
       const path = query.groupBy === 'day' ? 'requestedAt' : query.groupBy;
 
       const result = await req.frogbot.aggregate({

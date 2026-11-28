@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util';
 
 import { loadConfig } from '../config/load.js';
+import { isFrogBotError } from '../errors/FrogBotError.js';
 import { formatCliError } from './formatCliError.js';
 import { migrateUsage } from './help.js';
 import { CliError, usageError } from './json.js';
@@ -200,7 +201,7 @@ export async function migrate(args: string[]): Promise<Record<string, unknown>> 
         break;
     }
   } catch (err) {
-    if (err instanceof CliError) throw err;
+    if (err instanceof CliError || isFrogBotError(err)) throw err;
 
     throw new CliError(formatCliError(err, `${command} failed`), { code: 'MIGRATE_FAILED' });
   }

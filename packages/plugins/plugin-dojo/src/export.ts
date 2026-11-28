@@ -6,26 +6,38 @@ import { fileURLToPath } from 'node:url';
 
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import type { DatabaseAdapter, Endpoint, FrogBotConfig } from 'frogbot';
+import {
+  type DatabaseAdapter,
+  type Endpoint,
+  type FrogBotConfig,
+  type FrogBotRequest,
+  problemResponse,
+} from 'frogbot';
 
 import { cleanSnapshot } from './cli/data/inventory.js';
 import { uploadFoldersSql } from './cli/data/uploadFolders.js';
 import type { DojoEnv } from './env.js';
+import { dojoError } from './errors.js';
 
 /** The only keys Dojo may ask for: `.dojo/export/<id>.db` in the app's bucket. */
 export const exportKeyPattern = /^\.dojo\/export\/[A-Za-z0-9-]{1,64}\.db$/;
 
-type ExportError = 'unauthorized' | 'invalid_key' | 'not_sqlite' | 'no_database' | 'disk_full';
+const codes = {
+  unauthorized: 'dojo.export-unauthorized',
+  invalid_key: 'dojo.export-invalid-key',
+  not_sqlite: 'dojo.export-not-sqlite',
+  no_database: 'dojo.export-no-database',
+  disk_full: 'dojo.export-disk-full',
+} as const;
 
-const statuses: Record<ExportError, number> = {
-  unauthorized: 401,
-  invalid_key: 400,
-  not_sqlite: 409,
-  no_database: 404,
-  disk_full: 507,
-};
+async function refuse(req: FrogBotRequest, error: keyof typeof codes): Promise<Response> {
+  const problem = problemResponse(dojoError(codes[error]), { req });
 
-const refuse = (error: ExportError) => Response.json({ error }, { status: statuses[error] });
+  return Response.json(
+    { ...((await problem.json()) as object), error },
+    { status: problem.status, headers: problem.headers },
+  );
+}
 
 const digest = (value: string) => createHash('sha256').update(value).digest();
 
@@ -87,7 +99,7 @@ export function r2Upload(env: DojoEnv): ExportUpload {
  * database with the adapter's snapshot, so writers don't wait, empties what a share empties (jobs,
  * waitpoints, locks, KV, trigger subscriptions and the sessions of every auth collection in the
  * sanitized config), records each upload collection's folder for `apps pull`, and uploads the copy
- * to `key` in the app's bucket. Refuses with `disk_full` when the database's disk lacks room for the
+ * to `key` in the app's bucket. Refusals are Problems (`dojo.export-*`) that also carry Dojo's `error`. Refuses with `disk_full` when the database's disk lacks room for the
  * copy and its cleaning, twice the database's size, and leaves nothing behind either way.
  */
 export function dojoExportEndpoint({
@@ -110,26 +122,26 @@ export function dojoExportEndpoint({
       const header = req.headers.get('authorization');
 
       if (header === null || !timingSafeEqual(digest(header), expected)) {
-        return refuse('unauthorized');
+        return refuse(req, 'unauthorized');
       }
 
       const body = (await req.json?.().catch(() => null)) as { key?: unknown } | null;
       const key = body?.key;
 
-      if (typeof key !== 'string' || !exportKeyPattern.test(key)) return refuse('invalid_key');
+      if (typeof key !== 'string' || !exportKeyPattern.test(key)) return refuse(req, 'invalid_key');
 
       const { snapshot } = req.frogbot.db as Pick<DatabaseAdapter, 'snapshot'>;
       const database = databaseFile(databaseUrl(), cwd);
 
-      if (!snapshot || !database) return refuse('not_sqlite');
+      if (!snapshot || !database) return refuse(req, 'not_sqlite');
 
       const size = await sizeOf(database);
 
-      if (size === 0) return refuse('no_database');
+      if (size === 0) return refuse(req, 'no_database');
 
       const { bavail, bsize } = await statfs(dirname(database));
 
-      if (bavail * bsize < 2 * size) return refuse('disk_full');
+      if (bavail * bsize < 2 * size) return refuse(req, 'disk_full');
 
       let folder: string | undefined;
 
@@ -139,7 +151,7 @@ export function dojoExportEndpoint({
         const to = join(folder, 'frogbot.db');
         const copy = await snapshot({ cwd, to });
 
-        if (!copy) return refuse('no_database');
+        if (!copy) return refuse(req, 'no_database');
 
         const { collections } = await req.frogbot.config._internal.payloadConfig;
 
@@ -155,7 +167,7 @@ export function dojoExportEndpoint({
 
         return Response.json({ key, bytes: (await stat(to)).size });
       } catch (error) {
-        if (isDiskFull(error)) return refuse('disk_full');
+        if (isDiskFull(error)) return refuse(req, 'disk_full');
 
         throw error;
       } finally {

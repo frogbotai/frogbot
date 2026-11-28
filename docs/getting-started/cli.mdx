@@ -43,10 +43,10 @@ Every command that finishes takes `--json`: `status`, `up`, `down`, `check`, `de
 ```
 
 ```json
-{ "command": "up", "success": false, "error": { "code": "BUILD_FAILED", "message": "/apps/crm is already up at http://127.0.0.1:3000, but its build failed; ..." } }
+{ "command": "up", "ok": false, "success": false, "error": { "code": "BUILD_FAILED", "message": "/apps/crm is already up at http://127.0.0.1:3000, but its build failed; ..." } }
 ```
 
-A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command's own code (such as `BUILD_FAILED`, `CONFIRM_REQUIRED` or `USERS_EXIST`), or `FAILED`. `deploy` keeps its own result shape (see [Deployment](/deployment/overview)). `start`, `dev`, `run` and `channels:run` run until you stop them or hand over to another program, so they refuse `--json` with exit `2`.
+A failure carries `ok: false`, with `success: false` kept for older scripts. When FrogBot raised a coded error, `error` is its Problem (`code`, `detail`, `hint`, `type`), and the command exits with that code's exit status. Otherwise, a failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command's own code (such as `BUILD_FAILED`, `CONFIRM_REQUIRED` or `USERS_EXIST`), or `FAILED`. `deploy` keeps its own result shape (see [Deployment](/deployment/overview)). `start`, `dev`, `run` and `channels:run` run until you stop them or hand over to another program, so they refuse `--json` with exit `2`.
 
 | Command | What `--json` adds beside `success` |
 | --- | --- |

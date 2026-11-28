@@ -30,6 +30,14 @@ function makeFrogBot() {
   };
 }
 
+function thrownBy(fn: () => unknown): unknown {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+}
+
 describe('API key authentication strategy', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -173,8 +181,10 @@ describe('API key authentication strategy', () => {
       const message =
         'API key was revoked at 2026-01-01T00:00:00.000Z. Mint a new one with POST /api/api-keys/mint.';
 
-      expect(() => run(req)).toThrow(expect.objectContaining({ message, status: 401 }));
-      expect(req.responseHeaders?.get('WWW-Authenticate')).toBe(
+      const thrown = thrownBy(() => run(req));
+
+      expect(thrown).toMatchObject({ code: 'api-keys.refused', message, status: 401 });
+      expect((thrown as { headers: Headers }).headers.get('WWW-Authenticate')).toBe(
         `Bearer error="invalid_token", error_description="${message}"`,
       );
     });

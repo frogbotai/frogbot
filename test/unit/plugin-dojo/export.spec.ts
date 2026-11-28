@@ -121,11 +121,23 @@ describe('POST /api/dojo/export', () => {
   it('answers only Dojo, and only for an export key', async () => {
     const app = await liveApp();
 
-    expect((await app.call({ key }, 'Bearer wrong')).status).toBe(401);
+    const wrong = await app.call({ key }, 'Bearer wrong');
+
+    expect(wrong.status).toBe(401);
+    expect(await wrong.json()).toMatchObject({
+      code: 'dojo.export-unauthorized',
+      error: 'unauthorized',
+    });
     expect((await app.call({ key }, '')).status).toBe(401);
 
     for (const bad of ['.dojo/import/frogbot.db', '.dojo/export/../x.db', 'media/a.png', 7]) {
-      expect((await app.call({ key: bad })).status).toBe(400);
+      const refused = await app.call({ key: bad });
+
+      expect(refused.status).toBe(400);
+      expect(await refused.json()).toMatchObject({
+        code: 'dojo.export-invalid-key',
+        error: 'invalid_key',
+      });
     }
 
     expect(app.uploaded).toEqual([]);
@@ -136,7 +148,12 @@ describe('POST /api/dojo/export', () => {
     const response = await app.call({ key }, 'Bearer jobs-secret', false);
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'not_sqlite' });
+    expect(response.headers.get('content-type')).toBe('application/problem+json');
+    expect(await response.json()).toMatchObject({
+      code: 'dojo.export-not-sqlite',
+      status: 409,
+      error: 'not_sqlite',
+    });
   });
 
   it('refuses with disk_full when the copy fails for room, leaving nothing', async () => {
@@ -161,7 +178,11 @@ describe('POST /api/dojo/export', () => {
     } as unknown as FrogBotRequest);
 
     expect(response.status).toBe(507);
-    expect(await response.json()).toEqual({ error: 'disk_full' });
+    expect(await response.json()).toMatchObject({
+      code: 'dojo.export-disk-full',
+      status: 507,
+      error: 'disk_full',
+    });
     expect(await readdir(join(app.dir, 'data'))).toEqual(['frogbot.db']);
   });
 

@@ -331,7 +331,7 @@ export type {
 } from './database/types.js';
 export { definePlugin } from './definePlugin.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
-export { problemResponse } from './errors/afterError.js';
+export { problemResponse, withUnknownRouteProblem } from './errors/afterError.js';
 export { frogbotError, type FrogBotErrorCode } from './errors/catalog.js';
 export {
   defineErrors,

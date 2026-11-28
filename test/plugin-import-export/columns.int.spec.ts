@@ -194,7 +194,7 @@ describe('import columns endpoint', () => {
     expect(response.body.source).toBe('names');
   });
 
-  type ErrorBody = { errors: { message: string; data: Record<string, unknown> }[] };
+  type ErrorBody = { code?: string; detail?: string; data?: Record<string, unknown> };
 
   function postBody(body: Record<string, unknown>, headers = ana.headers) {
     return booted.restClient.post<ErrorBody & Partial<ImportColumnsResponse>>(
@@ -207,12 +207,10 @@ describe('import columns endpoint', () => {
   const json = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64');
 
   it('refuses a request that may not create an import', async () => {
-    const response = await post<ErrorBody>('import-columns', [['Name']]);
+    const response = await post('import-columns', [['Name']]);
 
     expect(response.status).toBe(403);
-    expect(response.body.errors).toMatchObject([
-      { message: 'You are not allowed to import.', data: { code: 'import_not_allowed' } },
-    ]);
+    expect(response.body).toMatchObject({ code: 'import-export.import-not-allowed' });
   });
 
   it('refuses a collection this import collection does not serve, listing the ones it does', async () => {
@@ -223,27 +221,21 @@ describe('import columns endpoint', () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toMatchObject([
-      {
-        message: `Collection "users" can't be imported here. Importable: companies, tags, contacts, notes.`,
-        data: {
-          code: 'collection_not_importable',
-          allowed: ['companies', 'tags', 'contacts', 'notes'],
-        },
-      },
-    ]);
+    expect(response.body).toMatchObject({
+      code: 'import-export.collection-not-importable',
+      detail: `Collection "users" can't be imported here. Importable: companies, tags, contacts, notes.`,
+      data: { allowed: ['companies', 'tags', 'contacts', 'notes'] },
+    });
   });
 
   it('says the file goes in base64 fileData when it is missing', async () => {
     const response = await postBody({ format: 'csv' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toMatchObject([
-      {
-        message: 'No file data provided: send the file base64-encoded as `fileData`.',
-        data: { code: 'file_data_missing' },
-      },
-    ]);
+    expect(response.body).toMatchObject({
+      code: 'import-export.file-data-missing',
+      hint: 'Send the file base64-encoded as `fileData`.',
+    });
   });
 
   it.each(['xlsx', 'CSV', 5, null])(
@@ -252,12 +244,11 @@ describe('import columns endpoint', () => {
       const response = await postBody({ fileData: csv([['Name']]).toString('base64'), format });
 
       expect(response.status).toBe(400);
-      expect(response.body.errors).toMatchObject([
-        {
-          message: `Unsupported format ${JSON.stringify(format)}. Use "csv" or "json".`,
-          data: { code: 'unsupported_format', allowed: ['csv', 'json'] },
-        },
-      ]);
+      expect(response.body).toMatchObject({
+        code: 'import-export.unsupported-format',
+        detail: `Unsupported format ${JSON.stringify(format)}. Use "csv" or "json".`,
+        data: { allowed: ['csv', 'json'] },
+      });
     },
   );
 
@@ -272,24 +263,20 @@ describe('import columns endpoint', () => {
     const response = await postBody({ fileData: json([{ a: 1 }, 5, 'x']), format: 'json' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toMatchObject([
-      {
-        message: 'Could not read the file: Item 2 is not an object (got number).',
-        data: { code: 'file_unreadable' },
-      },
-    ]);
+    expect(response.body).toMatchObject({
+      code: 'import-export.file-unreadable',
+      detail: 'Could not read the file: Item 2 is not an object (got number).',
+    });
   });
 
   it('refuses a JSON file that is not an array as unreadable', async () => {
     const response = await postBody({ fileData: json({ a: 1 }), format: 'json' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toMatchObject([
-      {
-        message: 'Could not read the file: A JSON import must be an array of objects.',
-        data: { code: 'file_unreadable' },
-      },
-    ]);
+    expect(response.body).toMatchObject({
+      code: 'import-export.file-unreadable',
+      detail: 'Could not read the file: A JSON import must be an array of objects.',
+    });
   });
 
   it('has no AI suggestion endpoint without an AI model', async () => {

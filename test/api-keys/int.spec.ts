@@ -26,6 +26,14 @@ const writeSpend = (
     overrideAccess: true,
   });
 
+function fieldMessages(body: unknown): string {
+  const { errors = [] } = body as { errors?: { data?: { errors?: { message: string }[] } }[] };
+
+  return errors
+    .flatMap((entry) => entry.data?.errors?.map(({ message }) => message) ?? [])
+    .join(' ');
+}
+
 describe('API keys plugin integration', () => {
   let booted: BootedFrogBot;
   let upstream: Server;
@@ -206,14 +214,14 @@ describe('API keys plugin integration', () => {
     expect(mint.status).toBe(201);
 
     const keyHeaders = { 'x-service-key': mint.body.token };
-    const minted = await booted.restClient.post<{ error: string }>(
+    const minted = await booted.restClient.post<{ detail: string }>(
       '/api/credentials/mint',
       { name: 'Persist' },
       { headers: keyHeaders },
     );
 
     expect(minted.status).toBe(403);
-    expect(minted.body.error).toMatch(/can't mint or rotate/);
+    expect(minted.body.detail).toMatch(/can't mint or rotate/);
 
     const rotated = await booted.restClient.post(
       `/api/credentials/${mint.body.id}/rotate`,
@@ -278,16 +286,18 @@ describe('API keys plugin integration', () => {
       monthlyBudget: 5,
     });
 
-    const wider = await booted.restClient.post<{ error: string }>(
+    const wider = await booted.restClient.post<{ detail: string }>(
       '/api/credentials/mint',
       { name: 'Wide', data: { monthlyBudget: 50 } },
       { headers: parentHeaders },
     );
 
     expect(wider.status).toBe(400);
-    expect(wider.body.error).toContain('Can\'t exceed API key "CLI"\'s monthly cap of $5.00.');
+    expect(fieldMessages(wider.body)).toContain(
+      'Can\'t exceed API key "CLI"\'s monthly cap of $5.00.',
+    );
 
-    const grandchild = await booted.restClient.post<{ error: string }>(
+    const grandchild = await booted.restClient.post<{ detail: string }>(
       '/api/credentials/mint',
       { name: 'Deeper' },
       { headers: { 'x-service-key': child.body.token } },
@@ -626,7 +636,7 @@ describe('API keys plugin integration', () => {
     });
 
     const mintKey = (data: Record<string, unknown>) =>
-      booted.restClient.post<{ id: number | string; token: string; error?: string }>(
+      booted.restClient.post<{ id: number | string; token: string; detail?: string }>(
         '/api/credentials/mint',
         { name: 'CI bot', data },
         { headers: session },
@@ -770,7 +780,8 @@ describe('API keys plugin integration', () => {
       const above = await mintKey({ monthlyBudget: 60 });
 
       expect(above.status).toBe(400);
-      expect(above.body.error).toContain('monthly budget of $50.00.');
+      expect(fieldMessages(above.body)).toContain('monthly budget of $50.00.');
+      expect(above.body.detail).toContain('monthly budget of $50.00.');
 
       const key = await mintKey({ monthlyBudget: 25 });
       const headers = { 'x-service-key': key.body.token };
@@ -919,7 +930,7 @@ describe('API keys plugin integration', () => {
       password: 'frogbot-test-password',
     };
 
-    type Minted = { id: number | string; token: string; mintedBy?: unknown; error?: string };
+    type Minted = { id: number | string; token: string; mintedBy?: unknown; detail?: string };
 
     let ownerId: Account['id'];
     let session: { Authorization: string };
@@ -1112,9 +1123,11 @@ describe('API keys plugin integration', () => {
         );
 
         expect(widened.status).toBe(403);
-        expect(widened.body.errors[0]?.message).toBe(
-          'API key "P" can\'t change "tenant" on a key. Sign in to change it.',
-        );
+        expect(widened.body).toMatchObject({
+          code: 'api-keys.field-locked',
+          detail: 'API key "P" can\'t change "tenant" on a key.',
+          hint: 'Sign in to change it.',
+        });
       }
 
       const renamed = await booted.restClient.patch(
@@ -1186,7 +1199,10 @@ describe('API keys plugin integration', () => {
       const rotated = await rotate(asKey(parent.body.token), child.body.id);
 
       expect(rotated.status).toBe(400);
-      expect(rotated.body.error).toContain('Can\'t exceed API key "P"\'s monthly cap of $2.00.');
+      expect(fieldMessages(rotated.body)).toContain(
+        'Can\'t exceed API key "P"\'s monthly cap of $2.00.',
+      );
+      expect(rotated.body.detail).toBe('Can\'t exceed API key "P"\'s monthly cap of $2.00.');
       expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
       expect(
         (await booted.restClient.get('/api/credentials', { headers: asKey(child.body.token) }))
@@ -1206,10 +1222,8 @@ describe('API keys plugin integration', () => {
       );
     });
 
-    it('answers a missing key on revoke, minted-count and rotate with the errors envelope', async () => {
-      const notFound = {
-        errors: [{ name: 'APIError', message: 'API key not found', data: { code: 'not_found' } }],
-      };
+    it('answers a missing key on revoke, minted-count and rotate with api-keys.not-found', async () => {
+      const notFound = { code: 'api-keys.not-found', status: 404, detail: 'API key not found.' };
 
       for (const response of [
         await revoke(session, 999_999),
@@ -1217,7 +1231,7 @@ describe('API keys plugin integration', () => {
         await rotate(session, 999_999),
       ]) {
         expect(response.status).toBe(404);
-        expect(response.body).toEqual(notFound);
+        expect(response.body).toMatchObject(notFound);
       }
     });
 
@@ -1231,15 +1245,10 @@ describe('API keys plugin integration', () => {
         const refused = await revoke(asKey(child.body.token), id);
 
         expect(refused.status).toBe(404);
-        expect(refused.body).toEqual({
-          errors: [
-            {
-              name: 'APIError',
-              message:
-                'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.',
-              data: { code: 'not_found' },
-            },
-          ],
+        expect(refused.body).toMatchObject({
+          code: 'api-keys.not-found',
+          detail:
+            'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.',
         });
         expect((await mintedCount(asKey(child.body.token), id)).status).toBe(404);
       }
@@ -1411,7 +1420,12 @@ describe('API keys plugin integration', () => {
   });
 
   describe('expiring keys', () => {
-    type Minted = { id: number | string; token: string; expiresAt?: string | null; error?: string };
+    type Minted = {
+      id: number | string;
+      token: string;
+      expiresAt?: string | null;
+      detail?: string;
+    };
 
     let session: { Authorization: string };
 
@@ -1443,7 +1457,7 @@ describe('API keys plugin integration', () => {
 
       expect(unreadable.status).toBe(400);
       expect(past.status).toBe(400);
-      expect(past.body.error).toBe('expiresAt must be in the future.');
+      expect(past.body.detail).toBe('expiresAt must be in the future.');
 
       const farFuture = await mint(session, {
         name: 'Far',
@@ -1451,7 +1465,7 @@ describe('API keys plugin integration', () => {
       });
 
       expect(farFuture.status).toBe(400);
-      expect(farFuture.body.error).toBe('expiresAt must be before the year 10000.');
+      expect(farFuture.body.detail).toBe('expiresAt must be before the year 10000.');
 
       const expiresAt = new Date(Date.now() + 30 * 864e5).toISOString();
       const future = await mint(session, { name: 'Future', expiresAt });
@@ -1525,7 +1539,7 @@ describe('API keys plugin integration', () => {
       const refusedMint = await mint(asKey(key.body.token), { name: 'Next' });
 
       expect(refusedMint.status).toBe(401);
-      expect(refusedMint.body.error).toBe(message);
+      expect(refusedMint.body.detail).toBe(message);
       expect((await stored(key.body.id)).lastUsedAt).toBe(lastUsedAt);
 
       const login = await booted.restClient.post<{ token: string }>(
@@ -1540,7 +1554,10 @@ describe('API keys plugin integration', () => {
       );
 
       expect(rotated.status).toBe(400);
-      expect(rotated.body.error).toBe('This key has expired. Mint a new key instead.');
+      expect(rotated.body).toMatchObject({
+        code: 'api-keys.expired',
+        hint: 'Mint a new key instead.',
+      });
       expect((await stored(key.body.id)).revokedAt ?? null).toBeNull();
     });
 

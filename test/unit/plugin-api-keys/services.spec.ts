@@ -2,7 +2,6 @@ import type { FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  ApiKeyServiceError,
   mintApiKey,
   revokeApiKey,
   rotateApiKey,
@@ -56,9 +55,10 @@ describe('API key services', () => {
       owner: 'victim-1',
     };
 
-    await expect(mintApiKey(options as Parameters<typeof mintApiKey>[0])).rejects.toEqual(
-      new ApiKeyServiceError('authentication_required'),
-    );
+    await expect(mintApiKey(options as Parameters<typeof mintApiKey>[0])).rejects.toMatchObject({
+      code: 'auth.unauthenticated',
+      status: 401,
+    });
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -73,10 +73,10 @@ describe('API key services', () => {
 
     await expect(
       mintApiKey({ req, collectionSlug: 'credentials', tokenPrefix: 'fb', name: 'Persist' }),
-    ).rejects.toEqual(new ApiKeyServiceError('session_required'));
+    ).rejects.toMatchObject({ code: 'api-keys.session-required', status: 403 });
     await expect(
       rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
-    ).rejects.toEqual(new ApiKeyServiceError('session_required'));
+    ).rejects.toMatchObject({ code: 'api-keys.session-required', status: 403 });
     expect(create).not.toHaveBeenCalled();
     expect(find).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
@@ -261,7 +261,7 @@ describe('API key services', () => {
 
     await expect(
       rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
-    ).rejects.toEqual(new ApiKeyServiceError('not_found'));
+    ).rejects.toMatchObject({ code: 'api-keys.not-found', status: 404 });
     expect(update).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
   });
@@ -447,10 +447,7 @@ describe('API key services', () => {
 
       await expect(
         rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
-      ).rejects.toMatchObject({
-        message: 'This key has expired. Mint a new key instead.',
-        status: 400,
-      });
+      ).rejects.toMatchObject({ code: 'api-keys.expired', status: 400 });
       expect(create).not.toHaveBeenCalled();
       expect(update).not.toHaveBeenCalled();
     });

@@ -77,6 +77,18 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
+function problem(code: string, detail: string, fields?: { path: string; message: string }[]) {
+  return {
+    code,
+    detail,
+    title: detail,
+    status: 400,
+    retryable: false,
+    type: '',
+    errors: [{ message: detail, ...(fields ? { data: { errors: fields } } : {}) }],
+  };
+}
+
 describe('Form', () => {
   it('blocks Next until required questions are answered', async () => {
     const user = userEvent.setup();
@@ -178,7 +190,10 @@ describe('Form', () => {
 
   it('shows server errors on their fields, back on the step that holds them', async () => {
     respond(
-      { errors: [{ field: 'email', message: 'Enter a valid email.' }, { message: 'Nope.' }] },
+      problem('forms.invalid', 'Some answers need fixing.', [
+        { path: 'email', message: 'Enter a valid email.' },
+        { path: '', message: 'Nope.' },
+      ]),
       400,
     );
 
@@ -196,7 +211,7 @@ describe('Form', () => {
   });
 
   it('shows a refused submit’s message, like a rate limit', async () => {
-    respond({ error: 'Too many submissions. Try again later.' }, 429);
+    respond(problem('forms.rate-limited', 'Too many submissions. Try again later.'), 429);
 
     const user = userEvent.setup();
 
@@ -254,7 +269,11 @@ describe('Form', () => {
   });
 
   it('needs a Turnstile token, sends it, and resets the widget after a refusal', async () => {
-    const fetch = respond({ error: "We couldn't verify you're human. Try again." }, 400);
+    const fetch = respond(
+      problem('forms.not-human', "We couldn't verify you're human. Try again."),
+      400,
+    );
+
     let solve: (token: string) => void = () => {};
 
     const reset = vi.fn();

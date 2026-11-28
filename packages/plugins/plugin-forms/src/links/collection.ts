@@ -1,6 +1,6 @@
-import type { CollectionConfig, FieldHook } from 'frogbot';
+import { type CollectionConfig, type FieldHook, frogbotError } from 'frogbot';
 import { isId } from 'frogbot/internal';
-import { APIError, Forbidden } from 'payload';
+import { Forbidden } from 'payload';
 
 import type { FormLinkDocument, FormLinkDuration, FormLinkStatus } from '../types.js';
 import { FORM_LINKS_SLUG, isLinkCreate, linksAccess } from './access.js';
@@ -84,38 +84,21 @@ export function createFormLinksCollection({
         method: 'post',
         path: '/',
         handler: async (req) => {
-          if (!req.user) {
-            return Response.json({ error: 'Sign in to create links.' }, { status: 403 });
-          }
+          if (!req.user) throw frogbotError('auth.unauthenticated', 'Sign in to create links.');
 
           const body = (await req.json?.().catch(() => null)) as Record<string, unknown> | null;
 
-          if (!body || typeof body !== 'object') {
-            return Response.json({ error: 'The request body is invalid.' }, { status: 400 });
-          }
+          if (!body || typeof body !== 'object') throw frogbotError('request.invalid-json');
 
-          try {
-            const link = await createFormLink(req.frogbot, {
-              form: body.form as number | string,
-              record: body.record as number | string,
-              expiresIn: body.expiresIn as FormLinkDuration | undefined,
-              maxSubmissions: body.maxSubmissions as number | null | undefined,
-              req,
-            });
+          const link = await createFormLink(req.frogbot, {
+            form: body.form as number | string,
+            record: body.record as number | string,
+            expiresIn: body.expiresIn as FormLinkDuration | undefined,
+            maxSubmissions: body.maxSubmissions as number | null | undefined,
+            req,
+          });
 
-            return Response.json(link, { status: 201 });
-          } catch (error) {
-            if (error instanceof APIError && error.status < 500) {
-              const errors = (error.data as { errors?: unknown } | undefined)?.errors;
-
-              return Response.json(
-                { error: error.message, ...(errors ? { errors } : {}) },
-                { status: error.status },
-              );
-            }
-
-            throw error;
-          }
+          return Response.json(link, { status: 201 });
         },
       },
     ],

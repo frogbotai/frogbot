@@ -14,7 +14,7 @@ import {
 import {
   FIELDS,
   hasTwoFactor,
-  jsonError,
+  invalidReturnTo,
   passedKey,
   payloadRequest,
   readBody,
@@ -25,6 +25,7 @@ import {
   writeUser,
 } from './context.js';
 import { sendTwoFactorEmail } from './emails.js';
+import { twoFactorError } from './errors.js';
 import { withCodeLock } from './lock.js';
 import {
   codePageBody,
@@ -53,9 +54,8 @@ const pendingGone = (req: FrogBotRequest, slug: string): Refusal =>
   hasPendingCookie(req, slug)
     ? EXPIRED
     : {
-        status: 400,
         message: `No pending sign-in: send the \`${pendingCookieName(req, slug)}\` cookie from the sign-in response, or sign in again.`,
-        code: 'pending_missing',
+        code: 'two-factor.pending-missing',
       };
 
 const wantsJSON = (req: FrogBotRequest) =>
@@ -121,7 +121,7 @@ async function finish({
   }
 
   const returnTo = safeReturnTo(pending.returnTo ?? '', routes(req, slug).origin);
-  if (!returnTo) return jsonError('returnTo must be a path on this server.', 400);
+  if (!returnTo) return invalidReturnTo(req);
 
   const response = await finishSignIn({ ...base, returnTo });
   if (recoveryLeft === undefined) return response;
@@ -159,8 +159,8 @@ function fail({
   refusal: Refusal;
   body?: string;
 }): Response {
-  if (!form) return refusalResponse(refusal);
-  if (refusal.code === 'expired' || refusal.code === 'pending_missing') {
+  if (!form) return refusalResponse(req, refusal);
+  if (refusal.code === 'two-factor.expired' || refusal.code === 'two-factor.pending-missing') {
     return expiredPage(req, ctx.slug);
   }
 
@@ -169,8 +169,10 @@ function fail({
     slug: ctx.slug,
     title: 'Two-factor sign-in',
     body: body ?? '',
-    status: refusal.status,
-    headers: refusal.headers,
+    status: twoFactorError.definitions[refusal.code].status,
+    ...(refusal.retryAfter !== undefined && {
+      headers: { 'retry-after': String(refusal.retryAfter) },
+    }),
   });
 }
 
@@ -202,7 +204,9 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
       handler: async (req) => {
         const found = await readPending(req, slug);
         const json = wantsJSON(req);
-        if (!found) return json ? refusalResponse(pendingGone(req, slug)) : expiredPage(req, slug);
+        if (!found) {
+          return json ? refusalResponse(req, pendingGone(req, slug)) : expiredPage(req, slug);
+        }
 
         const { pending } = found;
         const { base } = routes(req, slug);

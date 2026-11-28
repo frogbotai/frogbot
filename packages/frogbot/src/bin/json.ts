@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 
+import { isFrogBotError } from '../errors/FrogBotError.js';
+import { toProblem } from '../errors/toProblem.js';
 import { formatCliError } from './formatCliError.js';
 
 /** What a {@link CliError} carries besides its message. */
@@ -38,9 +40,13 @@ const isParseArgsError = (error: unknown) =>
   error instanceof Error &&
   String((error as { code?: unknown }).code).startsWith('ERR_PARSE_ARGS_');
 
-/** The exit code for `error`: a `CliError`'s own, 2 for a flag `parseArgs` refused, else 1. */
+/**
+ * The exit code for `error`: a `CliError`'s own, a `FrogBotError`'s catalog `exit`, 2 for a flag
+ * `parseArgs` refused, else 1.
+ */
 export function exitCodeOf(error: unknown): number {
   if (error instanceof CliError) return error.exitCode;
+  if (isFrogBotError(error)) return typeof error.exit === 'number' ? error.exit : 1;
 
   return isParseArgsError(error) ? 2 : 1;
 }
@@ -92,12 +98,23 @@ export function writeJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value)}\n`);
 }
 
-/** The `--json` result for a command that failed with `error`. */
+/**
+ * The `--json` result for a command that failed with `error`: `ok: false`, with `success: false`
+ * kept for older scripts. A `FrogBotError`'s `error` is its `Problem`, with `message` set to its
+ * `detail`.
+ */
 export function failureJson(command: string, error: unknown) {
+  if (isFrogBotError(error)) {
+    const problem = toProblem(error, { debug: true });
+
+    return { command, ok: false, success: false, error: { ...problem, message: problem.detail } };
+  }
+
   const message = formatCliError(error).replace(/^\[frogbot\] /, '');
 
   return {
     command,
+    ok: false,
     success: false,
     error: {
       code:

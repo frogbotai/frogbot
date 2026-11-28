@@ -36,7 +36,7 @@ export type ImportColumnsFieldProps = JSONFieldClientProps & Partial<ImportColum
 
 type ImportFile = { fileData: string; format: 'csv' | 'json' };
 
-type ErrorBody = { errors?: { message?: string }[] };
+type ErrorBody = { detail?: string };
 
 type Loaded = ImportFile & Omit<ImportColumnsResponse, 'columns' | 'headers'>;
 
@@ -173,7 +173,7 @@ export function ImportColumnsField({ ai = false, field, path, readOnly }: Import
       if (!response.ok || !result.columns) {
         setNotice({
           error: true,
-          text: result.errors?.[0]?.message ?? 'AI suggestion failed.',
+          text: result.detail ?? 'AI suggestion failed.',
         });
 
         return;
@@ -368,7 +368,7 @@ async function loadColumns({
   const result = (await response.json()) as ImportColumnsResponse & ErrorBody;
 
   if (!response.ok) {
-    throw new Error(result.errors?.[0]?.message ?? "Could not read the file's columns.");
+    throw new Error(result.detail ?? "Could not read the file's columns.");
   }
 
   return { ...result, fileData, format };

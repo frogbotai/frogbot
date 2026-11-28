@@ -8,6 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
+import { refusal } from '../refusal.js';
 import { ticketFilesSlug, ticketsSlug } from '../shared.js';
 import { infectedMarker, staticDir } from './config.js';
 
@@ -179,9 +180,10 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
 
     const result = await submit({ subject: 'Reuse a file', screenshot: existing.id });
 
-    expect(result).toEqual({
+    expect({ status: result.status, body: refusal(result.body) }).toEqual({
       status: 400,
       body: {
+        code: 'forms.invalid',
         errors: [
           { field: 'screenshot', message: "Attach the file itself. File IDs aren't accepted." },
         ],
@@ -196,9 +198,12 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
       text('attachments', 'infected.txt', infectedMarker),
     ]);
 
-    expect(result).toEqual({
+    expect({ status: result.status, body: refusal(result.body) }).toEqual({
       status: 400,
-      body: { errors: [{ field: 'attachments', message: 'This file failed a virus scan.' }] },
+      body: {
+        code: 'forms.invalid',
+        errors: [{ field: 'attachments', message: 'This file failed a virus scan.' }],
+      },
     });
     expect(await storedFiles()).toEqual([]);
     expect(await filesOnDisk()).toEqual([]);
@@ -211,9 +216,9 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
       text('attachments', 'log.txt'),
     ]);
 
-    expect(result).toEqual({
+    expect({ status: result.status, body: refusal(result.body) }).toEqual({
       status: 400,
-      body: { errors: [expect.objectContaining({ field: 'subject' })] },
+      body: { code: 'forms.invalid', errors: [expect.objectContaining({ field: 'subject' })] },
     });
     expect(await storedFiles()).toEqual([]);
     expect(await filesOnDisk()).toEqual([]);
@@ -226,18 +231,22 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
       text('attachments', 'c.txt'),
     ]);
 
-    expect(tooMany).toEqual({
+    expect({ status: tooMany.status, body: refusal(tooMany.body) }).toEqual({
       status: 400,
-      body: { errors: [{ field: 'attachments', message: 'Attach up to 2 files.' }] },
+      body: {
+        code: 'forms.invalid',
+        errors: [{ field: 'attachments', message: 'Attach up to 2 files.' }],
+      },
     });
 
     const wrongType = await submit({ subject: 'A PDF' }, [
       { key: 'attachments', name: 'report.pdf', type: 'application/pdf', data: '%PDF-1.4' },
     ]);
 
-    expect(wrongType).toEqual({
+    expect({ status: wrongType.status, body: refusal(wrongType.body) }).toEqual({
       status: 400,
       body: {
+        code: 'forms.invalid',
         errors: [
           { field: 'attachments', message: '"report.pdf" isn\'t an accepted type (text/*).' },
         ],
@@ -248,12 +257,35 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
       text('attachments', 'big.txt', 'x'.repeat(MiB + 1)),
     ]);
 
-    expect(tooBig).toEqual({
+    expect({ status: tooBig.status, body: refusal(tooBig.body) }).toEqual({
       status: 400,
-      body: { errors: [{ field: 'attachments', message: '"big.txt" is larger than 1 MB.' }] },
+      body: {
+        code: 'forms.invalid',
+        errors: [{ field: 'attachments', message: '"big.txt" is larger than 1 MB.' }],
+      },
     });
 
     expect(await storedFiles()).toEqual([]);
+    expect(await tickets()).toEqual([]);
+  });
+
+  it('marks which field had the wrong type when a refusal also names a file', async () => {
+    const result = await submit({ subject: 5 }, [
+      text('attachments', 'a.txt'),
+      text('attachments', 'b.txt'),
+      text('attachments', 'c.txt'),
+    ]);
+
+    expect({ status: result.status, body: refusal(result.body) }).toEqual({
+      status: 400,
+      body: {
+        code: 'forms.invalid-answer',
+        errors: expect.arrayContaining([
+          { field: 'attachments', message: 'Attach up to 2 files.' },
+          expect.objectContaining({ field: 'subject', code: 'forms.invalid-answer' }),
+        ]),
+      },
+    });
     expect(await tickets()).toEqual([]);
   });
 
@@ -265,9 +297,9 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
       text('other', 'd.txt'),
     ]);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       status: 413,
-      body: { error: 'The files are too large, or there are too many.' },
+      body: expect.objectContaining({ code: 'forms.files-too-large' }),
     });
     expect(await storedFiles()).toEqual([]);
   });

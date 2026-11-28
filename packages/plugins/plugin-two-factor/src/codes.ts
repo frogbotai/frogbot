@@ -5,12 +5,12 @@ import {
   hasTwoFactor,
   jsonError,
   readUser,
-  type RefusalCode,
   type TwoFactorContext,
   type TwoFactorUser,
   WRONG_CODE,
 } from './context.js';
 import { sendTwoFactorEmail } from './emails.js';
+import type { TwoFactorErrorCode } from './errors.js';
 import { clearCodeFailures, codeLockSeconds, recordCodeFailure, withCodeLock } from './lock.js';
 import { spendRecoveryCode } from './recovery.js';
 import { verifyTOTP } from './totp.js';
@@ -20,36 +20,33 @@ export type CodeOutcome<T> =
   | { status: 'locked'; retryAfter: number }
   | { status: 'wrong' | 'expired' };
 
-/** A refused request: the status, message, `data.code` and headers it answers with. */
+/** A refused request: its code, the message a person reads, and the seconds to wait before retrying. */
 export type Refusal = {
-  status: number;
+  code: TwoFactorErrorCode;
   message: string;
-  code: RefusalCode;
-  headers?: HeadersInit;
+  retryAfter?: number;
 };
 
 export const LOCKED = 'Too many wrong codes. Try again in 10 minutes.';
 
 export const EXPIRED: Refusal = {
-  status: 400,
   message: 'This sign-in expired or was already used. Sign in again.',
-  code: 'expired',
+  code: 'two-factor.expired',
 };
 
-export const WRONG: Refusal = { status: 401, message: WRONG_CODE, code: 'wrong_code' };
+export const WRONG: Refusal = { message: WRONG_CODE, code: 'two-factor.wrong-code' };
 
-export const refusalResponse = ({ status, message, code, headers }: Refusal) =>
-  jsonError(message, status, { code, headers });
+export const refusalResponse = (req: FrogBotRequest, { message, code, retryAfter }: Refusal) =>
+  jsonError(req, code, { detail: message, retryAfter });
 
 /** The refusal for a code that wasn't accepted. */
 export function codeRefusal(outcome: Exclude<CodeOutcome<unknown>, { status: 'ok' }>): Refusal {
   if (outcome.status !== 'locked') return outcome.status === 'expired' ? EXPIRED : WRONG;
 
   return {
-    status: 429,
     message: LOCKED,
-    code: 'locked',
-    headers: { 'retry-after': String(outcome.retryAfter) },
+    code: 'two-factor.locked',
+    retryAfter: outcome.retryAfter,
   };
 }
 
@@ -64,9 +61,8 @@ export function readCode(
   if (!body) {
     return {
       refused: {
-        status: 400,
         message: 'Send JSON or a URL-encoded form body, e.g. {"code":"123456"}.',
-        code: 'body_unreadable',
+        code: 'two-factor.body-unreadable',
       },
     };
   }
@@ -80,9 +76,8 @@ export function readCode(
 
   return {
     refused: {
-      status: 400,
       message: 'Send the code as a string in `code`, e.g. {"code":"123456"}.',
-      code: 'code_missing',
+      code: 'two-factor.code-missing',
     },
   };
 }

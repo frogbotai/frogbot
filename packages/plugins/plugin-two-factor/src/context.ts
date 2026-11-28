@@ -1,6 +1,8 @@
-import type { FrogBotRequest } from 'frogbot';
+import { type FrogBotError, frogbotError, type FrogBotRequest, problemResponse } from 'frogbot';
 import { toPayloadRequest } from 'frogbot/internal';
 import { commitTransaction, initTransaction, killTransaction, type PayloadRequest } from 'payload';
+
+import { twoFactorError, type TwoFactorErrorCode } from './errors.js';
 
 /** The two-factor fields the plugin reads from a user, as stored. */
 export type TwoFactorUser = {
@@ -244,19 +246,33 @@ export async function readBody(
   return { body: null, form: false };
 }
 
-/** The stable `data.code` on a refusal, so callers branch on it rather than on the message. */
-export type RefusalCode =
-  'wrong_code' | 'locked' | 'expired' | 'pending_missing' | 'code_missing' | 'body_unreadable';
+/** Answers a refused two-factor request with its `Problem`, never cached. */
+export function jsonError(
+  req: FrogBotRequest,
+  code: TwoFactorErrorCode,
+  { detail, retryAfter }: { detail?: string; retryAfter?: number } = {},
+): Response {
+  return problemError(req, twoFactorError(code, { ...(detail ? { detail } : {}), retryAfter }));
+}
 
-export const jsonError = (
-  message: string,
-  status: number,
-  { code, headers }: { code?: RefusalCode; headers?: HeadersInit } = {},
-) =>
-  Response.json(
-    { errors: [code ? { message, data: { code } } : { message }] },
-    { status, headers: noStore(headers) },
+/** The 400 for a `returnTo` that isn't a path on this server. */
+export function invalidReturnTo(req: FrogBotRequest): Response {
+  const message = 'returnTo must be a path on this server.';
+
+  return problemError(
+    req,
+    frogbotError('request.invalid', { detail: message, fields: [{ path: 'returnTo', message }] }),
   );
+}
+
+/** Answers any `FrogBotError` as its `Problem`, never cached. */
+export function problemError(req: FrogBotRequest, error: FrogBotError): Response {
+  const response = problemResponse(error, { req });
+
+  response.headers.set('cache-control', 'no-store');
+
+  return response;
+}
 
 export function noStore(init?: HeadersInit): Headers {
   const headers = new Headers(init);

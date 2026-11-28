@@ -86,16 +86,18 @@ A user who loses both their authenticator and their recovery codes needs an admi
 
 ## Endpoints
 
-All live under `/api/<collection>` and answer errors as `{ errors: [{ message }] }`. A refused code, here and on `/two-factor/verify` and `/two-factor/setup`, also carries `data.code`, so a client branches on that rather than the message:
+All live under `/api/<collection>`. Every error is a [Problem](/agents/overview#invoke-over-http): branch on `code`, show `detail`. A refused code, here and on `/two-factor/verify` and `/two-factor/setup`, has one of these codes:
 
-| `data.code` | Status | Means |
+| `code` | Status | Means |
 | --- | --- | --- |
-| `wrong_code` | `401` | The code didn't match. On `verify`, `recovery-codes` and `disable` it counts toward the lock; on `setup` and `enable` it doesn't. |
-| `locked` | `429` | Five wrong codes locked code entry. `Retry-After` gives the seconds left. |
-| `code_missing` | `400` | `code` is missing, empty, or not a string or a whole number of up to six digits. It doesn't count. |
-| `body_unreadable` | `400` | The body isn't a JSON object or a URL-encoded form. It doesn't count. |
-| `pending_missing` | `400` | The request didn't send the pending sign-in cookie. |
-| `expired` | `400` | The pending sign-in, or the start of turning it on, expired or was used. Sign in, or start, again. |
+| `two-factor.wrong-code` | `401` | The code didn't match. On `verify`, `recovery-codes` and `disable` it counts toward the lock; on `setup` and `enable` it doesn't. |
+| `two-factor.locked` | `429` | Five wrong codes locked code entry. `Retry-After` gives the seconds left. |
+| `two-factor.code-missing` | `400` | `code` is missing, empty, or not a string or a whole number of up to six digits. It doesn't count. |
+| `two-factor.body-unreadable` | `400` | The body isn't a JSON object or a URL-encoded form. It doesn't count. |
+| `two-factor.pending-missing` | `400` | The request didn't send the pending sign-in cookie. |
+| `two-factor.expired` | `400` | The pending sign-in, or the start of turning it on, expired or was used. Sign in, or start, again. |
+
+The account endpoints also answer `two-factor.already-on` (`409`), `two-factor.off` (`400`), `two-factor.required` (`403`) and `two-factor.not-allowed` (`403`). A sign-in that skips the two-factor flow, such as a GraphQL `login`, gets `two-factor.sign-in-required` (`403`).
 
 | Endpoint | Body | Answer |
 | --- | --- | --- |

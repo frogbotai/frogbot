@@ -2,6 +2,7 @@ import { APIError, type FrogBotConfig, type FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
+import { routed } from '../../__helpers/shared/routed.js';
 
 function manager(collectionSlug = 'api-keys') {
   return {
@@ -153,8 +154,8 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const endpoint = collection.endpoints!.find((item) => item.path === '/mint')!;
-    const first = await endpoint.handler(req);
-    const second = await endpoint.handler(req);
+    const first = await routed(() => endpoint.handler(req));
+    const second = await routed(() => endpoint.handler(req));
     const firstBody = await first.json();
     const secondBody = await second.json();
 
@@ -172,7 +173,7 @@ describe('API keys collection', () => {
     for (const path of ['/mint', '/:id/revoke', '/:id/rotate']) {
       const endpoint = collection.endpoints!.find((item) => item.path === path)!;
 
-      expect((await endpoint.handler(req)).status).toBe(401);
+      expect((await routed(() => endpoint.handler(req))).status).toBe(401);
     }
   });
 
@@ -195,12 +196,13 @@ describe('API keys collection', () => {
 
     for (const path of ['/mint', '/:id/rotate']) {
       const endpoint = collection.endpoints!.find((item) => item.path === path)!;
-      const response = await endpoint.handler(req);
+      const response = await routed(() => endpoint.handler(req));
 
       expect(response.status).toBe(403);
-      expect(await response.json()).toEqual({
-        error:
-          "This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys.",
+      expect(await response.json()).toMatchObject({
+        code: 'api-keys.session-required',
+        detail: "This API key can't mint or rotate API keys.",
+        hint: 'Sign in, or use a key that can mint keys.',
       });
     }
 
@@ -231,7 +233,7 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
-    const minted = await mint.handler(req);
+    const minted = await routed(() => mint.handler(req));
 
     expect(minted.status).toBe(201);
     expect(await minted.json()).toMatchObject({ id: 'key-2', canMint: true, mintedBy: 'key-1' });
@@ -243,7 +245,7 @@ describe('API keys collection', () => {
     });
 
     const rotate = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
-    const rotated = await rotate.handler(req);
+    const rotated = await routed(() => rotate.handler(req));
 
     expect(rotated.status).toBe(201);
     expect(create.mock.calls[1][0].data).toMatchObject({
@@ -265,7 +267,7 @@ describe('API keys collection', () => {
 
     const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
 
-    expect((await mint.handler(req)).status).toBe(201);
+    expect((await routed(() => mint.handler(req))).status).toBe(201);
     expect(create.mock.calls[0][0].data).toMatchObject({ canMint: false, mintedBy: null });
   });
 
@@ -276,7 +278,7 @@ describe('API keys collection', () => {
       'expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.',
     ],
     ['a past date', '2020-01-01T00:00:00.000Z', 'expiresAt must be in the future.'],
-    ['a number', 1_900_000_000_000, 'expiresAt must be a date string'],
+    ['a number', 1_900_000_000_000, 'expiresAt must be a date string.'],
   ])('refuses a mint with %s for expiresAt, writing nothing', async (_name, expiresAt, error) => {
     const collection = await getCollection();
     const create = vi.fn();
@@ -287,10 +289,10 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
-    const response = await mint.handler(req);
+    const response = await routed(() => mint.handler(req));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error });
+    expect(await response.json()).toMatchObject({ code: 'request.invalid', detail: error });
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -305,7 +307,7 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
-    const response = await mint.handler(req);
+    const response = await routed(() => mint.handler(req));
 
     expect(response.status).toBe(201);
     expect(await response.json()).toMatchObject({ id: 'key-2', expiresAt });
@@ -331,11 +333,12 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const rotate = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
-    const response = await rotate.handler(req);
+    const response = await routed(() => rotate.handler(req));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
-      error: 'This key has expired. Mint a new key instead.',
+    expect(await response.json()).toMatchObject({
+      code: 'api-keys.expired',
+      hint: 'Mint a new key instead.',
     });
     expect(create).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
@@ -399,7 +402,7 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
-    const response = await endpoint.handler(req);
+    const response = await routed(() => endpoint.handler(req));
 
     expect(response.status).toBe(200);
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ id: 'key-1' }));
@@ -427,7 +430,7 @@ describe('API keys collection', () => {
 
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
 
-    expect((await endpoint.handler(req)).status).toBe(200);
+    expect((await routed(() => endpoint.handler(req))).status).toBe(200);
     expect(find).toHaveBeenCalledTimes(finds);
   });
 
@@ -442,7 +445,7 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
-    const response = await endpoint.handler(req);
+    const response = await routed(() => endpoint.handler(req));
 
     expect(response.status).toBe(400);
     expect(find).not.toHaveBeenCalled();
@@ -467,7 +470,7 @@ describe('API keys collection', () => {
 
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
 
-    expect((await endpoint.handler(req)).status).toBe(200);
+    expect((await routed(() => endpoint.handler(req))).status).toBe(200);
     expect((req.frogbot.find as ReturnType<typeof vi.fn>).mock.calls[0][0].where).toEqual({
       id: { equals: 'key-1' },
     });
@@ -497,7 +500,7 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
-    const response = await endpoint.handler(req);
+    const response = await routed(() => endpoint.handler(req));
     const body = await response.json();
 
     expect(response.status).toBe(201);
@@ -530,6 +533,7 @@ describe('API keys collection', () => {
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
 
     await expect(endpoint.handler(req)).rejects.toThrow('database unavailable');
+
     expect(update).not.toHaveBeenCalled();
   });
 
@@ -549,10 +553,13 @@ describe('API keys collection', () => {
     } as unknown as FrogBotRequest;
 
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
-    const response = await endpoint.handler(req);
+    const response = await routed(() => endpoint.handler(req));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: 'Over the cap.' });
+    expect(await response.json()).toMatchObject({
+      code: 'request.rejected',
+      detail: 'Over the cap.',
+    });
     expect(update).not.toHaveBeenCalled();
   });
 

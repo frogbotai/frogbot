@@ -81,7 +81,12 @@ export function UsageReports() {
 
     fetch(`${config.routes.api}/usage/report?${params}`, { signal: controller.signal })
       .then(async (response) => {
-        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          const problem = (await response.json().catch(() => null)) as { detail?: string } | null;
+
+          throw new Error(problem?.detail ?? `${response.status} ${response.statusText}`);
+        }
+
         setReport((await response.json()) as UsageReport);
       })
       .catch((reason: unknown) => {

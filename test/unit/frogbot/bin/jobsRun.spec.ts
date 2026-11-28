@@ -4,8 +4,9 @@ import { BasePayload } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { jobsRun } from '../../../../packages/frogbot/src/bin/jobsRun.js';
-import { CliError } from '../../../../packages/frogbot/src/bin/json.js';
+import { CliError, exitCodeOf } from '../../../../packages/frogbot/src/bin/json.js';
 import type { FrogBotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
+import { frogbotError } from '../../../../packages/frogbot/src/errors/catalog.js';
 import { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
   createDefaultRequest,
@@ -450,6 +451,15 @@ describe('jobs:run lifecycle', () => {
     expect(await worker).toEqual(new Error('exit:1'));
     expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
     expect(mocks.payload.destroy).toHaveBeenCalledOnce();
+  });
+
+  it('throws a FrogBotError raised while booting with its own code and catalog exit', async () => {
+    const invalid = frogbotError('request.invalid', '`queue` must be a string.');
+
+    mocks.loadConfig.mockRejectedValue(invalid);
+
+    expect(await jobsRun([]).catch((thrown: unknown) => thrown)).toBe(invalid);
+    expect(exitCodeOf(invalid)).toBe(2);
   });
 
   it('keeps signal handlers installed until cleanup finishes and reports cleanup failure', async () => {

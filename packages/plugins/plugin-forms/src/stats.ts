@@ -1,6 +1,13 @@
-import type { Access, CollectionConfig, Endpoint, FrogBot } from 'frogbot';
+import {
+  type Access,
+  type CollectionConfig,
+  type Endpoint,
+  type FrogBot,
+  frogbotError,
+} from 'frogbot';
 
 import { formIsClosed } from './closing.js';
+import { formError } from './errors.js';
 import { findForm, type FormsRuntime } from './lookup.js';
 import type { FormDocument, FormEvent } from './types.js';
 
@@ -69,14 +76,15 @@ export function createEventsEndpoint(runtime: FormsRuntime): Endpoint {
       const type = body?.type;
 
       if (!isPing(type)) {
-        return Response.json({ error: 'The request body is invalid.' }, { status: 400 });
+        throw frogbotError('request.invalid', {
+          detail: "type must be 'view' or 'start'.",
+          fields: [{ path: 'type', message: "type must be 'view' or 'start'." }],
+        });
       }
 
       const found = await findForm(req, runtime, req.routeParams?.slug);
 
-      if (!found || found.form.mode === 'update') {
-        return Response.json({ error: 'Not found' }, { status: 404 });
-      }
+      if (!found || found.form.mode === 'update') throw formError('forms.not-found');
 
       if (!(await formIsClosed(req.frogbot, found.form))) {
         await countEvent(req.frogbot, found.form, type);

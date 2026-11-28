@@ -451,6 +451,7 @@ describe('frogbot bin', () => {
       expect(json()).toEqual([
         {
           command: 'up',
+          ok: false,
           success: false,
           error: { code: errorCode, message: failure.message.replace('[frogbot] ', '') },
         },

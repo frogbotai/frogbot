@@ -88,6 +88,18 @@ describe('exports of versioned collections without drafts', () => {
     expect(JSON.stringify(body)).toContain('Globex');
   });
 
+  it('tells a signed-out download to sign in', async () => {
+    const { body, status } = await booted.restClient.post<{ code?: string; hint?: string }>(
+      '/api/exports/download',
+      { data: { collectionSlug: companiesSlug, format: 'csv' } },
+      { signal: AbortSignal.timeout(10_000) },
+    );
+
+    expect(status).toBe(401);
+    expect(body).toMatchObject({ code: 'auth.unauthenticated' });
+    expect(body.hint).toContain('Sign in');
+  });
+
   it('refuses to download a collection the export collection does not serve', async () => {
     const { body, status } = await download(usersSlug);
 

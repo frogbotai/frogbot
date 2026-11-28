@@ -15,12 +15,13 @@ import {
   refuseRejectedApiKey,
 } from './strategy.js';
 
+export { apiKeyError } from './errors.js';
 export type {
   MintApiKeyOptions,
   RevokeApiKeyOptions,
   RotateApiKeyOptions,
 } from './server/services.js';
-export { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
+export { mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 export type { ApiKeyHeaderOptions, ApiKeyTokenOptions } from './server/token.js';
 export {
   createApiKeyToken,

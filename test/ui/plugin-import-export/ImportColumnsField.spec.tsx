@@ -192,14 +192,7 @@ describe('ImportColumnsField', () => {
   it('keeps the mapping and shows the message when the AI call fails', async () => {
     respond(
       [columnsResponse],
-      [
-        {
-          errors: [
-            { message: 'AI suggestion failed: down', data: { code: 'ai_suggestion_failed' } },
-          ],
-        },
-        502,
-      ],
+      [{ code: 'import-export.ai-suggestion-failed', detail: 'AI suggestion failed.' }, 502],
     );
 
     render(<ImportColumnsField {...fieldProps} ai />);
@@ -207,7 +200,7 @@ describe('ImportColumnsField', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Suggest with AI' }));
 
-    await screen.findByText('AI suggestion failed: down');
+    await screen.findByText('AI suggestion failed.');
 
     expect(stored().columns).toEqual(columnsResponse.columns);
   });
@@ -215,12 +208,8 @@ describe('ImportColumnsField', () => {
   it("shows the endpoint's error when the file can't be read", async () => {
     respond([
       {
-        errors: [
-          {
-            message: 'Could not read the file: Invalid Closing Quote',
-            data: { code: 'file_unreadable' },
-          },
-        ],
+        code: 'import-export.file-unreadable',
+        detail: 'Could not read the file: Invalid Closing Quote',
       },
       400,
     ]);
