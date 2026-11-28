@@ -1,13 +1,14 @@
 import { isDeepStrictEqual } from 'node:util';
 
 import {
-  APIError,
   type CollectionBeforeValidateHook,
+  frogbotError,
   type FrogBotRequest,
   type Where,
 } from 'frogbot';
 
-import { apiKeyStrategyName, expiryTime, isExpiredKey } from '../strategy.js';
+import { apiKeyError } from '../errors.js';
+import { apiKeyStrategyName, expiryTime, isExpiredKey, signInRequired } from '../strategy.js';
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './token.js';
 
 export type MintApiKeyOptions = {
@@ -44,12 +45,6 @@ type KeyDocument = Record<string, unknown>;
 
 type KeyID = string | number;
 
-export class ApiKeyServiceError extends Error {
-  constructor(public readonly code: 'authentication_required' | 'not_found' | 'session_required') {
-    super(code);
-  }
-}
-
 export function isApiKeyRequest(req: FrogBotRequest): boolean {
   return (req.user as { _strategy?: unknown } | null | undefined)?._strategy === apiKeyStrategyName;
 }
@@ -68,10 +63,24 @@ function requestKey(req: FrogBotRequest) {
   return isApiKeyRequest(req) ? keyID((req.user as { apiKeyId?: unknown }).apiKeyId) : null;
 }
 
+function keyNotFound(req: FrogBotRequest) {
+  return apiKeyError(
+    'api-key.not-found',
+    isApiKeyRequest(req)
+      ? 'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.'
+      : undefined,
+  );
+}
+
+/** The 403 for an API key that tried to mint or rotate keys without `canMint`. */
+export function sessionRequired() {
+  return apiKeyError('api-key.session-required');
+}
+
 function requireMinter(req: FrogBotRequest) {
   const owner = req.user?.id;
-  if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
-  if (!canMintKeys(req)) throw new ApiKeyServiceError('session_required');
+  if (owner === undefined) throw signInRequired(req);
+  if (!canMintKeys(req)) throw sessionRequired();
 
   return { owner, mintedBy: requestKey(req) };
 }
@@ -144,10 +153,10 @@ export const keyScopeBeforeValidate: CollectionBeforeValidateHook = ({
   );
 
   if (changed) {
-    throw new APIError(
-      `${keyName(parent)} can't change "${changed}" on a key. Sign in to change it.`,
-      403,
-    );
+    throw apiKeyError('api-key.field-locked', {
+      detail: `${keyName(parent)} can't change "${changed}" on a key.`,
+      fields: [{ path: changed, message: "An API key can't change this field." }],
+    });
   }
 
   return data;
@@ -181,17 +190,24 @@ function parseExpiry(value: string): number | null {
   return valid ? expiryTime(value) : null;
 }
 
+function invalidExpiry(message: string) {
+  return frogbotError('request.invalid', {
+    detail: message,
+    fields: [{ path: 'expiresAt', message }],
+  });
+}
+
 function resolveExpiry(req: FrogBotRequest, asked: unknown): string | null {
   let expiresAt: number | null = null;
 
   if (asked !== undefined && asked !== null) {
     expiresAt = typeof asked === 'string' ? parseExpiry(asked) : null;
     if (expiresAt === null) {
-      throw new APIError('expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.', 400);
+      throw invalidExpiry('expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.');
     }
 
-    if (expiresAt <= Date.now()) throw new APIError('expiresAt must be in the future.', 400);
-    if (expiresAt > lastExpiry) throw new APIError('expiresAt must be before the year 10000.', 400);
+    if (expiresAt <= Date.now()) throw invalidExpiry('expiresAt must be in the future.');
+    if (expiresAt > lastExpiry) throw invalidExpiry('expiresAt must be before the year 10000.');
   }
 
   const parent = isApiKeyRequest(req) ? (req.user as { apiKey?: KeyDocument }).apiKey : undefined;
@@ -286,8 +302,8 @@ async function findKey({
   rotator = requestKey(req),
 }: FindKeyOptions) {
   const owner = req.user?.id;
-  if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
-  if (isApiKeyRequest(req) && rotator == null) throw new ApiKeyServiceError('not_found');
+  if (owner === undefined) throw signInRequired(req);
+  if (isApiKeyRequest(req) && rotator == null) throw keyNotFound(req);
 
   const scope: Where[] = [
     { id: { equals: id } },
@@ -313,7 +329,7 @@ async function findKey({
     typeof key.name !== 'string' ||
     (typeof key.owner !== 'string' && typeof key.owner !== 'number')
   ) {
-    throw new ApiKeyServiceError('not_found');
+    throw keyNotFound(req);
   }
 
   return key as RevokedKey;
@@ -417,7 +433,7 @@ export async function rotateApiKey({
 }: RotateApiKeyOptions) {
   const { mintedBy: rotator } = requireMinter(req);
   const key = await findKey({ req, collectionSlug, id, anyOwner, rotator });
-  if (isExpiredKey(key)) throw new APIError('This key has expired. Mint a new key instead.', 400);
+  if (isExpiredKey(key)) throw apiKeyError('api-key.expired');
 
   const expiresAt = expiryTime(key.expiresAt);
   const minted = await mintForOwner({
