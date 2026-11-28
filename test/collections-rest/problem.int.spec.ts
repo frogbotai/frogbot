@@ -41,6 +41,28 @@ describe('routed errors are Problems', () => {
     expect(res.headers.get('x-request-id')).toBe(body.requestId);
   });
 
+  it('answers a path no route matches with route.not-found', async () => {
+    const res = await fetch(`${booted.baseUrl}/api/no-such-collection`, {
+      method: 'POST',
+      headers: { 'x-request-id': 'req_unknown' },
+    });
+
+    expect(res.status).toBe(404);
+    expect(res.headers.get('content-type')).toContain('application/problem+json');
+    expect(res.headers.get('x-request-id')).toBe('req_unknown');
+    expect(await res.json()).toMatchObject({
+      code: 'route.not-found',
+      detail: 'No POST route at /api/no-such-collection.',
+      requestId: 'req_unknown',
+    });
+
+    const direct = await booted.frogbot.handleRequest(
+      new Request('http://localhost/api/no-such-collection/extra'),
+    );
+
+    expect(await direct.json()).toMatchObject({ code: 'route.not-found' });
+  });
+
   it('echoes an incoming X-Request-Id and maps NotFound', async () => {
     const res = await fetch(`${booted.baseUrl}/api/${projectsSlug}/999999`, {
       headers: { 'x-request-id': 'abc-123' },
