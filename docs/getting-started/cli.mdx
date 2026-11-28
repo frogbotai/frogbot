@@ -13,7 +13,52 @@ pnpm frogbot generate:types
 
 - **Environment files:** Before any command runs, `frogbot` loads `.env*` files from the current directory using Next.js rules (development files unless `NODE_ENV` is `production`).
 - **Config discovery:** Commands that load your app look for `frogbot.config.{ts,js,mjs}` in the current directory, `src/`, a parent directory, or the path in `FROGBOT_CONFIG_PATH`.
-- **Exit codes:** Command names are case-insensitive. A missing or unknown command prints available commands (and points to [Plugin commands](#plugin-commands)) and exits with code `2`. A command that fails prints the error and exits with code `1`.
+- **Exit codes:** `0` success, `1` failure, `2` usage error (an unknown command or flag, or a question with no terminal to answer it), `3` sign-in needed and `4` payment needed (`frogbot deploy` and `frogbot dojo`). A command never exits `0` after a failure. Command names are case-insensitive.
+
+## Help and version
+
+`frogbot`, `frogbot help`, `frogbot --help` and `frogbot -h` list every command in groups (Run, Ship, Database, Generate, then each plugin's group, such as Dojo, then Contributing), one line each, and exit `0`:
+
+```bash
+$ npx frogbot
+FrogBot 0.43.0. Usage: frogbot <command> [options]
+
+Run
+  dev                   Start the Next.js dev server, after writing the admin import map
+  up                    Run the app in the background, rebuilding on each edit
+  ...
+```
+
+- **One command's flags.** `frogbot <command> --help`, or `-h`, prints that command's usage and flags and exits `0`. In `frogbot run <file>`, flags after the file go to the file.
+- **Version.** `frogbot --version`, or `-v`, prints the installed version and exits `0`. It loads no config, so it works in any folder.
+- **For agents.** `frogbot help --json`, or `frogbot --help --json`, prints one object with the version, the exit codes, and every command by group with its `summary`, `usage` and `flags`. Plugin commands appear when the folder has an app.
+- **A broken config.** When the config fails to load, the list still prints, followed by the error, and `frogbot` exits `1`.
+
+## JSON output
+
+Every command that finishes takes `--json`: `status`, `up`, `down`, `check`, `deploy`, `users create`, every `migrate` command, `generate:types`, `generate:importmap`, `generate:piece-types`, `pieces:port` and `jobs:run` (once the worker stops). With it, stdout holds exactly one JSON object, on success and on failure, and everything else, including your config's and the database's logs, goes to stderr:
+
+```json
+{ "command": "up", "success": true, "folder": "/apps/crm", "url": "http://127.0.0.1:3000", "mode": "production", "state": "running", "log": "/apps/crm/.frogbot/service.log" }
+```
+
+```json
+{ "command": "up", "success": false, "error": { "code": "BUILD_FAILED", "message": "/apps/crm is already up at http://127.0.0.1:3000, but its build failed; ..." } }
+```
+
+A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command's own code (such as `BUILD_FAILED`, `CONFIRM_REQUIRED` or `USERS_EXIST`), or `FAILED`. `deploy` keeps its own result shape (see [Deployment](/deployment/overview)). `start`, `dev`, `run` and `channels:run` run until you stop them or hand over to another program, so they refuse `--json` with exit `2`.
+
+| Command | What `--json` adds beside `success` |
+| --- | --- |
+| `status` | `apps`: one `{ folder, url, mode, state, uptime?, lastError?, advisory? }` per app `up` started. |
+| `up` | `folder`, `url`, `mode`, `state` and `log` of the running app. |
+| `down` | `folder`, and `wasRunning`. |
+| `users create` | `email`, `collection`, `database`, and the one-time `password`, which isn't printed anywhere else. |
+| `migrate`, `migrate:down`, `migrate:fresh`, `migrate:refresh`, `migrate:reset` | `migrated` and `rolledBack`: the migration names. |
+| `migrate:status` | `migrations`: each migration with whether it ran and its batch. |
+| `migrate:create` | `path` of the migration it wrote. |
+| `generate:types`, `generate:importmap`, `generate:piece-types` | `path` and `changed`. |
+| `check` | See [Check's JSON result](#json-result). |
 
 ## Commands
 
@@ -21,28 +66,26 @@ pnpm frogbot generate:types
 | --- | --- | --- |
 | `dev` | Next.js `dev` arguments | Generates the admin import map, then starts the Next.js development server. See [`dev` and `start`](#dev-and-start). |
 | `start` | Next.js `start` arguments | Warns when the admin import map is stale, then starts the Next.js production server. See [`dev` and `start`](#dev-and-start). |
-| `up` | `--port <n\|auto>`, `--autostart` | Runs the app in the background, rebuilding and swapping in each edit. See [Run in the background](#run-in-the-background). |
+| `up` | `--port <n\|auto>`, `--dev`, `--autostart` | Runs the app in the background, rebuilding and swapping in each edit. See [Run in the background](#run-in-the-background). |
 | `down` | `[folder]` | Stops the app that `up` started. See [Run in the background](#run-in-the-background). |
 | `status` | — | Lists every app `up` started on this computer. See [Run in the background](#run-in-the-background). |
 | `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
 | `check` | `--json` | Loads your config as the running app does, with no server or database, and lists every problem it finds. See [Check your config](#check-your-config). |
 | `users create` | `<email>`, `--collection`, `--set <field>=<value>`, `--yes` | Creates the first user of an empty auth collection and prints a random password once. See [Create the first user](#create-the-first-user). |
-| `deploy` | `[target]`, `--dry-run`, `--json`, `--no-interactive`, `--env-file` | Checks the app, then deploys it to Dojo, Docker, Fly.io, Google Cloud, AWS or Azure. See [Deploy](#deploy). |
+| `deploy` | `[target]`, `--dry-run`, `--json`, `--no-interactive`, `--env-file` | Checks the app, then deploys it to Dojo or builds a Docker image. See [Deploy](#deploy). |
 | `generate:types` | — | Writes `frogbot-types.ts` from your config. See [Generating types](/typescript/generating-types). |
 | `generate:importmap` | — | Writes the admin import map for the custom components your config references. See [Custom components](/custom-components/overview). |
 | `generate:piece-types` | `<module>`, `--export`, `--output`, `--check` | Writes the TypeScript types for a piece's actions and triggers. See [Generate piece types](#generate-piece-types). |
 | `pieces:port` | `<slug>` | Prepares a piece package in the FrogBot repository for porting. See [Port a piece](#port-a-piece). |
 | `jobs:run` | `--cron`, `--limit`, `--queue`, `--all-queues`, `--handle-schedules` | Runs a long-lived jobs worker without Next.js. See [Workers](/jobs-queue/workers). |
 | `channels:run` | — | Holds chat-channel gateway connections, such as Discord's, in their own process. See [Discord](/pieces/discord). |
-| `migrate` | `--force-accept-warning` | Applies pending database migrations. See [Migrations](/database/migrations). |
-| `migrate:create` | `[name]`, `--name`, `--file`, `--skip-empty`, `--force-accept-warning` | Creates a migration from the current schema. See [Migrations](/database/migrations). |
+| `migrate` | `--yes` | Applies pending database migrations. See [Migrations](/database/migrations). |
+| `migrate:create` | `[name]`, `--name`, `--file`, `--skip-empty`, `--yes` | Creates a migration from the current schema. See [Migrations](/database/migrations). |
 | `migrate:status` | — | Lists applied and pending migrations. See [Migrations](/database/migrations). |
 | `migrate:down` | — | Rolls back the last batch of migrations. See [Migrations](/database/migrations). |
 | `migrate:refresh` | — | Rolls back every migration, then applies them all again. See [Migrations](/database/migrations). |
 | `migrate:reset` | — | Rolls back every migration. See [Migrations](/database/migrations). |
-| `migrate:fresh` | `--force-accept-warning` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
-
-`frogbot help`, `frogbot --help` and `frogbot -h` print the list of commands. `frogbot <command> --help`, or `-h`, prints a built-in command's usage and flags and exits `0`. In `frogbot run <file>`, flags after the file go to the file.
+| `migrate:fresh` | `--yes` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
 
 ## Check your config
 
@@ -79,7 +122,7 @@ Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, follow
 
 `check` doesn't run TypeScript or look at the database, and it says so when it passes. Run your app's `typecheck` script for type errors, and `frogbot migrate:status` for pending migrations.
 
-### JSON output
+### JSON result
 
 With `--json`, `check` writes exactly one JSON object to stdout and sends everything else, including your config's own logs, to stderr:
 
@@ -143,10 +186,10 @@ pnpm frogbot deploy docker --dry-run
 
 | Target | Comes from |
 | --- | --- |
-| `docker`, `fly`, `gcp`, `aws`, `azure` | Core. |
+| `docker` | Core. |
 | `dojo` | [`dojo()`](/plugins/dojo). This target runs when you name no target. |
 
-`frogbot deploy --help` lists every target with its flags, including targets plugins add, and `frogbot deploy <target> --help` prints one. See [Deployment](/deployment/overview) for each target's flags, checks, what it creates, and how to remove it.
+`frogbot deploy --help` lists the targets with their flags, including targets plugins add, and `frogbot deploy <target> --help` prints one. See [Deployment](/deployment/overview) for each target's flags, checks, what it creates, and how to remove it.
 
 ### Deploy to Dojo
 
@@ -279,6 +322,25 @@ When your app has a config file, `frogbot` loads it before running any command a
 | `getConfig` | `() => Promise<FrogBotSanitizedConfig>` | Resolves to the sanitized config `frogbot` already loaded. |
 | `getFrogBot` | `(options?) => Promise<FrogBot>` | Boots a FrogBot instance on first call, reuses it on later calls, and destroys it when the command finishes. Accepts `init` options (excluding `config`). |
 
+### Help for a plugin command
+
+Set `summary`, `usage` and `group` on the handler so `frogbot --help` lists the command under its group, `frogbot help --json` gives its usage and flags, and `frogbot <name> --help` prints them instead of running it:
+
+```ts
+const countUsers: CLICommand = Object.assign(
+  async ({ getFrogBot }: CLICommandContext) => {
+    // ...
+  },
+  { group: 'Users', summary: 'Print how many users there are', usage: 'users:count [--json]' },
+)
+```
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `summary` | `string` | — | One line for `frogbot --help`. |
+| `usage` | `string` | — | The arguments after `frogbot`, such as `users:count [--json]`. With it, `frogbot <name> --help` and `-h` print it and the summary and exit `0`; without it, `--help` goes to your handler. |
+| `group` | `string` | `Plugins` | The heading `frogbot --help` lists the command under, after Generate and before Contributing. |
+
 <Accordion title="Execution lifecycle, overrides, and error handling">
   - **Completion & exit codes:** `frogbot` exits when your handler's promise resolves (using `process.exitCode` if set, otherwise `0`), so `await` all async work. Throwing an error prints the message and exits with code `1`.
   - **Overriding & merging:** A `cli.commands` entry with the same name as a built-in command replaces it. Plugins should spread existing commands (`cli: { ...config.cli, commands: { ...config.cli?.commands, 'my:command': handler } }`) so user commands are preserved.
@@ -297,7 +359,7 @@ Added when [`aiCapturePlugin()`](/plugins/ai-capture) is in your config's `plugi
 
 ### Commands from `dojo()`
 
-Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which adds the `dojo` [deploy target](#deploy-to-dojo) and `frogbot dojo`: every other Dojo action from the terminal, for people and coding agents. Without an app (such as when pulling an app into an empty directory), run the same commands as `npx @frogbotai/plugin-dojo <command>`. The [Dojo guides](/dojo/overview) explain workspaces, sharing, domains and billing.
+Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which adds the `dojo` [deploy target](#deploy-to-dojo) and `frogbot dojo`: every other Dojo action from the terminal, for people and coding agents. Without an app (such as when signing in on a new computer or pulling an app into an empty directory), run the same commands as `npx @frogbotai/plugin-dojo <command>`; `frogbot dojo` there exits `2` and says so. The [Dojo guides](/dojo/overview) explain workspaces, sharing, domains and billing.
 
 | Command | Description |
 | --- | --- |
@@ -401,6 +463,7 @@ frogbot up
 | The first run | Waits until the app answers, prints its URL and log, and exits `0`. |
 | The first build or start fails | Prints the error and exits `1`. The app stays up in state `build failed`, serving nothing, and builds again on your next change, including `pnpm add`. `frogbot down` stops it. |
 | The app in this folder is already up | Prints the same URL, says it is watching for changes and when the last build landed, and adds the last error when the last update or restart failed. |
+| The app in this folder is already up, but no build has worked yet (state `build failed`) | Prints that, the last error and the log file, and exits `1`, so `frogbot up && curl …` stops. |
 
 ```bash
 frogbot up
@@ -411,7 +474,7 @@ frogbot up
 | --- | --- | --- | --- |
 | `--port <n\|auto>` | number or `auto` | the app's last port, else the first free one from `9696` | Serve on this port from now on. See [Port](#port). |
 | `--dev` | flag | off | Run `next dev` with hot reload instead of production builds. See [Dev mode](#dev-mode). Not remembered: a later `frogbot up` without it is production. |
-| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`, and on an app already up without it, it exits `1` and tells you to run `down` first. With `--dev`, it exits `1`: autostart is for hosting. |
+| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`, and on an app already up without it, it exits `1` and tells you to run `down` first. With `--dev`, it exits `2`: autostart is for hosting. |
 
 The app listens on `127.0.0.1` and `::1`, so `localhost` reaches it whichever address it resolves to. It isn't reachable from other computers. Each app gets its own port, so several apps run side by side:
 

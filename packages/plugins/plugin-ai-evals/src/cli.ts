@@ -112,8 +112,7 @@ function format(score: number | null | undefined): string {
   return typeof score === 'number' ? score.toFixed(3) : '—';
 }
 
-/** `frogbot evals:run`: runs a dataset with no user, in this process, and fails below `--min-score`. */
-export const evalsRunCommand: CLICommand = async ({ args, getFrogBot }) => {
+const runEvals: CLICommand = async ({ args, getFrogBot }) => {
   const parsed = parseEvalsRunArgs(args);
   const frogbot = await getFrogBot();
   const dataset = await findDataset(frogbot, parsed.dataset);
@@ -148,3 +147,10 @@ export const evalsRunCommand: CLICommand = async ({ args, getFrogBot }) => {
 
   if (run.status !== 'completed' || (run.errored ?? 0) > 0 || belowMin) process.exitCode = 1;
 };
+
+/** `frogbot evals:run`: runs a dataset with no user, in this process, and fails below `--min-score`. */
+export const evalsRunCommand: CLICommand = Object.assign(runEvals, {
+  group: 'AI',
+  summary: 'Run an eval dataset and fail below a minimum score',
+  usage: 'evals:run <dataset> [--model <id>] [--min-score <0-1>]',
+});

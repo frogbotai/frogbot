@@ -43,6 +43,11 @@ const allTargets = (config?: FrogBotSanitizedConfig): Record<string, DeployTarge
   ...coreDeployTargets,
 });
 
+const cloudTargets = new Set(['fly', 'gcp', 'aws', 'azure']);
+
+const listedTargets = (targets: Record<string, DeployTarget>): Record<string, DeployTarget> =>
+  Object.fromEntries(Object.entries(targets).filter(([name]) => !cloudTargets.has(name)));
+
 /** What `frogbot deploy --help` prints: every target with its own flags, or, after a target's name, that target's. */
 export function deployHelp(args: string[], { config, loadError }: LoadedConfig = {}): string {
   const targets = allTargets(config);
@@ -60,7 +65,7 @@ export function deployHelp(args: string[], { config, loadError }: LoadedConfig =
       ? 'Targets that plugins add, such as dojo, load only with a working config.'
       : undefined,
     'Targets:',
-    targetList(targets, { flags: true }),
+    targetList(listedTargets(targets), { flags: true }),
   ]
     .filter(Boolean)
     .join('\n');
@@ -101,13 +106,13 @@ export async function deploy(
           fix:
             name === 'dojo'
               ? pluginHint
-              : `Name one of: ${Object.keys(targets).join(', ')}. ${pluginHint}`,
+              : `Name one of: ${Object.keys(listedTargets(targets)).join(', ')}. ${pluginHint}`,
         };
 
     if (loadError) stderr.write(`${formatCliError(loadError)}\n`);
     else {
       stderr.write(
-        `${name ? `[frogbot] ${issue.message}\n` : ''}${name === 'dojo' ? `[frogbot] ${pluginHint}\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
+        `${name ? `[frogbot] ${issue.message}\n` : ''}${name === 'dojo' ? `[frogbot] ${pluginHint}\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(listedTargets(targets))}\n`,
       );
     }
 

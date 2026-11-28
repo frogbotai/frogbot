@@ -45,7 +45,7 @@ export function parseExportTrainingDataArgs(args: string[]): ParsedArgs {
   return parsed;
 }
 
-export const exportTrainingDataCommand: CLICommand = async ({ args, getFrogBot }) => {
+const exportTrainingDataRun: CLICommand = async ({ args, getFrogBot }) => {
   const { where, output, pageSize } = parseExportTrainingDataArgs(args);
   const frogbot = await getFrogBot({ disableOnInit: true });
 
@@ -56,3 +56,10 @@ export const exportTrainingDataCommand: CLICommand = async ({ args, getFrogBot }
 
   if (output) process.stdout.write(`[frogbot] training data written to ${output}\n`);
 };
+
+/** `frogbot export:training-data`: writes chats as JSONL training data, to stdout or `--output`. */
+export const exportTrainingDataCommand: CLICommand = Object.assign(exportTrainingDataRun, {
+  group: 'AI',
+  summary: 'Export chats as JSONL training data',
+  usage: 'export:training-data [--output <file>] [--where <json>] [--page-size <n>]',
+});

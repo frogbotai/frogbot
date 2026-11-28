@@ -1,3 +1,4 @@
+import { usageError } from './json.js';
 import { isAlive, listRegistrations, type Registration } from './service/registration.js';
 import { leftServer } from './service/stop.js';
 
@@ -58,19 +59,36 @@ export function formatTable(rows: string[][]): string {
     .join('\n');
 }
 
-export function status(args: string[] = []): void {
-  if (args.length) throw new Error('[frogbot] usage: frogbot status');
+/** `frogbot status`: prints a table of every app `up` started, and resolves to them for `--json`. */
+export function status(args: string[] = []): { apps: Record<string, unknown>[] } {
+  if (args.length) throw usageError('[frogbot] usage: frogbot status [--json]');
 
   const registrations = listRegistrations();
   const rows = statusRows(registrations);
+  const apps = registrations.map((registration, i) => {
+    const [folder, url, mode, state, uptime, lastError] = rows[i];
+
+    return {
+      folder,
+      url,
+      mode,
+      state,
+      ...(uptime !== '-' && { uptime }),
+      ...(lastError && { lastError }),
+      ...(registration.advisory &&
+        isAlive(registration.pid) && { advisory: registration.advisory }),
+    };
+  });
 
   if (!rows.length) {
     console.log('[frogbot] no apps are up; start one with `frogbot up` in its folder');
 
-    return;
+    return { apps };
   }
 
   console.log(formatTable([['FOLDER', 'URL', 'MODE', 'STATE', 'UPTIME', 'LAST ERROR'], ...rows]));
 
   for (const line of advisoryLines(registrations)) console.log(line);
+
+  return { apps };
 }

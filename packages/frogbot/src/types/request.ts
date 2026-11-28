@@ -24,5 +24,9 @@ export type FrogBotArgs<TArgs> = Omit<TArgs, 'req'> & { req: FrogBotRequest };
  */
 export type MigrationRequest = Omit<FrogBotRequest, 'frogbot'>;
 
-/** A database adapter's migration arguments as a migration file sees them: its own `req`, no `payload`. */
+/**
+ * A database adapter's migration arguments as a migration file sees them: its own `req`, no `payload`.
+ * A migration that still reads `payload` fails typecheck with "Property 'payload' does not exist": replace
+ * `payload.*` calls with SQL through `db`, or with `migrationDatabase(req)` on MongoDB.
+ */
 export type MigrationArgs<TArgs> = Omit<TArgs, 'payload' | 'req'> & { req: MigrationRequest };

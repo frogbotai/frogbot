@@ -4,6 +4,7 @@ import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:
 import nextEnvImport from '@next/env';
 
 import { upUsage } from './help.js';
+import { CliError, usageError } from './json.js';
 import { findNextConfig } from './runNext.js';
 import {
   installLaunchAgent,
@@ -60,6 +61,15 @@ export function age(since: number, now = Date.now()): string {
   return `${Math.floor(seconds / 86_400)} d`;
 }
 
+/** Whether an app that is up has no server answering: no build has worked, or its server crashed or failed to start. */
+export function nothingServes(found: Registration): boolean {
+  return (
+    found.state === 'build failed' ||
+    found.state === 'crashed' ||
+    (found.state === 'update failed' && !found.serverPid)
+  );
+}
+
 /** What `up` prints for an app already up: that it is watching, its last build, and its last error. */
 export function alreadyUp(found: Registration, now = Date.now()): string[] {
   const built = Date.parse(found.builtAt ?? '');
@@ -70,13 +80,32 @@ export function alreadyUp(found: Registration, now = Date.now()): string[] {
   const serving =
     found.state === 'build failed'
       ? `${found.dir} is already up at ${found.url}, but its build failed; it rebuilds on your next change`
-      : `${found.dir} is already up at ${found.url}, ${watching}${last}`;
+      : nothingServes(found)
+        ? `${found.dir} is already up at ${found.url}, but nothing is serving (${found.state}); it rebuilds on your next change`
+        : `${found.dir} is already up at ${found.url}, ${watching}${last}`;
 
   return [
     `[frogbot] ${serving}`,
     ...(found.lastError ? [`[frogbot] last error: ${found.lastError}`] : []),
   ];
 }
+
+/** What `frogbot up --json` adds to its result. */
+export type UpResult = {
+  folder: string;
+  url: string;
+  mode: ServiceMode;
+  state: string;
+  log: string;
+};
+
+const upResult = (registration: Registration): UpResult => ({
+  folder: registration.dir,
+  url: registration.url,
+  mode: registration.mode ?? 'production',
+  state: registration.state,
+  log: registration.log,
+});
 
 export type UpOptions = { port?: number | 'auto'; autostart: boolean; dev: boolean };
 
@@ -91,12 +120,12 @@ export function parseUpArgs(args: string[]): UpOptions {
     else if (arg === '--port' || arg === '-p') options.port = parsePort(args[++i]);
     else if (arg.startsWith('--port=')) options.port = parsePort(arg.slice('--port='.length));
     else {
-      throw new Error(`${upUsage}; "${arg}" isn't one of them`);
+      throw usageError(`${upUsage}; "${arg}" isn't one of them`);
     }
   }
 
   if (options.dev && options.autostart) {
-    throw new Error(
+    throw usageError(
       "[frogbot] --dev can't start at login; --autostart is for hosting. Run `frogbot up --dev` after each login",
     );
   }
@@ -231,7 +260,7 @@ const defaultSpawn = (dir: string, env: NodeJS.ProcessEnv) =>
  * the app answers, and prints its URL and log. A first build or start that fails prints the error's
  * tail and exits 1; the supervisor keeps watching and rebuilds on the next change (571 D3).
  */
-export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
+export async function up(args: string[] = [], deps: Deps = {}): Promise<UpResult | void> {
   if (process.env.FROGBOT_SERVICE === 'schema') return schemaStep();
   if (process.env.FROGBOT_SERVICE === 'supervise') return superviseHere();
 
@@ -271,9 +300,7 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
       );
     }
 
-    await keepRunning(found, options, log);
-
-    return;
+    return keepRunning(found, options, log);
   }
 
   const { port, chosen } = await pickPort(dir, id, options.port);
@@ -389,13 +416,15 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
 
   log(`[frogbot] log: ${registration.log}`);
   if (options.autostart) log(`[frogbot] starts at login: ${launchAgentFile(id)}`);
+
+  return upResult(registration);
 }
 
 async function keepRunning(
   found: Registration,
   { port: requested, dev }: UpOptions,
   log: (line: string) => void,
-): Promise<void> {
+): Promise<UpResult> {
   const paths = appPaths(found.dir);
   const mode: ServiceMode = dev ? 'dev' : 'production';
   const switching = mode !== (found.switching ?? found.mode ?? 'production');
@@ -407,9 +436,15 @@ async function keepRunning(
   const moving = typeof requested === 'number' && requested !== found.port;
 
   if (!switching && !moving) {
+    if (nothingServes(found)) {
+      throw new CliError(`${alreadyUp(found).join('\n')}\n[frogbot] log: ${found.log}`, {
+        code: 'BUILD_FAILED',
+      });
+    }
+
     for (const line of alreadyUp(found)) log(line);
 
-    return;
+    return upResult(found);
   }
 
   if (moving) {
@@ -452,6 +487,8 @@ async function keepRunning(
 
     log(`[frogbot] moved ${found.dir} to http://${HOST}:${requested}`);
   }
+
+  return upResult(readRegistration(registrationFile(found.id)) ?? found);
 }
 
 async function waitFor(

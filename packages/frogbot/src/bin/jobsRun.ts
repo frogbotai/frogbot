@@ -7,7 +7,9 @@ import { toPayloadRequest } from '../seams/request.js';
 import { formatCliError } from './formatCliError.js';
 import type { JobsRunOptions } from './jobsRunOptions.js';
 import { jobsRunUsage, parseJobsRunOptions } from './jobsRunOptions.js';
+import { CliError } from './json.js';
 
+/** `frogbot jobs:run`: runs jobs on a cron until SIGINT or SIGTERM, or a failure, which it throws once drained. */
 export async function jobsRun(args: string[]): Promise<void> {
   let options: JobsRunOptions;
 
@@ -17,13 +19,13 @@ export async function jobsRun(args: string[]): Promise<void> {
     console.error(formatCliError(error, 'jobs:run'));
     console.error(jobsRunUsage);
 
-    process.exit(2);
+    throw new CliError(formatCliError(error, 'jobs:run'), { exitCode: 2, reported: true });
   }
 
   if (options.help) {
     console.log(jobsRunUsage);
 
-    process.exit(0);
+    return;
   }
 
   let payload: Payload | undefined;
@@ -33,7 +35,7 @@ export async function jobsRun(args: string[]): Promise<void> {
   let activeTick: Promise<void> | undefined;
 
   let stopping = false;
-  let exitCode = 0;
+  let failure: CliError | undefined;
 
   let resolveStopped!: () => void;
   const stopped = new Promise<void>((resolve) => {
@@ -50,9 +52,10 @@ export async function jobsRun(args: string[]): Promise<void> {
   };
 
   const fail = (error: unknown) => {
-    exitCode = 1;
+    const message = formatCliError(error, 'jobs:run failed');
 
-    console.error(formatCliError(error, 'jobs:run failed'));
+    console.error(message);
+    failure ??= new CliError(message, { code: 'JOBS_FAILED', reported: true });
 
     stop();
   };
@@ -139,5 +142,5 @@ export async function jobsRun(args: string[]): Promise<void> {
     }
   }
 
-  process.exit(exitCode);
+  if (failure) throw failure;
 }

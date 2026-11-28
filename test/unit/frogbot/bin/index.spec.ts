@@ -102,6 +102,8 @@ vi.mock('../../../../packages/frogbot/src/bin/down.js', () => ({ down: mocks.dow
 vi.mock('../../../../packages/frogbot/src/bin/status.js', () => ({ status: mocks.status }));
 
 import { bin, commands } from '../../../../packages/frogbot/src/bin/index.js';
+import { CliError, usageError } from '../../../../packages/frogbot/src/bin/json.js';
+import { version } from '../../../../packages/frogbot/src/bin/overview.js';
 
 describe('frogbot bin', () => {
   const argv = process.argv;
@@ -143,6 +145,7 @@ describe('frogbot bin', () => {
     ['status', 'status'],
   ])('loads env before dispatching `%s`', async (command, handler) => {
     process.argv = ['node', 'frogbot', command];
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
     await bin();
 
@@ -162,18 +165,24 @@ describe('frogbot bin', () => {
     },
   );
 
-  it.each(['migrate', 'migrate:status'])('loads env before dispatching `%s`', async (command) => {
-    process.argv = ['node', 'frogbot', command];
-
-    await bin();
-
-    expect(mocks.calls).toEqual(['loadEnv', `migrate:${command}`]);
-  });
-
-  it.each(['help', '--help', '-h'])(
-    'prints the usage line for `%s` and exits 0',
+  it.each(['migrate', 'migrate:status'])(
+    'loads env before dispatching `%s`, then exits so database handles cannot hold the process',
     async (command) => {
       process.argv = ['node', 'frogbot', command];
+
+      const exit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+      await bin();
+
+      expect(mocks.calls).toEqual(['loadEnv', `migrate:${command}`]);
+      expect(exit).toHaveBeenCalledExactlyOnceWith(0);
+    },
+  );
+
+  it.each([[], ['help'], ['--help'], ['-h']])(
+    'prints the grouped commands for `frogbot %s` and exits 0',
+    async (...command) => {
+      process.argv = ['node', 'frogbot', ...command];
 
       const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -183,11 +192,84 @@ describe('frogbot bin', () => {
 
       await expect(bin()).rejects.toThrow('exit:0');
 
-      expect(log).toHaveBeenCalledWith(
-        expect.stringMatching(/^\[frogbot\] usage: frogbot <start\|/),
+      const text = String(log.mock.calls[0]?.[0]);
+      const headings = text.split('\n').filter((line) => /^[A-Z]\w+$/.test(line));
+
+      expect(text).toMatch(/^FrogBot \d+\.\d+\.\d+\. Usage: frogbot <command> \[options\]/);
+      expect(headings).toEqual(['Run', 'Ship', 'Database', 'Generate', 'Contributing']);
+      expect(text).toMatch(/\n {2}migrate:fresh +Drop all tables, then apply every migration\n/);
+      expect(text).toMatch(
+        /\n {2}migrate:refresh +Roll back every migration, then apply them all again\n/,
       );
+      expect(text).toContain('Exit codes: 0 success, 1 failure, 2 usage error');
     },
   );
+
+  it.each(['fly', 'gcp', 'aws', 'azure'])(
+    "doesn't advertise the %s deploy target",
+    async (target) => {
+      process.argv = ['node', 'frogbot', '--help'];
+
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      vi.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`exit:${code}`);
+      });
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(String(log.mock.calls[0]?.[0])).not.toMatch(new RegExp(`\\b${target}\\b`, 'i'));
+    },
+  );
+
+  it.each(['--version', '-v'])('prints the version for `%s` and exits 0', async (flag) => {
+    process.argv = ['node', 'frogbot', flag];
+    mocks.findConfigFile.mockReturnValue('/app/frogbot.config.ts');
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(log).toHaveBeenCalledExactlyOnceWith(version);
+    expect(version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(mocks.loadConfig).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['help', '--json'],
+    ['--help', '--json'],
+  ])('prints one JSON object for `frogbot %s %s`', async (...line) => {
+    process.argv = ['node', 'frogbot', ...line];
+
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(write).toHaveBeenCalledOnce();
+
+    const output = JSON.parse(String(write.mock.calls[0]?.[0])) as {
+      groups: { name: string; commands: { name: string; usage?: string; flags: string[] }[] }[];
+    };
+
+    expect(output).toMatchObject({ command: 'help', success: true, version });
+
+    const up = output.groups[0]?.commands.find((command) => command.name === 'up');
+
+    expect(up).toEqual({
+      name: 'up',
+      summary: 'Run the app in the background, rebuilding on each edit',
+      usage: 'frogbot up [--port <n|auto>] [--dev] [--autostart] [--json]',
+      flags: ['--port', '--dev', '--autostart', '--json'],
+    });
+  });
 
   it.each(Object.keys(commands).flatMap((command) => [`${command} --help`, `${command} -h`]))(
     'prints the usage for `frogbot %s` on stdout and exits 0 without running it',
@@ -232,27 +314,11 @@ describe('frogbot bin', () => {
 
   it('leaves `--help` after `--` to the command', async () => {
     process.argv = ['node', 'frogbot', 'jobs:run', '--', '--help'];
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
     await bin();
 
     expect(mocks.jobsRun).toHaveBeenLastCalledWith(['--', '--help']);
-  });
-
-  it('loads env before rejecting a missing name with the usage line', async () => {
-    process.argv = ['node', 'frogbot'];
-
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    vi.spyOn(process, 'exit').mockImplementation((code) => {
-      throw new Error(`exit:${code}`);
-    });
-
-    await expect(bin()).rejects.toThrow('exit:2');
-
-    expect(mocks.calls).toEqual(['loadEnv']);
-    expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|users|deploy|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
-    );
   });
 
   it.each(['unknown', 'export:captures', 'share'])(
@@ -272,7 +338,7 @@ describe('frogbot bin', () => {
       expect(mocks.loadConfig).not.toHaveBeenCalled();
       expect(error.mock.calls).toEqual([
         [
-          `[frogbot] "${command}" isn't a built-in command, and there's no app here to add it. Plugins add commands: see https://docs.frogbot.ai/getting-started/cli#plugin-commands`,
+          `[frogbot] "${command}" isn't a built-in command, and there's no app here to add it. Run \`frogbot --help\` for the list. Plugins add commands: see https://docs.frogbot.ai/getting-started/cli#plugin-commands`,
         ],
       ]);
     },
@@ -298,6 +364,8 @@ describe('frogbot bin', () => {
 
   it('forwards worker flags unchanged', async () => {
     const args = ['--cron', '*/5 * * * * *', '--limit', '0', '--handle-schedules'];
+
+    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
     process.argv = ['node', 'frogbot', 'jobs:run', ...args];
 
@@ -329,10 +397,225 @@ describe('frogbot bin', () => {
     expect(mocks.init).not.toHaveBeenCalled();
   });
 
-  describe('app commands', () => {
-    const usage =
-      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|users|deploy|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
+  describe('--json', () => {
+    function capture() {
+      const write = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation((chunk: unknown, done?: unknown) => {
+          if (typeof done === 'function') done();
 
+          return true;
+        });
+
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      vi.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`exit:${code}`);
+      });
+
+      const chunks = () => write.mock.calls.map(([chunk]) => String(chunk)).filter(Boolean);
+
+      return { chunks, error, json: () => chunks().map((chunk) => JSON.parse(chunk)) };
+    }
+
+    it('prints one success object, without passing --json on, and sends logs to stderr', async () => {
+      mocks.status.mockImplementationOnce(() => {
+        console.log('a table');
+
+        return { apps: [] } as never;
+      });
+
+      process.argv = ['node', 'frogbot', 'status', '--json'];
+
+      const { error, json } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(mocks.status).toHaveBeenLastCalledWith([]);
+      expect(json()).toEqual([{ command: 'status', success: true, apps: [] }]);
+      expect(error).toHaveBeenCalledWith('a table');
+    });
+
+    it.each([
+      [usageError('[frogbot] usage: frogbot status [--json]'), 2, 'USAGE_ERROR'],
+      [new CliError('[frogbot] broken', { code: 'BUILD_FAILED' }), 1, 'BUILD_FAILED'],
+      [new Error('boom'), 1, 'FAILED'],
+    ])('prints one failure object for %s and exits %i', async (failure, code, errorCode) => {
+      mocks.up.mockRejectedValueOnce(failure);
+      process.argv = ['node', 'frogbot', 'up', '--json'];
+
+      const { json } = capture();
+
+      await expect(bin()).rejects.toThrow(`exit:${code}`);
+
+      expect(json()).toEqual([
+        {
+          command: 'up',
+          success: false,
+          error: { code: errorCode, message: failure.message.replace('[frogbot] ', '') },
+        },
+      ]);
+    });
+
+    it("exits with a CliError's code and prints its message without --json", async () => {
+      mocks.up.mockRejectedValueOnce(usageError('[frogbot] usage: frogbot up'));
+      process.argv = ['node', 'frogbot', 'up', '--bad'];
+
+      const { chunks, error } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:2');
+
+      expect(chunks()).toEqual([]);
+      expect(error).toHaveBeenCalledExactlyOnceWith('[frogbot] usage: frogbot up');
+    });
+
+    it('prints nothing more for a failure the command already reported', async () => {
+      mocks.up.mockRejectedValueOnce(new CliError('[frogbot] done', { reported: true }));
+      process.argv = ['node', 'frogbot', 'up'];
+
+      const { error } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:1');
+
+      expect(error).not.toHaveBeenCalled();
+    });
+
+    it.each(['start', 'dev', 'channels:run'])(
+      'refuses `%s --json` with a usage error object, without running it',
+      async (command) => {
+        process.argv = ['node', 'frogbot', command, '--json'];
+
+        const { json } = capture();
+
+        await expect(bin()).rejects.toThrow('exit:2');
+
+        expect(mocks.calls).toEqual(['loadEnv']);
+        expect(json()).toEqual([
+          expect.objectContaining({
+            command,
+            success: false,
+            error: expect.objectContaining({ code: 'USAGE_ERROR' }),
+          }),
+        ]);
+      },
+    );
+
+    it('leaves --json after the file to the script `run` runs', async () => {
+      process.argv = ['node', 'frogbot', 'run', 'seed.ts', '--json'];
+
+      await bin();
+
+      expect(mocks.runScript).toHaveBeenLastCalledWith(['seed.ts', '--json']);
+    });
+
+    it('prints a failure object for an unknown command', async () => {
+      process.argv = ['node', 'frogbot', 'nope', '--json'];
+
+      const { json } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:2');
+
+      expect(json()).toEqual([
+        expect.objectContaining({
+          command: 'nope',
+          success: false,
+          error: expect.objectContaining({ code: 'USAGE_ERROR' }),
+        }),
+      ]);
+    });
+
+    it.each([
+      ['help', '--json'],
+      ['migrate:status', '--json'],
+      ['generate:types', '--json'],
+    ])("keeps the config's own logs off stdout for `%s %s`", async (...args) => {
+      mocks.findConfigFile.mockReturnValue('/app/frogbot.config.ts');
+
+      mocks.loadConfig.mockImplementation(() => {
+        process.stdout.write('from-config\n');
+        console.log('from-config');
+
+        return Promise.resolve({ cli: { commands: {} } });
+      });
+
+      process.argv = ['node', 'frogbot', ...args];
+
+      const { chunks, error } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(chunks()).toHaveLength(1);
+      expect(JSON.parse(chunks()[0])).toMatchObject({ success: true });
+      expect(error).toHaveBeenCalledWith('from-config');
+    });
+
+    it('lists `--force-accept-warning` in `help --json` for the migrate commands that take it', async () => {
+      process.argv = ['node', 'frogbot', 'help', '--json'];
+
+      const { json } = capture();
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      const [{ groups }] = json() as [
+        { groups: { commands: { name: string; flags: string[] }[] }[] },
+      ];
+
+      const listed = new Map(groups.flatMap(({ commands }) => commands.map((c) => [c.name, c])));
+
+      for (const name of ['migrate', 'migrate:create', 'migrate:fresh']) {
+        expect(listed.get(name)?.flags, name).toContain('--force-accept-warning');
+      }
+    });
+
+    it.each(['generate:types', 'generate:importmap'])(
+      'refuses an unknown flag for `%s` with exit 2, without running it',
+      async (command) => {
+        process.argv = ['node', 'frogbot', command, '--bogus', '--json'];
+
+        const { json } = capture();
+
+        await expect(bin()).rejects.toThrow('exit:2');
+
+        expect(mocks.calls).toEqual(['loadEnv']);
+        expect(json()).toEqual([
+          expect.objectContaining({
+            command,
+            success: false,
+            error: expect.objectContaining({ code: 'USAGE_ERROR' }),
+          }),
+        ]);
+      },
+    );
+
+    it('leaves `check --json` and `deploy --json` to print their own result', async () => {
+      process.argv = ['node', 'frogbot', 'check', '--json'];
+
+      const { chunks } = capture();
+
+      await bin();
+
+      expect(mocks.check).toHaveBeenLastCalledWith(['--json']);
+      expect(chunks()).toEqual([]);
+    });
+  });
+
+  it('names `npx @frogbotai/plugin-dojo` for `frogbot dojo` with no app, and exits 2', async () => {
+    process.argv = ['node', 'frogbot', 'dojo', 'login'];
+
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:2');
+
+    expect(error).toHaveBeenCalledExactlyOnceWith(
+      "[frogbot] There's no app here, so `frogbot dojo` isn't available. Run `npx @frogbotai/plugin-dojo <command>` (for example: `npx @frogbotai/plugin-dojo login`), which works in any folder.",
+    );
+  });
+
+  describe('app commands', () => {
     function withConfig(commands: Record<string, CLICommand>): FrogBotSanitizedConfig {
       const config = { cli: { commands } } as unknown as FrogBotSanitizedConfig;
 
@@ -452,7 +735,7 @@ describe('frogbot bin', () => {
       ['hello', 'runtime'],
       ['migrate', 'runtime'],
     ])('loads the config for `%s` in %s mode', async (command, mode) => {
-      withConfig({ hello: vi.fn() });
+      withConfig({ hello: vi.fn<CLICommand>() });
       process.argv = ['node', 'frogbot', command];
 
       await bin();
@@ -471,20 +754,118 @@ describe('frogbot bin', () => {
         await expect(bin()).rejects.toThrow('exit:2');
 
         expect(error).toHaveBeenCalledWith(
-          `[frogbot] "${command}" isn't a command in this app. Plugins add commands: see https://docs.frogbot.ai/getting-started/cli#plugin-commands`,
+          `[frogbot] "${command}" isn't a command in this app. Run \`frogbot --help\` for the list. Plugins add commands: see https://docs.frogbot.ai/getting-started/cli#plugin-commands`,
         );
       },
     );
 
-    it('lists app commands after the built-ins in the usage line', async () => {
-      withConfig({ start: vi.fn(), hello: vi.fn(), 'export:all': vi.fn() });
+    it('lists app commands under their group, before Contributing, with their summary', async () => {
+      withConfig({
+        start: Object.assign(vi.fn<CLICommand>(), { summary: 'My own start' }),
+        hello: vi.fn<CLICommand>(),
+        dojo: Object.assign(vi.fn<CLICommand>(), { group: 'Dojo', summary: 'Dojo things' }),
+        'export:all': Object.assign(vi.fn<CLICommand>(), { summary: 'Export everything' }),
+      });
+
       process.argv = ['node', 'frogbot'];
+      captureExit();
+
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      const text = String(log.mock.calls[0]?.[0]);
+
+      expect(text.split('\n').filter((line) => /^[A-Z]\w+$/.test(line))).toEqual([
+        'Run',
+        'Ship',
+        'Database',
+        'Generate',
+        'Dojo',
+        'Plugins',
+        'Contributing',
+      ]);
+      expect(text).toMatch(/\n {2}start +My own start\n/);
+      expect(text).toMatch(/\nDojo\n {2}dojo +Dojo things\n/);
+      expect(text).toMatch(/\nPlugins\n {2}hello\n {2}export:all +Export everything\n/);
+    });
+
+    it('lists app commands with their usage and flags in `help --json`', async () => {
+      withConfig({
+        'export:all': Object.assign(vi.fn<CLICommand>(), {
+          summary: 'Export everything',
+          usage: 'export:all [--output <file>]',
+        }),
+      });
+
+      process.argv = ['node', 'frogbot', 'help', '--json'];
+      captureExit();
+
+      const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(JSON.parse(String(write.mock.calls[0]?.[0])).groups).toContainEqual({
+        name: 'Plugins',
+        commands: [
+          {
+            name: 'export:all',
+            summary: 'Export everything',
+            usage: 'frogbot export:all [--output <file>]',
+            flags: ['--output'],
+          },
+        ],
+      });
+    });
+
+    it.each(['--help', '-h'])(
+      "prints an app command's usage and summary for %s without running it",
+      async (flag) => {
+        const run = vi.fn<CLICommand>();
+
+        withConfig({
+          'export:all': Object.assign(run, {
+            summary: 'Export everything',
+            usage: 'export:all [--output <file>]',
+          }),
+        });
+
+        process.argv = ['node', 'frogbot', 'export:all', flag];
+        captureExit();
+
+        const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+        await expect(bin()).rejects.toThrow('exit:0');
+
+        expect(run).not.toHaveBeenCalled();
+        expect(log).toHaveBeenCalledExactlyOnceWith(
+          '[frogbot] usage: frogbot export:all [--output <file>]\nExport everything',
+        );
+      },
+    );
+
+    it('passes `--help` to an app command without a usage, which prints its own', async () => {
+      const dojo = Object.assign(vi.fn<CLICommand>(), { group: 'Dojo', summary: 'Dojo things' });
+
+      withConfig({ dojo });
+      process.argv = ['node', 'frogbot', 'dojo', '--help'];
+
+      await bin();
+
+      expect(dojo).toHaveBeenCalledWith(expect.objectContaining({ args: ['--help'] }));
+    });
+
+    it('names `npx @frogbotai/plugin-dojo` when the app has no `dojo()`', async () => {
+      withConfig({});
+      process.argv = ['node', 'frogbot', 'dojo', 'login'];
 
       const error = captureExit();
 
       await expect(bin()).rejects.toThrow('exit:2');
 
-      expect(error).toHaveBeenCalledWith(`${usage}|hello|export:all>`);
+      expect(error).toHaveBeenCalledWith(
+        '[frogbot] "dojo" isn\'t a command in this app. Add `dojo()` from `@frogbotai/plugin-dojo` to `plugins` in frogbot.config.ts, or run `npx @frogbotai/plugin-dojo <command>`, which works in any folder.',
+      );
     });
 
     it('loads no config when no config file is found', async () => {
@@ -520,14 +901,33 @@ describe('frogbot bin', () => {
         expect(error.mock.calls).toEqual([['[frogbot] failed to load config']]);
       });
 
-      it('prints the usage line and the load error with no name', async () => {
+      it('prints the commands, then the load error, and exits 1 with no name', async () => {
         process.argv = ['node', 'frogbot'];
 
         const error = captureExit();
+        const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-        await expect(bin()).rejects.toThrow('exit:2');
+        await expect(bin()).rejects.toThrow('exit:1');
 
-        expect(error.mock.calls).toEqual([[`${usage}>`], ['[frogbot] failed to load config']]);
+        expect(String(log.mock.calls[0]?.[0])).toMatch(/^FrogBot /);
+        expect(error.mock.calls).toEqual([['[frogbot] failed to load config']]);
+      });
+
+      it('prints the commands with `success: false` and the load error for `help --json`, and exits 1', async () => {
+        process.argv = ['node', 'frogbot', 'help', '--json'];
+        captureExit();
+
+        const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+        await expect(bin()).rejects.toThrow('exit:1');
+
+        expect(write).toHaveBeenCalledOnce();
+        expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
+          command: 'help',
+          success: false,
+          error: { code: 'CONFIG_INVALID', message: 'failed to load config' },
+          groups: expect.any(Array),
+        });
       });
 
       it('treats a missing FROGBOT_CONFIG_PATH file as a load error', async () => {

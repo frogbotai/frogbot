@@ -2,6 +2,8 @@ import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 
+import { usageError } from './json.js';
+
 type PackageJson = {
   dependencies?: Record<string, string>;
   name?: string;
@@ -47,7 +49,7 @@ function words(slug: string): string[] {
 
 export async function piecesPort(args: string[], root = process.cwd()): Promise<void> {
   if (args.length !== 1 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(args[0])) {
-    throw new Error('[frogbot] usage: frogbot pieces:port <slug>');
+    throw usageError('[frogbot] usage: frogbot pieces:port <slug> [--json]');
   }
 
   const slug = args[0];
