@@ -279,6 +279,44 @@ describe('--wait on a move or accept that needs room paid for', () => {
     },
   );
 
+  it.each([[[]], [['--wait']]])(
+    'a refusal whose link is not a pay page stops at once (%j)',
+    async (extra) => {
+      const notPay = 'https://dojo.example/docs/moves';
+      const { dojo, run } = await setup({
+        'GET /api/handovers/h1/details': { body: pending },
+        'POST /api/handovers/h1/accept': {
+          status: 409,
+          body: {
+            errors: [
+              {
+                message: 'This project moved already.',
+                data: { code: 'conflict', url: notPay },
+              },
+            ],
+          },
+        },
+      });
+
+      const result = await run(['handovers', 'accept', 'h1', '--yes', ...extra, '--json'], {
+        onWait: () => {
+          throw new Error('waited on a refusal that is not a payment');
+        },
+      });
+
+      expect(result.code).toBe(1);
+      expect(dojo.paths().filter((each) => each === 'POST /api/handovers/h1/accept')).toHaveLength(
+        1,
+      );
+      expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+        ok: false,
+        code: 'conflict',
+        url: notPay,
+      });
+      expect(result.stderr()).not.toContain(notPay);
+    },
+  );
+
   it('gives up with exit 1 after 30 minutes without the payment', async () => {
     const { dojo, run } = await setup({
       'GET /api/handovers/h1/details': { body: pending },
@@ -293,7 +331,7 @@ describe('--wait on a move or accept that needs room paid for', () => {
     );
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
       ok: false,
-      code: 'conflict',
+      code: 'payment_required',
       url,
       error:
         "Dojo still has no payment for the room after 30 minutes. Once it's paid, run the command again.",
