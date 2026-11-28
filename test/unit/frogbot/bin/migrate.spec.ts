@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
+import type * as PayloadModule from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const execFileAsync = promisify(execFile);
@@ -43,7 +44,8 @@ const mocks = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock('payload', () => ({
+vi.mock('payload', async (importOriginal) => ({
+  ...(await importOriginal<typeof PayloadModule>()),
   default: { db: mocks.adapter, find: mocks.find, init: mocks.init },
 }));
 
