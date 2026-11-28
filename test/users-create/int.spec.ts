@@ -54,7 +54,7 @@ async function login(env: Record<string, string>, email: string, secret: string,
   expect(result.code, result.stdout + result.stderr).toBe(0);
   expect(line, result.stdout + result.stderr).toBeDefined();
 
-  return JSON.parse(line ?? '') as { status: number; users: number };
+  return JSON.parse(line ?? '') as { status: number; users: number; verified?: boolean };
 }
 
 let directory: string;
@@ -87,7 +87,7 @@ describe('frogbot users create on a local SQLite app', () => {
 
     expect(secret).toMatch(/^[\w-]{43}$/);
     expect(result.stdout.split(secret)).toHaveLength(2);
-    expect(await login(env, 'a@b.co', secret)).toEqual({ status: 200, users: 1 });
+    expect(await login(env, 'a@b.co', secret)).toMatchObject({ status: 200, users: 1 });
   });
 
   it('refuses a second user, and still refuses once the first is trashed', async () => {
@@ -133,7 +133,7 @@ describe('frogbot users create on a local SQLite app', () => {
     const given = await frogbot(['users', 'create', 'a@b.co', '--set', 'name=Ada'], env);
 
     expect(given.code, given.stdout + given.stderr).toBe(0);
-    expect(await login(env, 'a@b.co', password(given))).toEqual({ status: 200, users: 1 });
+    expect(await login(env, 'a@b.co', password(given))).toMatchObject({ status: 200, users: 1 });
   });
 
   it('creates a verified user on a collection that verifies email, so it signs in at once', async () => {
@@ -142,7 +142,7 @@ describe('frogbot users create on a local SQLite app', () => {
 
     expect(result.code, result.stdout + result.stderr).toBe(0);
     expect(result.stdout + result.stderr).not.toMatch(/verify your email|Email sent/i);
-    expect(await login(env, 'a@b.co', password(result))).toEqual({ status: 200, users: 1 });
+    expect(await login(env, 'a@b.co', password(result))).toMatchObject({ status: 200, users: 1 });
   });
 
   it('refuses a collection that has no auth', async () => {
@@ -181,7 +181,7 @@ describe('frogbot users reset-password on a local SQLite app', () => {
     expect(secret).toMatch(/^[\w-]{43}$/);
     expect(secret).not.toBe(old);
     expect(result.stdout.split(secret)).toHaveLength(2);
-    expect(await login(env, 'a@b.co', secret)).toEqual({ status: 200, users: 1 });
+    expect(await login(env, 'a@b.co', secret)).toMatchObject({ status: 200, users: 1 });
     expect(await login(env, 'a@b.co', old)).toMatchObject({ status: 401 });
   });
 
@@ -215,7 +215,7 @@ describe('frogbot users reset-password on a local SQLite app', () => {
     const result = await frogbot(['users', 'reset-password', 'a@b.co'], env);
 
     expect(result.code, result.stdout + result.stderr).toBe(0);
-    expect(await login(env, 'a@b.co', password(result))).toEqual({ status: 200, users: 1 });
+    expect(await login(env, 'a@b.co', password(result))).toMatchObject({ status: 200, users: 1 });
   });
 
   it('marks an unverified user verified on a collection that verifies email', async () => {
@@ -228,7 +228,34 @@ describe('frogbot users reset-password on a local SQLite app', () => {
 
     expect(result.code, result.stdout + result.stderr).toBe(0);
     expect(result.stdout + result.stderr).not.toMatch(/Email sent/i);
-    expect(await login(env, 'a@b.co', password(result))).toEqual({ status: 200, users: 1 });
+    expect(await login(env, 'a@b.co', password(result))).toMatchObject({ status: 200, users: 1 });
+  });
+
+  it('leaves an unverified user unverified when the reset fails', async () => {
+    const env = sqlite('reset-blocked', 'verify');
+    const secret = password(await frogbot(['users', 'create', 'a@b.co'], env));
+
+    await login(env, 'a@b.co', secret, 'unverify');
+
+    const blocked = { ...env, USERS_CREATE_SCENARIO: 'verify-block' };
+    const result = await frogbot(['users', 'reset-password', 'a@b.co'], blocked);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('users rejected the new password: account disabled');
+    expect(result.stdout).not.toContain('Password:');
+    expect(await login(env, 'a@b.co', secret)).toMatchObject({ verified: false });
+  });
+
+  it('resets a user saved before a field became required', async () => {
+    const env = sqlite('reset-required');
+
+    await frogbot(['users', 'create', 'a@b.co'], env);
+
+    const required = { ...env, USERS_CREATE_SCENARIO: 'name' };
+    const result = await frogbot(['users', 'reset-password', 'a@b.co'], required);
+
+    expect(result.code, result.stdout + result.stderr).toBe(0);
+    expect(await login(required, 'a@b.co', password(result))).toMatchObject({ status: 200 });
   });
 });
 
@@ -273,7 +300,7 @@ describe('frogbot users create on a Postgres database', () => {
       expect(result.stdout).toContain(
         `[frogbot] users create: database postgres://${url.host}${url.pathname}\n`,
       );
-      expect(await login(env, 'a@b.co', password(result))).toEqual({ status: 200, users: 1 });
+      expect(await login(env, 'a@b.co', password(result))).toMatchObject({ status: 200, users: 1 });
     });
 
     it('lets only one of two runs started together create a user', async () => {

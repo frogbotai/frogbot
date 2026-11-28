@@ -32,4 +32,6 @@ const response = await frogbot.handleRequest(
 
 const { docs } = await frogbot.db.find({ collection: 'users', limit: 10, pagination: false });
 
-process.stdout.write(`RESULT ${JSON.stringify({ status: response.status, users: docs.length })}\n`);
+process.stdout.write(
+  `RESULT ${JSON.stringify({ status: response.status, users: docs.length, verified: docs[0]?._verified })}\n`,
+);

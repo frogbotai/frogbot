@@ -18,7 +18,7 @@ export default buildConfig({
     {
       slug: 'users',
       auth:
-        scenario === 'verify'
+        scenario === 'verify' || scenario === 'verify-block'
           ? { verify: true }
           : scenario === 'no-local'
             ? { disableLocalStrategy: { enableFields: true } }
@@ -26,6 +26,16 @@ export default buildConfig({
               ? { maxLoginAttempts: 2, lockTime: 600_000 }
               : true,
       trash: true,
+      hooks:
+        scenario === 'verify-block'
+          ? {
+              beforeLogin: [
+                () => {
+                  throw new Error('account disabled');
+                },
+              ],
+            }
+          : {},
       fields: scenario === 'name' ? [{ name: 'name', type: 'text', required: true }] : [],
     },
     { slug: 'notes', fields: [{ name: 'title', type: 'text' }] },
