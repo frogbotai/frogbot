@@ -46,7 +46,7 @@ Every command that finishes takes `--json`: `status`, `up`, `down`, `check`, `de
 { "command": "up", "success": false, "error": { "code": "BUILD_FAILED", "message": "/apps/crm is already up at http://127.0.0.1:3000, but its build failed; ..." } }
 ```
 
-A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command's own code (such as `BUILD_FAILED`, `CONFIRM_REQUIRED`, `CANCELLED` or `USERS_EXIST`), or `FAILED`. Answering "no" at a `migrate` prompt exits `1` with `CANCELLED` and changes nothing, so `frogbot migrate && frogbot deploy` stops there. `deploy` keeps its own result shape (see [Deployment](/deployment/overview)). `start`, `dev`, `run` and `channels:run` run until you stop them or hand over to another program, so they refuse `--json` with exit `2`.
+A failure's `code` is stable for scripts: `USAGE_ERROR` with exit `2`, a command's own code (such as `BUILD_FAILED`, `CONFIRM_REQUIRED`, `CANCELLED` or `USERS_EXIST`), or `FAILED`. Answering "no" at a `migrate` prompt exits `1` with `CANCELLED` (on `migrate:refresh`, after the rollback has already run), so `frogbot migrate && frogbot deploy` stops there. `deploy` keeps its own result shape (see [Deployment](/deployment/overview)). `start`, `dev`, `run` and `channels:run` run until you stop them or hand over to another program, so they refuse `--json` with exit `2`.
 
 | Command | What `--json` adds beside `success` |
 | --- | --- |

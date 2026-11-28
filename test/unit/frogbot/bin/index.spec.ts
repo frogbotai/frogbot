@@ -279,6 +279,33 @@ describe('frogbot bin', () => {
     });
   });
 
+  it('keeps config-load output off stdout for `frogbot run --help --json`', async () => {
+    mocks.findConfigFile.mockReturnValue('/app/frogbot.config.ts');
+
+    mocks.loadConfig.mockImplementationOnce(() => {
+      console.log('config says hi');
+
+      return Promise.resolve({ cli: { commands: {} } });
+    });
+
+    process.argv = ['node', 'frogbot', 'run', '--help', '--json'];
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(log).not.toHaveBeenCalledWith('config says hi');
+    expect(error).toHaveBeenCalledWith('config says hi');
+    expect(write).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({ command: 'run' });
+  });
+
   it.each([['status'], ['up', '--port', '4000'], ['migrate:fresh']])(
     'prints one JSON value for `frogbot %s --help --json` without running it',
     async (command, ...rest) => {

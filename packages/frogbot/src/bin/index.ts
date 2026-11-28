@@ -233,7 +233,12 @@ export async function bin() {
 
   const command = process.argv[2]?.toLowerCase();
   const args = process.argv.slice(3);
-  const asksJson = Boolean(command && ownArgs(command, args).includes('--json'));
+  const asksJson = Boolean(
+    command &&
+    (ownArgs(command, args).includes('--json') ||
+      (command === 'run' && asksForHelp(command, args) && args.slice(0, 2).includes('--json'))),
+  );
+
   const restoreLoad = asksJson ? logToStderr() : () => undefined;
   const loaded = await readConfig(command).finally(restoreLoad);
   const { config, loadError } = loaded;
@@ -266,9 +271,8 @@ export async function bin() {
   if (handler && !appCommand && asksForHelp(command, args)) {
     const { help } = handler;
     const text = typeof help === 'string' ? help : await help(args, { config, loadError });
-    const json = asksJson || (command === 'run' && args.slice(0, 2).includes('--json'));
 
-    printHelp(command, text, appCommands, json);
+    printHelp(command, text, appCommands, asksJson);
 
     return process.exit(0);
   }

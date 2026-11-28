@@ -187,6 +187,13 @@ export async function migrate(args: string[]): Promise<Record<string, unknown>> 
       case 'migrate:refresh': {
         result = await adapter.migrateRefresh();
 
+        if (result?.cancelled && shouldPrompt) {
+          throw new CliError(
+            `[frogbot] ${command} cancelled: every migration was rolled back and none were applied again. Run \`frogbot migrate\` to apply them.`,
+            { code: 'CANCELLED' },
+          );
+        }
+
         if (result?.cancelled) {
           throw new CliError(
             'payload_migrations has a dev-mode row (batch -1), so migrate:refresh stopped before applying migrations.\n' +
