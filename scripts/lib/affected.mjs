@@ -77,6 +77,7 @@ export const CHECK_INPUTS = {
 const STRUCTURAL_CHECKS = [
   'core-boundaries',
   'dist-imports',
+  'messages',
   'package-boundaries',
   'test-types',
   'tests',
