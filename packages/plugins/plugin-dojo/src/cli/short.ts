@@ -63,7 +63,8 @@ const logs: RawVerb = {
 };
 
 const status: Verb = {
-  summary: "Show the app's address, whether it's running, and its last deploy.",
+  summary:
+    "Show the app's address, whether it's running, and its last deploy. Exits 1 when that deploy failed.",
   args: '[app]',
   run: async ({ io, dojo, positionals: [ref = ''] }) => {
     const app = await readApp(dojo(), ref);
@@ -101,6 +102,8 @@ const status: Verb = {
       ...(deploy?.error ? [`[frogbot] ${deploy.error}`] : []),
       ...(deploy?.failed ? [`${program} logs shows why.`] : []),
     ]);
+
+    return deploy?.failed ? 1 : 0;
   },
 };
 
@@ -119,12 +122,13 @@ const open: Verb = {
 
 const rollback: Verb = {
   summary:
-    'Put back the newest version that went live before the current one, or the deployment you name.',
+    'Put back the newest healthy version that went live before the current one, or the deployment you name. Prints the command that undoes it.',
   args: '[id]',
   run: async ({ io, dojo, positionals: [id] }) => {
     const program = dojoProgram(io.program);
     const app = await readApp(dojo(), await linkedApp(io, `Usage: ${program} rollback [id]`));
     const target = id ?? (await previousLive(dojo(), app, program));
+    const replaced = app.deployment ?? null;
 
     const { deploymentId } = await dojoJSON<{ deploymentId: string | number }>(
       dojo(),
@@ -132,14 +136,25 @@ const rollback: Verb = {
       { method: 'POST', what: `Dojo couldn't roll ${app.slug} back`, needs: editorNeeded },
     );
 
-    done(io, { app: app.slug, rolledBackTo: target, deploymentId }, [
-      `[frogbot] Rolling ${app.slug} back to ${target} as deployment ${deploymentId}. If it can't start, the current version keeps running.`,
+    const from = replaced === null ? '' : ` from ${replaced}`;
+
+    done(io, { app: app.slug, rolledBackTo: target, replaced, deploymentId }, [
+      `[frogbot] Rolling ${app.slug} back${from} to ${target} as deployment ${deploymentId}. If it can't start, the current version keeps running.`,
       `${program} status shows when it's live.`,
+      ...(replaced === null ? [] : [`Undo with ${program} rollback ${replaced}.`]),
     ]);
   },
 };
 
 async function previousLive(dojo: DojoClient, app: LiveApp, program: string): Promise<string> {
+  const listed = `${program} deployments list ${app.slug} shows its deployments.`;
+
+  if (app.deployment == null) {
+    throw new ShareError(`${app.slug} has no live deployment to roll back from. ${listed}`, 1, {
+      code: 'NO_LIVE_DEPLOYMENT',
+    });
+  }
+
   const deploys = await recentDeploys(dojo, app, 50);
   const same = (a: unknown, b: unknown) => a != null && String(a) === String(b);
   const byId = (id: unknown) => deploys.find((deploy) => same(deploy.id, id));
@@ -152,6 +167,7 @@ async function previousLive(dojo: DojoClient, app: LiveApp, program: string): Pr
     deploys.find(
       (deploy) =>
         deploy.liveAt &&
+        !failed(deploy) &&
         Date.parse(deploy.liveAt) < before &&
         !same(deploy.id, app.deployment) &&
         !same(deploy.id, source?.id) &&
@@ -159,10 +175,7 @@ async function previousLive(dojo: DojoClient, app: LiveApp, program: string): Pr
     );
 
   if (!target) {
-    throw new ShareError(
-      `${app.slug} has no earlier live version to go back to. ${program} deployments list ${app.slug} shows its deployments.`,
-      2,
-    );
+    throw new ShareError(`${app.slug} has no earlier healthy version to go back to. ${listed}`, 2);
   }
 
   return String(target.id);

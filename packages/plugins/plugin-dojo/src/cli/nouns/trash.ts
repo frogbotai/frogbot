@@ -22,6 +22,7 @@ export async function trashedApps(
   field: 'workspace' | 'project',
   id: string | number,
   name: string,
+  program: string,
 ): Promise<TrashedApp[]> {
   const apps = await dojoList<TrashedApp & { deletedAt?: string | null }>(
     dojo,
@@ -33,7 +34,7 @@ export async function trashedApps(
 
   if (live.length > 0) {
     throw new ShareError(
-      `${name} still holds ${count(live.length, 'app')} outside Trash (${live.join(', ')}), so nothing was deleted. Move each with apps move or delete it with apps delete, then rerun with --purge-trash.`,
+      `${name} still holds ${count(live.length, 'app')} outside Trash (${live.join(', ')}), so nothing was deleted. Move each with ${program} apps move or delete it with ${program} apps delete, then rerun with --purge-trash.`,
     );
   }
 
@@ -58,7 +59,7 @@ export async function purgeApps(dojo: DojoClient, apps: TrashedApp[]): Promise<v
       throw new ShareError(
         `${error.message} Already deleted for good: ${gone.join(', ')}. Rerun to carry on.`,
         error.exitCode,
-        carried(error),
+        { ...carried(error), purged: gone },
       );
     });
   }
@@ -82,11 +83,13 @@ const carried = (error: ShareError) => ({
 
 /**
  * Sends a delete. After a purge (`purged` holds the slugs, possibly none), any refusal names what was already
- * deleted for good. A refusal because apps remain (409) also names the next step: without `--purge-trash` that is
- * the flag; after a purge the apps left are ones the caller can't see, so it names who can move them.
+ * deleted for good, in its text and its `purged`. A refusal because apps remain (409) also names the next step:
+ * without `--purge-trash` that is the flag; after a purge the apps left are ones the caller can't see, so it names
+ * who can move them.
  */
 export async function namingPurge<T>(
   purged: string[] | undefined,
+  program: string,
   send: () => Promise<T>,
 ): Promise<T> {
   try {
@@ -99,13 +102,16 @@ export async function namingPurge<T>(
       error.status !== 409
         ? ''
         : purged
-          ? "The apps left are ones you can't see: their Admins can move them with apps move or delete them with apps delete, then rerun."
-          : 'Rerun with --purge-trash to delete its apps in Trash for good first; apps outside Trash need apps move or apps delete.';
+          ? `The apps left are ones you can't see: their Admins can move them with ${program} apps move or delete them with ${program} apps delete, then rerun.`
+          : `Rerun with --purge-trash to delete its apps in Trash for good first; apps outside Trash need ${program} apps move or ${program} apps delete.`;
 
     const next = [gone, left].filter(Boolean).join(' ');
 
     if (!next) throw error;
 
-    throw new ShareError(`${error.message} ${next}`, error.exitCode, carried(error));
+    throw new ShareError(`${error.message} ${next}`, error.exitCode, {
+      ...carried(error),
+      purged: purged?.length ? purged : undefined,
+    });
   }
 }

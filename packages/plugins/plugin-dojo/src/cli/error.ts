@@ -18,6 +18,8 @@ export type ShareErrorDetails = Partial<NeededStep> & {
   /** The link Dojo sent with its refusal, such as the billing page. */
   url?: string;
   deploymentId?: string | number;
+  /** The apps a `--purge-trash` deleted for good before the command stopped. */
+  purged?: string[];
   cause?: unknown;
 };
 
@@ -36,13 +38,24 @@ export class ShareError extends Error {
   status?: number;
   url?: string;
   deploymentId?: string | number;
+  purged?: string[];
   /** The sign-in or payment a person has to give before the command can carry on. */
   step?: NeededStep;
 
   constructor(
     message: string,
     exitCode: ShareError['exitCode'] = 1,
-    { code, status, url, deploymentId, cause, needs, link, userCode }: ShareErrorDetails = {},
+    {
+      code,
+      status,
+      url,
+      deploymentId,
+      purged,
+      cause,
+      needs,
+      link,
+      userCode,
+    }: ShareErrorDetails = {},
   ) {
     super(message, cause === undefined ? undefined : { cause });
     this.name = 'ShareError';
@@ -51,6 +64,7 @@ export class ShareError extends Error {
     this.status = status;
     this.url = url;
     this.deploymentId = deploymentId;
+    this.purged = purged;
     this.step = needs && { needs, link, userCode };
   }
 
@@ -61,6 +75,7 @@ export class ShareError extends Error {
         status: this.status,
         url: this.url,
         deploymentId: this.deploymentId,
+        purged: this.purged,
         ...this.step,
       }).filter(([, value]) => value !== undefined),
     );

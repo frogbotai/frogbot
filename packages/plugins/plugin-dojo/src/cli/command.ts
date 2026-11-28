@@ -35,8 +35,11 @@ export type Verb = {
    * the folder's app (`.frogbot/app.json`) when left out.
    */
   args?: string;
-  /** For `[app] <x>...`: whether the first positional names the app rather than the first `<x>`. */
-  appFirst?: (first: string) => boolean;
+  /**
+   * For `[app] <x>...`: whether the first positional names the app rather than the first `<x>`. `linked` says whether
+   * the folder has an app (`.frogbot/app.json`).
+   */
+  appFirst?: (first: string, folder: { linked: boolean }) => boolean;
   flags?: Record<string, VerbFlag>;
   /**
    * Destructive: asks this with a terminal, and needs `--yes` without one. `true` when `run` asks
@@ -124,6 +127,13 @@ export async function linkedApp(
   return String(link.appId);
 }
 
+async function isLinked(cwd: string): Promise<boolean> {
+  return readLink(cwd).then(
+    (link) => link !== undefined,
+    () => false,
+  );
+}
+
 /** `positionals` with the folder's app put first when a verb's leading `[app]` was left out. */
 export async function withApp(
   verb: Pick<Verb, 'args' | 'appFirst'>,
@@ -139,7 +149,9 @@ export async function withApp(
   const [first] = positionals;
 
   const given = variadic
-    ? positionals.length >= parts.length && first !== undefined && (verb.appFirst?.(first) ?? true)
+    ? positionals.length >= parts.length &&
+      first !== undefined &&
+      (!verb.appFirst || verb.appFirst(first, { linked: await isLinked(io.cwd) }))
     : positionals.length >= parts.length;
 
   if (given || positionals.length < parts.length - 1) return positionals;
@@ -190,7 +202,13 @@ export async function runVerb(
 ): Promise<number> {
   const { positionals: given, values } = parseVerbArgs(verb, args, usage);
   const { min, max, names } = arity(verb.args);
-  const positionals = await withApp(verb, given, io, usage);
+  const named =
+    verb.args?.startsWith('[app]') && verb.flags?.app && typeof values.app === 'string'
+      ? values.app
+      : undefined;
+
+  const positionals =
+    named === undefined ? await withApp(verb, given, io, usage) : [named, ...given];
 
   if (positionals.length < min || positionals.length > max) {
     throw new ShareError(`Usage: ${usage}`, 2);

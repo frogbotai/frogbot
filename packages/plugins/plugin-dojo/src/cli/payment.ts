@@ -4,8 +4,11 @@ import { dojoError, dojoStop, needsPayment, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { canWait, say } from './io.js';
 
-const pollMs = 5000;
-const maxPolls = 360;
+/** How often a wait for a payment asks Dojo again. */
+export const pollMs = 5000;
+
+/** How many times a wait for a payment asks before it gives up: 30 minutes. */
+export const maxPolls = 360;
 
 const paying = new Set(['active', 'trialing', 'past_due']);
 
@@ -53,7 +56,7 @@ async function paid(dojo: DojoClient, paywall: Paywall): Promise<boolean> {
   );
 }
 
-function showPaywall(io: DojoIO, paywall: Paywall): void {
+function showPaywall(io: DojoIO, paywall: Pick<Paywall, 'why' | 'url' | 'owner'>): void {
   say(io, `[frogbot] ${paywall.why}`);
 
   say(
@@ -66,6 +69,18 @@ function showPaywall(io: DojoIO, paywall: Paywall): void {
   say(io, paywall.url);
 
   if (io.isTTY && paywall.owner) io.openBrowser(paywall.url);
+}
+
+/** `link` resolved against Dojo when it is Dojo's upgrade page, which pays for room in a workspace. */
+export function payPage(dojo: DojoClient, link: string): string | undefined {
+  if (!URL.canParse(link, dojo.url)) return undefined;
+
+  return readPaywall('', dojo.url, link)?.url;
+}
+
+/** Shows the pay link Dojo sent with a refusal, worded as a wait for a payment shows it. */
+export function showPayLink(io: DojoIO, why: string, url: string): void {
+  showPaywall(io, { why: why.replace(nextStep, ''), url, owner: !someoneElse.test(why) });
 }
 
 function paymentNeeded(paywall: Paywall, then: string): ShareError {
