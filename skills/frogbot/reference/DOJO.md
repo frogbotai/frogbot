@@ -4,7 +4,7 @@ Docs: https://docs.frogbot.ai/plugins/dojo
 
 Shipping an app, the first time and every time after, is `npx frogbot deploy`. Everything else happens through `frogbot dojo`: keys, a custom domain, the people on an app, workspaces, deployments and rollbacks, logs, starting and stopping an app, Trash, data exports, templates, activity, Dojo API keys and billing. Deploying is in "Sharing The App" in [SKILL.md](../SKILL.md#sharing-the-app).
 
-The commands come from `dojo()` (`@frogbotai/plugin-dojo`). `npx frogbot dojo <command>` needs an app that lists it; `npx @frogbotai/plugin-dojo <command>` runs the same command in any folder, including `login` on a fresh machine. `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. In a folder you deployed, which has `.frogbot/app.json`, leave `<app>` out and the command acts on that app. `npx frogbot dojo <command> --help` prints a command's flags, and `npx frogbot dojo --help --json` lists every command, verb and flag as one JSON value.
+The commands come from `dojo()` (`@frogbotai/plugin-dojo`). `npx frogbot dojo <command>` needs an app that lists it; `npx @frogbotai/plugin-dojo <command>` runs the same command in any folder, including `login` on a fresh machine. `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. In a folder you deployed, which has `.frogbot/app.json`, leave `<app>` out and most commands act on that app; `apps pull` and `sharing leave` always need it. `npx frogbot dojo <command> --help` prints a command's flags, and `npx frogbot dojo --help --json` lists every command, verb and flag as one JSON value.
 
 ## Daily
 
