@@ -1,25 +1,24 @@
 import {
   type Access,
-  APIError,
   type CollectionConfig,
   type CollectionView,
   type Endpoint,
   type Field,
+  frogbotError,
   type FrogBotRequest,
   moneyField,
 } from 'frogbot';
 
 import {
-  ApiKeyServiceError,
   canMintKeys,
   countMintedApiKeys,
-  isApiKeyRequest,
   keyScopeBeforeValidate,
   mintApiKey,
   revokeApiKey,
   rotateApiKey,
+  sessionRequired,
 } from './server/services.js';
-import { apiKeyChallenge, apiKeyRefusal } from './strategy.js';
+import { signInRequired } from './strategy.js';
 
 const managerComponent = (collectionSlug: string) => ({
   path: '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer',
@@ -36,44 +35,8 @@ type CollectionOptions = {
   existing?: CollectionConfig;
 };
 
-const sessionRequired = () =>
-  Response.json(
-    {
-      error:
-        "This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys.",
-    },
-    { status: 403 },
-  );
-
-function authenticationRequired(req: FrogBotRequest) {
-  const refusal = apiKeyRefusal(req);
-
-  return Response.json(
-    { error: refusal ?? 'Authentication required' },
-    {
-      status: 401,
-      ...(refusal && { headers: { 'WWW-Authenticate': `Bearer ${apiKeyChallenge(refusal)}` } }),
-    },
-  );
-}
-
-const keyNotFound = (req: FrogBotRequest) =>
-  new APIError(
-    isApiKeyRequest(req)
-      ? 'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.'
-      : 'API key not found',
-    404,
-    { code: 'not_found' },
-    true,
-  );
-
-function describeError(error: APIError): string {
-  const details = (error.data as { errors?: { message?: unknown }[] } | undefined)?.errors;
-  const messages = details
-    ?.map(({ message }) => message)
-    .filter((message) => typeof message === 'string');
-
-  return messages?.length ? messages.join(' ') : error.message;
+function invalid(path: string, message: string) {
+  return frogbotError('request.invalid', { detail: message, fields: [{ path, message }] });
 }
 
 const ownKeys: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false);
@@ -128,8 +91,8 @@ function createEndpoints({
       method: 'post',
       path: '/mint',
       handler: async (req) => {
-        if (!req.user) return authenticationRequired(req);
-        if (!canMintKeys(req)) return sessionRequired();
+        if (!req.user) throw signInRequired(req);
+        if (!canMintKeys(req)) throw sessionRequired();
         const body = ((await req.json?.().catch(() => null)) ?? null) as {
           name?: unknown;
           data?: unknown;
@@ -137,51 +100,39 @@ function createEndpoints({
         } | null;
 
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
-        if (!name) return Response.json({ error: 'Name is required' }, { status: 400 });
+        if (!name) throw invalid('name', 'Name is required.');
 
         const data = body?.data ?? {};
         if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-          return Response.json({ error: 'data must be an object' }, { status: 400 });
+          throw invalid('data', 'data must be an object.');
         }
 
         const expiresAt = body?.expiresAt ?? null;
         if (expiresAt !== null && typeof expiresAt !== 'string') {
-          return Response.json({ error: 'expiresAt must be a date string' }, { status: 400 });
+          throw invalid('expiresAt', 'expiresAt must be a date string.');
         }
 
-        try {
-          return Response.json(
-            await mintApiKey({
-              req,
-              collectionSlug,
-              tokenPrefix,
-              name,
-              data: data as Record<string, unknown>,
-              expiresAt,
-            }),
-            { status: 201 },
-          );
-        } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
-            return authenticationRequired(req);
-          }
-
-          if (error instanceof APIError && error.status < 500) {
-            return Response.json({ error: describeError(error) }, { status: error.status });
-          }
-
-          throw error;
-        }
+        return Response.json(
+          await mintApiKey({
+            req,
+            collectionSlug,
+            tokenPrefix,
+            name,
+            data: data as Record<string, unknown>,
+            expiresAt,
+          }),
+          { status: 201 },
+        );
       },
     },
     {
       method: 'post',
       path: '/:id/revoke',
       handler: async (req) => {
-        if (!req.user) return authenticationRequired(req);
+        if (!req.user) throw signInRequired(req);
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          throw keyNotFound(req);
+          throw frogbotError('request.invalid', 'The key id is missing.');
         }
 
         const text = (await req.text?.()) ?? '';
@@ -193,93 +144,57 @@ function createEndpoints({
             cascade = body.cascade;
           }
         } catch {
-          return Response.json({ error: 'The body must be JSON' }, { status: 400 });
+          throw frogbotError('request.invalid-json');
         }
 
         if (typeof cascade !== 'boolean') {
-          return Response.json({ error: 'cascade must be true or false' }, { status: 400 });
+          throw invalid('cascade', 'cascade must be true or false.');
         }
 
-        try {
-          const anyOwner = (await canRevokeAnyKey?.(req)) === true;
-          const {
-            name: _name,
-            owner: _owner,
-            ...result
-          } = await revokeApiKey({ req, collectionSlug, id, anyOwner, cascade });
+        const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+        const {
+          name: _name,
+          owner: _owner,
+          ...result
+        } = await revokeApiKey({ req, collectionSlug, id, anyOwner, cascade });
 
-          return Response.json(result);
-        } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
-            return authenticationRequired(req);
-          }
-
-          if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            throw keyNotFound(req);
-          }
-
-          throw error;
-        }
+        return Response.json(result);
       },
     },
     {
       method: 'get',
       path: '/:id/minted-count',
       handler: async (req) => {
-        if (!req.user) return authenticationRequired(req);
+        if (!req.user) throw signInRequired(req);
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          throw keyNotFound(req);
+          throw frogbotError('request.invalid', 'The key id is missing.');
         }
 
-        try {
-          const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+        const anyOwner = (await canRevokeAnyKey?.(req)) === true;
 
-          return Response.json({
-            count: await countMintedApiKeys({ req, collectionSlug, id, anyOwner }),
-          });
-        } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            throw keyNotFound(req);
-          }
-
-          throw error;
-        }
+        return Response.json({
+          count: await countMintedApiKeys({ req, collectionSlug, id, anyOwner }),
+        });
       },
     },
     {
       method: 'post',
       path: '/:id/rotate',
       handler: async (req) => {
-        if (!req.user) return authenticationRequired(req);
-        if (!canMintKeys(req)) return sessionRequired();
+        if (!req.user) throw signInRequired(req);
+        if (!canMintKeys(req)) throw sessionRequired();
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          throw keyNotFound(req);
+          throw frogbotError('request.invalid', 'The key id is missing.');
         }
 
-        try {
-          const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+        const anyOwner = (await canRevokeAnyKey?.(req)) === true;
 
-          return Response.json(
-            await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }),
-            { status: 201 },
-          );
-        } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
-            return authenticationRequired(req);
-          }
-
-          if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            throw keyNotFound(req);
-          }
-
-          if (error instanceof APIError && error.status < 500) {
-            return Response.json({ error: describeError(error) }, { status: error.status });
-          }
-
-          throw error;
-        }
+        return Response.json(
+          await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }),
+          { status: 201 },
+        );
       },
     },
   ];

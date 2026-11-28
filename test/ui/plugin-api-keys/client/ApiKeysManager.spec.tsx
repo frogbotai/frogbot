@@ -275,7 +275,7 @@ describe('API key controls', () => {
     it("shows the server's refusal in the dialog", async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
-        json: () => Promise.resolve({ error: 'expiresAt must be in the future.' }),
+        json: () => Promise.resolve({ detail: 'expiresAt must be in the future.' }),
       } as Response);
 
       openCreate();
@@ -411,7 +411,7 @@ describe('API key controls', () => {
   });
 
   it('keeps the revoke dialog open with the error when revoking fails', async () => {
-    keysMade(0, { ok: false, json: () => Promise.resolve({ error: 'Key is in use' }) });
+    keysMade(0, { ok: false, json: () => Promise.resolve({ detail: 'Key is in use' }) });
 
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
@@ -423,10 +423,10 @@ describe('API key controls', () => {
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
-  it('shows the message from an errors envelope when revoking fails', async () => {
+  it("shows the Problem's detail when revoking fails", async () => {
     keysMade(0, {
       ok: false,
-      json: () => Promise.resolve({ errors: [{ message: 'API key not found' }] }),
+      json: () => Promise.resolve({ code: 'api-key.not-found', detail: 'API key not found' }),
     });
 
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
@@ -586,7 +586,7 @@ describe('API key controls', () => {
   it('shows a mint validation error in the dialog', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: false,
-      json: () => Promise.resolve({ error: "Can't exceed Ada's monthly budget of $50.00." }),
+      json: () => Promise.resolve({ detail: "Can't exceed Ada's monthly budget of $50.00." }),
     } as Response);
 
     openCreate();

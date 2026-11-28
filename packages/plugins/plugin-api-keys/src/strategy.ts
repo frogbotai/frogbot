@@ -1,6 +1,7 @@
-import { APIError, type AuthStrategy, type CollectionMeHook } from 'frogbot';
+import { type AuthStrategy, type CollectionMeHook, type FrogBotError, frogbotError } from 'frogbot';
 import { toPayloadRequest } from 'frogbot/internal';
 
+import { apiKeyError } from './errors.js';
 import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
 
 export const apiKeyStrategyName = 'api-key';
@@ -80,10 +81,21 @@ export function refuseRejectedApiKey({
 
   if (!message) return;
 
-  req.responseHeaders = new Headers(req.responseHeaders);
-  req.responseHeaders.set('WWW-Authenticate', `Bearer ${apiKeyChallenge(message)}`);
+  throw refusedKey(message);
+}
 
-  throw new APIError(message, 401, null, true);
+function refusedKey(message: string): FrogBotError {
+  return apiKeyError('api-key.refused', {
+    detail: message,
+    headers: { 'WWW-Authenticate': `Bearer ${apiKeyChallenge(message)}` },
+  });
+}
+
+/** The 401 for a request with no user: why its API key was refused, or a plain sign-in error. */
+export function signInRequired(req: object | null | undefined): FrogBotError {
+  const refusal = apiKeyRefusal(req);
+
+  return refusal ? refusedKey(refusal) : frogbotError('auth.unauthenticated');
 }
 
 let loggedStampFailure = false;

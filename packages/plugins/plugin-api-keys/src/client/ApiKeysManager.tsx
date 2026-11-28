@@ -104,11 +104,11 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
       }),
     });
 
-    const result = (await response.json()) as { error?: string; token?: string };
+    const result = (await response.json()) as { detail?: string; token?: string };
 
     setLoading(false);
     if (!response.ok || !result.token) {
-      setError(result.error ?? 'Unable to create API key');
+      setError(result.detail ?? 'Unable to create API key');
 
       return;
     }
@@ -361,12 +361,9 @@ export function RevokeApiKey({
 
     setLoading(false);
     if (!response.ok) {
-      const result = (await response.json()) as {
-        error?: string;
-        errors?: { message?: string }[];
-      };
+      const result = (await response.json()) as { detail?: string };
 
-      setError(result.error ?? result.errors?.[0]?.message ?? 'Unable to revoke API key');
+      setError(result.detail ?? 'Unable to revoke API key');
 
       return;
     }
