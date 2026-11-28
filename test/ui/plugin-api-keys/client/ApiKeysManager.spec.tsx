@@ -600,6 +600,45 @@ describe('API key controls', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
+  it("shows a Problem's field messages over Payload's generic field-invalid detail", async () => {
+    const generic = 'The following field is invalid: Monthly Cap (USD)';
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      json: () =>
+        Promise.resolve({
+          code: 'request.invalid',
+          status: 400,
+          detail: generic,
+          errors: [
+            {
+              message: generic,
+              name: 'ValidationError',
+              data: {
+                collection: 'credentials',
+                errors: [
+                  {
+                    label: 'Monthly Cap (USD)',
+                    message: "Can't exceed ada@example.com's monthly budget of $50.00.",
+                    path: 'monthlyBudget',
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+    } as Response);
+
+    openCreate();
+
+    fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      "Can't exceed ada@example.com's monthly budget of $50.00.",
+    );
+  });
+
   it('the client entry exports the key controls and the create data hook', async () => {
     const entry = await import('../../../../packages/plugins/plugin-api-keys/src/client.js');
 

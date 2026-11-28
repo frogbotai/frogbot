@@ -636,7 +636,7 @@ describe('API keys plugin integration', () => {
     });
 
     const mintKey = (data: Record<string, unknown>) =>
-      booted.restClient.post<{ id: number | string; token: string; error?: string }>(
+      booted.restClient.post<{ id: number | string; token: string; detail?: string }>(
         '/api/credentials/mint',
         { name: 'CI bot', data },
         { headers: session },
@@ -781,6 +781,7 @@ describe('API keys plugin integration', () => {
 
       expect(above.status).toBe(400);
       expect(fieldMessages(above.body)).toContain('monthly budget of $50.00.');
+      expect(above.body.detail).toContain('monthly budget of $50.00.');
 
       const key = await mintKey({ monthlyBudget: 25 });
       const headers = { 'x-service-key': key.body.token };
@@ -1201,6 +1202,7 @@ describe('API keys plugin integration', () => {
       expect(fieldMessages(rotated.body)).toContain(
         'Can\'t exceed API key "P"\'s monthly cap of $2.00.',
       );
+      expect(rotated.body.detail).toBe('Can\'t exceed API key "P"\'s monthly cap of $2.00.');
       expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
       expect(
         (await booted.restClient.get('/api/credentials', { headers: asKey(child.body.token) }))
