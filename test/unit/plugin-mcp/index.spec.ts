@@ -397,12 +397,12 @@ describe('MCP plugin tools', () => {
     {
       name: 'getConfigInfo',
       tools: [returning('getConfigInfo', null)],
-      message: "[plugin-mcp] Tool 'getConfigInfo' has the name of a built-in Payload MCP tool.",
+      message: "[plugin-mcp] Tool 'getConfigInfo' has the name of a built-in MCP tool.",
     },
     {
       name: 'findDocuments',
       tools: [returning('findDocuments', null)],
-      message: "[plugin-mcp] Tool 'findDocuments' has the name of a built-in Payload MCP tool.",
+      message: "[plugin-mcp] Tool 'findDocuments' has the name of a built-in MCP tool.",
     },
     {
       name: 'a duplicate slug',

@@ -12,6 +12,7 @@ import { format, getFileInfo, resolveConfig } from 'prettier';
 import { getConfiguredModelIds } from '../ai/models.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import type { FrogBotSanitizedConfig } from '../config/sanitized.js';
+import { toFrogBotMessage } from '../errors/upstreamMessages.js';
 
 const BANNER = `/* tslint:disable */
 /* eslint-disable */
@@ -243,14 +244,10 @@ async function compileTypes(
   });
 
   if (extraTypeStrings && extraTypeStrings.size > 0) {
-    const definitions = [...extraTypeStrings].map((definition) =>
-      definition.replaceAll('@payloadcms/richtext-lexical', '@frogbotai/richtext-lexical'),
-    );
-
-    compiled = `${compiled.trimEnd()}\n\n${definitions.join('\n\n')}\n`;
+    compiled = `${compiled.trimEnd()}\n\n${[...extraTypeStrings].join('\n\n')}\n`;
   }
 
-  const output = `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai)}\n`;
+  const output = `${toFrogBotMessage(compiled).trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai)}\n`;
 
   return format(output, await formatOptions(outputPath));
 }
