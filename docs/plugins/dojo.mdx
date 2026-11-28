@@ -147,6 +147,15 @@ Outside Dojo, `dojo()` only adds the `dojo` command and the `dojo` deploy target
 - **Jobs.** Dojo wakes the app to run due jobs. Everyone else gets the app's own `jobs.access.run`.
 - **Sign-in.** The login page gets "Continue with Dojo". See [Sign in with Dojo](#sign-in-with-dojo).
 - **Badge.** Every FrogBot page gets a small "Made with FrogBot · Share your own" link in the bottom-left corner. Visitors can close it for the rest of their browser session. `dojo({ badge: false })` turns it off.
+- **Data export.** `POST /api/dojo/export` copies the database to the app's bucket when Dojo asks, for `apps export-data`. Only Dojo can call it. A refusal is a [Problem](/agents/overview#invoke-over-http) with one of these codes, plus the `error` word Dojo reads:
+
+| Code | Status | `error` | Means |
+| --- | --- | --- | --- |
+| `dojo.export-unauthorized` | `401` | `unauthorized` | The bearer isn't the app's `DOJO_JOBS_SECRET`. |
+| `dojo.export-invalid-key` | `400` | `invalid_key` | `key` isn't `.dojo/export/<id>.db`. |
+| `dojo.export-not-sqlite` | `409` | `not_sqlite` | The database isn't a SQLite file. |
+| `dojo.export-no-database` | `404` | `no_database` | The app has no database yet. |
+| `dojo.export-disk-full` | `507` | `disk_full` | The disk lacks room for the copy, twice the database's size. |
 
 ### Sign in with Dojo
 
