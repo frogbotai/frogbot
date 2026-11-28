@@ -135,6 +135,19 @@ export function wrapCollectionAccess(
   }
 }
 
+function sanitizeUpload(
+  { slug, upload }: Pick<CollectionConfig, 'slug' | 'upload'>,
+  attachFrogBot: AttachFrogBot,
+) {
+  const { handlers, ...config } = typeof upload === 'object' ? upload : {};
+
+  return {
+    ...config,
+    staticDir: config.staticDir || `files/${slug}`,
+    ...(handlers ? { handlers: wrapUploadHandlers(handlers, attachFrogBot) } : {}),
+  };
+}
+
 export function sanitizeCollection(
   c: CollectionConfig,
   attachFrogBot: AttachFrogBot,
@@ -221,14 +234,7 @@ export function sanitizeCollection(
     ),
     ...(admin ? { admin } : {}),
     ...(select ? { select } : {}),
-    ...(typeof c.upload === 'object' && c.upload.handlers
-      ? {
-          upload: {
-            ...c.upload,
-            handlers: wrapUploadHandlers(c.upload.handlers, attachFrogBot),
-          },
-        }
-      : {}),
+    ...(c.upload ? { upload: sanitizeUpload(c, attachFrogBot) } : {}),
     ...(orderable ? { orderable: true } : {}),
     ...(c.chat === true
       ? {
