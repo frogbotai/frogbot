@@ -2770,6 +2770,7 @@ describe('frogbot sanitize', () => {
     expect(payloadConfig.admin.meta.defaultOGImageType).toBe('static');
     expect(payloadConfig.admin.meta.openGraph.siteName).toBe('FrogBot');
     expect(payloadConfig.i18n.translations.en.general.payloadSettings).toBe('FrogBot Settings');
+    expect(payloadConfig.i18n.translations.en.upload.pasteURL).toBe('Paste link');
   });
 
   it('defaults the cookie prefix to FrogBot', async () => {
@@ -2797,7 +2798,12 @@ describe('frogbot sanitize', () => {
         },
       },
       i18n: {
-        translations: { en: { general: { payloadSettings: 'Acme Settings' } } },
+        translations: {
+          en: {
+            general: { payloadSettings: 'Acme Settings' },
+            upload: { pasteURL: 'Paste a URL' },
+          },
+        },
       },
     } as unknown as Partial<FrogBotConfig>);
 
@@ -2816,6 +2822,7 @@ describe('frogbot sanitize', () => {
       images: [{ url: '/og.png' }],
     });
     expect(payloadConfig.i18n.translations.en.general.payloadSettings).toBe('Acme Settings');
+    expect(payloadConfig.i18n.translations.en.upload.pasteURL).toBe('Paste a URL');
   });
 
   it('preserves unrelated user i18n translations when injecting branding', async () => {

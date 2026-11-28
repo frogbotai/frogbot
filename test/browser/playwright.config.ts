@@ -405,6 +405,7 @@ const testProjects = [
       'chatRowHover.browser.spec.ts',
       'settingsShell.browser.spec.ts',
       'uiParity.browser.spec.ts',
+      'uploadDropzone.browser.spec.ts',
     ],
   }),
   project({
