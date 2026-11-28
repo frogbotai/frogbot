@@ -5,15 +5,16 @@ import {
   type CollectionBeforeOperationHook,
   type CollectionBeforeSignInHook,
   type Endpoint,
+  FrogBotError,
   type FrogBotRequest,
   headersWithCors,
 } from 'frogbot';
-import { APIError, loginOperation, resetPasswordOperation } from 'payload';
+import { loginOperation, resetPasswordOperation } from 'payload';
 import { generatePayloadCookie } from 'payload/shared';
 
 import {
   hasTwoFactor,
-  jsonError,
+  invalidReturnTo,
   noStore,
   passedKey,
   payloadRequest,
@@ -24,16 +25,17 @@ import {
   type TwoFactorUser,
   writeUser,
 } from './context.js';
+import { twoFactorError } from './errors.js';
 import { createPending } from './pending.js';
 import { createTOTPSecret } from './totp.js';
 
 /** Thrown by the plugin's `beforeLogin` gate for a user who must enter a code or set up two-factor sign-in first. */
-export class TwoFactorRequired extends APIError {
+export class TwoFactorRequired extends FrogBotError<'two-factor.sign-in-required'> {
   readonly userId: string | number;
   readonly mode: 'code' | 'setup';
 
   constructor(userId: string | number, mode: 'code' | 'setup') {
-    super('Two-factor sign-in is required. Sign in through the two-factor flow.', 403);
+    super('two-factor.sign-in-required', twoFactorError.definitions['two-factor.sign-in-required']);
     this.userId = userId;
     this.mode = mode;
   }
@@ -206,7 +208,7 @@ export const createLoginEndpoint = (ctx: TwoFactorContext): Endpoint => ({
     const returnTo =
       typeof data.returnTo === 'string' ? safeReturnTo(data.returnTo, origin) : undefined;
 
-    if (returnTo === null) return jsonError('returnTo must be a path on this server.', 400);
+    if (returnTo === null) return invalidReturnTo(req);
 
     const authData =
       collection.config.auth.loginWithUsername !== false

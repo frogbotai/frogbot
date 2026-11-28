@@ -1,9 +1,8 @@
 export type TwoFactorResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-/** The first error message of a FrogBot API error body, or `fallback`. */
+/** The `detail` of a FrogBot `Problem`, or `fallback`. */
 export function errorMessage(body: unknown, fallback: string): string {
-  const errors = (body as { errors?: { message?: unknown }[] } | null)?.errors;
-  const message = errors?.[0]?.message ?? (body as { message?: unknown } | null)?.message;
+  const message = (body as { detail?: unknown } | null)?.detail;
 
   return typeof message === 'string' && message ? message : fallback;
 }

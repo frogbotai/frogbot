@@ -3,7 +3,7 @@ import { registerFirstUserOperation } from 'payload';
 import { generatePayloadCookie } from 'payload/shared';
 
 import {
-  jsonError,
+  invalidReturnTo,
   payloadRequest,
   readUser,
   routes,
@@ -31,7 +31,7 @@ export const createFirstRegisterEndpoint = (ctx: TwoFactorContext): Endpoint => 
     const { origin, base } = routes(req, ctx.slug);
     const returnTo = typeof requested === 'string' ? safeReturnTo(requested, origin) : undefined;
 
-    if (returnTo === null) return jsonError('returnTo must be a path on this server.', 400);
+    if (returnTo === null) return invalidReturnTo(req);
 
     const authData = collection.config.auth.loginWithUsername
       ? { email: text(data.email), password: text(data.password), username: text(data.username) }

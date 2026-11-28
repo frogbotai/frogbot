@@ -13,7 +13,17 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const CODE_MISSING = 'Send the code as a string in `code`, e.g. {"code":"123456"}.';
 
-const refusal = (message: string, code: string) => ({ errors: [{ message, data: { code } }] });
+const codes: Record<string, string> = {
+  wrong_code: 'two-factor.wrong-code',
+  locked: 'two-factor.locked',
+  expired: 'two-factor.expired',
+  pending_missing: 'two-factor.pending-missing',
+  code_missing: 'two-factor.code-missing',
+  body_unreadable: 'two-factor.body-unreadable',
+};
+
+const refusal = (message: string, code: string) =>
+  expect.objectContaining({ code: codes[code] ?? code, detail: message });
 
 describe('two-factor refusals', () => {
   let booted: BootedFrogBot;

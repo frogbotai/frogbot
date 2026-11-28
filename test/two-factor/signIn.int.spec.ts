@@ -194,10 +194,9 @@ describe('two-factor sign-in', () => {
       );
 
       expect(refused.status).toBe(429);
-      expect(await refused.json()).toEqual({
-        errors: [
-          { message: 'Too many wrong codes. Try again in 10 minutes.', data: { code: 'locked' } },
-        ],
+      expect(await refused.json()).toMatchObject({
+        code: 'two-factor.locked',
+        detail: 'Too many wrong codes. Try again in 10 minutes.',
       });
       expect(await t.sessions('locked@example.com')).toHaveLength(1);
     });
@@ -303,8 +302,9 @@ describe('two-factor sign-in', () => {
       const wrong = await t.json(`${twoFactorURL}/verify`, { code: '123456' }, { cookie });
 
       expect(wrong.status).toBe(401);
-      expect(await wrong.json()).toEqual({
-        errors: [{ message: "That code didn't work.", data: { code: 'wrong_code' } }],
+      expect(await wrong.json()).toMatchObject({
+        code: 'two-factor.wrong-code',
+        detail: "That code didn't work.",
       });
 
       const finished = await t.json(
@@ -340,7 +340,11 @@ describe('two-factor sign-in', () => {
       const without = await t.login('plain-wrong@example.com', { password: 'nope' });
 
       expect(withCode.status).toBe(without.status);
-      expect(await withCode.json()).toEqual(await without.json());
+
+      const { requestId: _withId, ...withBody } = await withCode.json();
+      const { requestId: _withoutId, ...withoutBody } = await without.json();
+
+      expect(withBody).toEqual(withoutBody);
       expect(t.cookie(withCode, pendingCookieName)).toBeUndefined();
     });
 
