@@ -258,6 +258,27 @@ describe('frogbot bin', () => {
     });
   });
 
+  it('prints one JSON value for `frogbot run --help --json` without running it', async () => {
+    process.argv = ['node', 'frogbot', 'run', '--help', '--json'];
+
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:0');
+
+    expect(mocks.calls).toEqual(['loadEnv']);
+    expect(write).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
+      command: 'run',
+      success: true,
+      usage: 'frogbot run <file> [args...]',
+      help: expect.stringMatching(/^\[frogbot\] usage: frogbot run /),
+    });
+  });
+
   it.each([['status'], ['up', '--port', '4000'], ['migrate:fresh']])(
     'prints one JSON value for `frogbot %s --help --json` without running it',
     async (command, ...rest) => {

@@ -266,8 +266,9 @@ export async function bin() {
   if (handler && !appCommand && asksForHelp(command, args)) {
     const { help } = handler;
     const text = typeof help === 'string' ? help : await help(args, { config, loadError });
+    const json = asksJson || (command === 'run' && args.slice(0, 2).includes('--json'));
 
-    printHelp(command, text, appCommands, asksJson);
+    printHelp(command, text, appCommands, json);
 
     return process.exit(0);
   }
