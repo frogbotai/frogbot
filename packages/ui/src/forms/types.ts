@@ -1,3 +1,5 @@
+import type { Problem } from '@frogbotai/protocol';
+
 import type { FormRule, FormRuleMatch } from './rules.js';
 
 export type FormQuestionType =
@@ -61,9 +63,8 @@ export type FormFieldError = {
 /** An answer a confirmed submission didn't use. `reason` is for reading and may be reworded. */
 export type FormIgnoredAnswer = { field: string; reason: string };
 
+/** A confirmed submission, or the `Problem` that says why it was refused. */
 export type FormSubmitResponse =
-  | { confirmation: FormConfirmation; ignored?: FormIgnoredAnswer[] }
-  | { errors: FormFieldError[] }
-  | { error: string };
+  { confirmation: FormConfirmation; ignored?: FormIgnoredAnswer[] } | Problem;
 
 export type FormValue = boolean | File[] | string | string[];

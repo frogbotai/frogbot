@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
+import { refusal } from '../refusal.js';
 import {
   applicationsSlug,
   draftedSlug,
@@ -319,16 +320,18 @@ describe(`form edit links [${adapterLabel}]`, () => {
         record: mine,
       });
 
-      const tooLong = await booted.restClient.post<{ errors?: { path: string }[] }>(
+      const tooLong = await booted.restClient.post(
         '/api/form-links',
         { form: form.slug, record: mine, expiresIn: '90d' },
         { headers: await auth(admin) },
       );
 
       expect(refused.status).toBe(403);
-      expect(signedOut.status).toBe(403);
+      expect(signedOut.status).toBe(401);
       expect(tooLong.status).toBe(400);
-      expect(tooLong.body.errors).toEqual([expect.objectContaining({ path: 'expiresIn' })]);
+      expect(refusal(tooLong.body).errors).toEqual([
+        expect.objectContaining({ field: 'expiresIn' }),
+      ]);
       expect(await storedLinks()).toHaveLength(1);
     });
 
@@ -728,8 +731,11 @@ describe(`form edit links [${adapterLabel}]`, () => {
 
         expect(opened.status).toBe(410);
         expect(saved.status).toBe(410);
-        expect(opened.body).toEqual({ error: 'This link is no longer valid.' });
-        expect(saved.body).toEqual(opened.body);
+        expect(opened.body).toMatchObject({
+          code: 'forms.link-invalid',
+          detail: 'This link is no longer valid.',
+        });
+        expect(saved.body).toMatchObject({ code: 'forms.link-invalid' });
       }
 
       expect((await application(mine)).name ?? null).toBeNull();
@@ -763,7 +769,7 @@ describe(`form edit links [${adapterLabel}]`, () => {
       const failed = await save(token, { name: failingName });
 
       expect(failed.status).toBe(400);
-      expect(failed.body).toEqual({ error: 'The CRM refused this change.' });
+      expect(failed.body).toMatchObject({ detail: 'The CRM refused this change.' });
       expect(await uses(token)).toEqual({ submissions: 0, lastSubmittedAt: null });
 
       expect((await save(token, { name: 'Fine' })).status).toBe(200);
@@ -782,14 +788,9 @@ describe(`form edit links [${adapterLabel}]`, () => {
       const refused = await save(token, { name: 'Grace', phone: 5550100 });
 
       expect(refused.status).toBe(400);
-      expect(refused.body).toEqual({
-        errors: [
-          {
-            field: 'phone',
-            message: 'phone: expected a string, got 5550100.',
-            code: 'invalid_answer',
-          },
-        ],
+      expect(refusal(refused.body)).toEqual({
+        code: 'forms.invalid-answer',
+        errors: [{ field: 'phone', message: 'phone: expected a string, got 5550100.' }],
       });
       expect(await uses(token)).toEqual({ submissions: 0, lastSubmittedAt: null });
       expect(await application(mine)).toMatchObject({ name: 'Ada', phone: '555-0100' });

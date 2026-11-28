@@ -8,6 +8,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
+import { refusal } from './refusal.js';
 import { hookMarkerPrefix, leadsSlug, staffFormSlug, ticketsSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -218,8 +219,8 @@ describe(`forms plugin [${adapterLabel}]`, () => {
       const definition = await booted.restClient.get(`/api/forms/${slug}/definition`);
       const submitted = await submit(slug, { data: { email: 'ada@example.com' } });
 
-      expect(definition).toMatchObject({ status: 404, body: { error: 'Not found' } });
-      expect(submitted).toMatchObject({ status: 404, body: { error: 'Not found' } });
+      expect(definition).toMatchObject({ status: 404, body: { code: 'forms.not-found' } });
+      expect(submitted).toMatchObject({ status: 404, body: { code: 'forms.not-found' } });
     }
 
     expect(await leads()).toEqual([]);
@@ -310,18 +311,11 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     });
 
     expect(status).toBe(400);
-    expect(body).toEqual({
+    expect(refusal(body)).toEqual({
+      code: 'forms.invalid-answer',
       errors: [
-        {
-          field: 'firstName',
-          message: 'firstName: expected a string, got 5.',
-          code: 'invalid_answer',
-        },
-        {
-          field: 'interest',
-          message: 'interest: expected a string, got ["sales"].',
-          code: 'invalid_answer',
-        },
+        { field: 'firstName', message: 'firstName: expected a string, got 5.' },
+        { field: 'interest', message: 'interest: expected a string, got ["sales"].' },
       ],
     });
     expect(await leads()).toEqual([]);
@@ -348,14 +342,9 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     });
 
     expect(status).toBe(400);
-    expect(body).toEqual({
-      errors: [
-        {
-          field: 'interest',
-          message: 'interest: expected a string, got 7.',
-          code: 'invalid_answer',
-        },
-      ],
+    expect(refusal(body)).toEqual({
+      code: 'forms.invalid-answer',
+      errors: [{ field: 'interest', message: 'interest: expected a string, got 7.' }],
     });
     expect(await leads()).toEqual([]);
   });
@@ -431,7 +420,10 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     const { status, body } = await submit('contact', { data: { email: 'not-an-email' } });
 
     expect(status).toBe(400);
-    expect(body).toEqual({ errors: [expect.objectContaining({ field: 'email' })] });
+    expect(refusal(body)).toEqual({
+      code: 'forms.invalid',
+      errors: [expect.objectContaining({ field: 'email' })],
+    });
     expect(await leads()).toEqual([]);
   });
 

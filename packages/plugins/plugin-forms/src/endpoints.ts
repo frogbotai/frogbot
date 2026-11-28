@@ -2,13 +2,16 @@ import {
   addDataAndFileToRequest,
   APIError,
   type Endpoint,
+  frogbotError,
   type FrogBotRequest,
   isFrogBotError,
+  problemResponse,
 } from 'frogbot';
 
 import { bodyAnswers, pickSubmission, shownQuestions } from './answers.js';
 import { countResponse, formIsClosed, isClosed } from './closing.js';
 import { buildConfirmation } from './definition.js';
+import { formError } from './errors.js';
 import {
   asFormLink,
   openLinkLimited,
@@ -37,27 +40,31 @@ import {
   uploadQuestions,
 } from './uploads.js';
 
-const notFound = () =>
-  Response.json({ error: 'Not found' } satisfies FormSubmitResponse, { status: 404 });
+const answer = (req: FrogBotRequest, error: unknown) => problemResponse(error, { req });
 
-const closed = () =>
-  Response.json({ error: 'This form is closed.' } satisfies FormSubmitResponse, { status: 410 });
+const notFound = (req: FrogBotRequest) => answer(req, formError('forms.not-found'));
 
-const linkGone = () =>
-  Response.json({ error: 'This link is no longer valid.' } satisfies FormSubmitResponse, {
-    status: 410,
-  });
+const closed = (req: FrogBotRequest) => answer(req, formError('forms.closed'));
 
-const failure = (status: number, error: string, headers?: HeadersInit) =>
-  Response.json({ error } satisfies FormSubmitResponse, { status, headers });
+const linkGone = (req: FrogBotRequest) => answer(req, formError('forms.link-invalid'));
 
-const busy = () => failure(503, 'This form is busy. Try again.');
+const busy = (req: FrogBotRequest) => answer(req, formError('forms.busy'));
 
-const tooMany = (retryAfter: number) =>
-  failure(429, 'Too many submissions. Try again later.', { 'Retry-After': String(retryAfter) });
+const tooMany = (req: FrogBotRequest, retryAfter: number) =>
+  answer(req, formError('forms.rate-limited', { retryAfter }));
 
-const invalid = (errors: FormFieldError[]) =>
-  Response.json({ errors } satisfies FormSubmitResponse, { status: 400 });
+const invalid = (req: FrogBotRequest, errors: FormFieldError[]) =>
+  answer(
+    req,
+    formError(
+      errors.some(({ code }) => code === 'invalid_answer')
+        ? 'forms.invalid-answer'
+        : 'forms.invalid',
+      {
+        fields: errors.map(({ field, message }) => ({ path: field ?? '', message })),
+      },
+    ),
+  );
 
 const confirmed = (form: FormDocument, ignored: FormIgnoredAnswer[] = []) =>
   Response.json({
@@ -99,7 +106,7 @@ export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
 
       if (token === null) {
         const found = await findForm(req, runtime, req.routeParams?.slug);
-        if (!found || found.form.mode === 'update') return notFound();
+        if (!found || found.form.mode === 'update') return notFound(req);
 
         return Response.json(await definitionFor(req, runtime, found));
       }
@@ -107,12 +114,12 @@ export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
       try {
         const opening = await openLinkLimited(req, runtime, req.routeParams?.slug, token);
 
-        if (opening.status === 'limited') return tooMany(opening.retryAfter);
-        if (opening.status === 'gone') return linkGone();
+        if (opening.status === 'limited') return tooMany(req, opening.retryAfter);
+        if (opening.status === 'gone') return linkGone(req);
 
         return Response.json(opening.definition);
       } catch (error) {
-        if (isFrogBotError(error, 'kv.lock-held')) return busy();
+        if (isFrogBotError(error, 'kv.lock-held')) return busy(req);
 
         throw error;
       }
@@ -122,15 +129,15 @@ export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
 
 function saveFailed(req: FrogBotRequest, form: FormDocument, error: unknown): Response {
   const errors = fieldErrors(error);
-  if (errors) return invalid(errors);
+  if (errors) return invalid(req, errors);
 
-  if (error instanceof APIError && error.status < 500) return failure(error.status, error.message);
+  if (error instanceof APIError && error.status < 500) return answer(req, error);
 
-  if (isFrogBotError(error, 'kv.lock-held')) return busy();
+  if (isFrogBotError(error, 'kv.lock-held')) return busy(req);
 
   req.frogbot.logger.error({ err: error, form: form.slug }, '[plugin-forms] Submit failed');
 
-  return failure(500, 'Something went wrong.');
+  return answer(req, frogbotError('internal', { cause: error }));
 }
 
 async function saveEdit(
@@ -147,7 +154,7 @@ async function saveEdit(
   try {
     const stored = ruled.length ? await prefill(req, form, link, [...new Set(ruled)]) : {};
     const picked = pickSubmission(form, target, body, { edit: true, stored });
-    if ('errors' in picked) return invalid(picked.errors);
+    if ('errors' in picked) return invalid(req, picked.errors);
 
     const outcome = await spendUse(req, form, link, () =>
       asFormLink(req, form, link, () =>
@@ -162,10 +169,10 @@ async function saveEdit(
       ),
     );
 
-    return outcome ? confirmed(form, picked.ignored) : linkGone();
+    return outcome ? confirmed(form, picked.ignored) : linkGone(req);
   } catch (error) {
     if (error instanceof APIError && (error.status === 403 || error.status === 404)) {
-      return linkGone();
+      return linkGone(req);
     }
 
     return saveFailed(req, form, error);
@@ -184,9 +191,9 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
       try {
         const limit = ip ? await takeRateLimit(req.frogbot, ip, spam.rateLimit) : undefined;
 
-        if (limit && !limit.allowed) return tooMany(limit.retryAfter);
+        if (limit && !limit.allowed) return tooMany(req, limit.retryAfter);
       } catch (error) {
-        if (isFrogBotError(error, 'kv.lock-held')) return busy();
+        if (isFrogBotError(error, 'kv.lock-held')) return busy(req);
 
         throw error;
       }
@@ -194,24 +201,24 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
       const found = await findForm(req, runtime, req.routeParams?.slug);
       const token = req.searchParams.get('link');
 
-      if (!found) return token === null ? notFound() : linkGone();
+      if (!found) return token === null ? notFound(req) : linkGone(req);
 
       const { form, target } = found;
       const link = token === null ? null : await resolveLink(req, form, token);
 
-      if (token !== null && !link) return linkGone();
-      if (token === null && form.mode === 'update') return notFound();
+      if (token !== null && !link) return linkGone(req);
+      if (token === null && form.mode === 'update') return notFound(req);
 
-      if (link ? isClosed(form, 0) : await formIsClosed(req.frogbot, form)) return closed();
+      if (link ? isClosed(form, 0) : await formIsClosed(req.frogbot, form)) return closed(req);
 
       try {
         await addDataAndFileToRequest(req);
       } catch (error) {
         if (error instanceof APIError && error.status === 413) {
-          return failure(413, 'The files are too large, or there are too many.');
+          return answer(req, formError('forms.files-too-large'));
         }
 
-        return failure(400, 'The request body is invalid.');
+        return answer(req, frogbotError('request.invalid', 'The request body is invalid.'));
       }
 
       const body = isRecord(req.data) ? req.data : {};
@@ -229,7 +236,7 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
           return false;
         });
 
-        if (!verified) return failure(400, "We couldn't verify you're human. Try again.");
+        if (!verified) return answer(req, formError('forms.not-human'));
       }
 
       if (link) return saveEdit(req, form, target, link, body);
@@ -243,7 +250,7 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
       const refused = checkFiles(files, bodyAnswers(body), req.files);
 
       if ('errors' in picked || refused.length) {
-        return invalid([...('errors' in picked ? picked.errors : []), ...refused]);
+        return invalid(req, [...('errors' in picked ? picked.errors : []), ...refused]);
       }
 
       try {
@@ -269,7 +276,7 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
           }
         });
 
-        if (outcome.closed) return closed();
+        if (outcome.closed) return closed(req);
 
         if (runtime.analytics) {
           await countEvent(req.frogbot, form, 'completion').catch((error: unknown) => {
@@ -284,14 +291,14 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
       } catch (error) {
         if (error instanceof FileRejected) {
           const errors = fileErrors(error);
-          if (errors) return invalid(errors);
+          if (errors) return invalid(req, errors);
 
           req.frogbot.logger.error(
             { err: error.reason, form: form.slug, field: error.field },
             '[plugin-forms] Saving a file failed',
           );
 
-          return failure(500, 'Something went wrong.');
+          return answer(req, frogbotError('internal', { cause: error.reason }));
         }
 
         return saveFailed(req, form, error);
